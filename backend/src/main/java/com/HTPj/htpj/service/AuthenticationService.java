@@ -14,7 +14,7 @@ import com.HTPj.htpj.dto.request.RefreshRequest;
 import com.HTPj.htpj.dto.response.AuthenticationResponse;
 import com.HTPj.htpj.dto.response.IntrospectResponse;
 import com.HTPj.htpj.entity.InvalidatedToken;
-import com.HTPj.htpj.entity.User;
+import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.InvalidatedTokenRepository;
@@ -70,15 +70,15 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        var user = userRepository
+        var users = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        boolean authenticated = passwordEncoder.matches(request.getPassword(), users.getPassword());
 
         if (!authenticated) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-        var token = generateToken(user);
+        var token = generateToken(users);
 
         return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
@@ -120,7 +120,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder().token(token).authenticated(true).build();
     }
 
-    private String generateToken(User user) {
+    private String generateToken(Users user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
@@ -170,7 +170,7 @@ public class AuthenticationService {
         return signedJWT;
     }
 
-    private String buildScope(User user) {
+    private String buildScope(Users user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
         if (!CollectionUtils.isEmpty(user.getRoles()))

@@ -15,12 +15,12 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class User {
+public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
-    @Column(name = "username", unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
+    @Column(name = "username", unique = true, columnDefinition = "VARCHAR(255)")
     String username;
 
     String password;

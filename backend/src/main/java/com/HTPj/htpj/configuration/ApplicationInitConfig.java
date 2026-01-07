@@ -4,7 +4,7 @@ import java.util.HashSet;
 
 import com.HTPj.htpj.constant.PredefinedRole;
 import com.HTPj.htpj.entity.Role;
-import com.HTPj.htpj.entity.User;
+import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.repository.RoleRepository;
 import com.HTPj.htpj.repository.UserRepository;
 import org.springframework.boot.ApplicationRunner;
@@ -55,7 +55,7 @@ public class ApplicationInitConfig {
                 var roles = new HashSet<Role>();
                 roles.add(adminRole);
 
-                User user = User.builder()
+                Users user = Users.builder()
                         .username(ADMIN_USER_NAME)
                         .password(passwordEncoder.encode(ADMIN_PASSWORD))
                         .roles(roles)
