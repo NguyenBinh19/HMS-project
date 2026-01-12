@@ -36,7 +36,7 @@ public class SecurityConfig {
     };
 
     private final String[] PUBLIC_GET_ENPOINTS = {
-        "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh"
+        "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh", "/auth/vault"
     };
 
     @Autowired

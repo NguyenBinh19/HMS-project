@@ -4,19 +4,30 @@ server:
   port: 8080
 
 spring:
-  datasource:
-    username: sa
-    password: Justin@2025
-    url: "jdbc:sqlserver://;serverName=103.167.89.125;databaseName=hms;encrypt=true;trustServerCertificate=true;"
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  application:
+    name: hms
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate.dialect: org.hibernate.dialect.SQLServerDialect
+  cloud:
+    vault:
+      kv:
+        enabled: true
+        backend: secret
+        default-context: application
+        profile-separator: '/'
+      authentication: TOKEN
+      token: hms@2026
+      scheme: http
+      host: 103.167.89.125
+      port: 8200
+  config:
+    import: vault://
+
 jwt:
-  signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
   valid-duration: 6000 # in second
   refreshable-duration: 36000 # in seconds
 springdoc:

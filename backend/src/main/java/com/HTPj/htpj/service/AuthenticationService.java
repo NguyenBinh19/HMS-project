@@ -13,6 +13,7 @@ import com.HTPj.htpj.dto.request.LogoutRequest;
 import com.HTPj.htpj.dto.request.RefreshRequest;
 import com.HTPj.htpj.dto.response.AuthenticationResponse;
 import com.HTPj.htpj.dto.response.IntrospectResponse;
+import com.HTPj.htpj.dto.vault.JwtVaultProps;
 import com.HTPj.htpj.entity.InvalidatedToken;
 import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
@@ -42,10 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthenticationService {
     UserRepository userRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
-
-    @NonFinal
-    @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;
+    JwtVaultProps jwtVaultProps;
 
     @NonFinal
     @Value("${jwt.valid-duration}")
@@ -125,7 +123,7 @@ public class AuthenticationService {
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
-                .issuer("devteria.com")
+                .issuer("justin.nguyen")
                 .issueTime(new Date())
                 .expirationTime(new Date(
                         Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
@@ -138,7 +136,7 @@ public class AuthenticationService {
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(jwtVaultProps.getKey().getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("Cannot create token", e);
@@ -147,7 +145,7 @@ public class AuthenticationService {
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        JWSVerifier verifier = new MACVerifier(jwtVaultProps.getKey().getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token);
 
