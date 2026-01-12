@@ -5,8 +5,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.4</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>4.0.1</version>
+		<relativePath/>
 	</parent>
 	<groupId>com.HTPj</groupId>
 	<artifactId>HTPj</artifactId>
@@ -191,19 +191,10 @@
 						</indent>
 						<palantirJavaFormat/>
 						<importOrder>
-							<!-- Specify either order or file, but not both -->
 							<order>java,jakarta,org,com,com.diffplug,</order>
 						</importOrder>
 					</java>
 				</configuration>
-				<!--				<executions>-->
-				<!--					<execution>-->
-				<!--						<phase>compile</phase>-->
-				<!--						<goals>-->
-				<!--							<goal>check</goal>-->
-				<!--						</goals>-->
-				<!--					</execution>-->
-				<!--				</executions>-->
 			</plugin>
 		</plugins>
 		<finalName>HTPj-Project</finalName>

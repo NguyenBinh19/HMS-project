@@ -26,8 +26,8 @@ public class SwaggerConfig {
                 .components(new Components().addSecuritySchemes
                         ("Bearer Authentication", createAPIKeyScheme()))
                 .info(new Info().title("My REST API")
-                        .description("Peter là tên con cặc anh Hoàng. Tây vãi lồn!")
-                        .version("1.0").contact(new Contact().name("Nguyễn Phương Tuấn Anh")));
+                        .description("My REST API")
+                        .version("1.0").contact(new Contact().name("HMS")));
     }
 
     @Bean

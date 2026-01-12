@@ -1,6 +1,6 @@
 server:
   servlet:
-    context-path: /demo
+    context-path: /hms
   port: 8080
 
 spring:
@@ -17,7 +17,7 @@ spring:
       hibernate.dialect: org.hibernate.dialect.SQLServerDialect
 jwt:
   signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
-  valid-duration: 3600 # in second
+  valid-duration: 6000 # in second
   refreshable-duration: 36000 # in seconds
 springdoc:
   api-docs:
