@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_URL =
-    import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8386/api/v1";
+    import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 
 const api = axios.create({
     baseURL: API_URL,
