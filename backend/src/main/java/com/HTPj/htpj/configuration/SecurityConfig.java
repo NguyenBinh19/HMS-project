@@ -26,7 +26,8 @@ public class SecurityConfig {
             "/auth/token",
             "/auth/introspect",
             "/auth/logout",
-            "/auth/refresh"
+            "/auth/refresh",
+            "/room-types"
     };
 
     private final String[] PUBLIC_POST_ENPOINTS = {
