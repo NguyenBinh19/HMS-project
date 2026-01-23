@@ -1,7 +1,7 @@
 package com.HTPj.htpj.service.impl;
 
-import com.HTPj.htpj.dto.request.CreateRoomTypeRequest;
-import com.HTPj.htpj.dto.response.RoomTypeResponse;
+import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.RoomType;
 import com.HTPj.htpj.exception.AppException;
@@ -41,6 +41,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .totalRooms(request.getTotalRooms())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .roomStatus("inactive")
                 .build();
 
         RoomType room = roomTypeRepository.save(roomType);

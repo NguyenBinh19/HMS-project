@@ -1,4 +1,4 @@
-package com.HTPj.htpj.dto.response;
+package com.HTPj.htpj.dto.response.roomtype;
 
 import lombok.*;
 
@@ -19,4 +19,5 @@ public class RoomTypeResponse {
     private BigDecimal basePrice;
     private Integer maxGuest;
     private Integer totalRooms;
+    private String roomStatus;
 }

@@ -1,8 +1,8 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
-import com.HTPj.htpj.dto.request.CreateRoomTypeRequest;
-import com.HTPj.htpj.dto.response.RoomTypeResponse;
+import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.service.RoomTypeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

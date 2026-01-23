@@ -48,4 +48,8 @@ public class RoomType {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "room_status", length = 20)
+    private String roomStatus;
+
 }

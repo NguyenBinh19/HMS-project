@@ -1,4 +1,4 @@
-package com.HTPj.htpj.dto.request;
+package com.HTPj.htpj.dto.request.roomtype;
 
 
 import lombok.*;

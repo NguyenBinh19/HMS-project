@@ -1,6 +1,6 @@
 package com.HTPj.htpj.mapper;
 
-import com.HTPj.htpj.dto.response.RoomTypeResponse;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.RoomType;
 
 public class RoomTypeMapper {
@@ -15,6 +15,7 @@ public class RoomTypeMapper {
                 .basePrice(entity.getBasePrice())
                 .maxGuest(entity.getMaxGuest())
                 .totalRooms(entity.getTotalRooms())
+                .roomStatus(entity.getRoomStatus())
                 .build();
     }
 }
