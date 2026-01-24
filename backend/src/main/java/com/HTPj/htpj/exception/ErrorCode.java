@@ -19,6 +19,8 @@ public enum ErrorCode {
 
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
+    ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

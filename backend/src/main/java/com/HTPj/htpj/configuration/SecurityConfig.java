@@ -26,8 +26,7 @@ public class SecurityConfig {
             "/auth/token",
             "/auth/introspect",
             "/auth/logout",
-            "/auth/refresh",
-            "/room-types"
+            "/auth/refresh"
     };
 
     private final String[] PUBLIC_POST_ENPOINTS = {
@@ -47,6 +46,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
                 request
+                        .requestMatchers("/room-types/**").permitAll() //test room type
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                         .permitAll()
                         .requestMatchers(PUBLIC_POST_ENPOINTS)
