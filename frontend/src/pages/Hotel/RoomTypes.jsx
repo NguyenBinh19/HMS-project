@@ -1,7 +1,7 @@
 import { Plus, Hotel, Search, Loader2, Sparkles, Filter } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import RoomTypeCard from "@/components/hotel/room/RoomCard";
-import RoomTypeModal from "@/components/hotel/room/RoomModal";
+import RoomTypeCard from "@/components/hotel/roomTypes/RoomTypeCard.jsx";
+import RoomTypeModal from "@/components/hotel/roomTypes/RoomTypeModal.jsx";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 
 const HOTEL_ID = 1;
