@@ -3,11 +3,13 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
+import com.HTPj.htpj.entity.Amenity;
 import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.RoomType;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomTypeMapper;
+import com.HTPj.htpj.repository.AmenityRepository;
 import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.RoomTypeService;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
     private final RoomTypeRepository roomTypeRepository;
     private final HotelRepository hotelRepository;
+    private final AmenityRepository amenityRepository;
 
     @Override
     public RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request) {
@@ -40,12 +44,24 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .roomTitle(request.getRoomTitle())
                 .description(request.getDescription())
                 .basePrice(request.getBasePrice())
-                .maxGuest(request.getMaxGuest())
+                .max_adults(request.getMax_adults())
+                .maxChildren(request.getMaxChildren())
+                .roomArea(request.getRoomArea())
+                .bedType(request.getBedType())
+                .keywords(request.getKeywords())
                 .totalRooms(request.getTotalRooms())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .roomStatus("inactive")
                 .build();
+
+        if (request.getAmenityIds() != null && !request.getAmenityIds().isEmpty()) {
+            List<Amenity> amenities = amenityRepository.findByAmenityIdIn(request.getAmenityIds());
+            if (amenities.size() != request.getAmenityIds().size()) {
+                throw new AppException(ErrorCode.AMENITY_NOT_FOUND);
+            }
+            roomType.setAmenities(new HashSet<>(amenities));
+        }
 
         RoomType room = roomTypeRepository.save(roomType);
 
@@ -63,7 +79,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
     @Override
     public RoomTypeDetailResponse getRoomTypeDetail(Integer roomTypeId) {
-        RoomType roomType = roomTypeRepository.findById(roomTypeId)
+        RoomType roomType = roomTypeRepository.findByIdWithAmenities(roomTypeId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
 
         return RoomTypeMapper.toDetailResponse(roomType);

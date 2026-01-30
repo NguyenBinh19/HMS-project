@@ -15,7 +15,7 @@ public class RoomTypeResponse {
     private String roomCode;
     private String roomTitle;
     private BigDecimal basePrice;
-    private Integer maxGuest;
+    private Integer max_adults;
     private Integer totalRooms;
     private String roomStatus;
 }
