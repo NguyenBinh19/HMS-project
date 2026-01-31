@@ -19,7 +19,7 @@ public class RoomTypeDetailResponse {
     private String roomTitle;
     private String description;
     private BigDecimal basePrice;
-    private Integer max_adults;
+    private Integer maxAdults;
     private Integer maxChildren;
     private BigDecimal roomArea;
     private String bedType;
@@ -28,6 +28,7 @@ public class RoomTypeDetailResponse {
     private String roomStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<AmenityResponse> amenities;
+    private List<String> amenities;
+
 
 }

@@ -6,8 +6,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -40,7 +38,7 @@ public class RoomType {
     private BigDecimal basePrice;
 
     @Column(name = "max_adults")
-    private Integer max_adults;
+    private Integer maxAdults;
 
     @Column(name = "max_children")
     private Integer maxChildren;
@@ -57,14 +55,8 @@ public class RoomType {
     @Column(name = "total_rooms")
     private Integer totalRooms;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "room_type_amenities",
-            joinColumns = @JoinColumn(name = "room_type_id", nullable = false),
-            inverseJoinColumns = @JoinColumn(name = "amenity_id", nullable = false),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"room_type_id", "amenity_id"})
-    )
-    private Set<Amenity> amenities = new HashSet<>();
+    @Column(name = "amenities", columnDefinition = "NVARCHAR(MAX)")
+    private String amenities;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

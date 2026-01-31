@@ -18,11 +18,12 @@ public class CreateRoomTypeRequest {
     private String roomTitle;
     private String description;
     private BigDecimal basePrice;
-    private Integer max_adults;
+    private Integer maxAdults;
     private Integer maxChildren;
     private BigDecimal roomArea;
     private String bedType;
     private String keywords;
     private Integer totalRooms;
-    private List<Integer> amenityIds;
+    private List<String> amenities;
+
 }

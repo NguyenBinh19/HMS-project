@@ -1,24 +1,14 @@
 package com.HTPj.htpj.mapper;
 
-import com.HTPj.htpj.dto.response.roomtype.AmenityResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
-import com.HTPj.htpj.entity.Amenity;
 import com.HTPj.htpj.entity.RoomType;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RoomTypeMapper {
 
-    public static RoomTypeDetailResponse toDetailResponse(RoomType entity) {
-        List<AmenityResponse> amenities = entity.getAmenities() == null
-                ? Collections.emptyList()
-                : entity.getAmenities().stream()
-                        .map(RoomTypeMapper::toAmenityResponse)
-                        .collect(Collectors.toList());
-
+    public static RoomTypeDetailResponse toDetailResponse(RoomType entity, List<String> amenities) {
         return RoomTypeDetailResponse.builder()
                 .roomTypeId(entity.getRoomTypeId())
                 .hotelId(entity.getHotel().getHotelId())
@@ -26,24 +16,16 @@ public class RoomTypeMapper {
                 .roomTitle(entity.getRoomTitle())
                 .description(entity.getDescription())
                 .basePrice(entity.getBasePrice())
-                .max_adults(entity.getMax_adults())
+                .maxAdults(entity.getMaxAdults())
                 .maxChildren(entity.getMaxChildren())
                 .roomArea(entity.getRoomArea())
                 .bedType(entity.getBedType())
                 .keywords(entity.getKeywords())
                 .totalRooms(entity.getTotalRooms())
+                .amenities(amenities)
                 .roomStatus(entity.getRoomStatus())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .amenities(amenities)
-                .build();
-    }
-
-    public static AmenityResponse toAmenityResponse(Amenity entity) {
-        return AmenityResponse.builder()
-                .id(entity.getAmenityId())
-                .name(entity.getName())
-                .category(entity.getCategory())
                 .build();
     }
 
@@ -54,7 +36,7 @@ public class RoomTypeMapper {
                 .roomCode(entity.getRoomCode())
                 .roomTitle(entity.getRoomTitle())
                 .basePrice(entity.getBasePrice())
-                .max_adults(entity.getMax_adults())
+                .max_adults(entity.getMaxAdults())
                 .totalRooms(entity.getTotalRooms())
                 .roomStatus(entity.getRoomStatus())
                 .build();
