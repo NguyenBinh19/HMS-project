@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,10 +19,16 @@ public class RoomTypeDetailResponse {
     private String roomTitle;
     private String description;
     private BigDecimal basePrice;
-    private Integer maxGuest;
+    private Integer maxAdults;
+    private Integer maxChildren;
+    private BigDecimal roomArea;
+    private String bedType;
+    private String keywords;
     private Integer totalRooms;
     private String roomStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<String> amenities;
+
 
 }

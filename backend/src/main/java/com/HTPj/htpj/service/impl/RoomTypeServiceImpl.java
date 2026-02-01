@@ -11,8 +11,10 @@ import com.HTPj.htpj.mapper.RoomTypeMapper;
 import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.RoomTypeService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +26,8 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
     private final RoomTypeRepository roomTypeRepository;
     private final HotelRepository hotelRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     @Override
     public RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request) {
@@ -34,22 +38,38 @@ public class RoomTypeServiceImpl implements RoomTypeService {
             throw new AppException(ErrorCode.ROOM_TYPE_EXISTED);
         }
 
+        String amenities = null;
+        try {
+            if (request.getAmenities() != null) {
+                amenities = objectMapper.writeValueAsString(request.getAmenities());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid amenities format");
+        }
+
+
         RoomType roomType = RoomType.builder()
                 .hotel(hotel)
                 .roomCode(request.getRoomCode())
                 .roomTitle(request.getRoomTitle())
                 .description(request.getDescription())
                 .basePrice(request.getBasePrice())
-                .maxGuest(request.getMaxGuest())
+                .maxAdults(request.getMaxAdults())
+                .maxChildren(request.getMaxChildren())
+                .roomArea(request.getRoomArea())
+                .bedType(request.getBedType())
+                .keywords(request.getKeywords())
                 .totalRooms(request.getTotalRooms())
+                .amenities(amenities)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .roomStatus("inactive")
                 .build();
 
         RoomType room = roomTypeRepository.save(roomType);
+        List<String> amenitiesList = parseAmenities(room.getAmenities());
 
-        return RoomTypeMapper.toDetailResponse(room);
+        return RoomTypeMapper.toDetailResponse(room, amenitiesList);
     }
 
     @Override
@@ -66,7 +86,9 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
 
-        return RoomTypeMapper.toDetailResponse(roomType);
+        List<String> amenitiesList = parseAmenities(roomType.getAmenities());
+
+        return RoomTypeMapper.toDetailResponse(roomType, amenitiesList);
     }
 
     @Override
@@ -80,8 +102,22 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
         RoomType updatedRoomType = roomTypeRepository.save(roomType);
 
-        return RoomTypeMapper.toDetailResponse(updatedRoomType);
+        List<String> amenitiesList = parseAmenities(updatedRoomType.getAmenities());
+
+        return RoomTypeMapper.toDetailResponse(updatedRoomType, amenitiesList);
     }
+
+    private List<String> parseAmenities(String amenitiesJson) {
+        try {
+            if (amenitiesJson == null || amenitiesJson.isBlank()) {
+                return List.of();
+            }
+            return objectMapper.readValue(amenitiesJson, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse amenities JSON", e);
+        }
+    }
+
 
 
 

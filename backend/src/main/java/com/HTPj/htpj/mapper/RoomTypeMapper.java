@@ -4,9 +4,11 @@ import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.RoomType;
 
+import java.util.List;
+
 public class RoomTypeMapper {
 
-    public static RoomTypeDetailResponse toDetailResponse(RoomType entity) {
+    public static RoomTypeDetailResponse toDetailResponse(RoomType entity, List<String> amenities) {
         return RoomTypeDetailResponse.builder()
                 .roomTypeId(entity.getRoomTypeId())
                 .hotelId(entity.getHotel().getHotelId())
@@ -14,8 +16,13 @@ public class RoomTypeMapper {
                 .roomTitle(entity.getRoomTitle())
                 .description(entity.getDescription())
                 .basePrice(entity.getBasePrice())
-                .maxGuest(entity.getMaxGuest())
+                .maxAdults(entity.getMaxAdults())
+                .maxChildren(entity.getMaxChildren())
+                .roomArea(entity.getRoomArea())
+                .bedType(entity.getBedType())
+                .keywords(entity.getKeywords())
                 .totalRooms(entity.getTotalRooms())
+                .amenities(amenities)
                 .roomStatus(entity.getRoomStatus())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
@@ -29,7 +36,7 @@ public class RoomTypeMapper {
                 .roomCode(entity.getRoomCode())
                 .roomTitle(entity.getRoomTitle())
                 .basePrice(entity.getBasePrice())
-                .maxGuest(entity.getMaxGuest())
+                .max_adults(entity.getMaxAdults())
                 .totalRooms(entity.getTotalRooms())
                 .roomStatus(entity.getRoomStatus())
                 .build();

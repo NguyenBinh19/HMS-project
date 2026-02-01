@@ -37,11 +37,26 @@ public class RoomType {
     @Column(name = "base_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal basePrice;
 
-    @Column(name = "max_guest")
-    private Integer maxGuest;
+    @Column(name = "max_adults")
+    private Integer maxAdults;
+
+    @Column(name = "max_children")
+    private Integer maxChildren;
+
+    @Column(name = "room_area", precision = 10, scale = 2)
+    private BigDecimal roomArea;
+
+    @Column(name = "bed_type", length = 100)
+    private String bedType;
+
+    @Column(name = "keywords", columnDefinition = "NVARCHAR(MAX)")
+    private String keywords;
 
     @Column(name = "total_rooms")
     private Integer totalRooms;
+
+    @Column(name = "amenities", columnDefinition = "NVARCHAR(MAX)")
+    private String amenities;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
