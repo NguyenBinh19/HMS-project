@@ -1,9 +1,41 @@
 import { useState, useEffect } from "react";
 import {
-    X, Check, AlertCircle,
-    Type, Hash, DollarSign, Users, Home, FileText
+    X, Check, AlertCircle, Plus, Wand2, Loader2, // Đã thêm Loader2
+    Type, Hash, DollarSign, Users, Home, FileText, Bed, Ruler, Baby, Tag, Save
 } from "lucide-react";
 import { roomTypeService } from "@/services/roomtypes.service.js";
+
+const InputField = ({ label, name, value, onChange, error, type = "text", placeholder, icon: Icon, required = false, ...props }) => (
+    <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-slate-700">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <div className="relative">
+            {Icon && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Icon size={18} />
+                </div>
+            )}
+            <input
+                type={type}
+                name={name}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-4 py-2 border rounded-lg text-sm transition-all
+                    ${error ? "border-red-300 ring-1 ring-red-100" : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"}
+                `}
+                {...props}
+            />
+        </div>
+        {error && <span className="text-xs text-red-500">{error}</span>}
+    </div>
+);
+
+const SUGGESTED_AMENITIES = [
+    "Wifi tốc độ cao", "Smart TV", "Bồn tắm", "Máy sấy",
+    "Loa Bluetooth", "Ban công", "Hướng biển", "Hướng phố"
+];
 
 const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
     const [form, setForm] = useState({
@@ -11,269 +43,300 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
         roomTitle: "",
         description: "",
         basePrice: "",
-        maxGuest: "",
+        maxAdults: "",
+        maxChildren: "",
         totalRooms: "",
+        roomArea: "",
+        bedType: "",
+        keywords: "",
         roomStatus: "ACTIVE",
+        amenities: []
     });
 
+    const [tagInput, setTagInput] = useState("");
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
-    // Hiệu ứng Fade-in khi mở modal
     useEffect(() => {
         setIsVisible(true);
-        // Khóa cuộn trang chính khi mở modal
         document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
+        return () => { document.body.style.overflow = 'unset'; };
     }, []);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        if (errors[e.target.name]) {
-            setErrors({ ...errors, [e.target.name]: "" });
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: "" }));
         }
     };
 
-    const blockInvalidNumber = (e) => {
-        if (["-", ".", ","].includes(e.key)) e.preventDefault();
+    // --- LOGIC TAGS ---
+    const handleAddTag = (e) => {
+        if (e.key === 'Enter' || e.type === 'click') {
+            e.preventDefault();
+            const val = tagInput.trim();
+            if (val && !form.amenities.includes(val)) {
+                setForm(prev => ({ ...prev, amenities: [...prev.amenities, val] }));
+                setTagInput("");
+            }
+        }
     };
+
+    const removeTag = (tagToRemove) => {
+        setForm(prev => ({
+            ...prev,
+            amenities: prev.amenities.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
+    const toggleSuggestedAmenity = (amenity) => {
+        setForm(prev => {
+            const exists = prev.amenities.includes(amenity);
+            if (exists) {
+                return { ...prev, amenities: prev.amenities.filter(a => a !== amenity) };
+            } else {
+                return { ...prev, amenities: [...prev.amenities, amenity] };
+            }
+        });
+    };
+    // ------------------
 
     const validate = () => {
         const newErrors = {};
-        if (!form.roomCode.trim()) newErrors.roomCode = "Vui lòng nhập mã loại phòng";
-        if (!form.roomTitle.trim()) newErrors.roomTitle = "Vui lòng nhập tên loại phòng";
-        if (!form.description.trim()) newErrors.description = "Mô tả không được để trống";
-        if (!form.basePrice || Number(form.basePrice) <= 0) newErrors.basePrice = "Giá phải lớn hơn 0";
-        if (!form.maxGuest || Number(form.maxGuest) <= 0) newErrors.maxGuest = "Số khách phải lớn hơn 0";
-        if (!form.totalRooms || Number(form.totalRooms) <= 0) newErrors.totalRooms = "Số phòng phải lớn hơn 0";
+        if (!form.roomCode.trim()) newErrors.roomCode = "Nhập mã phòng";
+        if (!form.roomTitle.trim()) newErrors.roomTitle = "Nhập tên hạng phòng";
+        if (!form.basePrice || Number(form.basePrice) <= 0) newErrors.basePrice = "Nhập giá hợp lệ";
+        if (!form.totalRooms || Number(form.totalRooms) <= 0) newErrors.totalRooms = "Nhập số lượng";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleClose = () => {
-        setIsVisible(false);
-        setTimeout(onClose, 300); // Đợi animation đóng xong
-    };
-
     const handleSubmit = async () => {
         if (!validate()) return;
-
         try {
             setLoading(true);
-            await roomTypeService.createRoomType({
-                ...form,
-                hotelId,
+
+
+            const payload = {
+                hotelId: hotelId,
+                roomCode: form.roomCode,
+                roomTitle: form.roomTitle,
+                description: form.description,
                 basePrice: Number(form.basePrice),
-                maxGuest: Number(form.maxGuest),
+                maxAdults: Number(form.maxAdults) || 2,
+                maxChildren: Number(form.maxChildren) || 0,
+                roomArea: Number(form.roomArea) || 0,
+                bedType: form.bedType,
+                keywords: form.keywords,
                 totalRooms: Number(form.totalRooms),
-            });
+                amenities: form.amenities
+            };
 
-            setSuccess(true);
+            console.log("Sending payload:", payload); // Debug
+
+            await roomTypeService.createRoomType(payload);
             onSuccess();
-
-            setTimeout(() => {
-                handleClose();
-            }, 1500);
+            handleClose();
         } catch (err) {
             console.error(err);
-            // Có thể thêm toast error tại đây
         } finally {
             setLoading(false);
         }
     };
 
-    // Component Input
-    const FormInput = ({ label, name, type = "text", icon: Icon, placeholder, ...props }) => (
-        <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 block">
-                {label} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                    <Icon size={18} />
-                </div>
-                <input
-                    type={type}
-                    name={name}
-                    value={form[name]}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all duration-200
-                        ${errors[name]
-                        ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                        : "border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-blue-100"
-                    }`}
-                    {...props}
-                />
-            </div>
-            {errors[name] && (
-                <p className="text-red-500 text-xs flex items-center gap-1 mt-1 animate-pulse">
-                    <AlertCircle size={12} /> {errors[name]}
-                </p>
-            )}
-        </div>
-    );
+    const handleClose = () => {
+        setIsVisible(false);
+        setTimeout(onClose, 300);
+    };
 
     return (
-        <div
-            className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-        >
-            <div
-                className={`bg-white w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] transition-all duration-300 transform ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
-            >
-                {/* --- HEADER --- */}
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-2xl z-10">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <Home className="text-blue-600" size={24} />
-                            Thêm Loại Phòng Mới
-                        </h2>
-                        <p className="text-sm text-slate-500 mt-0.5">Điền thông tin chi tiết để thiết lập loại phòng</p>
-                    </div>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                        <X size={24} />
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+
+                {/* HEADER */}
+                <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+                    <h2 className="text-lg font-bold text-slate-800">Thêm hạng phòng mới</h2>
+                    <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* --- BODY (Scrollable) --- */}
+                {/* BODY */}
                 <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
 
-                    {/* Thông báo thành công */}
-                    {success && (
-                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm animate-bounce-in">
-                            <div className="bg-green-500 text-white p-1 rounded-full">
-                                <Check size={16} strokeWidth={3} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-sm">Thành công!</h4>
-                                <p className="text-xs opacity-90">Loại phòng đã được tạo và lưu vào hệ thống.</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Thông tin cơ bản */}
+                    {/* 1. THÔNG TIN CƠ BẢN */}
                     <section>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Thông tin chung</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <FormInput
-                                label="Mã loại phòng"
-                                name="roomCode"
-                                icon={Hash}
-                                placeholder="VD: DLX01"
+                        <h3 className="text-sm font-bold text-slate-900 mb-4">Thông tin cơ bản</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                            <InputField
+                                label="Tên hạng phòng" name="roomTitle"
+                                value={form.roomTitle} onChange={handleChange} error={errors.roomTitle}
+                                required icon={Type}
                             />
-                            <FormInput
-                                label="Tên hiển thị"
-                                name="roomTitle"
-                                icon={Type}
-                                placeholder="VD: Deluxe King Ocean View"
+                            <InputField
+                                label="Số lượng phòng (Vật lý)" name="totalRooms" type="number"
+                                value={form.totalRooms} onChange={handleChange} error={errors.totalRooms}
+                                required icon={Home}
+                            />
+                            <InputField
+                                label="Mã phòng (Code)" name="roomCode"
+                                value={form.roomCode} onChange={handleChange} error={errors.roomCode}
+                                required icon={Hash}
+                            />
+                            <InputField
+                                label="Giá gốc (VNĐ/Đêm)" name="basePrice" type="number"
+                                value={form.basePrice} onChange={handleChange} error={errors.basePrice}
+                                required icon={DollarSign}
                             />
                         </div>
                     </section>
 
-                    {/* Định giá & Sức chứa */}
+                    {/* 2. SỨC CHỨA & KÍCH THƯỚC */}
                     <section>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Vận hành</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <FormInput
-                                label="Giá cơ bản (VNĐ)"
-                                name="basePrice"
-                                type="number"
-                                icon={DollarSign}
-                                placeholder="0"
-                                min={1}
-                                onKeyDown={blockInvalidNumber}
-                            />
-                            <FormInput
-                                label="Sức chứa (Khách)"
-                                name="maxGuest"
-                                type="number"
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                            <InputField
+                                label="Sức chứa người lớn" name="maxAdults" type="number"
+                                value={form.maxAdults} onChange={handleChange}
                                 icon={Users}
-                                placeholder="2"
-                                min={1}
-                                onKeyDown={blockInvalidNumber}
                             />
-                            <FormInput
-                                label="Tổng số phòng"
-                                name="totalRooms"
-                                type="number"
-                                icon={Home}
-                                placeholder="10"
-                                min={1}
-                                onKeyDown={blockInvalidNumber}
+                            <InputField
+                                label="Sức chứa trẻ em" name="maxChildren" type="number"
+                                value={form.maxChildren} onChange={handleChange}
+                                icon={Baby}
+                            />
+                            <InputField
+                                label="Kích thước phòng (m²)" name="roomArea" type="number"
+                                value={form.roomArea} onChange={handleChange}
+                                icon={Ruler}
+                            />
+                            <InputField
+                                label="Loại giường" name="bedType"
+                                value={form.bedType} onChange={handleChange}
+                                icon={Bed}
                             />
                         </div>
                     </section>
 
-                    {/* Chi tiết & Trạng thái */}
-                    <section className="grid grid-cols-1 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                <FileText size={16} className="text-slate-400"/> Mô tả chi tiết <span className="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                name="description"
-                                rows={4}
-                                onChange={handleChange}
-                                placeholder="Mô tả tiện nghi, hướng nhìn, diện tích..."
-                                className={`w-full px-4 py-3 rounded-lg border bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all duration-200 resize-none
-                                ${errors.description
-                                    ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                                    : "border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-blue-100"
-                                }`}
+                    {/* 3. MÔ TẢ & MARKETING */}
+                    <section>
+                        <h3 className="text-sm font-bold text-slate-900 mb-4 mt-2">Mô tả phòng (Marketing)</h3>
+                        <div className="space-y-4">
+                            <InputField
+                                label="Từ khóa chính (SEO)" name="keywords"
+                                value={form.keywords} onChange={handleChange}
+                                icon={Tag}
                             />
-                            {errors.description && (
-                                <p className="text-red-500 text-xs flex items-center gap-1 mt-1">
-                                    <AlertCircle size={12} /> {errors.description}
-                                </p>
-                            )}
-                        </div>
 
-                        <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div>
-                                <label className="text-sm font-bold text-slate-700 block">Trạng thái </label>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-slate-700">Mô tả chi tiết</label>
+                                <div className="relative">
+                                    <textarea
+                                        name="description"
+                                        rows={4}
+                                        value={form.description}
+                                        onChange={handleChange}
+                                        placeholder="Nhập mô tả chi tiết về phòng..."
+                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
+                                    />
+                                    <button className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded shadow-sm transition-colors">
+                                        <Wand2 size={12} />
+                                        VIẾT MÔ TẢ BẰNG AI
+                                    </button>
+                                </div>
                             </div>
-                            <div className="relative inline-block w-32">
-                                <select
-                                    name="roomStatus"
-                                    onChange={handleChange}
-                                    value={form.roomStatus}
-                                    className="block w-full px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer hover:border-blue-400 transition-colors"
+                        </div>
+                    </section>
+
+                    {/* 4. TIỆN ÍCH */}
+                    <section>
+                        <h3 className="text-sm font-bold text-slate-900 mb-3">Tiện ích</h3>
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {form.amenities.map((tag, index) => (
+                                    <span key={index} className="flex items-center gap-1 px-3 py-1 bg-white border border-blue-200 text-blue-700 rounded-full text-xs font-semibold shadow-sm animate-fade-in">
+                                        {tag}
+                                        <X
+                                            size={12}
+                                            className="cursor-pointer hover:text-red-500"
+                                            onClick={() => removeTag(tag)}
+                                        />
+                                    </span>
+                                ))}
+                                {form.amenities.length === 0 && (
+                                    <span className="text-slate-400 text-xs italic py-1">Chưa có tiện ích nào được chọn</span>
+                                )}
+                            </div>
+
+                            <div className="relative mb-4">
+                                <input
+                                    type="text"
+                                    value={tagInput}
+                                    onChange={(e) => setTagInput(e.target.value)}
+                                    onKeyDown={handleAddTag}
+                                    placeholder="Nhập tiện ích khác và nhấn Enter..."
+                                    className="w-full pl-3 pr-10 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                                />
+                                <button
+                                    onClick={(e) => handleAddTag({ ...e, key: 'Enter' })}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600"
                                 >
-                                    <option value="ACTIVE">Hoạt động</option>
-                                    <option value="INACTIVE">Tạm ẩn</option>
-                                </select>
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+
+                            <div className="border-t border-slate-200 pt-3">
+                                <p className="text-xs text-slate-500 font-medium mb-2 uppercase tracking-wide">Gợi ý nhanh:</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {SUGGESTED_AMENITIES.map(item => {
+                                        const isSelected = form.amenities.includes(item);
+                                        return (
+                                            <div
+                                                key={item}
+                                                onClick={() => toggleSuggestedAmenity(item)}
+                                                className={`cursor-pointer text-xs px-3 py-2 rounded border transition-all flex items-center gap-2
+                                                    ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
+                                                    : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center
+                                                    ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`
+                                                }>
+                                                    {isSelected && <Check size={10} className="text-white" />}
+                                                </div>
+                                                {item}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </section>
                 </div>
 
-                {/* --- FOOTER --- */}
-                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3 z-10">
+                {/* FOOTER */}
+                <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-white rounded-b-xl">
                     <button
                         onClick={handleClose}
-                        disabled={loading}
-                        className="px-5 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent hover:border-slate-200 transition-all duration-200 active:scale-95"
+                        className="px-5 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors text-sm flex items-center gap-1"
                     >
-                        Huỷ bỏ
+                        <X size={16}/> Hủy bỏ
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={loading || success}
-                        className={`px-6 py-2.5 rounded-lg text-white font-semibold shadow-md shadow-blue-500/20 transition-all duration-200 active:scale-95 flex items-center gap-2
-                        ${loading || success ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30'}`}
+                        disabled={loading}
+                        className="px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
                     >
-                        {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                        {success ? "Đã Lưu!" : "Lưu Loại Phòng"}
+                        {loading ? <Loader2 className="animate-spin" size={16}/> : <Save size={16} />}
+                        Thêm
                     </button>
                 </div>
+
             </div>
         </div>
     );

@@ -7,6 +7,7 @@ import VerifyEmail from "../pages/Auth/VerifyEmail";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
+import HotelMain from "../pages/Hotel/HotelDashboard.jsx"
 
 const AppRoutes = () => {
     return (
@@ -20,7 +21,13 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/manage-room-types" element={<RoomTypes />} />
+
+                {/*<Route path="/manage-room-types" element={<RoomTypes />} />*/}
+                <Route path="/hotel" element={<HotelMain />}>
+                    <Route path="room-types" element={<RoomTypes />} />
+                    <Route index element={<Navigate to="room-types" replace />} />
+                </Route>
+
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </>

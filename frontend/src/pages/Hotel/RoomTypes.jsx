@@ -1,24 +1,48 @@
-import { Plus, Hotel, Search, Loader2, Sparkles, Filter } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
-import RoomTypeCard from "@/components/hotel/roomTypes/RoomTypeCard.jsx";
+import {
+    Plus, Loader2, Pencil, Trash2,
+    User, Baby, Building2
+} from "lucide-react";
+import { useEffect, useState } from "react";
+// Import cả 2 Modal: Thêm mới và Chi tiết
 import RoomTypeModal from "@/components/hotel/roomTypes/RoomTypeModal.jsx";
+import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetail.jsx";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 
 const HOTEL_ID = 1;
 
 const ManageRoomTypes = () => {
     const [roomTypes, setRoomTypes] = useState([]);
-    const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
+
+    // State quản lý Modal
+    const [showAddModal, setShowAddModal] = useState(false); // Modal Thêm mới
+    const [selectedRoomId, setSelectedRoomId] = useState(null); // Modal Chi tiết (Nếu có ID thì mở)
 
     const fetchRoomTypes = async () => {
         try {
             setLoading(true);
             const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
-            setRoomTypes(res?.result || []);
+            const dataList = res?.result || [];
+
+            const mappedData = dataList.map(item => {
+                const rawStatus = item.room_status || item.roomStatus || '';
+                const isActive = rawStatus.toLowerCase() === 'active';
+
+                return {
+                    ...item,
+                    id: item.roomTypeId || item.room_type_id,
+                    title: item.roomTitle || item.room_title,
+                    area: item.room_area || item.roomArea || 0,
+                    adults: item.max_adults || item.maxAdults || 0,
+                    children: item.max_children  || 0,
+                    totalRooms: item.total_rooms || item.totalRooms || 0,
+                    isActive: isActive
+                };
+            });
+
+            setRoomTypes(mappedData);
         } catch (err) {
-            console.error(err);
+            console.error("Lỗi tải danh sách phòng:", err);
         } finally {
             setLoading(false);
         }
@@ -28,125 +52,177 @@ const ManageRoomTypes = () => {
         fetchRoomTypes();
     }, []);
 
-    // Lọc danh sách theo từ khóa tìm kiếm
-    const filteredRoomTypes = useMemo(() => {
-        return roomTypes.filter(rt =>
-            rt.roomTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            rt.roomCode.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [roomTypes, searchTerm]);
+    // Mở modal Thêm mới
+    const handleAddNew = () => {
+        setShowAddModal(true);
+    };
+
+    // Mở modal Chi tiết/Sửa (Nhận ID từ item)
+    const handleEdit = (item) => {
+        setSelectedRoomId(item.id);
+    };
+
+    // Callback khi thêm/sửa thành công
+    const handleSuccess = () => {
+        fetchRoomTypes();
+    };
 
     return (
-        <div className="min-h-screen bg-slate-50/50">
-            {/* --- TOP BAR DECORATION --- */}
-            <div className="h-48 bg-gradient-to-r from-blue-700 to-blue-900 absolute top-0 left-0 right-0 -z-10" />
+        <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans text-slate-900">
+            <div className="max-w-7xl mx-auto">
 
-            <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
+                {/* HEADER TITLE */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-extrabold text-slate-800 mb-2">
+                        Quản lý phòng
+                    </h1>
+                    <p className="text-slate-500 font-medium text-[15px]">
+                        Quản lý và tối ưu hóa các hạng phòng của khách sạn để tăng tỷ lệ chuyển đổi
+                    </p>
+                </div>
 
-                {/* --- HEADER SECTION --- */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 text-white">
-                    <div>
-                        <h1 className="text-3xl font-extrabold flex items-center gap-3">
-                            Quản Lý Loại Phòng
-                        </h1>
-                        <p className="text-blue-100 mt-2 max-w-xl text-lg font-light opacity-90">
-                            Thiết lập và quản lý các hạng phòng, giá cả và tiện ích.
-                        </p>
-                    </div>
+                {/* MAIN CARD */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
 
-                    <div className="flex items-center gap-3">
-                        <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-lg border border-white/20 text-sm font-medium">
-                            Tổng số: <span className="font-bold text-white text-lg ml-1">{roomTypes.length}</span>
-                        </div>
+                    {/* CARD HEADER */}
+                    <div className="flex flex-row justify-between items-center p-6 border-b border-slate-100">
+                        <h2 className="text-lg font-bold text-slate-800">
+                            Quản lý Hạng phòng (Inventory Setup)
+                        </h2>
+
                         <button
-                            onClick={() => setOpen(true)}
-                            className="flex items-center gap-2 px-5 py-3 rounded-xl
-                            bg-white text-blue-700 font-bold shadow-lg shadow-blue-900/20
-                            hover:bg-blue-50 hover:shadow-xl transition-all active:scale-95"
+                            onClick={handleAddNew}
+                            className="flex items-center gap-1 text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer"
                         >
-                            <Plus size={20} strokeWidth={3} />
-                            Thêm Mới
+                            <Plus size={16} strokeWidth={3} />
+                            Thêm hạng phòng mới
                         </button>
                     </div>
-                </div>
 
-                {/* --- TOOLBAR (SEARCH) --- */}
-                <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm theo tên phòng hoặc mã..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 rounded-xl text-slate-700 placeholder:text-slate-400 focus:outline-none focus:bg-slate-50 transition-colors"
-                        />
-                    </div>
-                </div>
-
-                {/* --- CONTENT AREA --- */}
-                {loading ? (
-                    /* SKELETON LOADING STATE */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 h-[280px] animate-pulse flex flex-col gap-4">
-                                <div className="h-6 w-2/3 bg-slate-200 rounded" />
-                                <div className="h-4 w-1/3 bg-slate-100 rounded" />
-                                <div className="flex-1 bg-slate-50 rounded-xl mt-2" />
-                                <div className="flex gap-2 mt-2">
-                                    <div className="h-8 w-20 bg-slate-200 rounded-lg" />
-                                    <div className="h-8 w-20 bg-slate-200 rounded-lg" />
-                                </div>
+                    {/* TABLE LIST */}
+                    <div className="overflow-x-auto">
+                        {loading ? (
+                            <div className="p-12 text-center text-slate-500 flex flex-col items-center">
+                                <Loader2 className="animate-spin mb-2" size={24} />
+                                Đang tải dữ liệu...
                             </div>
-                        ))}
-                    </div>
-                ) : roomTypes.length === 0 ? (
-                    /* EMPTY STATE (NO DATA) */
-                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200 shadow-sm">
-                        <div className="bg-blue-50 p-6 rounded-full mb-4">
-                            <Sparkles className="text-blue-500" size={40} />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800">Chưa có loại phòng nào</h3>
-                        <p className="text-slate-500 mt-2 mb-8 text-center max-w-sm">
-                            Hệ thống chưa ghi nhận loại phòng nào. Hãy bắt đầu bằng cách tạo loại phòng đầu tiên.
-                        </p>
-                        <button
-                            onClick={() => setOpen(true)}
-                            className="px-8 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-1 transition-all"
-                        >
-                            Tạo ngay
-                        </button>
-                    </div>
-                ) : filteredRoomTypes.length === 0 ? (
-                    /* EMPTY SEARCH RESULT */
-                    <div className="text-center py-20">
-                        <p className="text-slate-500 text-lg">Không tìm thấy loại phòng nào phù hợp với "{searchTerm}"</p>
-                        <button
-                            onClick={() => setSearchTerm("")}
-                            className="text-blue-600 font-semibold mt-2 hover:underline"
-                        >
-                            Xóa bộ lọc
-                        </button>
-                    </div>
-                ) : (
-                    /* CARD GRID */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {filteredRoomTypes.map((roomType) => (
-                            <RoomTypeCard
-                                key={roomType.roomTypeId}
-                                roomType={roomType}
-                                onRefresh={fetchRoomTypes}
-                            />
-                        ))}
-                    </div>
-                )}
+                        ) : roomTypes.length === 0 ? (
+                            <div className="p-12 text-center text-slate-500">
+                                Chưa có dữ liệu loại phòng nào.
+                            </div>
+                        ) : (
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                <tr className="text-sm font-semibold text-slate-500 border-b border-slate-100">
+                                    <th className="px-6 py-5 w-[30%]">Thông tin</th>
+                                    <th className="px-6 py-5 w-[30%]">Sức chứa</th>
+                                    <th className="px-6 py-5 w-[15%]">Số lượng vật lý</th>
+                                    <th className="px-6 py-5 w-[15%]">Trạng thái</th>
+                                    <th className="px-6 py-5 w-[10%]">Hành động</th>
+                                </tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                {roomTypes.map((item) => (
+                                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
 
-                {/* MODAL */}
-                {open && (
+                                        {/* CỘT 1: THÔNG TIN */}
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-900 flex-shrink-0 mt-1">
+                                                    <Building2 size={24} strokeWidth={2} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-900 text-[15px] mb-1">
+                                                        {item.title}
+                                                    </div>
+                                                    <div className="text-slate-400 text-xs font-semibold">
+                                                        {item.area}m²
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* CỘT 2: SỨC CHỨA */}
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-6 text-slate-700">
+                                                <div className="flex items-center gap-1.5">
+                                                    <User size={15} fill="currentColor" className="text-slate-900" />
+                                                    <span className="font-medium text-[14px]">x{item.adults} Người lớn</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Baby size={16} className="text-slate-900" strokeWidth={2.5} />
+                                                    <span className="font-medium text-[14px]">x{item.children} Trẻ em</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* CỘT 3: SỐ LƯỢNG */}
+                                        <td className="px-6 py-5">
+                                            <span className="text-slate-800 font-medium text-[15px]">
+                                                {item.totalRooms} phòng
+                                            </span>
+                                        </td>
+
+                                        {/* CỘT 4: TRẠNG THÁI */}
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`
+                                                    w-11 h-6 rounded-full relative transition-colors duration-300 cursor-pointer
+                                                    ${item.isActive ? 'bg-[#00C16A]' : 'bg-slate-300'}
+                                                `}>
+                                                    <div className={`
+                                                        absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300
+                                                        ${item.isActive ? 'left-[22px]' : 'left-0.5'}
+                                                    `} />
+                                                </div>
+                                                <span className="text-xs font-medium text-slate-500">
+                                                    {item.isActive ? 'Đang rao' : 'Tạm ẩn'}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        {/* CỘT 5: HÀNH ĐỘNG */}
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(item)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                                                    title="Chỉnh sửa / Chi tiết"
+                                                >
+                                                    <Pencil size={14} strokeWidth={2.5} />
+                                                </button>
+
+                                                <button
+                                                    className="w-8 h-8 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
+                {/* --- MODAL 1: THÊM MỚI  --- */}
+                {showAddModal && (
                     <RoomTypeModal
                         hotelId={HOTEL_ID}
-                        onClose={() => setOpen(false)}
-                        onSuccess={fetchRoomTypes}
+                        onClose={() => setShowAddModal(false)}
+                        onSuccess={handleSuccess}
+                    />
+                )}
+
+                {/* --- MODAL 2: CHI TIẾT & SỬA  */}
+                {selectedRoomId && (
+                    <RoomTypeDetailModal
+                        roomId={selectedRoomId}
+                        onClose={() => setSelectedRoomId(null)}
+                        onSuccess={handleSuccess}
                     />
                 )}
             </div>

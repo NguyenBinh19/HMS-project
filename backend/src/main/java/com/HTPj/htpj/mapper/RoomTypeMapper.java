@@ -37,6 +37,8 @@ public class RoomTypeMapper {
                 .roomTitle(entity.getRoomTitle())
                 .basePrice(entity.getBasePrice())
                 .max_adults(entity.getMaxAdults())
+                .max_children(entity.getMaxChildren())
+                .room_area(entity.getRoomArea())
                 .totalRooms(entity.getTotalRooms())
                 .roomStatus(entity.getRoomStatus())
                 .build();
