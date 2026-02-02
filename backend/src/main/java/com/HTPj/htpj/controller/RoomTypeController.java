@@ -2,6 +2,7 @@ package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
+import com.HTPj.htpj.dto.request.roomtype.UpdateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.service.RoomTypeService;
@@ -55,6 +56,17 @@ public class RoomTypeController {
                 .result(roomTypeService.inactiveRoomType(roomTypeId))
                 .build();
     }
+
+    @PutMapping("/{roomTypeId}")
+    ApiResponse<RoomTypeDetailResponse> updateRoomType(
+            @PathVariable Integer roomTypeId,
+            @RequestBody UpdateRoomTypeRequest request
+    ) {
+        return ApiResponse.<RoomTypeDetailResponse>builder()
+                .result(roomTypeService.updateRoomType(roomTypeId, request))
+                .build();
+    }
+
 
 
 

@@ -1,6 +1,7 @@
 package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
+import com.HTPj.htpj.dto.request.roomtype.UpdateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.Hotel;
@@ -118,6 +119,37 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         }
     }
 
+    @Override
+    public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request
+    ) {
+        RoomType roomType = roomTypeRepository.findById(roomTypeId)
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+
+        roomType.setRoomTitle(request.getRoomTitle());
+        roomType.setDescription(request.getDescription());
+        roomType.setBasePrice(request.getBasePrice());
+        roomType.setMaxAdults(request.getMaxAdults());
+        roomType.setMaxChildren(request.getMaxChildren());
+        roomType.setRoomArea(request.getRoomArea());
+        roomType.setBedType(request.getBedType());
+        roomType.setKeywords(request.getKeywords());
+        roomType.setTotalRooms(request.getTotalRooms());
+        roomType.setRoomStatus(request.getRoomStatus());
+
+        try {
+            String amenitiesJson = objectMapper.writeValueAsString(request.getAmenities());
+            roomType.setAmenities(amenitiesJson);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid amenities format");
+        }
+
+        roomType.setUpdatedAt(LocalDateTime.now());
+
+        RoomType updated = roomTypeRepository.save(roomType);
+
+        return RoomTypeMapper.toDetailResponse(updated, parseAmenities(updated.getAmenities())
+        );
+    }
 
 
 
