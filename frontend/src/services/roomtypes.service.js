@@ -50,9 +50,20 @@ const deleteRoomType = async (roomTypeId) => {
     }
 };
 
+// 5. Update thông tin loại phòng
+const updateRoomType = async (roomTypeId, payload) => {
+    try {
+        const response = await api.put(`/room-types/${roomTypeId}`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Update Room Type Error:", error);
+        throw error;
+    }
+}
 export const roomTypeService = {
     createRoomType,
     getRoomTypesByHotelId,
     getRoomTypeDetail,
     deleteRoomType,
+    updateRoomType,
 };

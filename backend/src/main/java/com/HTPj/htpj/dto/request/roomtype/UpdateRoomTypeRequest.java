@@ -21,6 +21,5 @@ public class UpdateRoomTypeRequest {
     private String bedType;
     private String keywords;
     private Integer totalRooms;
-    private String roomStatus;
     private List<String> amenities;
 }

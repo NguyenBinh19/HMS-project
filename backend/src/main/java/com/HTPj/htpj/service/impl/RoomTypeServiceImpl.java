@@ -134,7 +134,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         roomType.setBedType(request.getBedType());
         roomType.setKeywords(request.getKeywords());
         roomType.setTotalRooms(request.getTotalRooms());
-        roomType.setRoomStatus(request.getRoomStatus());
 
         try {
             String amenitiesJson = objectMapper.writeValueAsString(request.getAmenities());

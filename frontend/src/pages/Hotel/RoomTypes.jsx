@@ -2,11 +2,11 @@ import {
     Plus, Loader2, Pencil, Trash2,
     User, Baby, Building2
 } from "lucide-react";
-import { useEffect, useState } from "react";
-// Import cả 2 Modal: Thêm mới và Chi tiết
+import { useEffect, useState, useRef } from "react";
 import RoomTypeModal from "@/components/hotel/roomTypes/RoomTypeModal.jsx";
 import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetail.jsx";
 import { roomTypeService } from "@/services/roomtypes.service.js";
+import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
 const HOTEL_ID = 1;
 
@@ -14,10 +14,12 @@ const ManageRoomTypes = () => {
     const [roomTypes, setRoomTypes] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // State quản lý Modal
-    const [showAddModal, setShowAddModal] = useState(false); // Modal Thêm mới
-    const [selectedRoomId, setSelectedRoomId] = useState(null); // Modal Chi tiết (Nếu có ID thì mở)
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedRoomId, setSelectedRoomId] = useState(null);
 
+    const toastRef = useRef(null);
+
+    // --- FETCH DATA ---
     const fetchRoomTypes = async () => {
         try {
             setLoading(true);
@@ -52,23 +54,61 @@ const ManageRoomTypes = () => {
         fetchRoomTypes();
     }, []);
 
-    // Mở modal Thêm mới
+    // --- HANDLERS ---
+
     const handleAddNew = () => {
         setShowAddModal(true);
     };
 
-    // Mở modal Chi tiết/Sửa (Nhận ID từ item)
     const handleEdit = (item) => {
         setSelectedRoomId(item.id);
     };
 
-    // Callback khi thêm/sửa thành công
-    const handleSuccess = () => {
+    const handleDelete = async (id) => {
+        const confirmDelete = window.confirm("Bạn có chắc chắn muốn hủy giao bán hạng phòng này không?");
+        if (!confirmDelete) return;
+
+        try {
+            await roomTypeService.deleteRoomType(id);
+
+            // Thông báo thành công
+            if (toastRef.current) {
+                toastRef.current.addMessage({
+                    mode: "success",
+                    message: "Đã xóa hạng phòng thành công!"
+                });
+            }
+
+            await fetchRoomTypes();
+        } catch (err) {
+            console.error("Xóa thất bại:", err);
+
+            // Thông báo lỗi
+            if (toastRef.current) {
+                toastRef.current.addMessage({
+                    mode: "error", // Sửa lại mode nếu component Toast của bạn hỗ trợ 'error'
+                    message: "Có lỗi xảy ra khi xóa hạng phòng."
+                });
+            }
+        }
+    };
+
+    const handleSuccess = (customMessage) => {
         fetchRoomTypes();
+
+        if (toastRef.current) {
+            toastRef.current.addMessage({
+                mode: "success",
+                // Sử dụng tham số truyền vào
+                message: customMessage || "Thao tác thành công!"
+            });
+        }
     };
 
     return (
         <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans text-slate-900">
+            <ToastPortal ref={toastRef} />
+
             <div className="max-w-7xl mx-auto">
 
                 {/* HEADER TITLE */}
@@ -124,8 +164,7 @@ const ManageRoomTypes = () => {
                                 <tbody className="text-sm">
                                 {roomTypes.map((item) => (
                                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
-
-                                        {/* CỘT 1: THÔNG TIN */}
+                                        {/* CỘT 1 */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-start gap-4">
                                                 <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-900 flex-shrink-0 mt-1">
@@ -141,8 +180,7 @@ const ManageRoomTypes = () => {
                                                 </div>
                                             </div>
                                         </td>
-
-                                        {/* CỘT 2: SỨC CHỨA */}
+                                        {/* CỘT 2 */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-6 text-slate-700">
                                                 <div className="flex items-center gap-1.5">
@@ -155,19 +193,17 @@ const ManageRoomTypes = () => {
                                                 </div>
                                             </div>
                                         </td>
-
-                                        {/* CỘT 3: SỐ LƯỢNG */}
+                                        {/* CỘT 3 */}
                                         <td className="px-6 py-5">
                                             <span className="text-slate-800 font-medium text-[15px]">
                                                 {item.totalRooms} phòng
                                             </span>
                                         </td>
-
-                                        {/* CỘT 4: TRẠNG THÁI */}
+                                        {/* CỘT 4 */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
                                                 <div className={`
-                                                    w-11 h-6 rounded-full relative transition-colors duration-300 cursor-pointer
+                                                    w-11 h-6 rounded-full relative transition-colors duration-300 cursor-default
                                                     ${item.isActive ? 'bg-[#00C16A]' : 'bg-slate-300'}
                                                 `}>
                                                     <div className={`
@@ -180,8 +216,7 @@ const ManageRoomTypes = () => {
                                                 </span>
                                             </div>
                                         </td>
-
-                                        {/* CỘT 5: HÀNH ĐỘNG */}
+                                        {/* CỘT 5 */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
                                                 <button
@@ -191,10 +226,10 @@ const ManageRoomTypes = () => {
                                                 >
                                                     <Pencil size={14} strokeWidth={2.5} />
                                                 </button>
-
                                                 <button
+                                                    onClick={() => handleDelete(item.id)}
                                                     className="w-8 h-8 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
-                                                    title="Xóa"
+                                                    title="Chuyển vào thùng rác"
                                                 >
                                                     <Trash2 size={14} strokeWidth={2.5} />
                                                 </button>
@@ -208,21 +243,21 @@ const ManageRoomTypes = () => {
                     </div>
                 </div>
 
-                {/* --- MODAL 1: THÊM MỚI  --- */}
+                {/* MODAL 1 */}
                 {showAddModal && (
                     <RoomTypeModal
                         hotelId={HOTEL_ID}
                         onClose={() => setShowAddModal(false)}
-                        onSuccess={handleSuccess}
+                        onSuccess={() => handleSuccess("Thêm hạng phòng mới thành công!")}
                     />
                 )}
 
-                {/* --- MODAL 2: CHI TIẾT & SỬA  */}
+                {/* MODAL 2 */}
                 {selectedRoomId && (
                     <RoomTypeDetailModal
                         roomId={selectedRoomId}
                         onClose={() => setSelectedRoomId(null)}
-                        onSuccess={handleSuccess}
+                        onSuccess={() => handleSuccess("Cập nhật thông tin thành công!")}
                     />
                 )}
             </div>

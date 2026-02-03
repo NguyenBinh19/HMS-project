@@ -10,7 +10,7 @@ const AMENITY_GROUPS = {
 };
 
 // --- 2. COMPONENT INPUT  ---
-const InputField = ({ label, name, value, onChange, type = "text", placeholder, className = "", ...props }) => (
+const InputField = ({ label, name, value, onChange, type = "text", placeholder, className = "", disabled = false, ...props }) => (
     <div className={`space-y-1.5 ${className}`}>
         <label className="text-sm font-semibold text-slate-700 block">
             {label}
@@ -18,10 +18,15 @@ const InputField = ({ label, name, value, onChange, type = "text", placeholder, 
         <input
             type={type}
             name={name}
-            value={value || ""}
+            value={value}
             onChange={onChange}
+            disabled={disabled}
             placeholder={placeholder}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-slate-400 bg-white"
+            className={`w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 
+                focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all 
+                placeholder:text-slate-400 bg-white 
+                ${disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed select-none" : "bg-white"}
+            `}
             {...props}
         />
     </div>
@@ -31,16 +36,15 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
     // --- STATE ---
     const [form, setForm] = useState({
         roomTitle: "",
-        totalRooms: "",
-        maxAdults: "",
-        maxChildren: "",
-        roomArea: "",
+        totalRooms: 0,
+        maxAdults: 1,
+        maxChildren: 0,
+        roomArea: 0,
         bedType: "",
         keywords: "",
         description: "",
         amenities: [],
-        basePrice: "",
-        roomStatus: "ACTIVE"
+        basePrice: 0,
     });
 
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -61,17 +65,15 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
 
                     setForm({
                         roomTitle: data.roomTitle || "",
-                        totalRooms: data.totalRooms || "",
-                        maxAdults: data.maxAdults || "",
-                        maxChildren: data.maxChildren || "",
-                        roomArea: data.roomArea || "",
+                        totalRooms: data.totalRooms || 0,
+                        maxAdults: data.maxAdults || 1,
+                        maxChildren: data.maxChildren || 0,
+                        roomArea: data.roomArea || 0,
                         bedType: data.bedType || "",
                         keywords: data.keywords || "",
-                        basePrice: data.basePrice || "",
-                        tone: "Sang trọng", // Default value for UI demo
+                        basePrice: data.basePrice || 0,
                         description: data.description || "",
                         amenities: data.amenities || [],
-                        roomStatus: data.roomStatus || "ACTIVE"
                     });
                 } catch (err) {
                     console.error("Load detail error:", err);
@@ -86,12 +88,33 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
     }, [roomId]);
 
     // --- HANDLERS ---
+
+    // 1. Handle Change: chặn số âm
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        let newValue = value;
+
+        if (type === "number") {
+            if (value === "") {
+                newValue = "";
+            } else {
+                // Chặn số âm
+                const numValue = parseFloat(value);
+                if (numValue < 0) return; // Không cho nhập số âm
+                newValue = numValue;
+            }
+        }
+
+        setForm(prev => ({ ...prev, [name]: newValue }));
     };
 
-    // Xử lý check/uncheck tiện ích
+    // 2. Chặn các ký tự đặc biệt trong ô input number ('-', '+', 'e')
+    const handleKeyDown = (e) => {
+        if (e.key === "-" || e.key === "+" || e.key === "e" || e.key === "E") {
+            e.preventDefault();
+        }
+    };
+
     const handleAmenityChange = (amenity) => {
         setForm(prev => {
             const currentAmenities = prev.amenities || [];
@@ -103,23 +126,46 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
         });
     };
 
+    // --- LOGIC UPDATE (VALIDATION TRƯỚC KHI GỬI) ---
     const handleUpdate = async () => {
+        // 1. Validate dữ liệu
+        if (!form.roomTitle.trim()) {
+            alert("Vui lòng nhập tên hạng phòng!");
+            return;
+        }
+        if (Number(form.basePrice) <= 0) {
+            alert("Giá phòng phải lớn hơn 0!");
+            return;
+        }
+        if (Number(form.maxAdults) < 1) {
+            alert("Sức chứa người lớn tối thiểu là 1!");
+            return;
+        }
+
         try {
             setIsSaving(true);
+
             const payload = {
-                ...form,
-                basePrice: 0,
+                roomTitle: form.roomTitle,
+                description: form.description,
+                basePrice: Number(form.basePrice),
                 maxAdults: Number(form.maxAdults),
                 maxChildren: Number(form.maxChildren),
                 totalRooms: Number(form.totalRooms),
                 roomArea: Number(form.roomArea),
+                bedType: form.bedType,
+                keywords: form.keywords,
+                amenities: form.amenities
             };
 
             await roomTypeService.updateRoomType(roomId, payload);
+
             onSuccess();
             handleClose();
         } catch (err) {
             console.error("Update failed", err);
+            // Có thể hiển thị thông báo lỗi từ backend trả về nếu có
+            alert("Cập nhật thất bại. Vui lòng kiểm tra lại thông tin!");
         } finally {
             setIsSaving(false);
         }
@@ -162,39 +208,54 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
                                         value={form.roomTitle}
                                         onChange={handleChange}
                                         placeholder="VD: Deluxe Ocean View"
+                                        // Nếu bạn muốn cấm sửa tên phòng (coi như code) thì bỏ comment dòng dưới:
+                                        // disabled={true}
                                     />
+
                                     <InputField
-                                        label="Số lượng phòng (Vật lý)"
+                                        label="Tổng số phòng (Allotment)"
                                         name="totalRooms"
                                         type="number"
+                                        min="0"
                                         value={form.totalRooms}
                                         onChange={handleChange}
+                                        onKeyDown={handleKeyDown}
                                         placeholder="0"
                                     />
+
                                     <InputField
-                                        label="Sức chứa người lớn"
+                                        label="Người lớn (Max)"
                                         name="maxAdults"
                                         type="number"
+                                        min="1"
                                         value={form.maxAdults}
                                         onChange={handleChange}
+                                        onKeyDown={handleKeyDown}
                                         placeholder="2"
                                     />
+
                                     <InputField
-                                        label="Sức chứa trẻ em"
+                                        label="Trẻ em (Max)"
                                         name="maxChildren"
                                         type="number"
+                                        min="0"
                                         value={form.maxChildren}
                                         onChange={handleChange}
+                                        onKeyDown={handleKeyDown}
                                         placeholder="1"
                                     />
+
                                     <InputField
-                                        label="Kích thước phòng (m²)"
+                                        label="Diện tích (m²)"
                                         name="roomArea"
                                         type="number"
+                                        min="0"
                                         value={form.roomArea}
                                         onChange={handleChange}
+                                        onKeyDown={handleKeyDown}
                                         placeholder="30"
                                     />
+
                                     <InputField
                                         label="Loại giường"
                                         name="bedType"
@@ -203,18 +264,21 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
                                         placeholder="VD: King Bed"
                                         className="bg-slate-50"
                                     />
+
                                     <InputField
                                         label="Giá gốc (VNĐ/Đêm)"
                                         name="basePrice"
                                         type="number"
+                                        min="0"
                                         value={form.basePrice}
                                         onChange={handleChange}
-                                        className="bg-slate-50"
+                                        onKeyDown={handleKeyDown}
+                                        className="bg-slate-50 font-medium text-blue-600"
                                     />
                                 </div>
                             </section>
 
-                            {/* SECTION 2: MARKETING (AI WRITER) */}
+                            {/* SECTION 2: MARKETING */}
                             <section>
                                 <h3 className="text-sm font-bold text-slate-900 mb-4">Mô tả phòng (Marketing)</h3>
                                 <div className="space-y-4">
@@ -225,18 +289,7 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
                                         onChange={handleChange}
                                         placeholder="VD: view biển, bồn tắm nằm..."
                                     />
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-semibold text-slate-700">Giọng văn</label>
-                                        <input
-                                            name="tone"
-                                            value={form.tone}
-                                            onChange={handleChange}
-                                            className="w-full px-3 py-2.5 bg-slate-100 border-none rounded-lg text-sm text-slate-700 font-medium"
-                                            placeholder="Sang trọng"
-                                        />
-                                    </div>
 
-                                    {/* BUTTON AI */}
                                     <div className="flex justify-center py-1">
                                         <button className="flex items-center gap-2 bg-[#6366f1] hover:bg-[#5558e6] text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md shadow-indigo-200 transition-all active:scale-95">
                                             <Sparkles size={16} />
@@ -258,7 +311,7 @@ const RoomTypeDetailModal = ({ roomId, onClose, onSuccess }) => {
                                 </div>
                             </section>
 
-                            {/* SECTION 3: TIỆN ÍCH (CHECKBOX GRID) */}
+                            {/* SECTION 3: TIỆN ÍCH */}
                             <section>
                                 <h3 className="text-sm font-bold text-slate-900 mb-4">Tiện ích</h3>
                                 <div className="grid grid-cols-3 gap-6">

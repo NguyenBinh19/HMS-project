@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import {
-    X, Check, AlertCircle, Plus, Wand2, Loader2, // Đã thêm Loader2
-    Type, Hash, DollarSign, Users, Home, FileText, Bed, Ruler, Baby, Tag, Save
+    X, Check, Plus, Wand2, Loader2,
+    Type, Hash, DollarSign, Users, Home, Bed, Ruler, Baby, Tag, Save
 } from "lucide-react";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 
-const InputField = ({ label, name, value, onChange, error, type = "text", placeholder, icon: Icon, required = false, ...props }) => (
+// --- COMPONENT INPUT  ---
+const InputField = ({ label, name, value, onChange, error, type = "text", placeholder, icon: Icon, required = false, disabled = false, ...props }) => (
     <div className="space-y-1.5">
         <label className="text-sm font-semibold text-slate-700">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <div className="relative">
             {Icon && (
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${disabled ? "text-slate-300" : "text-slate-400"}`}>
                     <Icon size={18} />
                 </div>
             )}
@@ -21,14 +22,20 @@ const InputField = ({ label, name, value, onChange, error, type = "text", placeh
                 name={name}
                 value={value}
                 onChange={onChange}
+                disabled={disabled}
                 placeholder={placeholder}
-                className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-4 py-2 border rounded-lg text-sm transition-all
-                    ${error ? "border-red-300 ring-1 ring-red-100" : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"}
+                className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-4 py-2 border rounded-lg text-sm transition-all outline-none
+                    ${error
+                    ? "border-red-300 ring-1 ring-red-100 bg-red-50/10"
+                    : disabled
+                        ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed select-none"
+                        : "bg-white border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                }
                 `}
                 {...props}
             />
         </div>
-        {error && <span className="text-xs text-red-500">{error}</span>}
+        {error && <span className="text-xs text-red-500 font-medium">{error}</span>}
     </div>
 );
 
@@ -38,18 +45,19 @@ const SUGGESTED_AMENITIES = [
 ];
 
 const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
+    // --- STATE ---
     const [form, setForm] = useState({
         roomCode: "",
         roomTitle: "",
         description: "",
         basePrice: "",
-        maxAdults: "",
-        maxChildren: "",
+        maxAdults: 1,
+        maxChildren: 0,
         totalRooms: "",
         roomArea: "",
         bedType: "",
         keywords: "",
-        roomStatus: "ACTIVE",
+        roomStatus: "active",
         amenities: []
     });
 
@@ -64,12 +72,34 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
 
+    // --- HANDLERS ---
+    // 1. Handle Change: Chặn số âm
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        let newValue = value;
 
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: "" }));
+        }
+
+        // Logic chặn số âm
+        if (type === "number") {
+            if (value === "") {
+                newValue = "";
+            } else {
+                const numValue = parseFloat(value);
+                if (numValue < 0) return; // Chặn ngay lập tức
+                newValue = numValue;
+            }
+        }
+
+        setForm(prev => ({ ...prev, [name]: newValue }));
+    };
+
+    // 2. Chặn ký tự đặc biệt trong input number
+    const handleKeyDown = (e) => {
+        if (["-", "+", "e", "E"].includes(e.key)) {
+            e.preventDefault();
         }
     };
 
@@ -106,10 +136,17 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
 
     const validate = () => {
         const newErrors = {};
-        if (!form.roomCode.trim()) newErrors.roomCode = "Nhập mã phòng";
-        if (!form.roomTitle.trim()) newErrors.roomTitle = "Nhập tên hạng phòng";
-        if (!form.basePrice || Number(form.basePrice) <= 0) newErrors.basePrice = "Nhập giá hợp lệ";
-        if (!form.totalRooms || Number(form.totalRooms) <= 0) newErrors.totalRooms = "Nhập số lượng";
+        if (!form.roomCode.trim()) newErrors.roomCode = "Vui lòng nhập mã phòng";
+        if (!form.roomTitle.trim()) newErrors.roomTitle = "Vui lòng nhập tên hạng phòng";
+
+        if (form.basePrice === "" || Number(form.basePrice) <= 0)
+            newErrors.basePrice = "Giá phòng phải lớn hơn 0";
+
+        if (form.totalRooms === "" || Number(form.totalRooms) <= 0)
+            newErrors.totalRooms = "Số lượng phòng phải lớn hơn 0";
+
+        if (Number(form.maxAdults) < 1)
+            newErrors.maxAdults = "Tối thiểu 1 người lớn";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -120,23 +157,21 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
         try {
             setLoading(true);
 
-
             const payload = {
                 hotelId: hotelId,
                 roomCode: form.roomCode,
                 roomTitle: form.roomTitle,
                 description: form.description,
                 basePrice: Number(form.basePrice),
-                maxAdults: Number(form.maxAdults) || 2,
-                maxChildren: Number(form.maxChildren) || 0,
+                maxAdults: Number(form.maxAdults),
+                maxChildren: Number(form.maxChildren),
                 roomArea: Number(form.roomArea) || 0,
                 bedType: form.bedType,
                 keywords: form.keywords,
                 totalRooms: Number(form.totalRooms),
-                amenities: form.amenities
+                amenities: form.amenities,
+                roomStatus: form.roomStatus || "active"
             };
-
-            console.log("Sending payload:", payload); // Debug
 
             await roomTypeService.createRoomType(payload);
             onSuccess();
@@ -176,21 +211,34 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
                                 label="Tên hạng phòng" name="roomTitle"
                                 value={form.roomTitle} onChange={handleChange} error={errors.roomTitle}
                                 required icon={Type}
+                                placeholder="VD: Deluxe King"
                             />
-                            <InputField
-                                label="Số lượng phòng (Vật lý)" name="totalRooms" type="number"
-                                value={form.totalRooms} onChange={handleChange} error={errors.totalRooms}
-                                required icon={Home}
-                            />
+
                             <InputField
                                 label="Mã phòng (Code)" name="roomCode"
                                 value={form.roomCode} onChange={handleChange} error={errors.roomCode}
                                 required icon={Hash}
+                                placeholder="VD: DLX01 (Không dấu)"
+                                // Ở trang Create thì vẫn cho nhập RoomCode, nhưng có thể thêm logic uppercase nếu muốn
+                                style={{ textTransform: "uppercase" }}
                             />
+
+                            <InputField
+                                label="Số lượng phòng (Vật lý)" name="totalRooms" type="number"
+                                min="1"
+                                value={form.totalRooms} onChange={handleChange} onKeyDown={handleKeyDown}
+                                error={errors.totalRooms}
+                                required icon={Home}
+                                placeholder="10"
+                            />
+
                             <InputField
                                 label="Giá gốc (VNĐ/Đêm)" name="basePrice" type="number"
-                                value={form.basePrice} onChange={handleChange} error={errors.basePrice}
+                                min="0"
+                                value={form.basePrice} onChange={handleChange} onKeyDown={handleKeyDown}
+                                error={errors.basePrice}
                                 required icon={DollarSign}
+                                placeholder="2.500.000"
                             />
                         </div>
                     </section>
@@ -200,23 +248,29 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
                             <InputField
                                 label="Sức chứa người lớn" name="maxAdults" type="number"
-                                value={form.maxAdults} onChange={handleChange}
+                                min="1"
+                                value={form.maxAdults} onChange={handleChange} onKeyDown={handleKeyDown}
+                                error={errors.maxAdults}
                                 icon={Users}
                             />
                             <InputField
                                 label="Sức chứa trẻ em" name="maxChildren" type="number"
-                                value={form.maxChildren} onChange={handleChange}
+                                min="0"
+                                value={form.maxChildren} onChange={handleChange} onKeyDown={handleKeyDown}
                                 icon={Baby}
                             />
                             <InputField
                                 label="Kích thước phòng (m²)" name="roomArea" type="number"
-                                value={form.roomArea} onChange={handleChange}
+                                min="0"
+                                value={form.roomArea} onChange={handleChange} onKeyDown={handleKeyDown}
                                 icon={Ruler}
+                                placeholder="35"
                             />
                             <InputField
                                 label="Loại giường" name="bedType"
                                 value={form.bedType} onChange={handleChange}
                                 icon={Bed}
+                                placeholder="King Bed / Twin Bed"
                             />
                         </div>
                     </section>
@@ -229,6 +283,7 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
                                 label="Từ khóa chính (SEO)" name="keywords"
                                 value={form.keywords} onChange={handleChange}
                                 icon={Tag}
+                                placeholder="view biển, ban công..."
                             />
 
                             <div className="space-y-1.5">
@@ -240,11 +295,11 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
                                         value={form.description}
                                         onChange={handleChange}
                                         placeholder="Nhập mô tả chi tiết về phòng..."
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
+                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none outline-none"
                                     />
                                     <button className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded shadow-sm transition-colors">
                                         <Wand2 size={12} />
-                                        VIẾT MÔ TẢ BẰNG AI
+                                        AI WRITER
                                     </button>
                                 </div>
                             </div>
@@ -298,7 +353,7 @@ const RoomTypeModal = ({ hotelId = 1, onClose, onSuccess }) => {
                                             <div
                                                 key={item}
                                                 onClick={() => toggleSuggestedAmenity(item)}
-                                                className={`cursor-pointer text-xs px-3 py-2 rounded border transition-all flex items-center gap-2
+                                                className={`cursor-pointer text-xs px-3 py-2 rounded border transition-all flex items-center gap-2 select-none
                                                     ${isSelected
                                                     ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
                                                     : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
