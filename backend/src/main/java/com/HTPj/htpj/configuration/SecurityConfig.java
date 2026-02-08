@@ -46,7 +46,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
                 request
-                        .requestMatchers("/room-types/**").permitAll() //test room type
+
+                        .requestMatchers("/room-types/**").permitAll()
+                        .requestMatchers("/hotels/**").permitAll()//test room type
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                         .permitAll()
                         .requestMatchers(PUBLIC_POST_ENPOINTS)
