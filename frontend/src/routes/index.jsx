@@ -7,6 +7,9 @@ import VerifyEmail from "../pages/Auth/VerifyEmail";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
+import HotelDetailPage from "../pages/Hotel/HotelDetail.jsx";
+
+import HotelMain from "../pages/Hotel/HotelDashboard.jsx"
 
 const AppRoutes = () => {
     return (
