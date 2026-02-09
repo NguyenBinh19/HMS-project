@@ -3,6 +3,7 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
 import com.HTPj.htpj.dto.request.roomtype.UpdateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeListDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.RoomType;
@@ -59,7 +60,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .maxChildren(request.getMaxChildren())
                 .roomArea(request.getRoomArea())
                 .bedType(request.getBedType())
-                .keywords(request.getKeywords())
                 .totalRooms(request.getTotalRooms())
                 .amenities(amenities)
                 .createdAt(LocalDateTime.now())
@@ -132,7 +132,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         roomType.setMaxChildren(request.getMaxChildren());
         roomType.setRoomArea(request.getRoomArea());
         roomType.setBedType(request.getBedType());
-        roomType.setKeywords(request.getKeywords());
         roomType.setTotalRooms(request.getTotalRooms());
 
         try {
@@ -150,6 +149,16 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         );
     }
 
+    @Override
+    public List<RoomTypeListDetailResponse> getRoomTypeDetailsByHotelId(Integer hotelId) {
+        List<RoomType> roomTypes = roomTypeRepository.findByHotel_HotelId(hotelId);
 
+        return roomTypes.stream()
+                .map(roomType -> {
+                    List<String> amenitiesList = parseAmenities(roomType.getAmenities());
+                    return RoomTypeMapper.toListDetailResponse(roomType, amenitiesList);
+                })
+                .collect(Collectors.toList());
+    }
 
 }

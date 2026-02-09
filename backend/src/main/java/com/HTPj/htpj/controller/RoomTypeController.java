@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
 import com.HTPj.htpj.dto.request.roomtype.UpdateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeListDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.service.RoomTypeService;
 import lombok.AccessLevel;
@@ -48,6 +49,15 @@ public class RoomTypeController {
                 .build();
     }
 
+    @GetMapping("/details")
+    ApiResponse<List<RoomTypeListDetailResponse>> getRoomTypeDetailsByHotelId(
+            @RequestParam Integer hotelId
+    ) {
+        return ApiResponse.<List<RoomTypeListDetailResponse>>builder()
+                .result(roomTypeService.getRoomTypeDetailsByHotelId(hotelId))
+                .build();
+    }
+
     @DeleteMapping("/{roomTypeId}")
     ApiResponse<RoomTypeDetailResponse> deleteRoomType(
             @PathVariable Integer roomTypeId
@@ -66,6 +76,8 @@ public class RoomTypeController {
                 .result(roomTypeService.updateRoomType(roomTypeId, request))
                 .build();
     }
+
+
 
 
 
