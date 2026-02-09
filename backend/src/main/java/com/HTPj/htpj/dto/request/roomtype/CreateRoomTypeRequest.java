@@ -1,6 +1,5 @@
 package com.HTPj.htpj.dto.request.roomtype;
 
-
 import lombok.*;
 
 import java.math.BigDecimal;
