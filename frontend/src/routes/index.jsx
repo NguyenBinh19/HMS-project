@@ -7,6 +7,8 @@ import VerifyEmail from "../pages/Auth/VerifyEmail";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
+import HotelDetailPage from "../pages/Hotel/HotelDetail.jsx";
+
 import HotelMain from "../pages/Hotel/HotelDashboard.jsx"
 
 const AppRoutes = () => {
@@ -21,6 +23,8 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/manage-room-types" element={<RoomTypes />} />
+                <Route path="/hotels/:id" element={<HotelDetailPage />} />
 
                 {/*<Route path="/manage-room-types" element={<RoomTypes />} />*/}
                 <Route path="/hotel" element={<HotelMain />}>

@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
 import Sections from "./Section.jsx";
+import HotelSection from "@/components/common/Homepage/HotelSection.jsx";
 
 const MainLayout = () => {
     return (
@@ -13,7 +14,7 @@ const MainLayout = () => {
             {/*<main className="flex-grow bg-slate-50">*/}
             {/*    <Outlet />*/}
             {/*</main>*/}
-
+            <HotelSection/>
             <Footer />
         </div>
     );
