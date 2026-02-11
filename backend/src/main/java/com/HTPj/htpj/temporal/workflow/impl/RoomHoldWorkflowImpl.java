@@ -8,6 +8,7 @@ import java.time.Duration;
 
 public class RoomHoldWorkflowImpl implements RoomHoldWorkflow {
 
+    private long expireTime;
     private final RoomHoldActivities activities =
             Workflow.newActivityStub(
                     RoomHoldActivities.class,
@@ -19,13 +20,27 @@ public class RoomHoldWorkflowImpl implements RoomHoldWorkflow {
     @Override
     public void startRoomHold(String holdCode, long expireEpochMillis) {
 
-        long now = Workflow.currentTimeMillis();
-        long delay = expireEpochMillis - now;
+        this.expireTime = expireEpochMillis;
 
-        if (delay > 0) {
-            Workflow.sleep(Duration.ofMillis(delay));
+        while (true) {
+
+            long now = Workflow.currentTimeMillis();
+            long delay = expireTime - now;
+
+            if (delay <= 0) {
+                activities.expireHold(holdCode);
+                return;
+            }
+
+            Workflow.await(
+                    Duration.ofMillis(delay),
+                    () -> Workflow.currentTimeMillis() >= expireTime
+            );
         }
+    }
 
-        activities.expireHold(holdCode);
+    @Override
+    public void extendHold(long newExpireEpochMillis) {
+        this.expireTime = newExpireEpochMillis;
     }
 }

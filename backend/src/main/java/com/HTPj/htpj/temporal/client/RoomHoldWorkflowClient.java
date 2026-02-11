@@ -28,4 +28,15 @@ public class RoomHoldWorkflowClient {
                 expireEpochMillis
         );
     }
+    public void extendWorkflow(String holdCode, long newExpireEpochMillis) {
+
+        RoomHoldWorkflow workflow =
+                workflowClient.newWorkflowStub(
+                        RoomHoldWorkflow.class,
+                        "room-hold-" + holdCode
+                );
+
+        workflow.extendHold(newExpireEpochMillis);
+    }
+
 }

@@ -1,8 +1,11 @@
 package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
+import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
 import com.HTPj.htpj.dto.response.roomHold.RoomHoldResponse;
 import com.HTPj.htpj.entity.RoomHold;
+import com.HTPj.htpj.exception.AppException;
+import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomHoldMapper;
 import com.HTPj.htpj.repository.RoomHoldRepository;
 import com.HTPj.htpj.service.RoomHoldService;
@@ -25,7 +28,7 @@ public class RoomHoldServiceImpl implements RoomHoldService {
     public RoomHoldResponse createHold(CreateRoomHoldRequest req) {
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiredAt = now.plusMinutes(1);
+        LocalDateTime expiredAt = now.plusMinutes(3);
 
         RoomHold hold = RoomHold.builder()
                 .holdCode("HOLD-" + UUID.randomUUID())
@@ -51,4 +54,37 @@ public class RoomHoldServiceImpl implements RoomHoldService {
 
         return roomHoldMapper.toResponse(hold);
     }
+
+    @Override
+    public RoomHoldResponse extendHold(ExtendRoomHoldRequest request) {
+
+        final int EXTEND_MINUTES = 15;
+
+        RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
+                .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
+
+        if (!"HOLDING".equals(hold.getStatus())) {
+            throw new AppException(ErrorCode.HOLD_EXPIRED);
+        }
+
+        LocalDateTime newExpiredAt = LocalDateTime.now().plusMinutes(EXTEND_MINUTES);
+
+        hold.setExpiredAt(newExpiredAt);
+        roomHoldRepository.save(hold);
+
+        long newExpireEpochMillis = newExpiredAt
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+        workflowClient.extendWorkflow(
+                hold.getHoldCode(),
+                newExpireEpochMillis
+        );
+
+        return roomHoldMapper.toResponse(hold);
+    }
+
+
+
 }

@@ -11,8 +11,4 @@ public interface RoomHoldRepository extends JpaRepository<RoomHold, Long> {
 
     Optional<RoomHold> findByHoldCode(String holdCode);
 
-    List<RoomHold> findByStatusAndExpiredAtBefore(
-            String status,
-            LocalDateTime time
-    );
 }
