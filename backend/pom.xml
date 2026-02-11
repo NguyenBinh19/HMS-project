@@ -104,7 +104,15 @@
             <artifactId>mssql-jdbc</artifactId>
             <scope>runtime</scope>
         </dependency>
-    </dependencies>
+		<dependency>
+			<groupId>io.temporal</groupId>
+			<artifactId>temporal-sdk</artifactId>
+			<version>1.31.0</version>
+		</dependency>
+
+
+
+	</dependencies>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
