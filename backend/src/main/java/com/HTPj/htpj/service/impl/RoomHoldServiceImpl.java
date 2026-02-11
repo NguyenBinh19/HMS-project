@@ -28,7 +28,7 @@ public class RoomHoldServiceImpl implements RoomHoldService {
     public RoomHoldResponse createHold(CreateRoomHoldRequest req) {
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiredAt = now.plusMinutes(3);
+        LocalDateTime expiredAt = now.plusMinutes(15);
 
         RoomHold hold = RoomHold.builder()
                 .holdCode("HOLD-" + UUID.randomUUID())
