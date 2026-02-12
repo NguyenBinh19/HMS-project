@@ -19,7 +19,6 @@ public class UpdateRoomTypeRequest {
     private Integer maxChildren;
     private BigDecimal roomArea;
     private String bedType;
-    private String keywords;
     private Integer totalRooms;
     private List<String> amenities;
 }

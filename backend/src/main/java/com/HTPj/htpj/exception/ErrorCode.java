@@ -21,6 +21,9 @@ public enum ErrorCode {
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
     ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
 
+    HOLD_NOT_FOUND(3001, "Hold not found", HttpStatus.NOT_FOUND),
+    HOLD_EXPIRED(3002, "Hold has expired", HttpStatus.BAD_REQUEST),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

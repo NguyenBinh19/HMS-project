@@ -1,6 +1,7 @@
 package com.HTPj.htpj.mapper;
 
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeListDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.RoomType;
 
@@ -20,7 +21,6 @@ public class RoomTypeMapper {
                 .maxChildren(entity.getMaxChildren())
                 .roomArea(entity.getRoomArea())
                 .bedType(entity.getBedType())
-                .keywords(entity.getKeywords())
                 .totalRooms(entity.getTotalRooms())
                 .amenities(amenities)
                 .roomStatus(entity.getRoomStatus())
@@ -41,6 +41,21 @@ public class RoomTypeMapper {
                 .room_area(entity.getRoomArea())
                 .totalRooms(entity.getTotalRooms())
                 .roomStatus(entity.getRoomStatus())
+                .build();
+    }
+
+    public static RoomTypeListDetailResponse toListDetailResponse(RoomType entity, List<String> amenities) {
+        return RoomTypeListDetailResponse.builder()
+                .roomTypeId(entity.getRoomTypeId())
+                .hotelId(entity.getHotel().getHotelId())
+                .roomCode(entity.getRoomCode())
+                .roomTitle(entity.getRoomTitle())
+                .description(entity.getDescription())
+                .maxAdults(entity.getMaxAdults())
+                .maxChildren(entity.getMaxChildren())
+                .roomArea(entity.getRoomArea())
+                .bedType(entity.getBedType())
+                .amenities(amenities)
                 .build();
     }
 }

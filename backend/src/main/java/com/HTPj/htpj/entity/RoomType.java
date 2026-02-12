@@ -49,9 +49,6 @@ public class RoomType {
     @Column(name = "bed_type", length = 100)
     private String bedType;
 
-    @Column(name = "keywords", columnDefinition = "NVARCHAR(MAX)")
-    private String keywords;
-
     @Column(name = "total_rooms")
     private Integer totalRooms;
 

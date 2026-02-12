@@ -11,23 +11,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoomTypeDetailResponse {
-
+public class RoomTypeListDetailResponse {
     private Integer roomTypeId;
     private Integer hotelId;
     private String roomCode;
     private String roomTitle;
     private String description;
-    private BigDecimal basePrice;
     private Integer maxAdults;
     private Integer maxChildren;
     private BigDecimal roomArea;
     private String bedType;
-    private Integer totalRooms;
-    private String roomStatus;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<String> amenities;
-
-
 }

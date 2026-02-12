@@ -3,14 +3,17 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.entity.BookingDetail;
+import com.HTPj.htpj.entity.RoomHold;
 import com.HTPj.htpj.entity.RoomType;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.BookingDetailRepository;
+import com.HTPj.htpj.repository.RoomHoldRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +24,15 @@ import java.util.stream.Collectors;
 public class BookingServiceImpl implements BookingService {
     private final RoomTypeRepository roomTypeRepository;
     private final BookingDetailRepository bookingDetailRepository;
-    private final RoomAvailabilityMapper mapper;
+    private final RoomAvailabilityMapper roomAvailabilityMapper;
+    private final RoomHoldRepository roomHoldRepository;
+
 
     @Override
-    public List<RoomAvailabilityResponse> checkAvailability(
-            RoomAvailabilityRequest request
-    ) {
+    public List<RoomAvailabilityResponse> checkAvailability(RoomAvailabilityRequest request) {
 
-        List<RoomType> roomTypes = roomTypeRepository.findByHotel_HotelId(request.getHotelId());
+        List<RoomType> roomTypes =
+                roomTypeRepository.findByHotel_HotelId(request.getHotelId());
 
         List<BookingDetail> bookingDetails =
                 bookingDetailRepository.findOverlappingBookings(
@@ -42,25 +46,41 @@ public class BookingServiceImpl implements BookingService {
                 bookingDetails.stream()
                         .collect(Collectors.groupingBy(
                                 bd -> bd.getRoomType().getRoomTypeId(),
-                                Collectors.summingInt(
-                                        BookingDetail::getQuantity
-                                )
+                                Collectors.summingInt(BookingDetail::getQuantity)
                         ));
 
-        List<RoomAvailabilityResponse> responses =
-                new ArrayList<>();
+        List<RoomHold> roomHolds =
+                roomHoldRepository.findActiveOverlappingHolds(
+                        request.getHotelId(),
+                        request.getCheckIn(),
+                        request.getCheckOut(),
+                        LocalDateTime.now()
+                );
+        Map<Integer, Integer> holdingQuantityMap =
+                roomHolds.stream()
+                        .collect(Collectors.groupingBy(
+                                RoomHold::getRoomTypeId,
+                                Collectors.summingInt(RoomHold::getQuantity)
+                        ));
+
+        List<RoomAvailabilityResponse> responses = new ArrayList<>();
 
         for (RoomType rt : roomTypes) {
+
             if (!"ACTIVE".equalsIgnoreCase(rt.getRoomStatus())) {
-                responses.add(mapper.toInactive(rt));
+                responses.add(roomAvailabilityMapper.toInactive(rt));
                 continue;
             }
+
             int bookedQuantity =
-                    bookedQuantityMap.getOrDefault(
-                            rt.getRoomTypeId(), 0
-                    );
+                    bookedQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
+
+            int holdingQuantity =
+                    holdingQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
+
             int availableQuantity =
-                    rt.getTotalRooms() - bookedQuantity;
+                    rt.getTotalRooms() - bookedQuantity - holdingQuantity;
+
             if (availableQuantity <= 0) {
                 responses.add(
                         RoomAvailabilityResponse.builder()
@@ -72,11 +92,13 @@ public class BookingServiceImpl implements BookingService {
                                 .build()
                 );
             } else {
-                responses.add(
-                        mapper.toActive(rt, availableQuantity)
-                );
+                responses.add(roomAvailabilityMapper.toActive(rt, availableQuantity));
             }
         }
+        System.out.println("DB HOLDS SIZE = " + roomHolds.size());
+        System.out.println("checkIn  = " + request.getCheckIn());
+        System.out.println("checkOut = " + request.getCheckOut());
+
 
         return responses;
     }
