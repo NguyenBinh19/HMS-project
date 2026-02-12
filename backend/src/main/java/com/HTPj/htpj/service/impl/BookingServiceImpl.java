@@ -4,19 +4,21 @@ import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.entity.BookingDetail;
 import com.HTPj.htpj.entity.RoomHold;
+import com.HTPj.htpj.entity.RoomPricingRule;
 import com.HTPj.htpj.entity.RoomType;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.BookingDetailRepository;
 import com.HTPj.htpj.repository.RoomHoldRepository;
+import com.HTPj.htpj.repository.RoomPricingRuleRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +28,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingDetailRepository bookingDetailRepository;
     private final RoomAvailabilityMapper roomAvailabilityMapper;
     private final RoomHoldRepository roomHoldRepository;
+    private final RoomPricingRuleRepository roomPricingRuleRepository;
 
 
     @Override
@@ -81,25 +84,101 @@ public class BookingServiceImpl implements BookingService {
             int availableQuantity =
                     rt.getTotalRooms() - bookedQuantity - holdingQuantity;
 
+            BigDecimal calculatedPrice = calculateTotalPrice(
+                    rt,
+                    request.getCheckIn(),
+                    request.getCheckOut()
+            );
+
             if (availableQuantity <= 0) {
                 responses.add(
                         RoomAvailabilityResponse.builder()
                                 .roomTypeId(rt.getRoomTypeId())
                                 .roomTitle(rt.getRoomTitle())
-                                .price(rt.getBasePrice())
+                                .price(calculatedPrice)
                                 .quantityAvaiable(0)
                                 .status("sold_out")
                                 .build()
                 );
             } else {
-                responses.add(roomAvailabilityMapper.toActive(rt, availableQuantity));
+                responses.add(roomAvailabilityMapper.toActive(rt, availableQuantity, calculatedPrice));
             }
         }
-        System.out.println("DB HOLDS SIZE = " + roomHolds.size());
-        System.out.println("checkIn  = " + request.getCheckIn());
-        System.out.println("checkOut = " + request.getCheckOut());
-
 
         return responses;
     }
+
+    private BigDecimal calculateTotalPrice(RoomType roomType,
+                                           LocalDate checkIn,
+                                           LocalDate checkOut) {
+
+        BigDecimal basePrice = roomType.getBasePrice();
+
+        List<RoomPricingRule> rules =
+                roomPricingRuleRepository
+                        .findByRoomTypeIdAndIsActiveTrue(roomType.getRoomTypeId());
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (LocalDate date = checkIn;
+             date.isBefore(checkOut);
+             date = date.plusDays(1)) {
+
+            final LocalDate pricingDate = date;
+            final String dayOfWeek = pricingDate.getDayOfWeek().name().toLowerCase();
+
+            Optional<RoomPricingRule> selectedRule = rules.stream()
+                    .filter(rule -> {
+
+                        boolean matchDateRange = false;
+                        boolean matchDayOfWeek = false;
+
+                        if (rule.getStartDate() != null && rule.getEndDate() != null) {
+                            matchDateRange =
+                                    (!pricingDate.isBefore(rule.getStartDate()) &&
+                                            !pricingDate.isAfter(rule.getEndDate()));
+                        }
+
+                        if (rule.getDayOfWeek() != null) {
+                            matchDayOfWeek = Arrays.stream(rule.getDayOfWeek().split(","))
+                                    .map(String::trim)
+                                    .anyMatch(d -> d.equalsIgnoreCase(dayOfWeek));
+
+                        }
+
+                        return matchDateRange || matchDayOfWeek;
+                    })
+                    .min(Comparator.comparing(RoomPricingRule::getPriority));
+
+            BigDecimal dailyPrice = basePrice;
+
+            if (selectedRule.isPresent()) {
+
+                RoomPricingRule rule = selectedRule.get();
+
+                if (rule.getAdjustmentValue() != null &&
+                        rule.getAdjustmentType() != null) {
+
+                    if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
+
+                        BigDecimal percentAmount = basePrice
+                                .multiply(rule.getAdjustmentValue())
+                                .divide(BigDecimal.valueOf(100));
+
+                        dailyPrice = dailyPrice.add(percentAmount);
+                    }
+
+                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+                    }
+                }
+            }
+
+            totalPrice = totalPrice.add(dailyPrice);
+        }
+
+        return totalPrice;
+    }
+
+
 }
