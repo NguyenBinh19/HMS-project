@@ -2,10 +2,7 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
-import com.HTPj.htpj.entity.BookingDetail;
-import com.HTPj.htpj.entity.RoomHold;
-import com.HTPj.htpj.entity.RoomPricingRule;
-import com.HTPj.htpj.entity.RoomType;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.BookingDetailRepository;
 import com.HTPj.htpj.repository.RoomHoldRepository;
@@ -51,20 +48,20 @@ public class BookingServiceImpl implements BookingService {
                                 bd -> bd.getRoomType().getRoomTypeId(),
                                 Collectors.summingInt(BookingDetail::getQuantity)
                         ));
-
-        List<RoomHold> roomHolds =
-                roomHoldRepository.findActiveOverlappingHolds(
+        List<RoomHoldDetail> holdDetails =
+                roomHoldRepository.findActiveOverlappingHoldDetails(
                         request.getHotelId(),
                         request.getCheckIn(),
-                        request.getCheckOut(),
-                        LocalDateTime.now()
+                        request.getCheckOut()
                 );
+
         Map<Integer, Integer> holdingQuantityMap =
-                roomHolds.stream()
+                holdDetails.stream()
                         .collect(Collectors.groupingBy(
-                                RoomHold::getRoomTypeId,
-                                Collectors.summingInt(RoomHold::getQuantity)
+                                RoomHoldDetail::getRoomTypeId,
+                                Collectors.summingInt(RoomHoldDetail::getQuantity)
                         ));
+
 
         List<RoomAvailabilityResponse> responses = new ArrayList<>();
 

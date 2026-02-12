@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
 import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
 import com.HTPj.htpj.dto.response.roomHold.RoomHoldResponse;
 import com.HTPj.htpj.entity.RoomHold;
+import com.HTPj.htpj.entity.RoomHoldDetail;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomHoldMapper;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 @Service
 @RequiredArgsConstructor
@@ -33,14 +35,22 @@ public class RoomHoldServiceImpl implements RoomHoldService {
         RoomHold hold = RoomHold.builder()
                 .holdCode("HOLD-" + UUID.randomUUID())
                 .hotelId(req.getHotelId())
-                .roomTypeId(req.getRoomTypeId())
                 .checkInDate(req.getCheckInDate())
                 .checkOutDate(req.getCheckOutDate())
-                .quantity(req.getQuantity())
                 .createdAt(now)
                 .expiredAt(expiredAt)
                 .status("HOLDING")
                 .build();
+
+        List<RoomHoldDetail> details = req.getItems().stream()
+                .map(i -> RoomHoldDetail.builder()
+                        .roomHold(hold)
+                        .roomTypeId(i.getRoomTypeId())
+                        .quantity(i.getQuantity())
+                        .build())
+                .toList();
+
+        hold.setDetails(details);
 
         roomHoldRepository.save(hold);
 

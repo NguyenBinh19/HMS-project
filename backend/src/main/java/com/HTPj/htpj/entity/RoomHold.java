@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "room_holds")
@@ -25,17 +26,11 @@ public class RoomHold {
     @Column(name = "hotel_id", nullable = false)
     private Integer hotelId;
 
-    @Column(name = "room_type_id", nullable = false)
-    private Integer roomTypeId;
-
     @Column(name = "check_in_date", nullable = false)
     private LocalDate checkInDate;
 
     @Column(name = "check_out_date", nullable = false)
     private LocalDate checkOutDate;
-
-    @Column(nullable = false)
-    private Integer quantity;
 
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
@@ -45,5 +40,9 @@ public class RoomHold {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "roomHold", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoomHoldDetail> details;
+
 }
 
