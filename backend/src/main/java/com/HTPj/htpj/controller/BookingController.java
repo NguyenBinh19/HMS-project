@@ -1,9 +1,11 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
 import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
+import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.dto.response.roomHold.RoomHoldResponse;
 import com.HTPj.htpj.service.BookingService;
@@ -51,6 +53,16 @@ public class BookingController {
     ) {
         return ApiResponse.<RoomHoldResponse>builder()
                 .result(roomHoldService.extendHold(request))
+                .build();
+    }
+
+    //booking
+    @PostMapping("/create")
+    ApiResponse<CreateBookingResponse> createBooking(
+            @RequestBody CreateBookingRequest request
+    ) {
+        return ApiResponse.<CreateBookingResponse>builder()
+                .result(bookingService.createBooking(request))
                 .build();
     }
 

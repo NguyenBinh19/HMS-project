@@ -5,6 +5,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -40,6 +41,9 @@ public class BookingDetail {
     @Column(name = "subtotal_amount", precision = 12, scale = 2)
     private BigDecimal subtotalAmount;
 
+    @Column(name = "total_amount", precision = 12, scale = 2)
+    private BigDecimal totalAmount;
+
     @Column(name = "check_in_date")
     private LocalDate checkInDate;
 
@@ -51,4 +55,30 @@ public class BookingDetail {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "room_code", length = 50)
+    private String roomCode;
+
+    @Column(name = "bed_type", length = 100)
+    private String bedType;
+
+    @Column(name = "room_area", precision = 10, scale = 2)
+    private BigDecimal roomArea;
+
+    @Column(name = "max_adults")
+    private Integer maxAdults;
+
+    @Column(name = "max_children")
+    private Integer maxChildren;
+
+    @Column(name = "max_guests")
+    private Integer maxGuests;
+
+    @Column(name = "amenities", columnDefinition = "NVARCHAR(MAX)")
+    private String amenities;
+
+    @OneToMany(mappedBy = "bookingDetail",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<BookingDetailPrice> prices;
 }
