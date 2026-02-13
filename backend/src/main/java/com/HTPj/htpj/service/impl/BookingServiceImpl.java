@@ -1,13 +1,15 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
+import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.entity.*;
+import com.HTPj.htpj.exception.AppException;
+import com.HTPj.htpj.exception.ErrorCode;
+import com.HTPj.htpj.mapper.BookingMapper;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
-import com.HTPj.htpj.repository.BookingDetailRepository;
-import com.HTPj.htpj.repository.RoomHoldRepository;
-import com.HTPj.htpj.repository.RoomPricingRuleRepository;
-import com.HTPj.htpj.repository.RoomTypeRepository;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,8 @@ public class BookingServiceImpl implements BookingService {
     private final RoomAvailabilityMapper roomAvailabilityMapper;
     private final RoomHoldRepository roomHoldRepository;
     private final RoomPricingRuleRepository roomPricingRuleRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingMapper bookingMapper;
 
 
     @Override
@@ -105,9 +110,7 @@ public class BookingServiceImpl implements BookingService {
         return responses;
     }
 
-    private BigDecimal calculateTotalPrice(RoomType roomType,
-                                           LocalDate checkIn,
-                                           LocalDate checkOut) {
+    private BigDecimal calculateTotalPrice(RoomType roomType,LocalDate checkIn,LocalDate checkOut) {
 
         BigDecimal basePrice = roomType.getBasePrice();
 
@@ -177,5 +180,104 @@ public class BookingServiceImpl implements BookingService {
         return totalPrice;
     }
 
+    @Override
+    public CreateBookingResponse createBooking(CreateBookingRequest request) {
 
+        RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
+                .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
+
+        if (!"HOLDING".equalsIgnoreCase(hold.getStatus())) {
+            throw new AppException(ErrorCode.HOLD_EXPIRED);
+        }
+
+        LocalDate checkIn = hold.getCheckInDate();
+        LocalDate checkOut = hold.getCheckOutDate();
+
+        int nights = (int) ChronoUnit.DAYS.between(checkIn, checkOut);
+
+        Booking booking = Booking.builder()
+                .bookingCode("BOOKING-" + UUID.randomUUID().toString().substring(0, 8))
+                .hotelId(hold.getHotelId())
+                .userId(request.getUserId())       // tam thoi lay request
+                .agencyId(request.getAgencyId())
+                .checkInDate(checkIn)
+                .checkOutDate(checkOut)
+                .nights(nights)
+                .guestName(request.getGuestName())
+                .guestPhone(request.getGuestPhone())
+                .guestEmail(request.getGuestEmail())
+                .notes(request.getNotes())
+                .paymentMethod(request.getPaymentMethod())
+                .paymentStatus("unpaid")
+                .bookingStatus("booked")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        BigDecimal bookingTotal = BigDecimal.ZERO;
+        int totalRooms = 0;
+
+        List<BookingDetail> bookingDetails = new ArrayList<>();
+
+        for (RoomHoldDetail holdDetail : hold.getDetails()) {
+
+            RoomType roomType = roomTypeRepository.findById(holdDetail.getRoomTypeId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+
+            int quantity = holdDetail.getQuantity();
+
+            BigDecimal pricePerStay = calculateTotalPrice(roomType, checkIn, checkOut);
+
+            BigDecimal subtotal = pricePerStay;
+            BigDecimal total = subtotal.multiply(BigDecimal.valueOf(quantity));
+
+            bookingTotal = bookingTotal.add(total);
+            totalRooms += quantity;
+
+            BookingDetail detail = BookingDetail.builder()
+                    .booking(booking)
+                    .roomType(roomType)
+                    .roomTitle(roomType.getRoomTitle())
+                    .quantity(quantity)
+                    .pricePerNight(roomType.getBasePrice())
+                    .subtotalAmount(subtotal)   // giá 1 phòng
+                    .totalAmount(total)         // tổng tiền hạng phòng
+                    .checkInDate(checkIn)
+                    .checkOutDate(checkOut)
+                    .nights(nights)
+                    .createdAt(LocalDateTime.now())
+                    .roomCode(roomType.getRoomCode())
+                    .bedType(roomType.getBedType())
+                    .roomArea(roomType.getRoomArea())
+                    .maxAdults(roomType.getMaxAdults())
+                    .maxChildren(roomType.getMaxChildren())
+                    .maxGuests(
+                            (roomType.getMaxAdults() == null ? 0 : roomType.getMaxAdults()) +
+                                    (roomType.getMaxChildren() == null ? 0 : roomType.getMaxChildren())
+                    )
+                    .amenities(roomType.getAmenities())
+                    .build();
+
+            bookingDetails.add(detail);
+        }
+
+        booking.setBookingDetails(bookingDetails);
+        booking.setTotalRooms(totalRooms);
+        booking.setTotalGuests(request.getTotalGuests());
+
+        BigDecimal discount = request.getDiscountAmount() == null
+                ? BigDecimal.ZERO
+                : request.getDiscountAmount();
+
+        booking.setTotalAmount(bookingTotal);
+        booking.setDiscountAmount(discount);
+        booking.setFinalAmount(bookingTotal.subtract(discount));
+
+        Booking saved = bookingRepository.save(booking);
+
+        hold.setStatus("BOOKED");
+        roomHoldRepository.save(hold);
+
+        return bookingMapper.toResponse(saved);
+    }
 }

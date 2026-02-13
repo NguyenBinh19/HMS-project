@@ -16,27 +16,22 @@ import java.util.List;
 @Entity
 @Table(name = "bookings")
 public class Booking {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "booking_id")
     private Long bookingId;
 
-    @Column(name = "booking_code", nullable = false, length = 50, unique = true)
+    @Column(name = "booking_code", nullable = false, unique = true, length = 50)
     private String bookingCode;
 
+    @Column(name = "user_id", nullable = false, length = 255)
+    private String userId;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private User user;
+    @Column(name = "agency_id", nullable = false)
+    private Long agencyId;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "agency_id", nullable = false)
-//    private Agency agency;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "hotel_id", nullable = false)
-    private Hotel hotel;
+    @Column(name = "hotel_id", nullable = false)
+    private Integer hotelId;
 
     @Column(name = "check_in_date", nullable = false)
     private LocalDate checkInDate;
@@ -76,6 +71,18 @@ public class Booking {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "guest_name", length = 255)
+    private String guestName;
+
+    @Column(name = "guest_phone", length = 20)
+    private String guestPhone;
+
+    @Column(name = "guest_email", length = 100)
+    private String guestEmail;
+
+    @Column(name = "notes", columnDefinition = "NVARCHAR(MAX)")
+    private String notes;
 
     @OneToMany(
             mappedBy = "booking",

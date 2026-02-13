@@ -13,7 +13,7 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, Lo
         SELECT bd
         FROM BookingDetail bd
         JOIN bd.booking b
-        WHERE b.hotel.hotelId = :hotelId
+        WHERE b.hotelId = :hotelId
           AND b.bookingStatus IN :statuses
           AND b.checkInDate < :checkOut
           AND b.checkOutDate > :checkIn

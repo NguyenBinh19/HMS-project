@@ -36,7 +36,7 @@ public class RoomHold {
     private LocalDateTime expiredAt;
 
     @Column(nullable = false)
-    private String status; // HOLDING | EXPIRED
+    private String status; // HOLDING | EXPIRED|BOOKED
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
