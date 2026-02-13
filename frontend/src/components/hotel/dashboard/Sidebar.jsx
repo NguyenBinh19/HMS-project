@@ -14,7 +14,7 @@ const Sidebar = () => {
         { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/rate-plans" },
         { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/services" },
         { icon: <CalendarDays size={20} />, label: "LỊCH QUẢN LÝ TỒN KHO", path: "/hotel/inventory" },
-        { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ ĐỘNG", path: "/hotel/pricing" },
+        { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ TỰ ĐỘNG", path: "/hotel/dynamic-pricing" },
         { icon: <TicketPercent size={20} />, label: "QUẢN LÝ MÃ GIẢM GIÁ", path: "/hotel/coupons" },
         { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/finance" },
         { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/reception" },

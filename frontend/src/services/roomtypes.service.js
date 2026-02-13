@@ -60,10 +60,25 @@ const updateRoomType = async (roomTypeId, payload) => {
         throw error;
     }
 }
+
+// 6. Lấy chi tiết thông tin loại phòng theo khách sạn
+const getRoomTypesDetailByHotelId = async (hotelId) => {
+    try {
+        const response = await api.get(`/room-types/details`, {
+            params: { hotelId },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Get Room Types Detail Error:", error);
+        throw error;
+    }
+};
+
 export const roomTypeService = {
     createRoomType,
     getRoomTypesByHotelId,
     getRoomTypeDetail,
     deleteRoomType,
     updateRoomType,
+    getRoomTypesDetailByHotelId
 };

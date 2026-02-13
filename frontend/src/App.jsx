@@ -5,14 +5,14 @@ import AppRoutes from "./routes/index";
 import "leaflet/dist/leaflet.css";
 
 function App() {
-  return (
-    <AuthContextProvider>
-      <BrowserRouter>
-      <ScrollToTop />
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthContextProvider>
-  );
+    return (
+        <BrowserRouter>
+            <AuthContextProvider>
+                <ScrollToTop />
+                <AppRoutes />
+            </AuthContextProvider>
+        </BrowserRouter>
+    );
 }
 
 export default App;

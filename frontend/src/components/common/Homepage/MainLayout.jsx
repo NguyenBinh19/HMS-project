@@ -1,5 +1,3 @@
-import { Outlet } from "react-router-dom";
-// Hãy sửa lại đường dẫn import đúng với thư mục dự án của bạn
 import Header from "./Header.jsx";
 import Footer from "./Footer.jsx";
 import Sections from "./Section.jsx";
