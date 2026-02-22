@@ -44,9 +44,11 @@ public class UserService {
 
         user.setRoles(roles);
 
+        //Check if user existed
+        if(userRepository.existsByEmail(user.getEmail())) throw new AppException(ErrorCode.USER_EXISTED);
+
         try {
             user = userRepository.save(user);
-            if(user == null) throw new AppException(ErrorCode.USER_EXISTED);
         } catch (DataIntegrityViolationException exception) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }

@@ -122,7 +122,7 @@ const Register = () => {
     const scrollContainerRef = useRef(null);
 
     const [formData, setFormData] = useState({
-        fullName: "",
+        username: "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -206,9 +206,9 @@ const Register = () => {
             return;
         }
 
-        const { fullName, email, password, confirmPassword } = formData;
+        const { username, email, password, confirmPassword } = formData;
 
-        if (!fullName || !email || !password || !confirmPassword) {
+        if (!username || !email || !password || !confirmPassword) {
             setError("Vui lòng điền đầy đủ thông tin.");
             return;
         }
@@ -232,10 +232,9 @@ const Register = () => {
         setLoading(true);
         try {
             const res = await authService.register(
-                fullName,
+                username,
                 email,
-                password,
-                confirmPassword
+                password
             );
 
             if (res) {
@@ -243,14 +242,13 @@ const Register = () => {
                 setCountdown(5);
             }
         } catch (err) {
+            console.error("Registration Error:", err);
             const status = err?.response?.status;
             const data = err?.response?.data;
 
-            // lấy message tổng
             const serverMsg =
                 data?.message || data?.error || data?.msg || data?.title || "";
 
-            // cố lấy lỗi chi tiết theo field (tuỳ backend)
             const fieldErrors =
                 data?.errors ||
                 data?.data?.errors ||
@@ -267,14 +265,11 @@ const Register = () => {
             const s = String(msg).toLowerCase();
 
             if (status === 400) {
-                // đừng show "Validation failed" trần trụi nữa
                 if (s.includes("password") || s.includes("mật khẩu")) {
                     setError(
                         firstFieldMsg ||
                         "Mật khẩu không đạt yêu cầu. Vui lòng thêm chữ in hoa, số và ký tự đặc biệt."
                     );
-                } else if (s.includes("email")) {
-                    setError(firstFieldMsg || "Email không hợp lệ. Vui lòng kiểm tra lại.");
                 } else if (s.includes("validation failed")) {
                     setError("Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.");
                 } else {
@@ -306,7 +301,7 @@ const Register = () => {
     };
 
     const isFormValid =
-        passwordScore >= 2 && formData.fullName && formData.email && agreed;
+        passwordScore >= 2 && formData.username && formData.email && agreed;
 
     return (
         <div className="relative h-screen w-screen overflow-hidden flex items-center justify-center font-sans bg-slate-900">
@@ -368,10 +363,10 @@ const Register = () => {
                             )}
 
                             <form onSubmit={handleSubmit} className="space-y-5">
-                                {/* FullName */}
+                                {/* username */}
                                 <div className="relative group">
                                     <div
-                                        className={`absolute left-4 top-3.5 transition-colors ${focusedField === "fullName"
+                                        className={`absolute left-4 top-3.5 transition-colors ${focusedField === "username"
                                                 ? "text-emerald-600"
                                                 : "text-slate-400"
                                             }`}
@@ -380,12 +375,12 @@ const Register = () => {
                                     </div>
                                     <input
                                         type="text"
-                                        name="fullName"
-                                        onFocus={() => setFocusedField("fullName")}
+                                        name="username"
+                                        onFocus={() => setFocusedField("username")}
                                         onBlur={() => setFocusedField(null)}
-                                        value={formData.fullName}
+                                        value={formData.username}
                                         onChange={handleChange}
-                                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "fullName"
+                                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "username"
                                                 ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                 : "border-slate-100 hover:border-slate-300"
                                             }`}
@@ -660,7 +655,6 @@ const Register = () => {
                 </div>
             </div>
 
-            {/* ✅ SUCCESS MODAL */}
             <RegistrationSuccessModal
                 isOpen={showSuccessModal}
                 email={formData.email}
@@ -668,7 +662,6 @@ const Register = () => {
                 onLoginNow={() => navigate("/login")}
             />
 
-            {/* Other Modals */}
             <LegalModal
                 isOpen={modalType === "terms"}
                 onClose={() => setModalType(null)}

@@ -27,9 +27,22 @@ spring:
   config:
     import: vault://
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: binhnthe181520@fpt.edu.vn
+    password: uimo eqvl qznz xzno
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 jwt:
   valid-duration: 6000 # in second
   refreshable-duration: 36000 # in seconds
+
 springdoc:
   api-docs:
     path: /api-docs
