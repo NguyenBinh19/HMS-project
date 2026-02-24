@@ -30,8 +30,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: binhnthe181520@fpt.edu.vn
-    password: uimo eqvl qznz xzno
+    username: bookingsphere@gmail.com
+    password: vztu qatl dbij hvpg
     properties:
       mail:
         smtp:

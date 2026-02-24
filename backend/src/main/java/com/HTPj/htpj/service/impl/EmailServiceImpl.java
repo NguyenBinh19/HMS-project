@@ -17,7 +17,7 @@ public class EmailServiceImpl implements EmailService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private TemplateEngine templateEngine; // nếu dùng Thymeleaf
+    private TemplateEngine templateEngine;
 
     @Override
     public void sendWelcomeOnboardEmail(String to) {
