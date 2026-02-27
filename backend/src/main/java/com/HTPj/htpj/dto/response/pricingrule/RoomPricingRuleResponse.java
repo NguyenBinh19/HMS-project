@@ -19,6 +19,7 @@ public class RoomPricingRuleResponse {
     private String dayOfWeek;
     private LocalDate startDate;
     private LocalDate endDate;
+    private String action;
     private String adjustmentType;
     private BigDecimal adjustmentValue;
     private Integer priority;

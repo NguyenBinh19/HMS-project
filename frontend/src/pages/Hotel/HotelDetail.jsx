@@ -7,7 +7,7 @@ import {
     Star, Utensils, Check, BedDouble, Calendar as CalendarIcon,
     ChevronRight, Image as ImageIcon, Info, AlertCircle
 } from "lucide-react";
-
+import GalleryModal from "../../components/common/Hotel/GalleryModal.jsx";
 import publicApi from "../../services/publicApi.config";
 import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
@@ -65,7 +65,7 @@ const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
 export default function HotelDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-
+    const [openGallery, setOpenGallery] = useState(false);
     const [hotel, setHotel] = useState(null);
     const [roomTypes, setRoomTypes] = useState([]);
     const [loadingRooms, setLoadingRooms] = useState(true);
@@ -217,7 +217,10 @@ export default function HotelDetailPage() {
             setIsExtending(false);
         }
     };
-
+const gallery =
+        hotel?.images?.length > 0
+            ? hotel.images
+            : ["https://pix8.agoda.net/hotelImages/186/186135/186135_17083113400050872001.jpg"];
     if (!hotel) return <div className="flex justify-center items-center h-screen"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
 
     return (
@@ -238,32 +241,84 @@ export default function HotelDetailPage() {
 
                 <main className="max-w-[1200px] mx-auto w-full px-6 py-8 pb-48">
                     <section className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+                        {/* IMAGE AREA */}
                         <div className="relative h-[480px] bg-slate-200">
-                            <img src={hotel.images?.[0]} className="w-full h-full object-cover" alt="Hotel" />
+
+                            {/* HERO IMAGE */}
+                            <img
+                                src={hotel.images?.[0]}
+                                className="w-full h-full object-cover cursor-pointer"
+                                alt="Hotel"
+                                onClick={() => setOpenGallery(true)}
+                            />
+
+                            {/* FLOATING GALLERY CARD */}
+                            {hotel.images?.length > 1 && (
+                                <div className="absolute right-6 bottom-6 bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-3 w-[220px]">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {hotel.images.slice(1, 5).map((img, i) => (
+                                            <img
+                                                key={i}
+                                                src={img}
+                                                onClick={() => setOpenGallery(true)}
+                                                className="h-20 w-full object-cover rounded-xl cursor-pointer hover:opacity-90 transition"
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setOpenGallery(true)}
+                                        className="mt-3 w-full text-xs font-bold text-blue-600 hover:underline"
+                                    >
+                                        Xem tất cả ảnh
+                                    </button>
+                                </div>
+                            )}
                         </div>
+
+                        {/* INFO AREA */}
                         <div className="p-8">
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="flex text-yellow-400">{[1, 2, 3, 4, 5].map(i => <Star key={i} size={16} fill="currentColor" />)}</div>
+                                <div className="flex text-yellow-400">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <Star key={i} size={16} fill="currentColor" />
+                                    ))}
+                                </div>
                                 <span className="text-slate-500 text-sm font-bold">4.8/5</span>
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 mb-2">{hotel.hotelName}</h1>
+
+                            <h1 className="text-3xl font-black text-slate-900 mb-2">
+                                {hotel.hotelName}
+                            </h1>
+
                             <div className="flex items-center gap-2 text-blue-600 font-bold mb-6 text-sm">
-                                <MapPin size={18} /> <span>{hotel.address}</span>
+                                <MapPin size={18} />
+                                <span>{hotel.address}</span>
                             </div>
+
                             <div className="flex flex-wrap gap-4 pt-6 border-t border-slate-100">
-                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold italic">Wifi miễn phí</span>
-                                <span className="bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold italic">Có bữa sáng</span>
+                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold italic">
+                                    Wifi miễn phí
+                                </span>
+                                <span className="bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold italic">
+                                    Có bữa sáng
+                                </span>
                             </div>
                         </div>
                     </section>
-
+                   {openGallery && (
+                    <GalleryModal
+                        images={gallery}
+                        onClose={() => setOpenGallery(false)}
+                    />
+                )}
                     <div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600"/> Nhận phòng</label>
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
                         </div>
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600"/> Trả phòng</label>
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                         </div>
                         <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">Cập nhật ngày</button>
@@ -291,9 +346,9 @@ export default function HotelDetailPage() {
                                     <div className="flex-1">
                                         <h3 className="text-xl font-black text-slate-900 mb-2">{room.name}</h3>
                                         <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-bold mb-4">
-                                            <span className="flex items-center gap-1"><Users size={14}/> {room.maxAdults} Người lớn</span>
-                                            <span className="flex items-center gap-1"><BedDouble size={14}/> {room.bedType}</span>
-                                            <span className="flex items-center gap-1"><Maximize size={14}/> {room.area} m²</span>
+                                            <span className="flex items-center gap-1"><Users size={14} /> {room.maxAdults} Người lớn</span>
+                                            <span className="flex items-center gap-1"><BedDouble size={14} /> {room.bedType}</span>
+                                            <span className="flex items-center gap-1"><Maximize size={14} /> {room.area} m²</span>
                                         </div>
 
                                         {room.amenities.length > 0 && (
@@ -305,8 +360,8 @@ export default function HotelDetailPage() {
                                         )}
 
                                         <div className="grid grid-cols-2 gap-y-2">
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14}/> Xác nhận ngay</div>
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14}/> Miễn phí hủy phòng</div>
+                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14} /> Xác nhận ngay</div>
+                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14} /> Miễn phí hủy phòng</div>
                                         </div>
                                     </div>
 
@@ -317,7 +372,7 @@ export default function HotelDetailPage() {
                                         </div>
                                         <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
                                             <button onClick={() => handleUpdateQuantity(room, -1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-400 hover:text-blue-600 border border-slate-200 transition-colors">
-                                                <Minus size={16}/>
+                                                <Minus size={16} />
                                             </button>
                                             <span className="w-6 text-center font-black text-slate-800 text-lg">{currentCount}</span>
                                             <button
@@ -325,7 +380,7 @@ export default function HotelDetailPage() {
                                                 disabled={room.isSoldOut}
                                                 className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-400 hover:text-blue-600 border border-slate-200 transition-colors disabled:opacity-50"
                                             >
-                                                <Plus size={16}/>
+                                                <Plus size={16} />
                                             </button>
                                         </div>
                                     </div>

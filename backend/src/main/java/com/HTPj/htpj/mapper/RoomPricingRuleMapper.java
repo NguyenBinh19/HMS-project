@@ -6,6 +6,8 @@ import com.HTPj.htpj.entity.RoomPricingRule;
 
 public class RoomPricingRuleMapper {
 
+    /* ================= TO ENTITY ================= */
+
     public static RoomPricingRule toEntity(RoomPricingRuleRequest req) {
         return RoomPricingRule.builder()
                 .roomTypeId(req.getRoomTypeId())
@@ -14,12 +16,15 @@ public class RoomPricingRuleMapper {
                 .dayOfWeek(req.getDayOfWeek())
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
+                .action(req.getAction())
                 .adjustmentType(req.getAdjustmentType())
                 .adjustmentValue(req.getAdjustmentValue())
                 .priority(req.getPriority())
                 .isActive(req.getIsActive())
                 .build();
     }
+
+    /* ================= TO RESPONSE ================= */
 
     public static RoomPricingRuleResponse toResponse(RoomPricingRule e) {
         return RoomPricingRuleResponse.builder()
@@ -30,6 +35,7 @@ public class RoomPricingRuleMapper {
                 .dayOfWeek(e.getDayOfWeek())
                 .startDate(e.getStartDate())
                 .endDate(e.getEndDate())
+                .action(e.getAction())
                 .adjustmentType(e.getAdjustmentType())
                 .adjustmentValue(e.getAdjustmentValue())
                 .priority(e.getPriority())
@@ -39,12 +45,15 @@ public class RoomPricingRuleMapper {
                 .build();
     }
 
+    /* ================= UPDATE ================= */
+
     public static void update(RoomPricingRule e, RoomPricingRuleRequest req) {
         e.setRuleName(req.getRuleName());
         e.setRuleType(req.getRuleType());
         e.setDayOfWeek(req.getDayOfWeek());
         e.setStartDate(req.getStartDate());
         e.setEndDate(req.getEndDate());
+        e.setAction(req.getAction());
         e.setAdjustmentType(req.getAdjustmentType());
         e.setAdjustmentValue(req.getAdjustmentValue());
         e.setPriority(req.getPriority());

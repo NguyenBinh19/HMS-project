@@ -7,7 +7,11 @@ import java.util.List;
 public interface HotelImageRepository
         extends JpaRepository<HotelImage, Integer> {
 
-     List<HotelImage> findByHotelHotelIdOrderBySortOrderAsc(Integer hotelId);
+    // ✅ dùng cho detail (1 hotel)
+    List<HotelImage> findByHotelHotelIdOrderBySortOrderAsc(Integer hotelId);
+
+    // ✅ dùng cho search (nhiều hotel)
+    List<HotelImage> findByHotelHotelIdInOrderBySortOrderAsc(List<Integer> hotelIds);
 
     List<HotelImage> findByHotelHotelIdAndIsCoverTrue(Integer hotelId);
 

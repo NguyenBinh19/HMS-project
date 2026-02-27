@@ -7,13 +7,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "room_pricing_rules")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "room_pricing_rules")
 public class RoomPricingRule {
 
     @Id
@@ -27,20 +27,26 @@ public class RoomPricingRule {
     @Column(name = "rule_name")
     private String ruleName;
 
-    // WEEKDAY | DATE_RANGE | HOLIDAY
+    // WEEKLY | EVENT
     @Column(name = "rule_type", nullable = false)
     private String ruleType;
 
+    // Monday, Tuesday... (only for WEEKLY)
     @Column(name = "day_of_week")
     private String dayOfWeek;
 
+    // only for EVENT
     @Column(name = "start_date")
     private LocalDate startDate;
 
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    // PERCENT | FIXED
+    // INCREASE | DECREASE | KEEP
+    @Column(name = "action", nullable = false)
+    private String action;
+
+    // FIXED | PERCENT
     @Column(name = "adjustment_type", nullable = false)
     private String adjustmentType;
 
@@ -59,13 +65,10 @@ public class RoomPricingRule {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    /* ================= LIFECYCLE ================= */
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-
         if (isActive == null) isActive = true;
         if (priority == null) priority = 0;
     }

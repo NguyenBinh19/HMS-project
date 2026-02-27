@@ -6,6 +6,8 @@ import com.HTPj.htpj.service.RoomPricingRuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -15,8 +17,11 @@ public class RoomPricingRuleController {
 
     private final RoomPricingRuleService service;
 
+    /* ================= CRUD ================= */
+
     @PostMapping
-    public RoomPricingRuleResponse create(@RequestBody RoomPricingRuleRequest request) {
+    public RoomPricingRuleResponse create(
+            @RequestBody RoomPricingRuleRequest request) {
         return service.create(request);
     }
 
@@ -43,5 +48,20 @@ public class RoomPricingRuleController {
             @PathVariable Integer roomTypeId
     ) {
         return service.getByRoomType(roomTypeId);
+    }
+
+    /* ================= PRICING ENGINE ================= */
+
+    @GetMapping("/calculate")
+    public BigDecimal calculatePrice(
+            @RequestParam Integer roomTypeId,
+            @RequestParam String date,
+            @RequestParam BigDecimal basePrice
+    ) {
+        return service.calculateFinalPrice(
+                roomTypeId,
+                LocalDate.parse(date),
+                basePrice
+        );
     }
 }

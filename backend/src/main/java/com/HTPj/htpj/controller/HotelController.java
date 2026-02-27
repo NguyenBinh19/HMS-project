@@ -36,4 +36,13 @@ public class HotelController {
                 .result(hotelService.getHotelDetailForView(hotelId))
                 .build();
     }
+
+    @GetMapping("/search")
+    public ApiResponse<List<HotelDetailResponse>> searchHotels(
+            @RequestParam String keyword
+    ) {
+        return ApiResponse.<List<HotelDetailResponse>>builder()
+                .result(hotelService.searchHotels(keyword))
+                .build();
+    }
 }
