@@ -135,7 +135,7 @@ export default function BookingCheckoutPage() {
 
     const handleExpire = () => {
         alert("Phiên giữ chỗ đã hết hạn. Hệ thống sẽ quay về trang tìm kiếm.");
-        navigate("/");
+        navigate("/homepage");
     };
 
     const handleExtendHold = async () => {

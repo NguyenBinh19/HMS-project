@@ -1,5 +1,5 @@
 import api from "./publicApi.config.js";
-
+// import api from "./axios.config.js";
 // 1. Tạo loại phòng
 const createRoomType = async (payload) => {
     try {

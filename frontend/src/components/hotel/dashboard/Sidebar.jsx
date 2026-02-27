@@ -9,16 +9,16 @@ const Sidebar = () => {
 
     // Danh sách menu
     const menuItems = [
-        { icon: <Home size={20} />, label: "Dashboard", path: "/hotel/dashboard" },
+        { icon: <Home size={20} />, label: "Dashboard", path: "/hotel/room-types" },
         { icon: <Hotel size={20} />, label: "QUẢN LÝ PHÒNG", path: "/hotel/room-types" },
-        { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/rate-plans" },
-        { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/services" },
-        { icon: <CalendarDays size={20} />, label: "LỊCH QUẢN LÝ TỒN KHO", path: "/hotel/inventory" },
+        { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/room-types" },
+        { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/room-types" },
+        { icon: <CalendarDays size={20} />, label: "LỊCH QUẢN LÝ TỒN KHO", path: "/hotel/room-types" },
         { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ TỰ ĐỘNG", path: "/hotel/dynamic-pricing" },
         { icon: <TicketPercent size={20} />, label: "QUẢN LÝ MÃ GIẢM GIÁ", path: "/hotel/coupons" },
-        { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/finance" },
-        { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/reception" },
-        { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat" },
+        { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/room-types" },
+        { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/room-types" },
+        { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/room-types" },
     ];
 
     return (

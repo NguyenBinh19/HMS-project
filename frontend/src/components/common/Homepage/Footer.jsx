@@ -36,10 +36,10 @@ const Footer = () => {
                     <div>
                         <h4 className="text-base font-bold text-white mb-6 uppercase tracking-wider">Liên kết nhanh</h4>
                         <ul className="space-y-3 text-sm">
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Điều khoản sử dụng</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Chính sách bảo mật</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Quy chế hoạt động sàn</a></li>
-                            <li><a href="#" className="hover:text-blue-400 transition-colors">Hướng dẫn sử dụng</a></li>
+                            <li><a href="/homepage" className="hover:text-blue-400 transition-colors">Điều khoản sử dụng</a></li>
+                            <li><a href="/homepage" className="hover:text-blue-400 transition-colors">Chính sách bảo mật</a></li>
+                            <li><a href="/homepage" className="hover:text-blue-400 transition-colors">Quy chế hoạt động sàn</a></li>
+                            <li><a href="/homepage" className="hover:text-blue-400 transition-colors">Hướng dẫn sử dụng</a></li>
                         </ul>
                     </div>
 
@@ -47,18 +47,18 @@ const Footer = () => {
                     <div>
                         <h4 className="text-base font-bold text-white mb-6 uppercase tracking-wider">Kết nối với chúng tôi</h4>
                         <div className="flex gap-4">
-                            {/* Facebook - Blue */}
-                            <a href="#" className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:scale-110 transition-transform">
+                            {/* Facebook */}
+                            <a href="/homepage" className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:scale-110 transition-transform">
                                 <Facebook size={20} fill="currentColor" strokeWidth={0} />
                             </a>
 
-                            {/* Twitter - Sky */}
-                            <a href="#" className="w-10 h-10 rounded-full bg-[#1DA1F2] flex items-center justify-center text-white hover:scale-110 transition-transform">
+                            {/* Twitter */}
+                            <a href="/homepage" className="w-10 h-10 rounded-full bg-[#1DA1F2] flex items-center justify-center text-white hover:scale-110 transition-transform">
                                 <Twitter size={20} fill="currentColor" strokeWidth={0} />
                             </a>
 
-                            {/* Instagram - Gradient Pink */}
-                            <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center text-white hover:scale-110 transition-transform">
+                            {/* Instagram */}
+                            <a href="/homepage" className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center text-white hover:scale-110 transition-transform">
                                 <Instagram size={20} strokeWidth={2} />
                             </a>
                         </div>

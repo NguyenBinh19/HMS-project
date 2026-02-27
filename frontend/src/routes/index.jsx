@@ -12,6 +12,9 @@ import DynamicPricing from "../pages/Hotel/DynamicPricing.jsx"
 import HotelDetailPage from "@/pages/Hotel/HotelDetail.jsx";
 import BookingCheckoutPage from "@/pages/Agency/BookingCheckout.jsx";
 import BookingSuccessPage from "@/pages/Agency/BookingSuccess.jsx"
+import SearchHotelEngine from "@/pages/Agency/HotelSearchEngine.jsx"
+import ListSearchResult from "@/pages/Agency/ListSearchResult.jsx";
+import CouponManager from "@/pages/Hotel/CouponManager.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -28,12 +31,16 @@ const AppRoutes = () => {
                 <Route path="/hotels/:id" element={<HotelDetailPage />} />
                 <Route path="/booking-checkout" element={<BookingCheckoutPage />} />
                 <Route path="/booking-success" element={<BookingSuccessPage />} />
-                {/*<Route path="/manage-room-types" element={<RoomTypes />} />*/}
+                <Route path="search-hotel" element={<SearchHotelEngine />} />
+                <Route path="list-search-hotel" element={<ListSearchResult />} />
+
                 <Route path="/hotel" element={<HotelMain />}>
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
                     <Route path="dynamic-pricing" element={<DynamicPricing />} />
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
+                    <Route path="coupons" element={<CouponManager />} />
+                    <Route index element={<Navigate to="coupons" replace />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
