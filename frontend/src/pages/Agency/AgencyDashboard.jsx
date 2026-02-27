@@ -22,7 +22,7 @@ const AgencyLayout = () => {
 
                 {/* Nội dung  */}
                 <main className="flex-1 bg-slate-50">
-                    <div className="p-6 md:p-8">
+                    <div className="md:p-8">
                         <Outlet />
                     </div>
                 </main>

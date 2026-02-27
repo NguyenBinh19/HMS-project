@@ -14,28 +14,32 @@ const CompareBar = () => {
     if (compareItems.length === 0) return null;
 
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] bg-[#003580] text-white px-6 py-4 rounded-3xl shadow-[0_20px_50px_rgba(0,53,128,0.4)] flex items-center gap-8 border border-blue-400/30 backdrop-blur-md">
-            <div className="flex items-center gap-4 pl-2">
-                <div className="relative">
-                    <Layers size={22} className="text-blue-400" />
-                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#003580]">
-                        {compareItems.length}
-                    </span>
+        <div className="fixed bottom-6 left-[280px] right-6 z-[80] animate-in slide-in-from-bottom duration-500">
+            <div className="max-w-[1100px] mx-auto bg-slate-900/95 text-white px-6 py-4 rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center justify-between border border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-6 pl-2">
+                    <div className="relative">
+                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                            <Layers size={22} className="text-white" />
+                        </div>
+                        <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900">
+                            {compareItems.length}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-0.5">So sánh khách sạn</p>
+                        <p className="text-sm font-bold">{compareItems.length} địa điểm đã chọn</p>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-[10px] font-black uppercase text-blue-300 tracking-widest">Danh sách so sánh</p>
-                    <p className="text-xs font-bold italic">{compareItems.length}/4 khách sạn được chọn</p>
-                </div>
-            </div>
 
-            <div className="flex items-center gap-4 pr-2">
-                <button onClick={clearAll} className="text-[11px] font-black uppercase text-slate-300 hover:text-red-400 transition-colors">Xóa tất cả</button>
-                <button
-                    onClick={handleCompareNow}
-                    className="bg-yellow-400 text-blue-900 px-8 py-3 rounded-2xl font-black text-[11px] uppercase shadow-lg shadow-yellow-400/20 hover:bg-yellow-300 hover:-translate-y-0.5 transition-all active:scale-95"
-                >
-                    So sánh ngay
-                </button>
+                <div className="flex items-center gap-6 pr-2">
+                    <button onClick={clearAll} className="text-[11px] font-black uppercase text-slate-400 hover:text-white transition-colors">Xóa hết</button>
+                    <button
+                        onClick={handleCompareNow}
+                        className="bg-blue-600 text-white px-10 py-4 rounded-xl font-black text-[12px] uppercase shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        So sánh ngay <ChevronRight size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -115,9 +119,9 @@ export default function HotelSearchContainer() {
 
     return (
         <CompareProvider>
-        <div className="w-full bg-[#F3F7FA] min-h-screen font-sans pb-20">
+        <div className="w-full bg-slate-50 min-h-screen font-sans pb-40">
             {/* Banner Section */}
-            <section className="relative h-[420px] flex items-center justify-center px-4">
+            <section className="relative h-[380px] flex items-center justify-center px-4">
                 <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${homepage})` }}>
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]"></div>
                 </div>

@@ -14,7 +14,7 @@ export default function HotelSearchForm({ variant = "hero" }) {
         if (!keyword.trim()) return;
 
         // Đẩy từ khóa lên URL và chuyển sang trang danh sách kết quả
-        navigate(`/list-search-hotel?keyword=${encodeURIComponent(keyword.trim())}`);
+        navigate(`/search-hotel/list?keyword=${encodeURIComponent(keyword.trim())}`);
     };
 
     return (

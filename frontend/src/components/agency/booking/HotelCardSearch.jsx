@@ -19,11 +19,9 @@ const HotelCard = ({ hotel }) => {
         : "Chưa có";
 
     const handleViewDetail = (e) => {
-        // Nếu bạn dùng Link bọc ngoài thì dùng e.preventDefault()
-        navigate(`/hotels/${hotel.hotelId}`);
+        navigate(`/search-hotel/hotels/${hotel.hotelId}`);
     };
 
-    // FIX LỖI: Hàm xử lý so sánh có stopPropagation
     const handleToggleCompare = (e) => {
         e.stopPropagation(); // Ngăn sự kiện click lan ra thẻ cha (tránh vô tình chuyển trang)
         toggleCompareItem(hotel);
@@ -83,11 +81,11 @@ const HotelCard = ({ hotel }) => {
                         ))}
                     </div>
 
-                    <div className="flex gap-2">
-                        {/* Nút so sánh (UC-021) */}
+                    <div className="flex items-center gap-3">
+                        {/* Nút so sánh */}
                         <button
                             onClick={handleToggleCompare}
-                            className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase border transition-all flex items-center gap-1.5 shadow-sm ${
+                            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
                                 isSelected
                                     ? 'bg-blue-600 border-blue-600 text-white'
                                     : 'bg-white border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600'

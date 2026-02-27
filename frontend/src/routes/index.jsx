@@ -15,6 +15,7 @@ import BookingSuccessPage from "@/pages/Agency/BookingSuccess.jsx"
 import SearchHotelEngine from "@/pages/Agency/HotelSearchEngine.jsx"
 import ListSearchResult from "@/pages/Agency/ListSearchResult.jsx";
 import CouponManager from "@/pages/Hotel/CouponManager.jsx";
+import AgencyMain from "@/pages/Agency/AgencyDashboard.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -27,12 +28,22 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/manage-room-types" element={<RoomTypes />} />
-                <Route path="/hotels/:id" element={<HotelDetailPage />} />
-                <Route path="/booking-checkout" element={<BookingCheckoutPage />} />
-                <Route path="/booking-success" element={<BookingSuccessPage />} />
-                <Route path="search-hotel" element={<SearchHotelEngine />} />
-                <Route path="list-search-hotel" element={<ListSearchResult />} />
+                {/*<Route path="/hotels/:id" element={<HotelDetailPage />} />*/}
+                {/*<Route path="/booking-checkout" element={<BookingCheckoutPage />} />*/}
+                {/*<Route path="/booking-success" element={<BookingSuccessPage />} />*/}
+                {/*<Route path="search-hotel" element={<SearchHotelEngine />} />*/}
+                {/*<Route path="list-search-hotel" element={<ListSearchResult />} />*/}
+
+                <Route path="booking-success" element={<BookingSuccessPage />} />
+                <Route path="/" element={<AgencyMain />}>
+                    <Route path="search-hotel">
+                        <Route index element={<SearchHotelEngine />} />
+                        <Route path="list" element={<ListSearchResult />} />
+                        <Route path="hotels/:id" element={<HotelDetailPage />} />
+                    </Route>
+                    <Route path="booking-checkout" element={<BookingCheckoutPage />} />
+                    {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
+                </Route>
 
                 <Route path="/hotel" element={<HotelMain />}>
                     <Route path="room-types" element={<RoomTypes />} />

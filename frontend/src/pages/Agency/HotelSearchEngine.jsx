@@ -16,7 +16,7 @@ export default function HotelSearchEngine() {
                 >
                     {/* Lớp phủ màu đen mờ */}
                     <div className="absolute inset-0 bg-black/70"></div>
-                    {/* Lớp gradient nhẹ phía dưới để hòa hợp với phần content trắng */}
+                    {/* Lớp gradient nhẹ phía dưới */}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#F8FAFC]/20"></div>
                 </div>
 

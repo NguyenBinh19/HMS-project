@@ -22,7 +22,7 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="w-[260px] bg-white min-h-screen h-full flex flex-col border-r border-slate-200 flex-shrink-0">
+        <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
 
             {/* Header Sidebar */}
             <div className="h-16 bg-blue-600 flex items-center px-6 shadow-sm flex-shrink-0">

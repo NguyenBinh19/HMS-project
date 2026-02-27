@@ -23,7 +23,7 @@ const BookingSuccessPage = () => {
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="text-center">
                     <p className="mb-4 text-slate-600 font-medium">Không tìm thấy thông tin đơn hàng.</p>
-                    <button onClick={() => navigate("/")} className="text-blue-600 font-black underline uppercase text-sm">
+                    <button onClick={() => navigate("/homepage")} className="text-blue-600 font-black underline uppercase text-sm">
                         Quay lại trang chủ
                     </button>
                 </div>
@@ -149,7 +149,7 @@ const BookingSuccessPage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate("/homepage")}
                         className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all group shadow-sm"
                     >
                         <Home className="mb-2 group-hover:scale-110 transition-transform text-slate-400" size={24} />

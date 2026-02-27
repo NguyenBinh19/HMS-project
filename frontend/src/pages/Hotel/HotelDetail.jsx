@@ -12,9 +12,6 @@ import publicApi from "../../services/publicApi.config";
 import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 
-import Header from "../../components/common/Homepage/Header";
-import AgencySidebar from "../../components/common/Hotel/AgencySidebar";
-
 // --- 1. SUB-COMPONENT: TIMER MODAL ---
 const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
     const [timeLeft, setTimeLeft] = useState(0);
@@ -224,11 +221,9 @@ const gallery =
     if (!hotel) return <div className="flex justify-center items-center h-screen"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
 
     return (
-        <div className="bg-[#f8fafc] min-h-screen flex font-sans">
-            <AgencySidebar />
+        <div className="bg-slate-50 min-h-screen">
 
-            <div className="flex-1 ml-64 flex flex-col min-h-screen relative overflow-x-hidden">
-                <Header />
+            <div className="flex flex-col min-h-screen relative">
 
                 {bookingSession && (
                     <BookingTimerModal
@@ -239,7 +234,7 @@ const gallery =
                     />
                 )}
 
-                <main className="max-w-[1200px] mx-auto w-full px-6 py-8 pb-48">
+                <main className="max-w-[1200px] mx-auto w-full pb-24">
                     <section className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
                         {/* IMAGE AREA */}
                         <div className="relative h-[480px] bg-slate-200">
@@ -277,7 +272,7 @@ const gallery =
                         </div>
 
                         {/* INFO AREA */}
-                        <div className="p-8">
+                        <div className="p-10">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="flex text-yellow-400">
                                     {[1, 2, 3, 4, 5].map(i => (
@@ -390,7 +385,7 @@ const gallery =
                     </div>
                 </main>
 
-                <div className="fixed bottom-0 right-0 left-64 bg-white border-t border-slate-200 p-6 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
+                <div className="sticky bottom-0 bg-white border-t border-slate-200 p-6 z-40 shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
                     <div className="max-w-[1200px] mx-auto flex justify-between items-center">
                         <div className="flex items-center gap-6">
                             {selectedRooms.length > 0 ? (
