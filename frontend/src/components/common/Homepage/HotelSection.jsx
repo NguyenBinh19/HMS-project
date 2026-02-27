@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { getFeaturedHotels } from "@/services/hotel.service.js";
+import { useNavigate } from "react-router-dom";
 
 const HotelSection = () => {
     const [hotels, setHotels] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         getFeaturedHotels()
@@ -54,6 +56,7 @@ const HotelSection = () => {
                     {hotels.map((home) => (
                         <div
                             key={home.id}
+                            onClick={() => navigate(`/hotels/${home.id}`)}
                             className="bg-white rounded-xl shadow-md hover:shadow-lg transition cursor-pointer"
                         >
                             {/* Image */}

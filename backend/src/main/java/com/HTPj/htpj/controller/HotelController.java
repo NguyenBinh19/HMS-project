@@ -21,11 +21,6 @@ public class HotelController {
 
     HotelService hotelService;
 
-    /**
-     * =========================
-     * HOTEL LIST (VIEW)
-     * =========================
-     */
     @GetMapping
     public ApiResponse<List<HotelResponse>> getHotelsForView() {
         return ApiResponse.<List<HotelResponse>>builder()
@@ -33,11 +28,6 @@ public class HotelController {
                 .build();
     }
 
-    /**
-     * =========================
-     * HOTEL DETAIL (VIEW)
-     * =========================
-     */
     @GetMapping("/{hotelId}")
     public ApiResponse<HotelDetailResponse> getHotelDetailForView(
             @PathVariable Integer hotelId

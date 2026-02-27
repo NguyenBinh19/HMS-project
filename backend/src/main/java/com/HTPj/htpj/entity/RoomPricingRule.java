@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,16 +24,15 @@ public class RoomPricingRule {
     @Column(name = "room_type_id", nullable = false)
     private Integer roomTypeId;
 
-    @Column(name = "adjustment_type")
-    private String adjustmentType;   // percent | fixed
+    @Column(name = "rule_name")
+    private String ruleName;
 
-    @Column(name = "adjustment_value")
-    private BigDecimal adjustmentValue;
-
+    // WEEKDAY | DATE_RANGE | HOLIDAY
+    @Column(name = "rule_type", nullable = false)
+    private String ruleType;
 
     @Column(name = "day_of_week")
     private String dayOfWeek;
-    // monday, tuesday...
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -40,9 +40,38 @@ public class RoomPricingRule {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    // PERCENT | FIXED
+    @Column(name = "adjustment_type", nullable = false)
+    private String adjustmentType;
+
+    @Column(name = "adjustment_value", nullable = false)
+    private BigDecimal adjustmentValue;
+
     @Column(name = "priority")
     private Integer priority;
 
     @Column(name = "is_active")
     private Boolean isActive;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    /* ================= LIFECYCLE ================= */
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+
+        if (isActive == null) isActive = true;
+        if (priority == null) priority = 0;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
