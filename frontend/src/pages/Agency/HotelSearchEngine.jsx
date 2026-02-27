@@ -3,7 +3,7 @@ import HotelSearchForm from "@/components/agency/booking/SearchForm.jsx";
 import { History, Star, Gift, Crown, Building2 } from "lucide-react";
 import homepage from "@/assets/images/homepage.jpg";
 
-export default function HomePage() {
+export default function HotelSearchEngine() {
     return (
         <div className="w-full bg-[#F8FAFC] min-h-screen">
             {/* ================= HERO SECTION ================= */}

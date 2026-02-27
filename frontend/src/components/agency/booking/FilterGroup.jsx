@@ -1,34 +1,55 @@
-import React from "react";
-import { Star, DollarSign, Settings2, ShieldCheck, Coffee, Building2, Umbrella, Zap, Tag, CheckCircle2, Waves, Palmtree, Briefcase, UtensilsCrossed, Search } from "lucide-react";
+import React, { useState } from "react";
+import { Wifi, Star, Settings2, ShieldCheck, Umbrella, Zap, Tag, CheckCircle2, Waves, Palmtree, Briefcase, UtensilsCrossed, Search } from "lucide-react";
 
-export default function FilterSidebar() {
+export default function FilterSidebar({ onApplyFilter }) {
+    // State lưu trữ các lựa chọn lọc
+    const [selectedStars, setSelectedStars] = useState([]);
+    const [selectedAmenities, setSelectedAmenities] = useState([]);
+
+    // Xử lý chọn hạng sao
+    const handleStarToggle = (star) => {
+        setSelectedStars(prev =>
+            prev.includes(star) ? prev.filter(s => s !== star) : [...prev, star]
+        );
+    };
+
+    // Xử lý chọn tiện ích
+    const handleAmenityToggle = (value) => {
+        setSelectedAmenities(prev =>
+            prev.includes(value) ? prev.filter(a => a !== value) : [...prev, value]
+        );
+    };
+
+    // Gửi dữ liệu lên Component cha khi bấm nút
+    const handleApply = () => {
+        if (onApplyFilter) {
+            onApplyFilter({
+                stars: selectedStars,
+                amenities: selectedAmenities
+            });
+        }
+    };
+
     return (
         <aside className="w-[280px] bg-white rounded-[24px] border border-slate-100 p-5 sticky top-5 h-fit shadow-sm font-sans">
             <h3 className="font-black text-[#003580] text-[15px] mb-6 flex items-center gap-2 uppercase tracking-tight">
                 <Settings2 size={18} className="text-blue-600" /> Bộ lọc nâng cao
             </h3>
 
-            {/* Khoảng giá */}
-            <div className="mb-6 pb-6 border-b border-slate-100">
-                <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
-                    <DollarSign size={14} className="text-blue-600" /> Khoảng giá (VND)
-                </h4>
-                <div className="flex gap-2 items-center">
-                    <input type="text" defaultValue="500.000" className="w-full border border-slate-200 p-2 rounded-xl text-[13px] text-center font-bold text-slate-700 outline-none bg-slate-50" />
-                    <span className="text-slate-300">—</span>
-                    <input type="text" placeholder="Tối đa" className="w-full border border-slate-200 p-2 rounded-xl text-[13px] text-center font-bold outline-none" />
-                </div>
-            </div>
-
-            {/* Hạng sao */}
+            {/* LỌC THEO HẠNG SAO */}
             <div className="mb-6 pb-6 border-b border-slate-100">
                 <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
                     <Star size={14} className="text-blue-600" fill="currentColor" /> Hạng sao
                 </h4>
                 <div className="space-y-3">
-                    {[3, 4, 5].map(star => (
+                    {[1, 2, 3, 4, 5].map(star => (
                         <label key={star} className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                                checked={selectedStars.includes(star)}
+                                onChange={() => handleStarToggle(star)}
+                            />
                             <div className="flex items-center gap-1">
                                 <div className="flex text-yellow-400">
                                     {[...Array(star)].map((_, i) => <Star key={i} size={11} fill="currentColor" />)}
@@ -40,7 +61,7 @@ export default function FilterSidebar() {
                 </div>
             </div>
 
-            {/* Chính sách B2B */}
+            {/* CHÍNH SÁCH B2B (Giao diện tĩnh) */}
             <div className="mb-6 pb-6 border-b border-slate-100">
                 <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
                     <ShieldCheck size={14} className="text-blue-600" /> Chính sách B2B
@@ -48,33 +69,50 @@ export default function FilterSidebar() {
                 <div className="space-y-3">
                     <FilterItem label="Instant Confirmation" icon={<Zap size={14} className="text-yellow-500" />} />
                     <FilterItem label="Flash Sale" icon={<Tag size={14} className="text-red-500" />} />
-                    <FilterItem label="Free Cancellation" icon={<CheckCircle2 size={14} className="text-green-500" />} checked />
+                    <FilterItem label="Free Cancellation" icon={<CheckCircle2 size={14} className="text-green-500" />} defaultChecked />
                 </div>
             </div>
 
-            {/* Tiện ích */}
+            {/* LỌC THEO TIỆN ÍCH */}
             <div className="mb-6 pb-6 border-b border-slate-100">
                 <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
                     <Umbrella size={14} className="text-blue-600" /> Tiện ích
                 </h4>
                 <div className="space-y-3">
-                    <FilterItem label="Hồ bơi" icon={<Waves size={14} className="text-blue-400" />} />
-                    <FilterItem label="Bãi biển riêng" icon={<Palmtree size={14} className="text-orange-400" />} />
-                    <FilterItem label="Phòng họp" icon={<Briefcase size={14} className="text-slate-500" />} />
-                    <FilterItem label="Ăn sáng" icon={<UtensilsCrossed size={14} className="text-orange-500" />} />
+                    <FilterItem
+                        label="Wifi miễn phí"
+                        icon={<Wifi size={14} className="text-blue-400" />}
+                        isChecked={selectedAmenities.includes("Wifi miễn phí")}
+                        onChange={() => handleAmenityToggle("Wifi miễn phí")}
+                    />
+                    <FilterItem label="Hồ bơi" icon={<Waves size={14} className="text-blue-400" />} isChecked={selectedAmenities.includes("Swimming Pool")} onChange={() => handleAmenityToggle("Swimming Pool")} />
+                    <FilterItem label="Bãi biển riêng" icon={<Palmtree size={14} className="text-orange-400" />} isChecked={selectedAmenities.includes("Beach Front")} onChange={() => handleAmenityToggle("Beach Front")} />
+                    <FilterItem label="Spa & Thư giãn" icon={<Briefcase size={14} className="text-pink-400" />} isChecked={selectedAmenities.includes("Spa")} onChange={() => handleAmenityToggle("Spa")} />
+                    <FilterItem label="Nhà hàng" icon={<UtensilsCrossed size={14} className="text-orange-500" />} isChecked={selectedAmenities.includes("Restaurant")} onChange={() => handleAmenityToggle("Restaurant")} />
+                    <FilterItem label="Phòng Gym" icon={<Briefcase size={14} className="text-slate-500" />} isChecked={selectedAmenities.includes("Gym")} onChange={() => handleAmenityToggle("Gym")} />
                 </div>
             </div>
 
-            <button className="w-full bg-[#0061E5] text-white py-3 rounded-xl font-black text-[11px] shadow-lg shadow-blue-100 uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+            <button
+                onClick={handleApply}
+                className="w-full bg-[#0061E5] text-white py-3 rounded-xl font-black text-[11px] shadow-lg shadow-blue-100 uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+            >
                 <Search size={14} strokeWidth={3} /> Áp dụng bộ lọc
             </button>
         </aside>
     );
 }
 
-const FilterItem = ({ label, icon, checked = false }) => (
+// Component con để render checkbox
+const FilterItem = ({ label, icon, isChecked, defaultChecked, onChange }) => (
     <label className="flex items-center gap-3 cursor-pointer group">
-        <input type="checkbox" defaultChecked={checked} className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+        <input
+            type="checkbox"
+            checked={isChecked}
+            defaultChecked={defaultChecked}
+            onChange={onChange}
+            className="w-4 h-4 rounded border-slate-300 text-blue-600"
+        />
         <span className="text-[12px] font-bold text-slate-500 group-hover:text-blue-600 flex items-center gap-2">
             {icon} {label}
         </span>

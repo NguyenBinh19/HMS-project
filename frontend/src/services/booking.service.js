@@ -6,6 +6,8 @@ const checkAvailability = async (payload) => {
         const response = await api.post(`/booking/room_avai`, payload);
         return response.data;
     } catch (error) {
+        console.log("STATUS:", error.response?.status);
+        console.log("BACKEND DATA:", error.response?.data);
         console.error("Check Availability Error:", error);
         throw error;
     }
@@ -45,9 +47,21 @@ const createBooking = async (payload) => {
     }
 };
 
+// 5. Search Hotel
+const searchHotel = async (payload) => {
+    try {
+        const response = await api.get(`/hotels/search`, { params: payload });
+        return response.data;
+    } catch (error) {
+        console.error("Search Hotel Error:", error);
+        throw error;
+    }
+}
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
     extendHold,
     createBooking,
+    searchHotel,
 };
