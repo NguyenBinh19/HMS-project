@@ -1,10 +1,45 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { List, Map, Star, MapPin, ChevronLeft, ChevronRight, Search, Eye } from "lucide-react";
+import { List, Map, Star, MapPin, ChevronLeft, ChevronRight, Search, Eye, Layers } from "lucide-react";
 import HotelSearchForm from "@/components/agency/booking/SearchForm.jsx";
 import FilterSidebar from "@/components/agency/booking/FilterGroup.jsx";
 import homepage from "@/assets/images/homepage.jpg";
 import { bookingService } from "@/services/booking.service.js";
+import HotelCard from "@/components/agency/booking/HotelCardSearch.jsx";
+import { CompareProvider, useCompare } from '@/context/CompareContext.jsx';
+import CompareModal from "@/components/hotel/compareRoomPrices/CompareFloatingBar.jsx";
+
+const CompareBar = () => {
+    const { compareItems, handleCompareNow, clearAll } = useCompare();
+    if (compareItems.length === 0) return null;
+
+    return (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] bg-[#003580] text-white px-6 py-4 rounded-3xl shadow-[0_20px_50px_rgba(0,53,128,0.4)] flex items-center gap-8 border border-blue-400/30 backdrop-blur-md">
+            <div className="flex items-center gap-4 pl-2">
+                <div className="relative">
+                    <Layers size={22} className="text-blue-400" />
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#003580]">
+                        {compareItems.length}
+                    </span>
+                </div>
+                <div>
+                    <p className="text-[10px] font-black uppercase text-blue-300 tracking-widest">Danh sách so sánh</p>
+                    <p className="text-xs font-bold italic">{compareItems.length}/4 khách sạn được chọn</p>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4 pr-2">
+                <button onClick={clearAll} className="text-[11px] font-black uppercase text-slate-300 hover:text-red-400 transition-colors">Xóa tất cả</button>
+                <button
+                    onClick={handleCompareNow}
+                    className="bg-yellow-400 text-blue-900 px-8 py-3 rounded-2xl font-black text-[11px] uppercase shadow-lg shadow-yellow-400/20 hover:bg-yellow-300 hover:-translate-y-0.5 transition-all active:scale-95"
+                >
+                    So sánh ngay
+                </button>
+            </div>
+        </div>
+    );
+};
 
 export default function HotelSearchContainer() {
     const [searchParams] = useSearchParams();
@@ -52,10 +87,10 @@ export default function HotelSearchContainer() {
     // 2. Lọc Dữ Liệu (Chạy tự động mỗi khi `hotels` hoặc `filters` thay đổi)
     const filteredHotels = useMemo(() => {
         return hotels.filter(hotel => {
-            // Lọc Hạng Sao: Nếu không chọn sao nào -> pass. Nếu có chọn -> hotel.starRating phải nằm trong mảng đã chọn.
+            // Lọc Hạng Sao
             const matchStar = filters.stars.length === 0 || filters.stars.includes(hotel.starRating);
 
-            // Lọc Tiện ích: Phải chứa TẤT CẢ các tiện ích người dùng đã tích chọn (.every)
+            // Lọc Tiện ích
             const matchAmenities = filters.amenities.length === 0 || filters.amenities.every(a =>
                 hotel.amenities && hotel.amenities.includes(a)
             );
@@ -64,7 +99,7 @@ export default function HotelSearchContainer() {
         });
     }, [hotels, filters]);
 
-    // 3. Phân trang trên mảng ĐÃ LỌC (`filteredHotels`)
+    // 3. Phân trang trên mảng ĐÃ LỌC
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentHotels = filteredHotels.slice(indexOfFirstItem, indexOfLastItem);
@@ -79,6 +114,7 @@ export default function HotelSearchContainer() {
     };
 
     return (
+        <CompareProvider>
         <div className="w-full bg-[#F3F7FA] min-h-screen font-sans pb-20">
             {/* Banner Section */}
             <section className="relative h-[420px] flex items-center justify-center px-4">
@@ -196,71 +232,11 @@ export default function HotelSearchContainer() {
                     </div>
                 </div>
             </div>
+            <CompareBar />
+            <CompareModal />
         </div>
+        </CompareProvider>
     );
 }
 
-// Component thẻ khách sạn
-const HotelCard = ({ hotel }) => {
-    const navigate = useNavigate();
-    const coverImg = hotel.images && hotel.images.length > 0
-        ? hotel.images[0]
-        : "https://images.unsplash.com/photo-1551882547-ff43c63ebeaf?q=80&w=800";
 
-    const starCount = hotel.starRating || 0;
-    const formattedRating = (hotel.avgRating != null && hotel.avgRating > 0)
-        ? hotel.avgRating.toFixed(1)
-        : "Chưa có";
-    const handleViewDetail = () => {
-        // Điều hướng sang trang chi tiết với ID của khách sạn
-        navigate(`/hotels/${hotel.hotelId}`);
-    };
-
-    return (
-        <div className="bg-white border border-slate-100 rounded-[28px] p-4 flex gap-6 hover:shadow-xl transition-all group overflow-hidden relative">
-            <div className="w-[260px] h-[180px] rounded-[20px] overflow-hidden shrink-0 relative">
-                <img src={coverImg} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={hotel.hotelName} />
-                <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase">Flash Sale -15%</span>
-                    <span className="bg-[#00A32E] text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase tracking-tighter shadow-sm">⚡ Instant Booking</span>
-                </div>
-            </div>
-
-            <div className="flex-1 flex flex-col justify-between py-1">
-                <div className="flex justify-between items-start">
-                    <div className="max-w-[65%]">
-                        <h3 className="text-[#003580] font-black text-[19px] leading-tight uppercase tracking-tight group-hover:text-blue-600 transition-colors">
-                            {hotel.hotelName}
-                        </h3>
-                        <div className="flex items-center gap-1.5 mt-2">
-                            <div className="flex text-yellow-400">
-                                {[...Array(starCount)].map((_, i) => <Star key={i} size={13} fill="currentColor" />)}
-                            </div>
-                            <span className="text-[#003580] text-[11px] font-black uppercase ml-1 italic">
-                                {formattedRating !== "Chưa có" ? `${formattedRating}/5` : "Chưa có đánh giá"} ({hotel.totalReviews || 0} Reviews)
-                            </span>
-                        </div>
-                        <p className="text-slate-400 text-[11px] font-bold mt-4 flex items-center gap-1 italic truncate">
-                            <MapPin size={12} className="text-blue-500 shrink-0" /> {hotel.address}, {hotel.city}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-end mt-4">
-                    <div className="flex gap-2 flex-wrap max-w-[70%]">
-                        {hotel.amenities && hotel.amenities.slice(0, 4).map(t => (
-                            <span key={t} className="px-3 py-1 bg-slate-50 text-slate-500 text-[9px] font-black rounded-lg uppercase border border-slate-100">
-                                {t}
-                            </span>
-                        ))}
-                    </div>
-                    <button
-                        onClick={handleViewDetail}
-                        className="bg-blue-600 text-white px-7 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 shrink-0">
-                        <Eye size={14} strokeWidth={3} /> Xem phòng
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
