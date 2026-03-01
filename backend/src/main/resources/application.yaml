@@ -46,3 +46,8 @@ jwt:
 springdoc:
   api-docs:
     path: /api-docs
+
+temporal:
+  connection:
+    target: localhost:7233
+  namespace: default

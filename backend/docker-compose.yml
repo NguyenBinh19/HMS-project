@@ -45,6 +45,35 @@ services:
     networks:
       - 36-network
 
+  temporal-postgres:
+      image: postgres:13
+      container_name: temporal-postgres
+      restart: always
+      environment:
+          POSTGRES_USER: temporal
+          POSTGRES_PASSWORD: temporal
+      volumes:
+          - temporal_pg_data:/var/lib/postgresql/data
+      networks:
+          - 36-network
+
+  temporal:
+      image: temporalio/auto-setup:1.22
+      container_name: hms-temporal
+      restart: always
+      depends_on:
+          - temporal-postgres
+      environment:
+          - DB=postgresql
+          - DB_PORT=5432
+          - POSTGRES_USER=temporal
+          - POSTGRES_PWD=temporal
+          - POSTGRES_SEEDS=temporal-postgres
+      ports:
+          - "7233:7233"
+      networks:
+          - 36-network
+
   vault:
     image: hashicorp/vault:1.21
     container_name: vault
@@ -59,6 +88,10 @@ services:
     networks:
       - 36-network
 
+
 networks:
   36-network:
     driver: bridge
+
+volumes:
+  temporal_pg_data:
