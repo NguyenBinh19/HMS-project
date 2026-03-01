@@ -14,6 +14,10 @@ import com.HTPj.htpj.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -183,6 +187,14 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
 
+        // LẤY USER TỪ JWT
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getSubject();
+
         RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
                 .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
 
@@ -198,7 +210,8 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = Booking.builder()
                 .bookingCode("BOOKING-" + UUID.randomUUID().toString().substring(0, 8))
                 .hotelId(hold.getHotelId())
-                .userId(request.getUserId())       // tam thoi lay request
+                .userId(userId)
+//                .userId(request.getUserId())       // tam thoi lay request
                 .agencyId(request.getAgencyId())
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)

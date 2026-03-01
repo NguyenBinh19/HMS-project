@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // bật CORS
                 .authorizeHttpRequests(request ->
                         request
-                                .requestMatchers("/booking/**").permitAll()
+//                                .requestMatchers("/booking/**").permitAll()
                                 .requestMatchers("/room-types/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()

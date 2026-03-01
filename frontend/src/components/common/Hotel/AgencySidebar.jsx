@@ -53,7 +53,7 @@ const Sidebar = () => {
             label: "QUẢN LÝ BOOKING",
             path: "/",
             subItems: [
-                { icon: <List size={18} />, label: "Booking Checkout", path: "/booking-checkout" },
+                { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/booking-checkout" },
                 { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/agency/bookings/all" },
                 { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
             ]

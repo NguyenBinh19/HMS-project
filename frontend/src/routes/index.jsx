@@ -28,12 +28,8 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
-                {/*<Route path="/hotels/:id" element={<HotelDetailPage />} />*/}
-                {/*<Route path="/booking-checkout" element={<BookingCheckoutPage />} />*/}
-                {/*<Route path="/booking-success" element={<BookingSuccessPage />} />*/}
-                {/*<Route path="search-hotel" element={<SearchHotelEngine />} />*/}
-                {/*<Route path="list-search-hotel" element={<ListSearchResult />} />*/}
 
+                {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="/" element={<AgencyMain />}>
                     <Route path="search-hotel">
@@ -45,6 +41,7 @@ const AppRoutes = () => {
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
+                {/*Luồng Hotel Admin*/}
                 <Route path="/hotel" element={<HotelMain />}>
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
