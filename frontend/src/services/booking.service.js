@@ -1,4 +1,4 @@
-import api from "./publicApi.config.js";
+import api from "./axios.config.js";
 
 // 1. Kiểm tra phòng trống (Check Availability)
 const checkAvailability = async (payload) => {

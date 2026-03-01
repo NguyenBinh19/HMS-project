@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelResponse;
 import com.HTPj.htpj.service.HotelService;
+import com.HTPj.htpj.service.impl.HotelServiceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,12 +20,12 @@ import java.util.List;
 @Slf4j
 public class HotelController {
 
-    HotelService hotelService;
+    HotelService hotelServiceImpl;
 
     @GetMapping
     public ApiResponse<List<HotelResponse>> getHotelsForView() {
         return ApiResponse.<List<HotelResponse>>builder()
-                .result(hotelService.getHotelsForView())
+                .result(hotelServiceImpl.getHotelsForView())
                 .build();
     }
 
@@ -33,7 +34,7 @@ public class HotelController {
             @PathVariable Integer hotelId
     ) {
         return ApiResponse.<HotelDetailResponse>builder()
-                .result(hotelService.getHotelDetailForView(hotelId))
+                .result(hotelServiceImpl.getHotelDetailForView(hotelId))
                 .build();
     }
 
@@ -42,7 +43,7 @@ public class HotelController {
             @RequestParam String keyword
     ) {
         return ApiResponse.<List<HotelDetailResponse>>builder()
-                .result(hotelService.searchHotels(keyword))
+                .result(hotelServiceImpl.searchHotels(keyword))
                 .build();
     }
 }

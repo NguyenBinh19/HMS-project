@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import com.HTPj.htpj.dto.request.UserCreationRequest;
 import com.HTPj.htpj.dto.response.UserResponse;
-import com.HTPj.htpj.service.UserService;
+import com.HTPj.htpj.service.impl.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class UserControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     private UserCreationRequest request;
     private UserResponse userResponse;
@@ -68,7 +68,7 @@ class UserControllerTest {
         objectMapper.registerModule(new JavaTimeModule());
         String content = objectMapper.writeValueAsString(request);
 
-        Mockito.when(userService.createUser(ArgumentMatchers.any())).thenReturn(userResponse);
+        Mockito.when(userServiceImpl.createUser(ArgumentMatchers.any())).thenReturn(userResponse);
 
         // WHEN, THEN
         mockMvc.perform(MockMvcRequestBuilders.post("/users")

@@ -1,4 +1,4 @@
-import publicApi from "./publicApi.config.js";
+import publicApi from "./axios.config.js";
 
 export const getFeaturedHotels = async () => {
     const res = await publicApi.get("/hotels");

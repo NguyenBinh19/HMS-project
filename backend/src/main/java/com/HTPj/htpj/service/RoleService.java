@@ -1,43 +1,15 @@
 package com.HTPj.htpj.service;
 
-import java.util.HashSet;
-import java.util.List;
-
 import com.HTPj.htpj.dto.request.RoleRequest;
 import com.HTPj.htpj.dto.response.RoleResponse;
-import com.HTPj.htpj.mapper.RoleMapper;
-import com.HTPj.htpj.repository.PermissionRepository;
-import com.HTPj.htpj.repository.RoleRepository;
-import org.springframework.stereotype.Service;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
 
-@Service
-@RequiredArgsConstructor
-@Slf4j
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class RoleService {
-    RoleRepository roleRepository;
-    PermissionRepository permissionRepository;
-    RoleMapper roleMapper;
+import java.util.List;
 
-    public RoleResponse create(RoleRequest request) {
-        var role = roleMapper.toRole(request);
+public interface RoleService {
 
-        var permissions = permissionRepository.findAllById(request.getPermissions());
-        role.setPermissions(new HashSet<>(permissions));
+    RoleResponse create(RoleRequest request);
 
-        role = roleRepository.save(role);
-        return roleMapper.toRoleResponse(role);
-    }
+    List<RoleResponse> getAll();
 
-    public List<RoleResponse> getAll() {
-        return roleRepository.findAll().stream().map(roleMapper::toRoleResponse).toList();
-    }
-
-    public void delete(String role) {
-        roleRepository.deleteById(role);
-    }
+    void delete(String role);
 }

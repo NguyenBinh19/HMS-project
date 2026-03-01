@@ -3,6 +3,7 @@ package com.HTPj.htpj.controller;
 import com.HTPj.htpj.dto.request.pricingrule.RoomPricingRuleRequest;
 import com.HTPj.htpj.dto.response.pricingrule.RoomPricingRuleResponse;
 import com.HTPj.htpj.service.RoomPricingRuleService;
+import com.HTPj.htpj.service.impl.RoomPricingRuleServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +17,6 @@ import java.util.List;
 public class RoomPricingRuleController {
 
     private final RoomPricingRuleService service;
-
-    /* ================= CRUD ================= */
 
     @PostMapping
     public RoomPricingRuleResponse create(

@@ -6,6 +6,7 @@ import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.RoleRequest;
 import com.HTPj.htpj.dto.response.RoleResponse;
 import com.HTPj.htpj.service.RoleService;
+import com.HTPj.htpj.service.impl.RoleServiceImpl;
 import org.springframework.web.bind.annotation.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -18,25 +19,25 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class RoleController {
-    RoleService roleService;
+    RoleService roleServiceImpl;
 
     @PostMapping
     ApiResponse<RoleResponse> create(@RequestBody RoleRequest request) {
         return ApiResponse.<RoleResponse>builder()
-                .result(roleService.create(request))
+                .result(roleServiceImpl.create(request))
                 .build();
     }
 
     @GetMapping
     ApiResponse<List<RoleResponse>> getAll() {
         return ApiResponse.<List<RoleResponse>>builder()
-                .result(roleService.getAll())
+                .result(roleServiceImpl.getAll())
                 .build();
     }
 
     @DeleteMapping("/{role}")
     ApiResponse<Void> delete(@PathVariable String role) {
-        roleService.delete(role);
+        roleServiceImpl.delete(role);
         return ApiResponse.<Void>builder().build();
     }
 }
