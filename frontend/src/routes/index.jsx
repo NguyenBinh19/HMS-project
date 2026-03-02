@@ -16,6 +16,8 @@ import SearchHotelEngine from "@/pages/Agency/HotelSearchEngine.jsx"
 import ListSearchResult from "@/pages/Agency/ListSearchResult.jsx";
 import CouponManager from "@/pages/Hotel/CouponManager.jsx";
 import AgencyMain from "@/pages/Agency/AgencyDashboard.jsx";
+import MyBookingList from "@/pages/Agency/BookingLists.jsx"
+import BookingDetailPost from "@/pages/Agency/BookingDetailPost.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -38,6 +40,10 @@ const AppRoutes = () => {
                         <Route path="hotels/:id" element={<HotelDetailPage />} />
                     </Route>
                     <Route path="booking-checkout" element={<BookingCheckoutPage />} />
+                    <Route path="booking-list">
+                        <Route index element={<MyBookingList />} />
+                        <Route path="detail/:id" element={<BookingDetailPost />} />
+                    </Route>
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
