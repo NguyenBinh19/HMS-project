@@ -7,16 +7,16 @@ import api from "./axios.config.js";
 // 1. Đăng nhập thường
 const login = async (email, password) => {
   try {
-    const response = await api.post(`/auth/login`, {
+    const response = await api.post(`/auth/token`, {
       email,
       password,
     });
 
-    if (response.data && response.data.data.accessToken) { 
-      const { accessToken, user } = response.data.data; 
-      localStorage.setItem("accessToken", accessToken); 
-      localStorage.setItem("user", JSON.stringify(user));
-      return response.data.data; 
+    if (response.data && response.data.result.token) { 
+      const { token, user } = response.data.result; 
+      localStorage.setItem("accessToken", token); 
+      // localStorage.setItem("user", JSON.stringify(user));
+      return response.data; 
     }
     
     // Trường hợp API trả về 200 nhưng không có data (Logic dự phòng)
@@ -29,14 +29,12 @@ const login = async (email, password) => {
   }
 };
 
-// 2. Đăng ký
-const register = async (fullName, email, password, confirmPassword) => {
+const register = async (username, email, password, confirmPassword) => {
   try {
-    const response = await api.post(`/auth/register`, {
-      fullName,
+    const response = await api.post(`/users/register`, {
+      username,
       email,
-      password,
-      confirmPassword,
+      password
     });
     return response.data;
   } catch (error) {

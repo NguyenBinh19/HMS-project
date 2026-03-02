@@ -13,6 +13,7 @@ import com.HTPj.htpj.dto.response.UserResponse;
 import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.service.impl.UserServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,14 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class UserServiceTest {
+public class UserServiceImplTest {
     @Autowired
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -73,7 +73,7 @@ public class UserServiceTest {
         when(userRepository.save(any())).thenReturn(user);
 
         // WHEN
-        var response = userService.createUser(request);
+        var response = userServiceImpl.createUser(request);
         // THEN
 
         Assertions.assertThat(response.getId()).isEqualTo("cf0600f538b3");
@@ -86,7 +86,7 @@ public class UserServiceTest {
         when(userRepository.existsByUsername(anyString())).thenReturn(true);
 
         // WHEN
-        var exception = assertThrows(AppException.class, () -> userService.createUser(request));
+        var exception = assertThrows(AppException.class, () -> userServiceImpl.createUser(request));
 
         // THEN
         Assertions.assertThat(exception.getErrorCode().getCode()).isEqualTo(1002);
@@ -97,7 +97,7 @@ public class UserServiceTest {
     void getMyInfo_valid_success() {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
 
-        var response = userService.getMyInfo();
+        var response = userServiceImpl.getMyInfo();
 
         Assertions.assertThat(response.getUsername()).isEqualTo("john");
         Assertions.assertThat(response.getId()).isEqualTo("cf0600f538b3");
@@ -109,7 +109,7 @@ public class UserServiceTest {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.ofNullable(null));
 
         // WHEN
-        var exception = assertThrows(AppException.class, () -> userService.getMyInfo());
+        var exception = assertThrows(AppException.class, () -> userServiceImpl.getMyInfo());
 
         Assertions.assertThat(exception.getErrorCode().getCode()).isEqualTo(1005);
     }

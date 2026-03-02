@@ -46,10 +46,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-crypto -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -66,6 +73,11 @@
 			<artifactId>lombok</artifactId>
 			<version>${projectlombok-lombok.version}</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.25.14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -104,7 +116,15 @@
             <artifactId>mssql-jdbc</artifactId>
             <scope>runtime</scope>
         </dependency>
-    </dependencies>
+		<dependency>
+			<groupId>io.temporal</groupId>
+			<artifactId>temporal-sdk</artifactId>
+			<version>1.31.0</version>
+		</dependency>
+
+
+
+	</dependencies>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

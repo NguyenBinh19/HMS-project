@@ -22,11 +22,9 @@ public class Users {
 
     @Column(name = "username", unique = true, columnDefinition = "VARCHAR(255)")
     String username;
-
+    String email;
     String password;
-    String firstName;
     LocalDate dob;
-    String lastName;
 
     @ManyToMany
     Set<Role> roles;

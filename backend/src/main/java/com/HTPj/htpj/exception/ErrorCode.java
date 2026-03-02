@@ -9,13 +9,22 @@ import lombok.Getter;
 public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1001, "Uncategorized error", HttpStatus.BAD_REQUEST),
-    USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
+    USER_EXISTED(1002, "Người dùng với email này đã tồn tại", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
     INVALID_PASSWORD(1004, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1005, "User not existed", HttpStatus.NOT_FOUND),
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
+
+    HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
+    ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
+    ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
+
+    HOLD_NOT_FOUND(3001, "Hold not found", HttpStatus.NOT_FOUND),
+    HOLD_EXPIRED(3002, "Hold has expired", HttpStatus.BAD_REQUEST),
+
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

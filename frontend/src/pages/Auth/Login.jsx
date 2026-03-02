@@ -58,6 +58,7 @@ const Login = () => {
         try {
             const res = await authService.login(formData.email, formData.password);
 
+            console.log("Login Response:", res);
             if (res) {
                 if (updateUser) {
                     await updateUser(res.user);

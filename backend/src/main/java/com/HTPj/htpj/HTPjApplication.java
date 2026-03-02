@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class HTPjApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(HTPjApplication.class, args);
+		SpringApplication.run(HTPjApplication.class, args );
 	}
 
 }
