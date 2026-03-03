@@ -43,4 +43,24 @@ public class S3ServiceImpl implements S3Service {
                         .build());
         return objectAsBytes.asByteArray();
     }
+
+    @Override
+    public void uploadFile(MultipartFile file, String key) throws IOException {
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(props.getBucketName())
+                        .key(key)
+                        .contentType(file.getContentType())
+                        .build(),
+                RequestBody.fromBytes(file.getBytes())
+        );
+    }
+
+    @Override
+    public String getFileUrl(String key) {
+        return "https://" + props.getBucketName() +
+                ".s3." + props.getRegion() +
+                ".amazonaws.com/" + key;
+    }
 }

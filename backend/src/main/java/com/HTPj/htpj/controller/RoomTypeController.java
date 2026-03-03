@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,10 +25,19 @@ public class RoomTypeController {
 
     RoomTypeService roomTypeService;
 
-    @PostMapping
-    ApiResponse<RoomTypeDetailResponse> create(@RequestBody CreateRoomTypeRequest request) {
+//    @PostMapping
+//    ApiResponse<RoomTypeDetailResponse> create(@RequestBody CreateRoomTypeRequest request) {
+//        return ApiResponse.<RoomTypeDetailResponse>builder()
+//                .result(roomTypeService.createRoomType(request))
+//                .build();
+//    }
+    @PostMapping(consumes = "multipart/form-data")
+    ApiResponse<RoomTypeDetailResponse> create(
+            @RequestPart("data") CreateRoomTypeRequest request,
+            @RequestPart(value = "files", required = false) MultipartFile[] files
+    ) {
         return ApiResponse.<RoomTypeDetailResponse>builder()
-                .result(roomTypeService.createRoomType(request))
+                .result(roomTypeService.createRoomType(request, files))
                 .build();
     }
 
@@ -67,13 +77,23 @@ public class RoomTypeController {
                 .build();
     }
 
-    @PutMapping("/{roomTypeId}")
+//    @PutMapping("/{roomTypeId}")
+//    ApiResponse<RoomTypeDetailResponse> updateRoomType(
+//            @PathVariable Integer roomTypeId,
+//            @RequestBody UpdateRoomTypeRequest request
+//    ) {
+//        return ApiResponse.<RoomTypeDetailResponse>builder()
+//                .result(roomTypeService.updateRoomType(roomTypeId, request))
+//                .build();
+//    }
+    @PutMapping(value = "/{roomTypeId}", consumes = "multipart/form-data")
     ApiResponse<RoomTypeDetailResponse> updateRoomType(
             @PathVariable Integer roomTypeId,
-            @RequestBody UpdateRoomTypeRequest request
+            @RequestPart("data") UpdateRoomTypeRequest request,
+            @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
         return ApiResponse.<RoomTypeDetailResponse>builder()
-                .result(roomTypeService.updateRoomType(roomTypeId, request))
+                .result(roomTypeService.updateRoomType(roomTypeId, request, files))
                 .build();
     }
 

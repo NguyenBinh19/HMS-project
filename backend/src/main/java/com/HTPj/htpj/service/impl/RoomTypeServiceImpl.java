@@ -3,23 +3,29 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.roomtype.CreateRoomTypeRequest;
 import com.HTPj.htpj.dto.request.roomtype.UpdateRoomTypeRequest;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeDetailResponse;
+import com.HTPj.htpj.dto.response.roomtype.RoomTypeImageResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeListDetailResponse;
 import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.RoomType;
+import com.HTPj.htpj.entity.RoomTypeImage;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomTypeMapper;
 import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.repository.RoomTypeImageRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.RoomTypeService;
+import com.HTPj.htpj.service.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,10 +35,12 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     private final RoomTypeRepository roomTypeRepository;
     private final HotelRepository hotelRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RoomTypeImageRepository roomTypeImageRepository;
+    private final S3Service s3Service;
 
 
     @Override
-    public RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request) {
+    public RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request, MultipartFile[] files) {
         Hotel hotel = hotelRepository.findById(request.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
 
@@ -67,11 +75,43 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .roomStatus("inactive")
                 .build();
 
-        RoomType room = roomTypeRepository.save(roomType);
-        List<String> amenitiesList = parseAmenities(room.getAmenities());
+        RoomType savedRoomType = roomTypeRepository.save(roomType);
+        if (files != null && files.length > 0) {
 
-        return RoomTypeMapper.toDetailResponse(room, amenitiesList);
+            for (int i = 0; i < files.length; i++) {
+
+                MultipartFile file = files[i];
+
+                if (file.isEmpty()) continue;
+
+                try {
+                    String key = "room-types/"
+                            + savedRoomType.getRoomTypeId()
+                            + "/"
+                            + UUID.randomUUID();
+
+                    // Upload S3
+                    s3Service.uploadFile(file, key);
+
+                    RoomTypeImage image = RoomTypeImage.builder()
+                            .roomType(savedRoomType)
+                            .s3Key(key)
+                            .isMain(i == 0) // ảnh đầu tiên làm main
+                            .createdAt(LocalDateTime.now())
+                            .build();
+
+                    roomTypeImageRepository.save(image);
+
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to upload room type image", e);
+                }
+            }
+        }
+        List<String> amenitiesList = parseAmenities(savedRoomType.getAmenities());
+
+        return RoomTypeMapper.toDetailResponse(savedRoomType, amenitiesList);
     }
+
 
     @Override
     public List<RoomTypeResponse> getRoomTypesByHotelId(Integer hotelId) {
@@ -88,8 +128,24 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
 
         List<String> amenitiesList = parseAmenities(roomType.getAmenities());
+        List<RoomTypeImage> images =
+                roomTypeImageRepository.findByRoomType_RoomTypeId(roomTypeId);
 
-        return RoomTypeMapper.toDetailResponse(roomType, amenitiesList);
+        List<RoomTypeImageResponse> imageResponses = images.stream()
+                .map(img -> RoomTypeImageResponse.builder()
+                        .imageId(img.getImageId())
+                        .imageUrl(s3Service.getFileUrl(img.getS3Key()))
+                        .isMain(img.getIsMain())
+                        .build())
+                .toList();
+
+        RoomTypeDetailResponse response =
+                RoomTypeMapper.toDetailResponse(roomType, amenitiesList);
+
+        response.setImages(imageResponses);
+
+        return response;
+
     }
 
     @Override
@@ -120,7 +176,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     }
 
     @Override
-    public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request
+    public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request, MultipartFile[] files
     ) {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
