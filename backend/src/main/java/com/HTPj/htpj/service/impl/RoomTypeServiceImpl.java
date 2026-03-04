@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -96,7 +97,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                     RoomTypeImage image = RoomTypeImage.builder()
                             .roomType(savedRoomType)
                             .s3Key(key)
-                            .isMain(i == 0) // ảnh đầu tiên làm main
                             .createdAt(LocalDateTime.now())
                             .build();
 
@@ -135,7 +135,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .map(img -> RoomTypeImageResponse.builder()
                         .imageId(img.getImageId())
                         .imageUrl(s3Service.getFileUrl(img.getS3Key()))
-                        .isMain(img.getIsMain())
                         .build())
                 .toList();
 
@@ -176,7 +175,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     }
 
     @Override
-    public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request, MultipartFile[] files
+    public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request, MultipartFile[] newImages
     ) {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
@@ -199,10 +198,67 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
         roomType.setUpdatedAt(LocalDateTime.now());
 
-        RoomType updated = roomTypeRepository.save(roomType);
+        //img
+        //delete
+        if (request.getDeletedImageIds() != null &&
+                !request.getDeletedImageIds().isEmpty()) {
 
-        return RoomTypeMapper.toDetailResponse(updated, parseAmenities(updated.getAmenities())
-        );
+            List<RoomTypeImage> imagesToDelete =
+                    roomTypeImageRepository.findAllById(request.getDeletedImageIds());
+
+            for (RoomTypeImage image : imagesToDelete) {
+                s3Service.deleteFile(image.getS3Key());
+                roomTypeImageRepository.delete(image);
+            }
+        }
+
+        //add img
+        if (newImages != null && newImages.length > 0) {
+            for (int i = 0; i < newImages.length; i++) {
+
+                MultipartFile file = newImages[i];
+
+                if (file == null || file.isEmpty()) continue;
+
+                try {
+
+                    String key = "room-types/"
+                            + roomType.getRoomTypeId()
+                            + "/"
+                            + UUID.randomUUID();
+
+                    s3Service.uploadFile(file, key);
+
+                    RoomTypeImage image = RoomTypeImage.builder()
+                            .roomType(roomType)
+                            .s3Key(key)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+
+                    roomTypeImageRepository.save(image);
+
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to upload room type image", e);
+                }
+            }
+        }
+        List<RoomTypeImageResponse> imageResponses =
+                roomTypeImageRepository.findByRoomType_RoomTypeId(roomTypeId)
+                        .stream()
+                        .map(img -> RoomTypeImageResponse.builder()
+                                .imageId(img.getImageId())
+                                .imageUrl(s3Service.getFileUrl(img.getS3Key()))
+                                .build())
+                        .toList();
+        RoomTypeDetailResponse response =
+                RoomTypeMapper.toDetailResponse(
+                        roomType,
+                        parseAmenities(roomType.getAmenities())
+                );
+
+        response.setImages(imageResponses);
+
+        return response;
     }
 
     @Override

@@ -21,4 +21,5 @@ public class UpdateRoomTypeRequest {
     private String bedType;
     private Integer totalRooms;
     private List<String> amenities;
+    private List<Integer> deletedImageIds;
 }

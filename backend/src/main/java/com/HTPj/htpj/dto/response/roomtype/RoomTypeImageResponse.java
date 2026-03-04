@@ -10,5 +10,4 @@ import lombok.*;
 public class RoomTypeImageResponse {
     private Integer imageId;
     private String imageUrl;
-    private Boolean isMain;
 }

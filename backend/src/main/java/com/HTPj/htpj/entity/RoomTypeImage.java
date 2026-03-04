@@ -25,9 +25,6 @@ public class RoomTypeImage {
     @Column(name = "s3_key", nullable = false)
     private String s3Key;
 
-    @Column(name = "is_main")
-    private Boolean isMain;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

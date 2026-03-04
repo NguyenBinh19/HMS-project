@@ -9,4 +9,5 @@ public interface S3Service {
     public byte[] downloadFile(String key);
     public void uploadFile(MultipartFile file, String key) throws IOException;
     public String getFileUrl(String key);
+    public void deleteFile(String key);
 }

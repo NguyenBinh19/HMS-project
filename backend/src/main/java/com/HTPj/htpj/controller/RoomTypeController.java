@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -86,14 +87,14 @@ public class RoomTypeController {
 //                .result(roomTypeService.updateRoomType(roomTypeId, request))
 //                .build();
 //    }
-    @PutMapping(value = "/{roomTypeId}", consumes = "multipart/form-data")
-    ApiResponse<RoomTypeDetailResponse> updateRoomType(
+    @PutMapping(value = "/{roomTypeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<RoomTypeDetailResponse> updateRoomType(
             @PathVariable Integer roomTypeId,
             @RequestPart("data") UpdateRoomTypeRequest request,
-            @RequestPart(value = "files", required = false) MultipartFile[] files
+            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages
     ) {
         return ApiResponse.<RoomTypeDetailResponse>builder()
-                .result(roomTypeService.updateRoomType(roomTypeId, request, files))
+                .result(roomTypeService.updateRoomType(roomTypeId, request, newImages))
                 .build();
     }
 
