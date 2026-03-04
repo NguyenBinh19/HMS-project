@@ -18,6 +18,9 @@ import CouponManager from "@/pages/Hotel/CouponManager.jsx";
 import AgencyMain from "@/pages/Agency/AgencyDashboard.jsx";
 import MyBookingList from "@/pages/Agency/BookingLists.jsx"
 import BookingDetailPost from "@/pages/Agency/BookingDetailPost.jsx";
+import KYCIntroduction from "@/pages/Auth/KYCIntroduction.jsx"
+import AdminLayout from "@/pages/Admin/AdminDashboard.jsx";
+import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -30,6 +33,8 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+
+                <Route path="/kyc-intro" element={<KYCIntroduction />} />
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
@@ -55,6 +60,11 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
+                </Route>
+
+                {/*Luồng Admin System*/}
+                <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="kyc-queue" element={<KYCQueuePage />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
