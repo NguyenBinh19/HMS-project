@@ -8,7 +8,7 @@ import {
     ChevronRight, Image as ImageIcon, Info, AlertCircle
 } from "lucide-react";
 import GalleryModal from "../../components/common/Hotel/GalleryModal.jsx";
-import publicApi from "../../services/publicApi.config";
+import publicApi from "../../services/axios.config.js";
 import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 
@@ -107,13 +107,20 @@ export default function HotelDetailPage() {
             if (!id) return;
             setLoadingRooms(true);
             try {
+                // Sử dụng một mảng các Promise và xử lý lỗi cục bộ cho từng cái nếu cần
                 const [hotelRes, staticRoomsData, availabilityData] = await Promise.all([
                     publicApi.get(`/hotels/${id}`),
-                    roomTypeService.getRoomTypesDetailByHotelId(id),
+                    roomTypeService.getRoomTypesDetailByHotelId(id).catch(err => {
+                        console.warn("Lỗi lấy chi tiết hạng phòng:", err);
+                        return { result: [] }; // Trả về mảng rỗng để map không lỗi
+                    }),
                     bookingService.checkAvailability({
                         hotelId: Number(id),
                         checkIn: dates.checkIn,
                         checkOut: dates.checkOut
+                    }).catch(err => {
+                        console.warn("API Availability yêu cầu đăng nhập hoặc lỗi:", err);
+                        return { result: [] }; // Trả về mảng rỗng nếu chưa login
                     })
                 ]);
 

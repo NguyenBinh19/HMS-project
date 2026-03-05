@@ -23,6 +23,8 @@ public enum ErrorCode {
 
     HOLD_NOT_FOUND(3001, "Hold not found", HttpStatus.NOT_FOUND),
     HOLD_EXPIRED(3002, "Hold has expired", HttpStatus.BAD_REQUEST),
+    AGENCY_NOT_FOUND(4001, "Agency not found", HttpStatus.NOT_FOUND),
+    KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
 
     ADDON_SERVICE_NOT_FOUND(4001, "Addon service not found", HttpStatus.NOT_FOUND),
     BOOKING_NOT_FOUND(4002, "Booking not found", HttpStatus.NOT_FOUND),

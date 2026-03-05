@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -42,5 +43,33 @@ public class S3ServiceImpl implements S3Service {
                         .key(key)
                         .build());
         return objectAsBytes.asByteArray();
+    }
+
+    @Override
+    public void uploadFile(MultipartFile file, String key) throws IOException {
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(props.getBucketName())
+                        .key(key)
+                        .contentType(file.getContentType())
+                        .build(),
+                RequestBody.fromBytes(file.getBytes())
+        );
+    }
+
+    @Override
+    public String getFileUrl(String key) {
+        return "https://" + props.getBucketName() +
+                ".s3." + props.getRegion() +
+                ".amazonaws.com/" + key;
+    }
+
+    @Override
+    public void deleteFile(String key) {
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(props.getBucketName())
+                .key(key)
+                .build());
     }
 }

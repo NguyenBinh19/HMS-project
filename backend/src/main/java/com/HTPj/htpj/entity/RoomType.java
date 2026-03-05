@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -63,5 +64,10 @@ public class RoomType {
 
     @Column(name = "room_status", length = 20)
     private String roomStatus;
+
+    @OneToMany(mappedBy = "roomType",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<RoomTypeImage> images;
 
 }

@@ -28,6 +28,7 @@ public class RoomTypeDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<String> amenities;
+    private List<RoomTypeImageResponse> images;
 
 
 }
