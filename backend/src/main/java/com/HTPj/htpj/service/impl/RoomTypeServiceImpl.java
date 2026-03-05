@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .amenities(amenities)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .roomStatus("inactive")
+                .roomStatus("active")
                 .build();
 
         RoomType savedRoomType = roomTypeRepository.save(roomType);
@@ -175,6 +176,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     }
 
     @Override
+//    @Transactional
     public RoomTypeDetailResponse updateRoomType(Integer roomTypeId, UpdateRoomTypeRequest request, MultipartFile[] newImages
     ) {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
@@ -197,6 +199,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         }
 
         roomType.setUpdatedAt(LocalDateTime.now());
+        roomType = roomTypeRepository.save(roomType);
 
         //img
         //delete
