@@ -1,8 +1,11 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.kyc.ApproveVerificationRequest;
 import com.HTPj.htpj.dto.request.kyc.KycUploadRequest;
+import com.HTPj.htpj.dto.response.kyc.KycQueueResponse;
 import com.HTPj.htpj.dto.response.kyc.KycUploadResponse;
+import com.HTPj.htpj.dto.response.kyc.KycVerificationDetailResponse;
 import com.HTPj.htpj.service.KycService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/kyc")
@@ -29,6 +34,41 @@ public class KycController {
     ) {
         return ApiResponse.<KycUploadResponse>builder()
                 .result(kycService.uploadKyc(userId, request, files))
+                .build();
+    }
+    @GetMapping
+    public ApiResponse<List<KycQueueResponse>> getAllPartnerVerifications() {
+        return ApiResponse.<List<KycQueueResponse>>builder()
+                .result(kycService.getAllPartnerVerifications())
+                .build();
+    }
+
+    @GetMapping("/filter")
+    public ApiResponse<List<KycQueueResponse>> getPartnerVerificationsByStatus(
+            @RequestParam("status") String status
+    ) {
+        return ApiResponse.<List<KycQueueResponse>>builder()
+                .result(kycService.getPartnerVerificationsByStatus(status))
+                .build();
+    }
+
+    @GetMapping("/{verificationId}")
+    public ApiResponse<KycVerificationDetailResponse> getVerificationDetail(
+            @PathVariable Integer verificationId
+    ) {
+        return ApiResponse.<KycVerificationDetailResponse>builder()
+                .result(kycService.getVerificationDetail(verificationId))
+                .build();
+    }
+
+    @PostMapping("/approve")
+    public ApiResponse<String> approveVerification(
+            @RequestBody ApproveVerificationRequest request
+    ) {
+        kycService.approveVerification(request);
+
+        return ApiResponse.<String>builder()
+                .result("Verification processed successfully")
                 .build();
     }
 }

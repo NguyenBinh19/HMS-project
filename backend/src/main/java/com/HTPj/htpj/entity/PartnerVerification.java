@@ -39,14 +39,8 @@ public class PartnerVerification {
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
-    @Column(name = "locked_at")
-    private LocalDateTime lockedAt;
-
     @Column(name = "version", nullable = false)
     private Integer version;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -55,7 +49,7 @@ public class PartnerVerification {
     private String partnerType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agency_id")
+    @JoinColumn(name = "agency_id", referencedColumnName = "agency_id")
     private Agency agency;
 
     @ManyToOne(fetch = FetchType.LAZY)

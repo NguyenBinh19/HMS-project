@@ -46,6 +46,6 @@ public class Agency {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "agency", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "agency")
     private List<PartnerVerification> verifications;
 }
