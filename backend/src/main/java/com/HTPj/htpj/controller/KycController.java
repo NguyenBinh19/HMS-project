@@ -21,15 +21,14 @@ public class KycController {
 
     private final KycService kycService;
 
-    @PostMapping(value = "/upload/{agencyId}",consumes = "multipart/form-data")
+    @PostMapping(value = "/upload/{userId}",consumes = "multipart/form-data")
     public ApiResponse<KycUploadResponse> uploadKyc(
-            @PathVariable Long agencyId,
+            @PathVariable String userId,
             @RequestPart("data") KycUploadRequest request,
-            @RequestPart(value = "files", required = false)
-            MultipartFile[] files
+            @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
         return ApiResponse.<KycUploadResponse>builder()
-                .result(kycService.uploadKyc(agencyId, request, files))
+                .result(kycService.uploadKyc(userId, request, files))
                 .build();
     }
 }

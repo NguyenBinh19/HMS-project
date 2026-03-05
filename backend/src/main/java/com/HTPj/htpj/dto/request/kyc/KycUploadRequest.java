@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class KycUploadRequest {
+    private String partnerType;
     private String legalName;
     private String taxCode;
     private String businessAddress;

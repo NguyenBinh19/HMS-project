@@ -40,6 +40,6 @@ public class KycDocument {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verification_id", nullable = false)
-    private AgencyVerification verification;
+    private PartnerVerification verification;
 
 }

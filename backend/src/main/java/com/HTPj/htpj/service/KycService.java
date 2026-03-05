@@ -5,5 +5,5 @@ import com.HTPj.htpj.dto.response.kyc.KycUploadResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface KycService {
-    KycUploadResponse uploadKyc(Long agencyId, KycUploadRequest request, MultipartFile[] files);
+    KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files);
 }

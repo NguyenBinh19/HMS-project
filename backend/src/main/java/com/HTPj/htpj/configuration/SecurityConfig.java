@@ -51,26 +51,39 @@ public class SecurityConfig {
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
 
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+//        httpSecurity
+//                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // bật CORS
+//                .authorizeHttpRequests(request ->
+//                        request
+////                                .requestMatchers("/booking/**").permitAll()
+//                                .requestMatchers("/room-types/**").permitAll()
+//                                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+//                                .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()
+//                                .requestMatchers(PUBLIC_GET_ENPOINTS).permitAll()
+//                                .anyRequest().authenticated()
+//                )
+//                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
+//                                .decoder(customJwtDecoder)
+//                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+//                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
+//                .csrf(AbstractHttpConfigurer::disable);
+//
+//        return httpSecurity.build();
+//    }
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // bật CORS
-                .authorizeHttpRequests(request ->
-                        request
-//                                .requestMatchers("/booking/**").permitAll()
-                                .requestMatchers("/room-types/**").permitAll()
-                                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                                .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()
-                                .requestMatchers(PUBLIC_GET_ENPOINTS).permitAll()
-                                .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
-                                .decoder(customJwtDecoder)
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
-                .csrf(AbstractHttpConfigurer::disable);
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        return httpSecurity.build();
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth ->
+                        auth.anyRequest().permitAll()
+                )
+                .oauth2ResourceServer(AbstractHttpConfigurer::disable); // TẮT JWT
+
+        return http.build();
     }
 
     @Bean

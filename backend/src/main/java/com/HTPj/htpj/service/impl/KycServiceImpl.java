@@ -3,14 +3,14 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.kyc.KycUploadRequest;
 import com.HTPj.htpj.dto.response.kyc.KycUploadResponse;
 import com.HTPj.htpj.entity.Agency;
-import com.HTPj.htpj.entity.AgencyLegalInformation;
-import com.HTPj.htpj.entity.AgencyVerification;
+import com.HTPj.htpj.entity.PartnerLegalInformation;
+import com.HTPj.htpj.entity.PartnerVerification;
 import com.HTPj.htpj.entity.KycDocument;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
-import com.HTPj.htpj.repository.AgencyLegalInformationRepository;
+import com.HTPj.htpj.repository.PartnerLegalInformationRepository;
 import com.HTPj.htpj.repository.AgencyRepository;
-import com.HTPj.htpj.repository.AgencyVerificationRepository;
+import com.HTPj.htpj.repository.PartnerVerificationRepository;
 import com.HTPj.htpj.repository.KycDocumentRepository;
 import com.HTPj.htpj.service.KycService;
 import com.HTPj.htpj.service.S3Service;
@@ -30,26 +30,24 @@ import java.util.Optional;
 public class KycServiceImpl implements KycService {
 
     private final AgencyRepository agencyRepository;
-    private final AgencyVerificationRepository verificationRepository;
-    private final AgencyLegalInformationRepository legalInformationRepository;
+    private final PartnerVerificationRepository verificationRepository;
+    private final PartnerLegalInformationRepository legalInformationRepository;
     private final KycDocumentRepository kycDocumentRepository;
     private final S3Service s3Service;
 
     @Override
-    public KycUploadResponse uploadKyc(Long agencyId, KycUploadRequest request, MultipartFile[] files) {
-        Agency agency = agencyRepository.findById(agencyId)
-                .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
-
-
-        Optional<AgencyVerification> latest =
+    public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
+        Optional<PartnerVerification> latest =
                 verificationRepository
-                        .findTopByAgency_AgencyIdOrderByVersionDesc(agencyId);
+                        .findTopBySubmittedByOrderByVersionDesc(userId);
+
         int newVersion = latest.map(v -> v.getVersion() + 1).orElse(1);
 
         LocalDateTime now = LocalDateTime.now();
 
-        AgencyVerification verification = AgencyVerification.builder()
-                .agency(agency)
+        PartnerVerification verification = PartnerVerification.builder()
+                .submittedBy(userId)
+                .partnerType(request.getPartnerType())
                 .status("Pending")
                 .version(newVersion)
                 .submittedAt(now)
@@ -57,21 +55,23 @@ public class KycServiceImpl implements KycService {
                 .updatedAt(now)
                 .build();
 
+
         verificationRepository.save(verification);
 
-        AgencyLegalInformation legalInfo = AgencyLegalInformation.builder()
-                .verification(verification)
-                .legalName(request.getLegalName())
-                .taxCode(request.getTaxCode())
-                .businessAddress(request.getBusinessAddress())
-                .representativeName(request.getRepresentativeName())
-                .representativeCICNumber(request.getRepresentativeCICNumber())
-                .businessLicenseNumber(request.getBusinessLicenseNumber())
-                .representativeCICDate(request.getRepresentativeCICDate())
-                .representativeCICPlace(request.getRepresentativeCICPlace())
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
+        PartnerLegalInformation legalInfo = PartnerLegalInformation.builder()
+                        .verification(verification)
+                        .legalName(request.getLegalName())
+                        .taxCode(request.getTaxCode())
+                        .businessAddress(request.getBusinessAddress())
+                        .representativeName(request.getRepresentativeName())
+                        .representativeCICNumber(request.getRepresentativeCICNumber())
+                        .businessLicenseNumber(request.getBusinessLicenseNumber())
+                        .representativeCICDate(request.getRepresentativeCICDate())
+                        .representativeCICPlace(request.getRepresentativeCICPlace())
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build();
+
 
         legalInformationRepository.save(legalInfo);
 
@@ -83,10 +83,10 @@ public class KycServiceImpl implements KycService {
 
             if (file.isEmpty()) continue;
 
-            String documentType = documentTypes.get(i);  // lấy theo index
+            String documentType = documentTypes.get(i);
 
             String key = "kyc/"
-                    + agencyId + "/v"
+                    + userId + "/v"
                     + newVersion + "/"
                     + System.currentTimeMillis()
                     + "_" + file.getOriginalFilename();
