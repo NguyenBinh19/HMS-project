@@ -17,6 +17,8 @@ import {
     CreditCard
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
+import { addonServiceApi } from "@/services/addonService.service.js";
+import ExtraServiceSection from "@/components/agency/booking/ExtraServiceSection.jsx";
 
 /* ================= TIMER BAR ================= */
 const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCount, maxExtensions }) => {
@@ -81,6 +83,9 @@ export default function BookingCheckoutPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("");
 
+    // UC-026 - Dịch vụ thêm
+    const [selectedAddons, setSelectedAddons] = useState([]);
+
     // số lần gia hạn (Tối đa 3 lần)
     const [extendCount, setExtendCount] = useState(0);
     const MAX_EXTENSIONS = 3;
@@ -130,6 +135,9 @@ export default function BookingCheckoutPage() {
     const finalTotal = data.totalPrice || 0;
     const basePrice = finalTotal / 0.8;
     const discount = basePrice - finalTotal;
+
+    // Tổng tiền dịch vụ thêm (UC-026)
+    const addonsTotal = selectedAddons.reduce((sum, s) => sum + (s.quantity || 1) * 0, 0); // sẽ tính sau khi có giá từ server
 
     const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
 
@@ -181,6 +189,17 @@ export default function BookingCheckoutPage() {
             };
             const response = await bookingService.createBooking(payload);
             if (response?.result) {
+                // UC-026: Lưu dịch vụ thêm nếu có
+                if (selectedAddons.length > 0) {
+                    try {
+                        await addonServiceApi.addServicesToBooking({
+                            bookingId: response.result.bookingId,
+                            services: selectedAddons,
+                        });
+                    } catch (addonErr) {
+                        console.warn("Lưu dịch vụ thêm thất bại:", addonErr);
+                    }
+                }
                 // Gửi đầy đủ thông tin sang trang Success
                 navigate("/booking-success", {
                     state: {
@@ -278,6 +297,12 @@ export default function BookingCheckoutPage() {
                             </div>
                         ))}
                     </div>
+
+                    {/* UC-026 - Dịch vụ thêm */}
+                    <ExtraServiceSection
+                        hotelId={data.hotelId}
+                        onChange={setSelectedAddons}
+                    />
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">

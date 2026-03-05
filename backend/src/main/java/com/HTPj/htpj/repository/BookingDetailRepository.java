@@ -9,9 +9,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface BookingDetailRepository extends JpaRepository<BookingDetail, Long> {
+    // JOIN FETCH bd.roomType để tránh N+1 khi truy cập roomType sau này
     @Query("""
         SELECT bd
         FROM BookingDetail bd
+        JOIN FETCH bd.roomType
         JOIN bd.booking b
         WHERE b.hotelId = :hotelId
           AND b.bookingStatus IN :statuses

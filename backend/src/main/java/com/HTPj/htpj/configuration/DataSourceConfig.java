@@ -19,7 +19,7 @@ public class DataSourceConfig {
     @Bean
     public DataSource dataSource() {
         String url = String.format(
-            "jdbc:sqlserver://;serverName=%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
+            "jdbc:sqlserver://;serverName=localhost;databaseName=hms;encrypt=true;trustServerCertificate=true;",
             props.getIp(), props.getName()
         );
 

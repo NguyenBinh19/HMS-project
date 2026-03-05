@@ -18,6 +18,7 @@ import CouponManager from "@/pages/Hotel/CouponManager.jsx";
 import AgencyMain from "@/pages/Agency/AgencyDashboard.jsx";
 import MyBookingList from "@/pages/Agency/BookingLists.jsx"
 import BookingDetailPost from "@/pages/Agency/BookingDetailPost.jsx";
+import AddonServiceManager from "@/pages/Hotel/AddonServices.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -55,6 +56,7 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
+                    <Route path="addon-services" element={<AddonServiceManager />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

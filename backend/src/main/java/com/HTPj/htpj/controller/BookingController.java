@@ -5,6 +5,8 @@ import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
 import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
+import com.HTPj.htpj.dto.response.booking.BookingDetailResponse;
+import com.HTPj.htpj.dto.response.booking.BookingHistoryResponse;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.dto.response.roomHold.RoomHoldResponse;
@@ -14,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,6 +66,27 @@ public class BookingController {
     ) {
         return ApiResponse.<CreateBookingResponse>builder()
                 .result(bookingService.createBooking(request))
+                .build();
+    }
+
+    // UC-029: Lịch sử đặt phòng (phân trang)
+    @GetMapping("/history")
+    ApiResponse<Page<BookingHistoryResponse>> getBookingHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ApiResponse.<Page<BookingHistoryResponse>>builder()
+                .result(bookingService.getBookingHistory(page, size))
+                .build();
+    }
+
+    // UC-030: Chi tiết booking theo booking code
+    @GetMapping("/detail/{bookingCode}")
+    ApiResponse<BookingDetailResponse> getBookingDetail(
+            @PathVariable String bookingCode
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.getBookingDetail(bookingCode))
                 .build();
     }
 

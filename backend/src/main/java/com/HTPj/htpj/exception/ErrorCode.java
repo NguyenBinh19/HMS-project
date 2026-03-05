@@ -24,6 +24,8 @@ public enum ErrorCode {
     HOLD_NOT_FOUND(3001, "Hold not found", HttpStatus.NOT_FOUND),
     HOLD_EXPIRED(3002, "Hold has expired", HttpStatus.BAD_REQUEST),
 
+    ADDON_SERVICE_NOT_FOUND(4001, "Addon service not found", HttpStatus.NOT_FOUND),
+    BOOKING_NOT_FOUND(4002, "Booking not found", HttpStatus.NOT_FOUND),
 
     ;
 
