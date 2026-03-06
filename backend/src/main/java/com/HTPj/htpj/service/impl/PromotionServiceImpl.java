@@ -73,4 +73,24 @@ public class PromotionServiceImpl implements PromotionService {
 
         return promotionMapper.toResponse(savedPromotion);
     }
+
+    @Override
+    public void deletePromotion(Integer id) {
+
+        Promotion promotion = promotionRepository
+                .findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_NOT_FOUND));
+
+        Integer usedCount = promotion.getUsedCount() == null ? 0 : promotion.getUsedCount();
+
+        if (usedCount == 0) {
+            promotionRepository.delete(promotion);
+            return;
+        }
+
+        promotion.setIsDeleted(true);
+        promotion.setStatus("INACTIVE");
+
+        promotionRepository.save(promotion);
+    }
 }

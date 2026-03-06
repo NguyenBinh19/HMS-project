@@ -38,4 +38,14 @@ public class PromotionController {
                 .result(promotionService.updatePromotion(id, request))
                 .build();
     }
+
+    @DeleteMapping("/{id}")
+    ApiResponse<String> deletePromotion(
+            @PathVariable Integer id
+    ) {
+        promotionService.deletePromotion(id);
+        return ApiResponse.<String>builder()
+                .result("Promotion deleted successfully")
+                .build();
+    }
 }

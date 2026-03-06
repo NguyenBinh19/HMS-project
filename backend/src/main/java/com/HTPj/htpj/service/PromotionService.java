@@ -7,5 +7,6 @@ import com.HTPj.htpj.dto.response.promotions.PromotionResponse;
 public interface PromotionService {
     PromotionResponse createPromotion(CreatePromotionRequest request);
     PromotionResponse updatePromotion(Integer id, UpdatePromotionRequest request);
+    void deletePromotion(Integer id);
 
 }
