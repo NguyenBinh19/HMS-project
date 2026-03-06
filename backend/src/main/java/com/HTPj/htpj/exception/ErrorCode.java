@@ -21,8 +21,11 @@ public enum ErrorCode {
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
     ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
 
-    HOLD_NOT_FOUND(3001, "Hold not found", HttpStatus.NOT_FOUND),
-    HOLD_EXPIRED(3002, "Hold has expired", HttpStatus.BAD_REQUEST),
+    PROMOTION_NOT_FOUND(2101, "Promotion not found", HttpStatus.NOT_FOUND),
+    PROMOTION_CODE_EXISTED(2102, "Promotion code already existed", HttpStatus.BAD_REQUEST),
+
+    HOLD_NOT_FOUND(2301, "Hold not found", HttpStatus.NOT_FOUND),
+    HOLD_EXPIRED(2302, "Hold has expired", HttpStatus.BAD_REQUEST),
     AGENCY_NOT_FOUND(4001, "Agency not found", HttpStatus.NOT_FOUND),
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),

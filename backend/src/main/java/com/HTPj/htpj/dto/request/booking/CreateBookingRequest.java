@@ -23,7 +23,7 @@ public class CreateBookingRequest {
 
     private Integer totalGuests;
 
-    private BigDecimal discountAmount;
+    private BigDecimal discountTotal;
 
     private String paymentMethod;
 }
