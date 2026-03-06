@@ -3,6 +3,7 @@ package com.HTPj.htpj.controller;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.promotions.CreatePromotionRequest;
 import com.HTPj.htpj.dto.request.promotions.UpdatePromotionRequest;
+import com.HTPj.htpj.dto.response.promotions.PromotionListResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionResponse;
 import com.HTPj.htpj.service.PromotionService;
 import lombok.AccessLevel;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/promotions")
@@ -46,6 +49,24 @@ public class PromotionController {
         promotionService.deletePromotion(id);
         return ApiResponse.<String>builder()
                 .result("Promotion deleted successfully")
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    ApiResponse<PromotionResponse> getPromotionDetail(
+            @PathVariable Integer id
+    ) {
+        return ApiResponse.<PromotionResponse>builder()
+                .result(promotionService.getPromotionDetail(id))
+                .build();
+    }
+
+    @GetMapping("/hotel/{hotelId}")
+    ApiResponse<List<PromotionListResponse>> getPromotionsByHotel(
+            @PathVariable Integer hotelId
+    ) {
+        return ApiResponse.<List<PromotionListResponse>>builder()
+                .result(promotionService.getPromotionsByHotel(hotelId))
                 .build();
     }
 }

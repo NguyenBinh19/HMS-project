@@ -2,6 +2,7 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.promotions.CreatePromotionRequest;
 import com.HTPj.htpj.dto.request.promotions.UpdatePromotionRequest;
+import com.HTPj.htpj.dto.response.promotions.PromotionListResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionResponse;
 import com.HTPj.htpj.entity.Promotion;
 import com.HTPj.htpj.exception.AppException;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +38,7 @@ public class PromotionServiceImpl implements PromotionService {
 
         Promotion savedPromotion = promotionRepository.save(promotion);
 
-        return promotionMapper.toResponse(savedPromotion);
+        return promotionMapper.toPromotionResponse(savedPromotion);
     }
 
     @Override
@@ -71,7 +73,7 @@ public class PromotionServiceImpl implements PromotionService {
 
         Promotion savedPromotion = promotionRepository.save(promotion);
 
-        return promotionMapper.toResponse(savedPromotion);
+        return promotionMapper.toPromotionResponse(savedPromotion);
     }
 
     @Override
@@ -92,5 +94,26 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setStatus("INACTIVE");
 
         promotionRepository.save(promotion);
+    }
+
+    @Override
+    public PromotionResponse getPromotionDetail(Integer id) {
+
+        Promotion promotion = promotionRepository
+                .findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_NOT_FOUND));
+
+        return promotionMapper.toPromotionResponse(promotion);
+    }
+
+    @Override
+    public List<PromotionListResponse> getPromotionsByHotel(Integer hotelId) {
+
+        List<Promotion> promotions =
+                promotionRepository.findByHotelIdAndIsDeletedFalse(hotelId);
+
+        return promotions.stream()
+                .map(promotionMapper::toPromotionListResponse)
+                .toList();
     }
 }
