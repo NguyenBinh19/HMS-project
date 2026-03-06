@@ -7,7 +7,7 @@ import {kycService} from "@/services/kyc.service.js";
 
 const KYCPage = () => {
     const [currentStep, setCurrentStep] = useState(1);
-    const [userId, setUserId] = useState("b00b85a6-6865-4f6a-a14f-fc7d6ff4d972"); // Giả định nhập tay hoặc lấy từ context
+    const [userId, setUserId] = useState("b00b85a6-6865-4f6a-a14f-fc7d6ff4d972"); // fix tam
 
     const handleStart = () => setCurrentStep(2);
 

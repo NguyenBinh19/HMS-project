@@ -13,10 +13,7 @@ const KYCQueuePage = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Đổi từ getVerificationsByStatus thành getPartnerVerificationsByStatus
             const res = await kycService.getPartnerVerificationsByStatus(activeTab);
-
-            // Kiểm tra cấu trúc trả về của BE (thường là res.result hoặc res.data)
             setData(res.result || res || []);
         } catch (error) {
             console.error("Lỗi lấy danh sách KYC:", error);
@@ -32,7 +29,6 @@ const KYCQueuePage = () => {
     const handleOpenReview = async (item) => {
         try {
             const res = await kycService.getVerificationDetail(item.id);
-            // Kiểm tra nếu có bọc trong .result thì lấy .result, không thì lấy res
             const detailData = res.result || res;
             setSelectedRequest(detailData);
             setIsModalOpen(true);
@@ -66,6 +62,12 @@ const KYCQueuePage = () => {
                         active={activeTab === KYC_STATUS.VERIFIED}
                         onClick={() => setActiveTab(KYC_STATUS.VERIFIED)}
                         color="text-emerald-600"
+                    />
+                    <TabItem
+                        label="Đã từ chối"
+                        active={activeTab === KYC_STATUS.REJECT}
+                        onClick={() => setActiveTab(KYC_STATUS.REJECT)}
+                        color="text-red-600"
                     />
                 </div>
             </div>

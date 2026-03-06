@@ -19,12 +19,11 @@ const uploadKyc = async (userId, data, files) => {
     try {
         const formData = new FormData();
 
-        // CHỈNH SỬA QUAN TRỌNG: Gắn data dưới dạng Blob JSON
         formData.append("data", new Blob([JSON.stringify(data)], {
             type: 'application/json'
         }));
 
-        // Gắn danh sách file (đảm bảo key là "files" như Backend yêu cầu)
+        // Gắn danh sách file
         files.forEach((file) => {
             formData.append("files", file);
         });
@@ -32,7 +31,6 @@ const uploadKyc = async (userId, data, files) => {
         const response = await api.post(`/kyc/upload/${userId}`, formData);
         return response.data;
     } catch (error) {
-        // Log chi tiết lỗi từ server để debug nhanh hơn
         console.error("Backend Error Detail:", error.response?.data);
         throw error;
     }
@@ -76,7 +74,6 @@ const getVerificationDetail = async (verificationId) => {
 // 5. Duyệt/Từ chối hồ sơ (Dành cho Admin)
 const approveVerification = async (payload) => {
     try {
-        // Gửi thẳng payload qua POST request
         const response = await api.post(`/kyc/approve`, payload);
         return response.data;
     } catch (error) {
