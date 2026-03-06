@@ -24,7 +24,7 @@ public class Promotion {
     @Column(name = "hotel_id", nullable = false)
     private Integer hotelId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String code;
 
     @Column(nullable = false)

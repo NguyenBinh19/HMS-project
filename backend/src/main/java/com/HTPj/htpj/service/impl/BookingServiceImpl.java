@@ -278,12 +278,12 @@ public class BookingServiceImpl implements BookingService {
         booking.setTotalRooms(totalRooms);
         booking.setTotalGuests(request.getTotalGuests());
 
-        BigDecimal discount = request.getDiscountAmount() == null
+        BigDecimal discount = request.getDiscountTotal() == null
                 ? BigDecimal.ZERO
-                : request.getDiscountAmount();
+                : request.getDiscountTotal();
 
         booking.setTotalAmount(bookingTotal);
-        booking.setDiscountAmount(discount);
+        booking.setDiscountTotal(discount);
         booking.setFinalAmount(bookingTotal.subtract(discount));
 
         Booking saved = bookingRepository.save(booking);

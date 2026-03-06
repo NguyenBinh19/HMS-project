@@ -1,22 +1,18 @@
 package com.HTPj.htpj.dto.request.promotions;
 
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreatePromotionRequest {
-    private Integer hotelId;
-    private String code;
+public class UpdatePromotionRequest {
     private String name;
-    private String typePromotion;
-    private String typeDiscount;
+    private String code;
     private BigDecimal discountVal;
     private BigDecimal maxDiscount;
     private BigDecimal minOrderVal;
@@ -25,5 +21,4 @@ public class CreatePromotionRequest {
     private Integer minStay;
     private Integer maxUsage;
     private String status;
-    private String createdBy;
 }

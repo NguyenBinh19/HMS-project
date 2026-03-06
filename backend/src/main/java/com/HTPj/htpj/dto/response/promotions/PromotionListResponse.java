@@ -1,5 +1,6 @@
 package com.HTPj.htpj.dto.response.promotions;
 
+
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -12,24 +13,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PromotionResponse {
-
+public class PromotionListResponse {
     private Integer id;
-    private Integer hotelId;
     private String code;
     private String name;
     private String typePromotion;
     private String typeDiscount;
     private BigDecimal discountVal;
-    private BigDecimal maxDiscount;
-    private BigDecimal minOrderVal;
     private LocalDate startDate;
     private LocalDate endDate;
-    private Integer minStay;
-    private Integer maxUsage;
     private Integer usedCount;
+    private Integer maxUsage;
     private String status;
-    private Boolean isDeleted;
-    private LocalDateTime createdAt;
-    private String createdBy;
 }

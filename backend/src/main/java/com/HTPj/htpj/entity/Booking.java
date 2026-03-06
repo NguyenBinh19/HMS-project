@@ -51,8 +51,8 @@ public class Booking {
     @Column(name = "total_amount", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "discount_amount", precision = 12, scale = 2)
-    private BigDecimal discountAmount;
+    @Column(name = "discount_total", precision = 12, scale = 2)
+    private BigDecimal discountTotal;
 
     @Column(name = "final_amount", precision = 12, scale = 2)
     private BigDecimal finalAmount;
