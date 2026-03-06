@@ -18,5 +18,7 @@ public interface KycService {
 
     KycVerificationDetailResponse getVerificationDetail(Integer verificationId);
 
+    List<KycQueueResponse> getPartnerVerificationsByUserId(String userId);
+
     void approveVerification(ApproveVerificationRequest request);
 }

@@ -14,4 +14,5 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
     Optional<Promotion> findByIdAndIsDeletedFalse(Integer id);
     boolean existsByCodeAndIsDeletedFalse(String code);
     List<Promotion> findByHotelIdAndIsDeletedFalse(Integer hotelId);
+    Optional<Promotion> findByCodeAndIsDeletedFalse(String code);
 }

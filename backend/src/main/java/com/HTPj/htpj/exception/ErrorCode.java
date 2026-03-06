@@ -23,6 +23,15 @@ public enum ErrorCode {
 
     PROMOTION_NOT_FOUND(2101, "Promotion not found", HttpStatus.NOT_FOUND),
     PROMOTION_CODE_EXISTED(2102, "Promotion code already existed", HttpStatus.BAD_REQUEST),
+    PROMOTION_CODE_INVALID(2103, "Promotion code is invalid", HttpStatus.BAD_REQUEST),
+    PROMOTION_INACTIVE(2104, "Promotion is inactive", HttpStatus.BAD_REQUEST),
+    PROMOTION_USAGE_EXCEEDED(2105, "Promotion usage exceeded", HttpStatus.BAD_REQUEST),
+    PROMOTION_NOT_APPLICABLE_HOTEL(2106, "Promotion not applicable for this hotel", HttpStatus.BAD_REQUEST),
+    PROMOTION_MIN_ORDER_NOT_MET(2107, "Minimum order value not reached", HttpStatus.BAD_REQUEST),
+    PROMOTION_EXPIRED(2108, "Promotion expired", HttpStatus.BAD_REQUEST),
+    PROMOTION_STAY_DATE_INVALID(2109, "Stay date not valid for promotion", HttpStatus.BAD_REQUEST),
+    PROMOTION_MIN_STAY_NOT_MET(2110, "Minimum stay not satisfied", HttpStatus.BAD_REQUEST),
+    PROMOTION_AGENCY_USAGE_EXCEEDED(2111, "Agency usage limit exceeded", HttpStatus.BAD_REQUEST),
 
     HOLD_NOT_FOUND(2301, "Hold not found", HttpStatus.NOT_FOUND),
     HOLD_EXPIRED(2302, "Hold has expired", HttpStatus.BAD_REQUEST),

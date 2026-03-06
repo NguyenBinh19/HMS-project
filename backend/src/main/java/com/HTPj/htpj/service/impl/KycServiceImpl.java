@@ -163,6 +163,14 @@ public class KycServiceImpl implements KycService {
     }
 
     @Override
+    public List<KycQueueResponse> getPartnerVerificationsByUserId(String userId) {
+        return verificationRepository.findByUserIdWithLegalInformation(userId)
+                .stream()
+                .map(kycMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void approveVerification(ApproveVerificationRequest request) {
 
         PartnerVerification verification = verificationRepository

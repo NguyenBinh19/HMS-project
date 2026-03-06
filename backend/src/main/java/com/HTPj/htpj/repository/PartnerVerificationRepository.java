@@ -24,6 +24,11 @@ public interface PartnerVerificationRepository
            "WHERE v.status = :status")
     List<PartnerVerification> findByStatusWithLegalInformation(@Param("status") String status);
 
+    @Query("SELECT v FROM PartnerVerification v " +
+            "LEFT JOIN FETCH v.legalInformation " +
+            "WHERE v.submittedBy = :userId")
+    List<PartnerVerification> findByUserIdWithLegalInformation(@Param("userId") String userId);
+
     @Query("""
        SELECT v
        FROM PartnerVerification v

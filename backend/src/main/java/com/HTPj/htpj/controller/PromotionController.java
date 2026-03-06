@@ -1,8 +1,11 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.promotions.ApplyPromotionRequest;
+import com.HTPj.htpj.dto.request.promotions.CheckPromotionCodeRequest;
 import com.HTPj.htpj.dto.request.promotions.CreatePromotionRequest;
 import com.HTPj.htpj.dto.request.promotions.UpdatePromotionRequest;
+import com.HTPj.htpj.dto.response.promotions.ApplyPromotionResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionListResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionResponse;
 import com.HTPj.htpj.service.PromotionService;
@@ -67,6 +70,26 @@ public class PromotionController {
     ) {
         return ApiResponse.<List<PromotionListResponse>>builder()
                 .result(promotionService.getPromotionsByHotel(hotelId))
+                .build();
+    }
+
+    @GetMapping("/apply/available")
+    ApiResponse<List<ApplyPromotionResponse>> getAvailablePromotions(
+            @RequestBody ApplyPromotionRequest request
+    ) {
+
+        return ApiResponse.<List<ApplyPromotionResponse>>builder()
+                .result(promotionService.getAvailablePromotions(request))
+                .build();
+    }
+
+    @PostMapping("/apply/check")
+    ApiResponse<ApplyPromotionResponse> checkPromotionCode(
+            @RequestBody CheckPromotionCodeRequest request
+    ) {
+
+        return ApiResponse.<ApplyPromotionResponse>builder()
+                .result(promotionService.checkPromotionCode(request))
                 .build();
     }
 }
