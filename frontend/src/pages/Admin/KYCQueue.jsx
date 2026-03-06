@@ -1,20 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import KYCTable from '@/components/admin/kycQueue/KYCTable.jsx';
 import KYCReviewModal from '@/components/admin/kycQueue/KYCReviewModal.jsx';
-import { getKYCRequests } from '@/services/kyc.service.js';
+import { kycService, KYC_STATUS } from '@/services/kyc.service.js';
 
 const KYCQueuePage = () => {
     const [data, setData] = useState([]);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState(KYC_STATUS.PENDING);
+    const [loading, setLoading] = useState(false);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            // Đổi từ getVerificationsByStatus thành getPartnerVerificationsByStatus
+            const res = await kycService.getPartnerVerificationsByStatus(activeTab);
+
+            // Kiểm tra cấu trúc trả về của BE (thường là res.result hoặc res.data)
+            setData(res.result || res || []);
+        } catch (error) {
+            console.error("Lỗi lấy danh sách KYC:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        getKYCRequests().then(res => setData(res));
-    }, []);
+        fetchData();
+    }, [activeTab]);
 
-    const handleOpenReview = (item) => {
-        setSelectedRequest(item);
-        setIsModalOpen(true);
+    const handleOpenReview = async (item) => {
+        try {
+            const res = await kycService.getVerificationDetail(item.id);
+            // Kiểm tra nếu có bọc trong .result thì lấy .result, không thì lấy res
+            const detailData = res.result || res;
+            setSelectedRequest(detailData);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error("Detail Error:", error);
+            alert("Không thể lấy thông tin chi tiết hồ sơ.");
+        }
     };
 
     return (
@@ -24,35 +49,49 @@ const KYCQueuePage = () => {
 
             {/* Tabs Header */}
             <div className="bg-white rounded-t-xl border-x border-t border-slate-200 px-6 pt-5 flex items-center justify-between">
-                <h3 className="font-bold text-slate-700 text-[15px]">Danh sách chờ duyệt</h3>
-                <div className="flex gap-8 border-b border-transparent">
-                    <div className="pb-3 border-b-2 border-blue-600 text-blue-600 flex items-center gap-2 cursor-pointer">
-                        <span className="text-[13px] font-bold">Chờ duyệt</span>
-                        <span className="bg-blue-100 px-2 py-0.5 rounded-full text-[10px] font-bold">15</span>
-                    </div>
-                    <div className="pb-3 text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-600 transition-colors">
-                        <span className="text-[13px] font-bold">Yêu cầu bổ sung</span>
-                        <span className="bg-slate-100 px-2 py-0.5 rounded-full text-[10px] font-bold">3</span>
-                    </div>
-                    <div className="pb-3 text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-600 transition-colors">
-                        <span className="text-[13px] font-bold">Đã duyệt</span>
-                        <span className="bg-slate-100 px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-600">42</span>
-                    </div>
+                <h3 className="font-bold text-slate-700 text-[15px]">Danh sách hồ sơ</h3>
+                <div className="flex gap-8">
+                    <TabItem
+                        label="Chờ duyệt"
+                        active={activeTab === KYC_STATUS.PENDING}
+                        onClick={() => setActiveTab(KYC_STATUS.PENDING)}
+                    />
+                    <TabItem
+                        label="Yêu cầu bổ sung"
+                        active={activeTab === KYC_STATUS.NEED_MORE_INFO}
+                        onClick={() => setActiveTab(KYC_STATUS.NEED_MORE_INFO)}
+                    />
+                    <TabItem
+                        label="Đã duyệt"
+                        active={activeTab === KYC_STATUS.VERIFIED}
+                        onClick={() => setActiveTab(KYC_STATUS.VERIFIED)}
+                        color="text-emerald-600"
+                    />
                 </div>
             </div>
 
             {/* Table */}
-            <KYCTable data={data} onReview={handleOpenReview} />
+            <KYCTable data={data} onReview={handleOpenReview} loading={loading} />
 
             {/* Modal Detail */}
             {isModalOpen && (
                 <KYCReviewModal
                     data={selectedRequest}
                     onClose={() => setIsModalOpen(false)}
+                    onRefresh={fetchData}
                 />
             )}
         </div>
     );
 };
+
+const TabItem = ({ label, active, onClick, color = "text-blue-600" }) => (
+    <div
+        onClick={onClick}
+        className={`pb-3 border-b-2 transition-all cursor-pointer flex items-center gap-2 ${active ? `border-blue-600 ${color}` : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+    >
+        <span className="text-[13px] font-bold">{label}</span>
+    </div>
+);
 
 export default KYCQueuePage;

@@ -186,9 +186,9 @@ public class KycServiceImpl implements KycService {
             String partnerType = verification.getPartnerType();
 
             if ("hotel".equalsIgnoreCase(partnerType)) {
-                Integer newHotelId = hotelRepository.generateHotelId();
+//                Integer newHotelId = hotelRepository.generateHotelId();
                 Hotel hotel = new Hotel();
-                hotel.setHotelId(newHotelId);
+//                hotel.setHotelId(newHotelId);
                 hotel.setHotelName(legalName);
                 hotel.setAddress(address);
                 Hotel savedHotel = hotelRepository.save(hotel);
@@ -196,9 +196,9 @@ public class KycServiceImpl implements KycService {
             }
 
             else if ("agency".equalsIgnoreCase(partnerType)) {
-                Long newAgencyId = agencyRepository.generateAgencyId();
+//                Long newAgencyId = agencyRepository.generateAgencyId();
                 Agency agency = new Agency();
-                agency.setAgencyId(newAgencyId);
+//                agency.setAgencyId(newAgencyId);
                 agency.setAgencyName(legalName);
                 agency.setAddress(address);
                 Agency savedAgency = agencyRepository.save(agency);

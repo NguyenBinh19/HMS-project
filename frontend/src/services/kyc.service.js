@@ -1,35 +1,94 @@
-export const mockKYCData = [
-    {
-        id: 1,
-        date: "20/05/2026 09:00",
-        type: "Khách sạn",
-        name: "CÔNG TY TNHH DU LỊCH ABC",
-        taxId: "0101234xxx",
-        address: "Số 123, Đường Nguyễn Trãi, Quận Thanh Xuân, Hà Nội",
-        representative: "Nguyễn Văn A",
-        idNumber: "012345678901",
-        ocrScore: 98,
-        status: "Match",
-        handler: "Chưa phân công"
-    },
-    {
-        id: 2,
-        date: "19/05/2026 14:30",
-        type: "Đại lý",
-        name: "CÔNG TY TNHH THƯƠNG MẠI XYZ",
-        taxId: "0109876xxx",
-        address: "456 CMT8, Quận 3, TP. Hồ Chí Minh",
-        representative: "Trần Thị B",
-        idNumber: "098765432123",
-        ocrScore: 40,
-        status: "Low Confidence",
-        handler: "Admin01"
-    }
-];
+import api from "./axios.config.js";
 
-export const getKYCRequests = async () => {
-    // Giả lập gọi API
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(mockKYCData), 300);
-    });
+// Các hằng số định nghĩa sẵn
+export const DOCUMENT_TYPES = {
+    BUSINESS_LICENSE: "BUSINESS_LICENSE",
+    REPRESENTATIVE_CIC_FRONT: "REPRESENTATIVE_CIC_FRONT",
+    REPRESENTATIVE_CIC_BACK: "REPRESENTATIVE_CIC_BACK"
+};
+
+export const KYC_STATUS = {
+    PENDING: "pending",
+    VERIFIED: "Verified",
+    REJECT: "reject",
+    NEED_MORE_INFO: "NeedMoreInfo"
+};
+
+// 1. Upload KYC (Tạo mới hoặc cập nhật khi status là NeedMoreInfo)
+const uploadKyc = async (userId, data, files) => {
+    try {
+        const formData = new FormData();
+
+        // CHỈNH SỬA QUAN TRỌNG: Gắn data dưới dạng Blob JSON
+        formData.append("data", new Blob([JSON.stringify(data)], {
+            type: 'application/json'
+        }));
+
+        // Gắn danh sách file (đảm bảo key là "files" như Backend yêu cầu)
+        files.forEach((file) => {
+            formData.append("files", file);
+        });
+
+        const response = await api.post(`/kyc/upload/${userId}`, formData);
+        return response.data;
+    } catch (error) {
+        // Log chi tiết lỗi từ server để debug nhanh hơn
+        console.error("Backend Error Detail:", error.response?.data);
+        throw error;
+    }
+};
+
+// 2. Lấy toàn bộ danh sách đối tác chờ duyệt (Dành cho Admin)
+const getAllPartnerVerifications = async () => {
+    try {
+        const response = await api.get(`/kyc`);
+        return response.data;
+    } catch (error) {
+        console.error("Get All Verifications Error:", error);
+        throw error;
+    }
+};
+
+// 3. Lọc hồ sơ theo trạng thái
+const getPartnerVerificationsByStatus = async (status) => {
+    try {
+        const response = await api.get(`/kyc/filter`, {
+            params: { status }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Filter KYC Error:", error);
+        throw error;
+    }
+};
+
+// 4. Lấy chi tiết hồ sơ theo ID
+const getVerificationDetail = async (verificationId) => {
+    try {
+        const response = await api.get(`/kyc/${verificationId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Detail Error:", error);
+        throw error;
+    }
+};
+
+// 5. Duyệt/Từ chối hồ sơ (Dành cho Admin)
+const approveVerification = async (payload) => {
+    try {
+        // Gửi thẳng payload qua POST request
+        const response = await api.post(`/kyc/approve`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Approve Verification Error:", error);
+        throw error;
+    }
+};
+
+export const kycService = {
+    uploadKyc,
+    getAllPartnerVerifications,
+    getPartnerVerificationsByStatus,
+    getVerificationDetail,
+    approveVerification,
 };

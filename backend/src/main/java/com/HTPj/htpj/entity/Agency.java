@@ -16,6 +16,7 @@ import java.util.List;
 public class Agency {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "agency_id")
     private Long agencyId;
 
