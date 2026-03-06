@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "agency_legal_information")
+@Table(name = "partner_legal_information")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgencyLegalInformation {
+public class PartnerLegalInformation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,5 +53,5 @@ public class AgencyLegalInformation {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verification_id", nullable = false, unique = true)
-    private AgencyVerification verification;
+    private PartnerVerification verification;
 }

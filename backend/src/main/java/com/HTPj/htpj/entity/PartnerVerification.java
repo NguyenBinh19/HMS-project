@@ -8,13 +8,13 @@ import java.util.List;
 
 
 @Entity
-@Table(name = "agency_verifications")
+@Table(name = "partner_verifications")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgencyVerification {
+public class PartnerVerification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +27,9 @@ public class AgencyVerification {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    @Column(name = "submitted_by")
+    private String submittedBy;
+
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
@@ -36,24 +39,25 @@ public class AgencyVerification {
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
-    @Column(name = "locked_at")
-    private LocalDateTime lockedAt;
-
     @Column(name = "version", nullable = false)
     private Integer version;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "partner_type")
+    private String partnerType;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agency_id", nullable = false)
+    @JoinColumn(name = "agency_id", referencedColumnName = "agency_id")
     private Agency agency;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hotel_id")
+    private Hotel hotel;
+
     @OneToOne(mappedBy = "verification", cascade = CascadeType.ALL)
-    private AgencyLegalInformation legalInformation;
+    private PartnerLegalInformation legalInformation;
 
     @OneToMany(mappedBy = "verification", cascade = CascadeType.ALL)
     private List<KycDocument> documents;

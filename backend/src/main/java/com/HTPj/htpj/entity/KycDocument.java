@@ -26,9 +26,6 @@ public class KycDocument {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
-    @Column(name = "admin_comment", length = 500)
-    private String adminComment;
-
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted;
 
@@ -40,6 +37,6 @@ public class KycDocument {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verification_id", nullable = false)
-    private AgencyVerification verification;
+    private PartnerVerification verification;
 
 }
