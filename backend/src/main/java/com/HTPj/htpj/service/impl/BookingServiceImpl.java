@@ -41,6 +41,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingMapper bookingMapper;
     private final PromotionService promotionService;
     private final PromotionRepository promotionRepository;
+    private final UserRepository userRepository;
 
 
     @Override
@@ -199,7 +200,9 @@ public class BookingServiceImpl implements BookingService {
 
         Jwt jwt = (Jwt) authentication.getPrincipal();
 
-        String userId = jwt.getSubject();
+        String usernameFromJwt = jwt.getSubject();
+        Users user = userRepository.findByUsername(usernameFromJwt)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
                 .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
@@ -216,7 +219,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = Booking.builder()
                 .bookingCode("BOOKING-" + UUID.randomUUID().toString().substring(0, 8))
                 .hotelId(hold.getHotelId())
-                .userId(userId)
+                .userId(user.getId())
 //                .userId(request.getUserId())       // tam thoi lay request
                 .agencyId(request.getAgencyId())
                 .checkInDate(checkIn)

@@ -107,42 +107,38 @@ export default function HotelDetailPage() {
             if (!id) return;
             setLoadingRooms(true);
             try {
-                // Sử dụng một mảng các Promise và xử lý lỗi cục bộ cho từng cái nếu cần
                 const [hotelRes, staticRoomsData, availabilityData] = await Promise.all([
                     publicApi.get(`/hotels/${id}`),
-                    roomTypeService.getRoomTypesDetailByHotelId(id).catch(err => {
-                        console.warn("Lỗi lấy chi tiết hạng phòng:", err);
-                        return { result: [] }; // Trả về mảng rỗng để map không lỗi
-                    }),
+                    roomTypeService.getRoomTypesDetailByHotelId(id).catch(() => ({ result: [] })),
                     bookingService.checkAvailability({
                         hotelId: Number(id),
                         checkIn: dates.checkIn,
                         checkOut: dates.checkOut
-                    }).catch(err => {
-                        console.warn("API Availability yêu cầu đăng nhập hoặc lỗi:", err);
-                        return { result: [] }; // Trả về mảng rỗng nếu chưa login
-                    })
+                    }).catch(() => ({ result: [] }))
                 ]);
 
                 setHotel(hotelRes.data.result);
                 const staticList = staticRoomsData.result || [];
                 const dynamicList = availabilityData.result || [];
 
-                const mergedRooms = staticList.map(staticRoom => {
-                    const dynamicRoom = dynamicList.find(d => d.roomTypeId === staticRoom.roomTypeId);
-                    return {
-                        id: staticRoom.roomTypeId,
-                        name: staticRoom.roomTitle,
-                        description: staticRoom.description,
-                        maxAdults: staticRoom.maxAdults,
-                        area: staticRoom.roomArea,
-                        bedType: staticRoom.bedType,
-                        amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
-                        price: dynamicRoom?.price || 0,
-                        quantity: dynamicRoom?.quantityAvaiable || 0,
-                        isSoldOut: !dynamicRoom || dynamicRoom.quantityAvaiable <= 0,
-                    };
-                });
+                const mergedRooms = staticList
+                    .filter(room => room.roomStatus?.toLowerCase() === 'active') // Chỉ lấy phòng Active
+                    .map(staticRoom => {
+                        const dynamicRoom = dynamicList.find(d => d.roomTypeId === staticRoom.roomTypeId);
+                        return {
+                            id: staticRoom.roomTypeId,
+                            name: staticRoom.roomTitle,
+                            description: staticRoom.description,
+                            maxAdults: staticRoom.max_adults || 2,
+                            maxChildren: staticRoom.max_children || 0,
+                            area: staticRoom.room_area || 0,
+                            bedType: staticRoom.bedType || "Giường đôi",
+                            amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
+                            price: dynamicRoom?.price || staticRoom.basePrice || 0,
+                            quantity: dynamicRoom?.quantityAvaiable || 0,
+                            isSoldOut: !dynamicRoom || dynamicRoom.quantityAvaiable <= 0,
+                        };
+                    });
                 setRoomTypes(mergedRooms);
             } catch (error) {
                 console.error("Fetch error:", error);
@@ -192,12 +188,21 @@ export default function HotelDetailPage() {
                     state: {
                         holdCode: res.result.holdCode,
                         expiredAt: res.result.expiredAt,
-                        hotelId: id,
                         hotelName: hotel.hotelName,
+                        address: hotel.address,
                         checkInDate: dates.checkIn,
                         checkOutDate: dates.checkOut,
-                        selectedRooms: selectedRooms, // Gửi cả danh sách phòng được chọn
-                        totalPrice: totalEstimatedPrice
+                        totalPrice: totalEstimatedPrice,
+                        // Truyền thông tin chi tiết từng loại phòng đã chọn
+                        selectedRooms: selectedRooms.map(r => ({
+                            id: r.id,
+                            name: r.name,
+                            count: r.count,
+                            // Truyền chính xác giá trị người lớn/trẻ em lấy từ r (room)
+                            maxAdults: r.maxAdults,
+                            maxChildren: r.maxChildren,
+                            price: r.price
+                        }))
                     }
                 });
             }
@@ -348,29 +353,52 @@ const gallery =
                                     <div className="flex-1">
                                         <h3 className="text-xl font-black text-slate-900 mb-2">{room.name}</h3>
                                         <div className="flex flex-wrap gap-4 text-xs text-slate-500 font-bold mb-4">
-                                            <span className="flex items-center gap-1"><Users size={14} /> {room.maxAdults} Người lớn</span>
-                                            <span className="flex items-center gap-1"><BedDouble size={14} /> {room.bedType}</span>
-                                            <span className="flex items-center gap-1"><Maximize size={14} /> {room.area} m²</span>
+                                        <span className="flex items-center gap-1">
+                                            <Users size={14}/> {room.maxAdults} Người lớn
+                                        </span>
+                                            {room.maxChildren > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                    <Plus size={12}/> {room.maxChildren} Trẻ em
+                                                </span>
+                                            )}
+
+                                            {room.area > 0 && (
+                                                <span className="flex items-center gap-1">
+            <Maximize size={14}/> {room.area} m²
+        </span>
+                                            )}
                                         </div>
 
                                         {room.amenities.length > 0 && (
                                             <div className="flex flex-wrap gap-2 mb-4">
                                                 {room.amenities.map((am, i) => (
-                                                    <span key={i} className="bg-slate-50 text-slate-400 text-[9px] px-2 py-1 rounded border border-slate-100 uppercase font-black tracking-tighter">{am}</span>
+                                                    <span key={i}
+                                                          className="bg-slate-50 text-slate-400 text-[9px] px-2 py-1 rounded border border-slate-100 uppercase font-black tracking-tighter">{am}</span>
                                                 ))}
                                             </div>
                                         )}
 
                                         <div className="grid grid-cols-2 gap-y-2">
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14} /> Xác nhận ngay</div>
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-black"><Check size={14} /> Miễn phí hủy phòng</div>
+                                            <div
+                                                className="flex items-center gap-2 text-emerald-600 text-[11px] font-black">
+                                                <Check size={14}/> Xác nhận ngay
+                                            </div>
+                                            <div
+                                                className="flex items-center gap-2 text-emerald-600 text-[11px] font-black">
+                                                <Check size={14}/> Miễn phí hủy phòng
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="min-w-[220px] md:border-l border-slate-100 md:pl-6 flex flex-col justify-between items-end">
+                                    <div
+                                        className="min-w-[220px] md:border-l border-slate-100 md:pl-6 flex flex-col justify-between items-end">
                                         <div className="text-right">
-                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Giá Net phòng/đêm</div>
-                                            <div className="text-2xl font-black text-emerald-600">{room.price > 0 ? formatCurrency(room.price) : "—"}</div>
+                                            <div
+                                                className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Giá
+                                                Net phòng/đêm
+                                            </div>
+                                            <div
+                                                className="text-2xl font-black text-emerald-600">{room.price > 0 ? formatCurrency(room.price) : "—"}</div>
                                         </div>
                                         <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
                                             <button onClick={() => handleUpdateQuantity(room, -1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-400 hover:text-blue-600 border border-slate-200 transition-colors">

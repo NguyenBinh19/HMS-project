@@ -58,6 +58,7 @@ const searchHotel = async (payload) => {
     }
 }
 
+
 export const bookingService = {
     checkAvailability,
     holdRoom,

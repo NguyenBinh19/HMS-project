@@ -73,7 +73,7 @@ public class PromotionController {
                 .build();
     }
 
-    @GetMapping("/apply/available")
+    @PostMapping("/apply/available")
     ApiResponse<List<ApplyPromotionResponse>> getAvailablePromotions(
             @RequestBody ApplyPromotionRequest request
     ) {

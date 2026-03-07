@@ -55,10 +55,35 @@ const getPromotionsByHotel = async (hotelId) => {
     }
 };
 
+// 6. Lấy danh sách Voucher khả dụng cho Agency
+const getAvailablePromotions = async (payload) => {
+    try {
+        // Đổi thành .post để khớp với BE sau khi sửa
+        const response = await api.post(`/promotions/apply/available`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Get Available Promotions Error:", error);
+        throw error;
+    }
+};
+
+// 7. Kiểm tra và áp dụng mã giảm giá
+const checkPromotionCode = async (payload) => {
+    try {
+        const response = await api.post(`/promotions/apply/check`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Check Promotion Error:", error);
+        throw error;
+    }
+};
+
 export const promotionService = {
     createPromotion,
     updatePromotion,
     deletePromotion,
     getPromotionDetail,
     getPromotionsByHotel,
+    getAvailablePromotions,
+    checkPromotionCode
 };

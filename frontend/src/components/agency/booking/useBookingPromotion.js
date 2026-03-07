@@ -1,0 +1,120 @@
+import { useState } from "react";
+import { parseISO, differenceInSeconds } from "date-fns";
+import { promotionService} from "@/services/coupon.service.js";
+
+export const useBookingPromotion = (bookingData, navigate) => {
+    const [promoCode, setPromoCode] = useState("");
+    const [promoData, setPromoData] = useState(null);
+    const [isCheckingPromo, setIsCheckingPromo] = useState(false);
+    const [promoError, setPromoError] = useState("");
+    const [showWallet, setShowWallet] = useState(false);
+    const [availableCoupons, setAvailableCoupons] = useState([]);
+
+    // 1. Fetch danh sách voucher từ Wallet (Sửa logic gọi API GET có Body)
+    const fetchWalletCoupons = async () => {
+        try {
+            const payload = {
+                hotelId: bookingData.hotelId,
+                agencyId: 1,
+                checkin: bookingData.checkInDate,
+                checkout: bookingData.checkOutDate,
+                billAmount: bookingData.totalPrice
+            };
+
+            // bookingService.getAvailablePromotions hiện tại đang dùng api.request({method: 'get', data: payload})
+            const response = await promotionService.getAvailablePromotions(payload);
+
+            // Đảm bảo map đúng field .result từ ApiResponse của Spring Boot
+            if (response?.result) {
+                setAvailableCoupons(response.result);
+            }
+        } catch (error) {
+            console.error("Lỗi lấy danh sách coupon wallet:", error);
+        }
+    };
+
+    // 2. Logic áp dụng mã (Giữ nguyên vì PostMapping xử lý ổn định)
+    const handleApplyCoupon = async (codeFromWallet = null) => {
+        const targetCode = codeFromWallet || promoCode;
+        if (!targetCode) return;
+
+        // Kiểm tra Session Timeout trước khi gọi API
+        const now = new Date();
+        const end = typeof bookingData.expiredAt === "string" ? parseISO(bookingData.expiredAt) : bookingData.expiredAt;
+        if (differenceInSeconds(end, now) <= 0) {
+            alert("Phiên giữ chỗ đã hết hạn. Vui lòng tìm kiếm lại phòng.");
+            navigate("/search-hotel");
+            return;
+        }
+
+        setIsCheckingPromo(true);
+        setPromoError("");
+        try {
+            const payload = {
+                hotelId: bookingData.hotelId,
+                agencyId: 1,
+                code: targetCode.trim(),
+                checkin: bookingData.checkInDate,
+                checkout: bookingData.checkOutDate,
+                billAmount: bookingData.totalPrice
+            };
+
+            const response = await promotionService.checkPromotionCode(payload);
+
+            if (response?.result) {
+                setPromoData(response.result);
+                setPromoCode(targetCode);
+                setShowWallet(false);
+            } else {
+                // Trường hợp trả về 200 nhưng result null (tùy logic BE)
+                setPromoError("Mã giảm giá không khả dụng.");
+            }
+        } catch (error) {
+            // Lấy message lỗi từ ApiResponse của Backend
+            const errMsg = error.response?.data?.message || "Mã không hợp lệ hoặc đã hết hạn.";
+            setPromoError(errMsg);
+            setPromoData(null);
+        } finally {
+            setIsCheckingPromo(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setPromoData(null);
+        setPromoCode("");
+        setPromoError("");
+    };
+
+    // 3. Tính toán giá trị giảm (Cẩn thận với kiểu dữ liệu số)
+    const basePrice = Number(bookingData.totalPrice) || 0;
+    let discountAmount = 0;
+
+    if (promoData) {
+        if (promoData.typeDiscount === "PERCENT") {
+            discountAmount = (basePrice * promoData.discountVal) / 100;
+            // Chặn mức giảm tối đa (Max Discount)
+            if (promoData.maxDiscount && discountAmount > promoData.maxDiscount) {
+                discountAmount = promoData.maxDiscount;
+            }
+        } else {
+            // Loại FIXED_AMOUNT
+            discountAmount = promoData.discountVal;
+        }
+    }
+
+    const finalPrice = Math.max(0, basePrice - discountAmount);
+
+    return {
+        promoCode, setPromoCode,
+        promoData,
+        isCheckingPromo,
+        promoError,
+        showWallet, setShowWallet,
+        availableCoupons,
+        fetchWalletCoupons,
+        handleApplyCoupon,
+        handleRemoveCoupon,
+        discountAmount, // BigDecimal bên Java
+        finalPrice
+    };
+};
