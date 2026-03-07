@@ -26,4 +26,6 @@ public class CreateBookingRequest {
     private BigDecimal discountTotal;
 
     private String paymentMethod;
+
+    private String promotionCode;
 }

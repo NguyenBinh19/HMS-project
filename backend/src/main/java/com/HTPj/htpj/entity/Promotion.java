@@ -7,6 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -45,11 +46,17 @@ public class Promotion {
     @Column(name = "min_order_val")
     private BigDecimal minOrderVal;
 
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    @Column(name = "apply_start_date", nullable = false)
+    private LocalDate applyStartDate;
 
-    @Column(name = "end_date", nullable = false)
-    private LocalDate endDate;
+    @Column(name = "apply_end_date", nullable = false)
+    private LocalDate applyEndDate;
+
+    @Column(name = "stay_start_date", nullable = false)
+    private LocalDate stayStartDate;
+
+    @Column(name = "stay_end_date", nullable = false)
+    private LocalDate stayEndDate;
 
     @Column(name = "min_stay")
     private Integer minStay;
@@ -59,6 +66,9 @@ public class Promotion {
 
     @Column(name = "used_count")
     private Integer usedCount;
+
+    @Column(name = "agency_usage_limit", nullable = false)
+    private Integer agencyUsageLimit;
 
     private String status;
 
@@ -70,4 +80,7 @@ public class Promotion {
 
     @Column(name = "created_by", nullable = false)
     private String createdBy;
+
+    @OneToMany(mappedBy = "promotion", fetch = FetchType.LAZY)
+    private List<Booking> bookings;
 }

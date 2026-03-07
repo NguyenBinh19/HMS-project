@@ -16,8 +16,11 @@ public class UpdatePromotionRequest {
     private BigDecimal discountVal;
     private BigDecimal maxDiscount;
     private BigDecimal minOrderVal;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDate applyStartDate;
+    private LocalDate applyEndDate;
+    private Integer agencyUsageLimit;
+    private LocalDate stayStartDate;
+    private LocalDate stayEndDate;
     private Integer minStay;
     private Integer maxUsage;
     private String status;

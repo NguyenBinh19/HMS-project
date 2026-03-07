@@ -20,8 +20,8 @@ public class PromotionListResponse {
     private String typePromotion;
     private String typeDiscount;
     private BigDecimal discountVal;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDate applyStartDate;
+    private LocalDate applyEndDate;
     private Integer usedCount;
     private Integer maxUsage;
     private String status;

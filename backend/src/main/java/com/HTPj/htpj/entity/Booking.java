@@ -84,6 +84,15 @@ public class Booking {
     @Column(name = "notes", columnDefinition = "NVARCHAR(MAX)")
     private String notes;
 
+    @Column(name = "promotion_code")
+    private String promotionCode;
+
+    @Column(name = "discount_val", precision = 18, scale = 2)
+    private BigDecimal discountVal;
+
+    @Column(name = "type_discount")
+    private String typeDiscount;
+
     @OneToMany(
             mappedBy = "booking",
             fetch = FetchType.LAZY,
@@ -91,4 +100,8 @@ public class Booking {
             orphanRemoval = true
     )
     private List<BookingDetail> bookingDetails;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "promotion_id")
+    private Promotion promotion;
 }

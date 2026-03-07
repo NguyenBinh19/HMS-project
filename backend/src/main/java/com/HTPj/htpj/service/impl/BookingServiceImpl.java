@@ -2,8 +2,10 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
+import com.HTPj.htpj.dto.request.promotions.CheckPromotionCodeRequest;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
+import com.HTPj.htpj.dto.response.promotions.ApplyPromotionResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
@@ -11,6 +13,7 @@ import com.HTPj.htpj.mapper.BookingMapper;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.BookingService;
+import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +39,8 @@ public class BookingServiceImpl implements BookingService {
     private final RoomPricingRuleRepository roomPricingRuleRepository;
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
+    private final PromotionService promotionService;
+    private final PromotionRepository promotionRepository;
 
 
     @Override
@@ -277,16 +283,64 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingDetails(bookingDetails);
         booking.setTotalRooms(totalRooms);
         booking.setTotalGuests(request.getTotalGuests());
-
-        BigDecimal discount = request.getDiscountTotal() == null
-                ? BigDecimal.ZERO
-                : request.getDiscountTotal();
-
         booking.setTotalAmount(bookingTotal);
-        booking.setDiscountTotal(discount);
-        booking.setFinalAmount(bookingTotal.subtract(discount));
+
+        BigDecimal discountTotal = BigDecimal.ZERO;
+
+        if (request.getPromotionCode() != null && !request.getPromotionCode().isBlank()) {
+
+            CheckPromotionCodeRequest promoRequest =
+                    CheckPromotionCodeRequest.builder()
+                            .code(request.getPromotionCode())
+                            .hotelId(hold.getHotelId())
+                            .agencyId(request.getAgencyId())
+                            .billAmount(bookingTotal)
+                            .checkin(checkIn)
+                            .checkout(checkOut)
+                            .build();
+
+            ApplyPromotionResponse promo =
+                    promotionService.checkPromotionCode(promoRequest);
+
+            booking.setPromotionCode(promo.getCode());
+            booking.setDiscountVal(promo.getDiscountVal());
+            booking.setTypeDiscount(promo.getTypeDiscount());
+
+            Promotion promotionEntity = promotionRepository.findById(promo.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_CODE_INVALID));
+
+            booking.setPromotion(promotionEntity);
+
+            if ("PERCENT".equalsIgnoreCase(promo.getTypeDiscount())) {
+
+                BigDecimal percentAmount =
+                        bookingTotal.multiply(promo.getDiscountVal())
+                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                if (promo.getMaxDiscount() != null &&
+                        percentAmount.compareTo(promo.getMaxDiscount()) >= 0) {
+
+                    discountTotal = promo.getMaxDiscount();
+                } else {
+                    discountTotal = percentAmount;
+                }
+
+            } else if ("AMOUNT".equalsIgnoreCase(promo.getTypeDiscount())) {
+                discountTotal = promo.getDiscountVal();
+            }
+        }
+        if (discountTotal.compareTo(bookingTotal) > 0) {
+            discountTotal = bookingTotal;
+        }
+        booking.setDiscountTotal(discountTotal);
+        booking.setFinalAmount(bookingTotal.subtract(discountTotal));
 
         Booking saved = bookingRepository.save(booking);
+
+        //count +1
+        if (saved.getPromotion() != null) {
+            promotionRepository.increaseUsedCount(saved.getPromotion().getId());
+        }
 
         hold.setStatus("BOOKED");
         roomHoldRepository.save(hold);

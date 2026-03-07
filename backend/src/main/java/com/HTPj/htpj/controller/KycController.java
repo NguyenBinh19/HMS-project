@@ -52,6 +52,15 @@ public class KycController {
                 .build();
     }
 
+    @GetMapping("/user/{userId}")
+    public ApiResponse<List<KycQueueResponse>> getPartnerVerificationsByUserId(
+            @PathVariable String userId
+    ) {
+        return ApiResponse.<List<KycQueueResponse>>builder()
+                .result(kycService.getPartnerVerificationsByUserId(userId))
+                .build();
+    }
+
     @GetMapping("/{verificationId}")
     public ApiResponse<KycVerificationDetailResponse> getVerificationDetail(
             @PathVariable Integer verificationId
