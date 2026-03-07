@@ -21,6 +21,7 @@ import BookingDetailPost from "@/pages/Agency/BookingDetailPost.jsx";
 import KYCIntroduction from "@/pages/Auth/KYCIntroduction.jsx"
 import AdminLayout from "@/pages/Admin/AdminDashboard.jsx";
 import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
+import VerificationStatusPage from "@/pages/Auth/VerificationStatus.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -35,6 +36,7 @@ const AppRoutes = () => {
                 <Route path="/verify-email" element={<VerifyEmail />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
+                <Route path="/kyc/status" element={<VerificationStatusPage />} />
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />

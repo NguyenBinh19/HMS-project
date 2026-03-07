@@ -82,10 +82,22 @@ const approveVerification = async (payload) => {
     }
 };
 
+// 6. Lấy chi tiết hồ sơ theo userId
+const getVerificationByUser = async (userId) => {
+    try {
+        const response = await api.get(`/kyc/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get User KYC Error:", error);
+        throw error;
+    }
+};
+
 export const kycService = {
     uploadKyc,
     getAllPartnerVerifications,
     getPartnerVerificationsByStatus,
     getVerificationDetail,
     approveVerification,
+    getVerificationByUser
 };
