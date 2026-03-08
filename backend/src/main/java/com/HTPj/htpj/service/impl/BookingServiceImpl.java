@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.request.promotions.CheckPromotionCodeRequest;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
+import com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.dto.response.promotions.ApplyPromotionResponse;
 import com.HTPj.htpj.entity.*;
@@ -349,5 +350,13 @@ public class BookingServiceImpl implements BookingService {
         roomHoldRepository.save(hold);
 
         return bookingMapper.toResponse(saved);
+    }
+
+    @Override
+    public List<ListAllBookingsResponse> getAllBookings() {
+
+        List<Booking> bookings = bookingRepository.findAll();
+
+        return bookingMapper.toBookingSummaryResponseList(bookings);
     }
 }
