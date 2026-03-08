@@ -71,6 +71,7 @@ export default function BookingCheckoutPage() {
     const [paymentMethod, setPaymentMethod] = useState("");
     const [extendCount, setExtendCount] = useState(0);
     const MAX_EXTENSIONS = 3;
+    const [isAgreed, setIsAgreed] = useState(false);
 
     const [customerInfo, setCustomerInfo] = useState({
         name: "", email: "", phone: "", notes: ""
@@ -124,6 +125,9 @@ export default function BookingCheckoutPage() {
     const handleConfirmBooking = async () => {
         const { name, email, phone } = customerInfo;
         if (!name.trim() || !email.trim() || !phone.trim() || !paymentMethod) return alert("Vui lòng điền đủ thông tin!");
+        if (!isAgreed) {
+            return alert("Bạn cần đồng ý với Quy tắc đặt phòng & Chính sách hủy để tiếp tục!");
+        }
         if (!validateEmail(email)) return alert("Email sai định dạng!");
         if (phone.length < 10) return alert("Số điện thoại không hợp lệ!");
 
@@ -343,6 +347,22 @@ export default function BookingCheckoutPage() {
                                 <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                                     <span className="text-sm font-black text-slate-900">Tổng cộng</span>
                                     <span className="text-xl font-black text-purple-600 leading-none">{formatCurrency(finalPrice)}</span>
+                                </div>
+
+                                {/* CHECKBOX ĐIỀU KHOẢN */}
+                                <div className="flex items-start gap-3 pt-2">
+                                    <div className="flex items-center h-5">
+                                        <input
+                                            id="terms"
+                                            type="checkbox"
+                                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                                            checked={isAgreed}
+                                            onChange={(e) => setIsAgreed(e.target.checked)}
+                                        />
+                                    </div>
+                                    <label htmlFor="terms" className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
+                                        Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
+                                    </label>
                                 </div>
 
                                 <button

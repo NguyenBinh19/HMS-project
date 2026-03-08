@@ -10,7 +10,7 @@ export const useBookingPromotion = (bookingData, navigate) => {
     const [showWallet, setShowWallet] = useState(false);
     const [availableCoupons, setAvailableCoupons] = useState([]);
 
-    // 1. Fetch danh sách voucher từ Wallet (Sửa logic gọi API GET có Body)
+    // 1. Fetch danh sách voucher từ Wallet
     const fetchWalletCoupons = async () => {
         try {
             const payload = {
@@ -21,10 +21,10 @@ export const useBookingPromotion = (bookingData, navigate) => {
                 billAmount: bookingData.totalPrice
             };
 
-            // bookingService.getAvailablePromotions hiện tại đang dùng api.request({method: 'get', data: payload})
+
             const response = await promotionService.getAvailablePromotions(payload);
 
-            // Đảm bảo map đúng field .result từ ApiResponse của Spring Boot
+
             if (response?.result) {
                 setAvailableCoupons(response.result);
             }
@@ -33,12 +33,12 @@ export const useBookingPromotion = (bookingData, navigate) => {
         }
     };
 
-    // 2. Logic áp dụng mã (Giữ nguyên vì PostMapping xử lý ổn định)
+
     const handleApplyCoupon = async (codeFromWallet = null) => {
         const targetCode = codeFromWallet || promoCode;
         if (!targetCode) return;
 
-        // Kiểm tra Session Timeout trước khi gọi API
+
         const now = new Date();
         const end = typeof bookingData.expiredAt === "string" ? parseISO(bookingData.expiredAt) : bookingData.expiredAt;
         if (differenceInSeconds(end, now) <= 0) {
@@ -66,11 +66,11 @@ export const useBookingPromotion = (bookingData, navigate) => {
                 setPromoCode(targetCode);
                 setShowWallet(false);
             } else {
-                // Trường hợp trả về 200 nhưng result null (tùy logic BE)
+
                 setPromoError("Mã giảm giá không khả dụng.");
             }
         } catch (error) {
-            // Lấy message lỗi từ ApiResponse của Backend
+
             const errMsg = error.response?.data?.message || "Mã không hợp lệ hoặc đã hết hạn.";
             setPromoError(errMsg);
             setPromoData(null);
@@ -85,7 +85,7 @@ export const useBookingPromotion = (bookingData, navigate) => {
         setPromoError("");
     };
 
-    // 3. Tính toán giá trị giảm (Cẩn thận với kiểu dữ liệu số)
+    // 3. Tính toán giá trị giảm
     const basePrice = Number(bookingData.totalPrice) || 0;
     let discountAmount = 0;
 

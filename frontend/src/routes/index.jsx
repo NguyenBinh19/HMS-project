@@ -22,6 +22,8 @@ import KYCIntroduction from "@/pages/Auth/KYCIntroduction.jsx"
 import AdminLayout from "@/pages/Admin/AdminDashboard.jsx";
 import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
 import VerificationStatusPage from "@/pages/Auth/VerificationStatus.jsx";
+import ViewAboutUs from "@/pages/common/ViewAboutUs.jsx";
+import ViewContact from "@/pages/common/ViewContact.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -34,6 +36,8 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/about-us" element={<ViewAboutUs />} />
+                <Route path="/contact" element={<ViewContact />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />

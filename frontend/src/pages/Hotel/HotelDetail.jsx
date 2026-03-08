@@ -134,7 +134,8 @@ export default function HotelDetailPage() {
                             area: staticRoom.room_area || 0,
                             bedType: staticRoom.bedType || "Giường đôi",
                             amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
-                            price: dynamicRoom?.price || staticRoom.basePrice || 0,
+                            // price: dynamicRoom?.price || staticRoom.basePrice || 0,
+                            price: dynamicRoom?.price || 0,
                             quantity: dynamicRoom?.quantityAvaiable || 0,
                             isSoldOut: !dynamicRoom || dynamicRoom.quantityAvaiable <= 0,
                         };
