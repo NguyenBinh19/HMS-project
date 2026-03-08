@@ -68,7 +68,7 @@ public class BookingController {
     }
 
     //UC79
-    @GetMapping
+    @GetMapping("/listAll")
     ApiResponse<List<ListAllBookingsResponse>> getAllBookings() {
         return ApiResponse.<List<ListAllBookingsResponse>>builder()
                 .result(bookingService.getAllBookings())
