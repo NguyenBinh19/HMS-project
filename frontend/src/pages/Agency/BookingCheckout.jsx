@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
 import { useBookingPromotion } from "@/components/agency/booking/useBookingPromotion.js";
+import { addonServiceApi } from "@/services/addonService.service.js";
+import ExtraServiceSection from "@/components/agency/booking/ExtraServiceSection.jsx";
 
 /* ================= TIMER BAR ================= */
 const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCount, maxExtensions }) => {
@@ -41,6 +43,7 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
                 <span className={`font-bold ${isLowTime ? "text-red-600" : "text-blue-600"}`}>
                     {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
                 </span>
+
                 <div className="ml-auto flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                         Lượt gia hạn: {extendCount}/{maxExtensions}
@@ -65,10 +68,16 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
 export default function BookingCheckoutPage() {
     const location = useLocation();
     const navigate = useNavigate();
+
     const [data, setData] = useState(location.state || {});
     const [isExtending, setIsExtending] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("");
+
+    // UC-026 - Dịch vụ thêm
+    const [selectedAddons, setSelectedAddons] = useState([]);
+
+    // số lần gia hạn (Tối đa 3 lần)
     const [extendCount, setExtendCount] = useState(0);
     const MAX_EXTENSIONS = 3;
     const [isAgreed, setIsAgreed] = useState(false);
@@ -109,6 +118,22 @@ export default function BookingCheckoutPage() {
     const checkOutDate = parseISO(data.checkOutDate);
     const nights = Math.max(1, differenceInDays(checkOutDate, checkInDate));
     const totalRooms = data.selectedRooms?.reduce((sum, r) => sum + r.count, 0) || 0;
+    const totalAdults = data.selectedRooms?.reduce((sum, r) => sum + (r.maxAdults * r.count), 0) || 0;
+    const totalChildren = data.selectedRooms?.reduce((sum, r) => sum + ((r.maxChildren || 0) * r.count), 0) || 0;
+
+    const finalTotal = data.totalPrice || 0;
+    const basePrice = finalTotal / 0.8;
+    const discount = basePrice - finalTotal;
+
+    // Tổng tiền dịch vụ thêm (UC-026)
+    const addonsTotal = selectedAddons.reduce((sum, s) => sum + (s.quantity || 1) * (s.netPrice || 0), 0);
+
+    const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+
+    const handleExpire = () => {
+        alert("Phiên giữ chỗ đã hết hạn. Hệ thống sẽ quay về trang tìm kiếm.");
+        navigate("/homepage");
+    };
 
     const handleExtendHold = async () => {
         if (extendCount >= MAX_EXTENSIONS) return alert("Hết lượt gia hạn.");
@@ -147,6 +172,18 @@ export default function BookingCheckoutPage() {
             };
             const response = await bookingService.createBooking(payload);
             if (response?.result) {
+                // UC-026: Lưu dịch vụ thêm nếu có
+                if (selectedAddons.length > 0) {
+                    try {
+                        const addonPayload = selectedAddons.map(({ netPrice, ...rest }) => rest);
+                        await addonServiceApi.addServicesToBooking({
+                            bookingId: response.result.bookingId,
+                            services: addonPayload,
+                        });
+                    } catch (addonErr) {
+                        console.warn("Lưu dịch vụ thêm thất bại:", addonErr);
+                    }
+                }
                 // Gửi đầy đủ thông tin sang trang Success
                 navigate("/booking-success", {
                     state: {
@@ -159,17 +196,23 @@ export default function BookingCheckoutPage() {
                             totalPrice: finalPrice,
                             paymentMethod: paymentMethod,
                             guestName: name.trim(),
-                            guestPhone: phone.trim(),
-                            guestEmail: email.trim(),
+                            guestPhone: phone,
+                            guestEmail: email,
+                            checkInDate: format(checkInDate, "dd/MM/yyyy"),
+                            checkOutDate: format(checkOutDate, "dd/MM/yyyy"),
                             totalNights: nights,
-                            rooms: data.selectedRooms
+                            totalRooms: totalRooms,
+                            totalPrice: finalTotal,
+                            paymentMethod: paymentMethod
                         }
                     }
                 });
             }
         } catch (error) {
-            alert(`Lỗi hệ thống: ${error.response?.data?.message || "Không xác định"}`);
-        } finally { setIsSubmitting(false); }
+            alert(`Lỗi: ${error.response?.data?.message || "Lỗi hệ thống"}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -184,7 +227,8 @@ export default function BookingCheckoutPage() {
             />
 
             <div className="max-w-6xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* CỘT TRÁI: THÔNG TIN KHÁCH & PHÒNG */}
+
+                {/* CỘT TRÁI (THÔNG TIN KHÁCH & PHÒNG) */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
@@ -237,6 +281,12 @@ export default function BookingCheckoutPage() {
                             </div>
                         ))}
                     </div>
+
+                    {/* UC-026 - Dịch vụ thêm */}
+                    <ExtraServiceSection
+                        hotelId={data.hotelId}
+                        onChange={setSelectedAddons}
+                    />
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
@@ -364,6 +414,22 @@ export default function BookingCheckoutPage() {
                                         Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
                                     </label>
                                 </div>
+                        <div className="border-t border-slate-100 pt-4 space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
+                                <span className="text-emerald-600 font-bold">-{formatCurrency(discount)}</span>
+                            </div>
+                            {addonsTotal > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
+                                    <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                </div>
+                            )}
+                            <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
+                                <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
+                                <span className="text-xl font-black">{formatCurrency(finalTotal + addonsTotal)}</span>
+                            </div>
+                        </div>
 
                                 <button
                                     onClick={handleConfirmBooking}

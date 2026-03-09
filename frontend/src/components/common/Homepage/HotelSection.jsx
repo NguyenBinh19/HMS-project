@@ -7,6 +7,9 @@ const HotelSection = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    const token = localStorage.getItem("accessToken");
+    const isLoggedIn = !!token;
+
     useEffect(() => {
         getFeaturedHotels()
             .then((data) => {
@@ -56,7 +59,7 @@ const HotelSection = () => {
                     {hotels.map((home) => (
                         <div
                             key={home.id}
-                            onClick={() => navigate(`/hotels/${home.id}`)}
+                            onClick={() => navigate(`/search-hotel/hotels/${home.id}`)}
                             className="bg-white rounded-xl shadow-md hover:shadow-lg transition cursor-pointer"
                         >
                             {/* Image */}
@@ -83,9 +86,15 @@ const HotelSection = () => {
                                     {home.city}
                                 </div>
 
-                                <div className="text-sm text-red-600 font-medium">
-                                    Đăng nhập để xem giá B2B
-                                </div>
+                                {isLoggedIn ? (
+                                    <div className="text-sm text-blue-600 font-medium">
+                                        Xem thông tin khách sạn
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-red-600 font-medium">
+                                        Đăng nhập để xem giá B2B
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

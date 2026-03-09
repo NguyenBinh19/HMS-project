@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class CreateBookingResponse {
+    private Long bookingId;
     private String bookingCode;
     private BigDecimal finalAmount;
     private String bookingStatus;

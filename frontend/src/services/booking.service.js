@@ -58,6 +58,28 @@ const searchHotel = async (payload) => {
     }
 }
 
+// UC-029: Lịch sử đặt phòng (phân trang)
+const getBookingHistory = async (page = 0, size = 10) => {
+    try {
+        const response = await api.get(`/booking/history`, { params: { page, size } });
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking History Error:", error);
+        throw error;
+    }
+};
+
+// UC-030: Chi tiết booking theo booking code
+const getBookingDetail = async (bookingCode) => {
+    try {
+        const response = await api.get(`/booking/detail/${bookingCode}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking Detail Error:", error);
+        throw error;
+    }
+};
+
 
 export const bookingService = {
     checkAvailability,
@@ -65,4 +87,6 @@ export const bookingService = {
     extendHold,
     createBooking,
     searchHotel,
+    getBookingHistory,
+    getBookingDetail,
 };
