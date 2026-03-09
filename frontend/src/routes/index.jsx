@@ -25,6 +25,10 @@ import VerificationStatusPage from "@/pages/Auth/VerificationStatus.jsx";
 import ViewAboutUs from "@/pages/common/ViewAboutUs.jsx";
 import ViewContact from "@/pages/common/ViewContact.jsx";
 import ViewAllBooking from "@/pages/Admin/ViewAllBooking.jsx";
+import StaffDashboard from "@/pages/Agency/StaffDashboard.jsx";
+import HotelStaffDashboard from "@/pages/Hotel/HotelStaffDashboard.jsx";
+import AgencyProfile from "@/pages/Agency/AgencyProfile.jsx";
+import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -56,6 +60,8 @@ const AppRoutes = () => {
                         <Route index element={<MyBookingList />} />
                         <Route path="detail/:id" element={<BookingDetailPost />} />
                     </Route>
+                    <Route path="staff" element={<StaffDashboard />} />
+                    <Route path="agency-profile" element={<AgencyProfile />} />
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
@@ -67,6 +73,8 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
+                    <Route path="staff" element={<HotelStaffDashboard/>} />
+                    <Route path="profile" element={<HotelProfile/>} />
                 </Route>
 
                 {/*Luồng Admin System*/}
