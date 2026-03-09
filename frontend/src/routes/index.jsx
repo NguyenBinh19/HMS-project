@@ -24,6 +24,7 @@ import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
 import VerificationStatusPage from "@/pages/Auth/VerificationStatus.jsx";
 import ViewAboutUs from "@/pages/common/ViewAboutUs.jsx";
 import ViewContact from "@/pages/common/ViewContact.jsx";
+import ViewAllBooking from "@/pages/Admin/ViewAllBooking.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -71,6 +72,7 @@ const AppRoutes = () => {
                 {/*Luồng Admin System*/}
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
+                    <Route path="view-booking" element={<ViewAllBooking />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
