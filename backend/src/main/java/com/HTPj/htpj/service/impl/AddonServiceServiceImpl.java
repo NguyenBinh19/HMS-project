@@ -145,12 +145,21 @@ public class AddonServiceServiceImpl implements AddonServiceService {
         }).collect(Collectors.toList());
 
         List<BookingAddonService> savedList = bookingAddonServiceRepository.saveAll(saved);
+
+        // Cập nhật finalAmount: cộng thêm tổng tiền dịch vụ vào booking
+        BigDecimal totalAddonCost = savedList.stream()
+                .map(BookingAddonService::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        booking.setFinalAmount(booking.getFinalAmount().add(totalAddonCost));
+        booking.setUpdatedAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+
         return savedList.stream().map(AddonServiceMapper::toBookingAddonResponse).collect(Collectors.toList());
     }
 
     @Override
     public List<BookingAddonServiceResponse> getBookingAddonServices(Long bookingId) {
-        return bookingAddonServiceRepository.findByBooking_BookingId(bookingId)
+        return bookingAddonServiceRepository.findByBookingIdWithService(bookingId)
                 .stream().map(AddonServiceMapper::toBookingAddonResponse).collect(Collectors.toList());
     }
 }

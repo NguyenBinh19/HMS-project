@@ -49,14 +49,18 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
         if (!onChange) return;
         const payload = Object.entries(newSelected)
             .filter(([, v]) => v.checked)
-            .map(([id, v]) => ({
-                serviceId: Number(id),
-                quantity: v.qty,
-                serviceDate: v.serviceDate || null,
-                flightNumber: v.flightNumber || null,
-                flightTime: v.flightTime || null,
-                specialNote: v.specialNote || null,
-            }));
+            .map(([id, v]) => {
+                const svc = services.find(s => String(s.serviceId) === String(id));
+                return {
+                    serviceId: Number(id),
+                    quantity: v.qty,
+                    serviceDate: v.serviceDate || null,
+                    flightNumber: v.flightNumber || null,
+                    flightTime: v.flightTime || null,
+                    specialNote: v.specialNote || null,
+                    netPrice: svc?.netPrice ?? 0,
+                };
+            });
         onChange(payload);
     };
 

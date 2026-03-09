@@ -137,7 +137,7 @@ export default function BookingCheckoutPage() {
     const discount = basePrice - finalTotal;
 
     // Tổng tiền dịch vụ thêm (UC-026)
-    const addonsTotal = selectedAddons.reduce((sum, s) => sum + (s.quantity || 1) * 0, 0); // sẽ tính sau khi có giá từ server
+    const addonsTotal = selectedAddons.reduce((sum, s) => sum + (s.quantity || 1) * (s.netPrice || 0), 0);
 
     const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
 
@@ -192,9 +192,10 @@ export default function BookingCheckoutPage() {
                 // UC-026: Lưu dịch vụ thêm nếu có
                 if (selectedAddons.length > 0) {
                     try {
+                        const addonPayload = selectedAddons.map(({ netPrice, ...rest }) => rest);
                         await addonServiceApi.addServicesToBooking({
                             bookingId: response.result.bookingId,
-                            services: selectedAddons,
+                            services: addonPayload,
                         });
                     } catch (addonErr) {
                         console.warn("Lưu dịch vụ thêm thất bại:", addonErr);
@@ -369,9 +370,15 @@ export default function BookingCheckoutPage() {
                                 <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
                                 <span className="text-emerald-600 font-bold">-{formatCurrency(discount)}</span>
                             </div>
+                            {addonsTotal > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
+                                    <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                </div>
+                            )}
                             <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
                                 <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
-                                <span className="text-xl font-black">{formatCurrency(finalTotal)}</span>
+                                <span className="text-xl font-black">{formatCurrency(finalTotal + addonsTotal)}</span>
                             </div>
                         </div>
 

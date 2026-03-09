@@ -40,10 +40,13 @@ public class HotelController {
 
     @GetMapping("/search")
     public ApiResponse<List<HotelDetailResponse>> searchHotels(
-            @RequestParam String keyword
+            @RequestParam String keyword,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkIn,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkOut,
+            @RequestParam(required = false) Integer rooms
     ) {
         return ApiResponse.<List<HotelDetailResponse>>builder()
-                .result(hotelServiceImpl.searchHotels(keyword))
+                .result(hotelServiceImpl.searchHotels(keyword, checkIn, checkOut, rooms))
                 .build();
     }
 }

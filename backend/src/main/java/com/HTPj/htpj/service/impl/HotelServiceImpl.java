@@ -3,14 +3,11 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelSearchProjection;
-import com.HTPj.htpj.entity.Hotel;
-import com.HTPj.htpj.entity.HotelImage;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.HotelMapper;
-import com.HTPj.htpj.repository.HotelImageRepository;
-import com.HTPj.htpj.repository.HotelRepository;
-import com.HTPj.htpj.repository.HotelReviewRepository;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.HotelService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +30,9 @@ public class HotelServiceImpl implements HotelService {
     HotelImageRepository hotelImageRepository;
     HotelReviewRepository hotelReviewRepository;
     HotelMapper hotelMapper;
+    RoomTypeRepository roomTypeRepository;
+    BookingDetailRepository bookingDetailRepository;
+    RoomHoldRepository roomHoldRepository;
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -95,7 +96,7 @@ public class HotelServiceImpl implements HotelService {
                 .totalReviews(totalReviews)
                 .build();
     }
-    public List<HotelDetailResponse> searchHotels(String keyword) {
+    public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms) {
 
         List<HotelSearchProjection> hotels =
                 hotelRepository.searchHotels(keyword);
@@ -117,22 +118,90 @@ public class HotelServiceImpl implements HotelService {
                         Collectors.mapping(HotelImage::getImageUrl, Collectors.toList())
                 ));
 
-        return hotels.stream().map(h ->
-                HotelDetailResponse.builder()
-                        .hotelId(h.getHotelId())
-                        .hotelName(h.getHotelName())
-                        .address(h.getAddress())
-                        .city(h.getCity())
-                        .country(h.getCountry())
-                        .phone(h.getPhone())
-                        .description(h.getDescription())
-                        .starRating(h.getStarRating())
-                        .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
-                        .amenities(parseAmenities(h.getAmenities()))
-                        .avgRating(h.getAvgRating())
-                        .totalReviews(h.getTotalReviews())
-                        .build()
-        ).toList();
+        boolean filterByAvailability = checkIn != null && checkOut != null;
+        int requiredRooms = rooms != null && rooms > 0 ? rooms : 1;
+
+        // Tính availability nếu có ngày
+        Map<Integer, BigDecimal> minPriceMap = new HashMap<>();
+        Map<Integer, Integer> availableRoomMap = new HashMap<>();
+
+        if (filterByAvailability) {
+            List<RoomType> allRoomTypes = roomTypeRepository.findByHotel_HotelIdIn(hotelIds);
+
+            // Booked quantities per roomType
+            List<BookingDetail> overlappingBookings =
+                    bookingDetailRepository.findOverlappingBookingsForHotels(
+                            hotelIds, checkIn, checkOut, List.of("CONFIRMED", "PAID", "booked"));
+
+            Map<Integer, Integer> bookedMap = overlappingBookings.stream()
+                    .collect(Collectors.groupingBy(
+                            bd -> bd.getRoomType().getRoomTypeId(),
+                            Collectors.summingInt(BookingDetail::getQuantity)));
+
+            // Hold quantities per roomType
+            List<RoomHoldDetail> overlappingHolds =
+                    roomHoldRepository.findActiveOverlappingHoldDetailsForHotels(
+                            hotelIds, checkIn, checkOut);
+
+            Map<Integer, Integer> holdMap = overlappingHolds.stream()
+                    .collect(Collectors.groupingBy(
+                            RoomHoldDetail::getRoomTypeId,
+                            Collectors.summingInt(RoomHoldDetail::getQuantity)));
+
+            // Group room types by hotel
+            Map<Integer, List<RoomType>> roomTypesByHotel = allRoomTypes.stream()
+                    .filter(rt -> "ACTIVE".equalsIgnoreCase(rt.getRoomStatus()))
+                    .collect(Collectors.groupingBy(rt -> rt.getHotel().getHotelId()));
+
+            for (Integer hotelId : hotelIds) {
+                List<RoomType> rts = roomTypesByHotel.getOrDefault(hotelId, List.of());
+                int totalAvailable = 0;
+                BigDecimal minPrice = null;
+
+                for (RoomType rt : rts) {
+                    int booked = bookedMap.getOrDefault(rt.getRoomTypeId(), 0);
+                    int held = holdMap.getOrDefault(rt.getRoomTypeId(), 0);
+                    int available = rt.getTotalRooms() - booked - held;
+
+                    if (available > 0) {
+                        totalAvailable += available;
+                        if (minPrice == null || rt.getBasePrice().compareTo(minPrice) < 0) {
+                            minPrice = rt.getBasePrice();
+                        }
+                    }
+                }
+
+                availableRoomMap.put(hotelId, totalAvailable);
+                if (minPrice != null) {
+                    minPriceMap.put(hotelId, minPrice);
+                }
+            }
+        }
+
+        return hotels.stream()
+                .filter(h -> {
+                    if (!filterByAvailability) return true;
+                    int available = availableRoomMap.getOrDefault(h.getHotelId(), 0);
+                    return available >= requiredRooms;
+                })
+                .map(h ->
+                        HotelDetailResponse.builder()
+                                .hotelId(h.getHotelId())
+                                .hotelName(h.getHotelName())
+                                .address(h.getAddress())
+                                .city(h.getCity())
+                                .country(h.getCountry())
+                                .phone(h.getPhone())
+                                .description(h.getDescription())
+                                .starRating(h.getStarRating())
+                                .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
+                                .amenities(parseAmenities(h.getAmenities()))
+                                .avgRating(h.getAvgRating())
+                                .totalReviews(h.getTotalReviews())
+                                .minPrice(minPriceMap.get(h.getHotelId()))
+                                .totalAvailableRooms(availableRoomMap.get(h.getHotelId()))
+                                .build()
+                ).toList();
     }
     private List<String> parseAmenities(String amenitiesJson) {
         if (amenitiesJson == null || amenitiesJson.isBlank()) {

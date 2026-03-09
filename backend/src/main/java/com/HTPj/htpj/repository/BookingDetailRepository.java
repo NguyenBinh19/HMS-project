@@ -26,4 +26,21 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, Lo
             @Param("checkOut") LocalDate checkOut,
             @Param("statuses") List<String> statuses
     );
+
+    @Query("""
+        SELECT bd
+        FROM BookingDetail bd
+        JOIN FETCH bd.roomType
+        JOIN bd.booking b
+        WHERE b.hotelId IN :hotelIds
+          AND b.bookingStatus IN :statuses
+          AND b.checkInDate < :checkOut
+          AND b.checkOutDate > :checkIn
+    """)
+    List<BookingDetail> findOverlappingBookingsForHotels(
+            @Param("hotelIds") List<Integer> hotelIds,
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut,
+            @Param("statuses") List<String> statuses
+    );
 }
