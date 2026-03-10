@@ -1,5 +1,6 @@
 package com.HTPj.htpj.repository;
 
+import com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse;
 import com.HTPj.htpj.entity.Booking;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -44,4 +46,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("agencyId") Long agencyId,
             @Param("code") String code
     );
+
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+        b.bookingCode,
+        b.createdAt,
+        b.guestName,
+        a.agencyName,
+        h.hotelName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN Hotel h ON b.hotelId = h.hotelId
+    """)
+    List<ListAllBookingsResponse> getAllBookingsSummary();
 }

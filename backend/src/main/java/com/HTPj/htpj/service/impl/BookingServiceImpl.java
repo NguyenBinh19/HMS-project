@@ -2,6 +2,7 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
+import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
 import com.HTPj.htpj.dto.response.booking.*;
 import com.HTPj.htpj.dto.request.promotions.CheckPromotionCodeRequest;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
@@ -492,11 +493,35 @@ public class BookingServiceImpl implements BookingService {
         return jwt.getSubject();
     }
 
+    //UC79
     @Override
     public List<ListAllBookingsResponse> getAllBookings() {
+        return bookingRepository.getAllBookingsSummary();
+    }
 
-        List<Booking> bookings = bookingRepository.findAll();
+    //UC28:
+    @Override
+    public BookingDetailResponse updateGuestInformation(UpdateGuestRequest request) {
 
-        return bookingMapper.toBookingSummaryResponseList(bookings);
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        LocalDate currentDate = LocalDate.now();
+
+        if (!"CONFIRMED".equals(booking.getBookingStatus())
+                || !currentDate.isBefore(booking.getCheckInDate())) {
+            throw new AppException(ErrorCode.BOOKING_UPDATE_NOT_ALLOWED);
+        }
+
+        booking.setGuestName(request.getGuestName());
+        booking.setGuestPhone(request.getGuestPhone());
+        booking.setGuestEmail(request.getGuestEmail());
+        booking.setNotes(request.getNotes());
+
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return bookingMapper.toBookingDetailResponse(savedBooking);
     }
 }

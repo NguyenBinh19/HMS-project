@@ -17,10 +17,12 @@ public enum ErrorCode {
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
 
+    //hotel + room
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
     ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
 
+    //promotion
     PROMOTION_NOT_FOUND(2101, "Promotion not found", HttpStatus.NOT_FOUND),
     PROMOTION_CODE_EXISTED(2102, "Promotion code already existed", HttpStatus.BAD_REQUEST),
     PROMOTION_CODE_INVALID(2103, "Promotion code is invalid", HttpStatus.BAD_REQUEST),
@@ -33,14 +35,16 @@ public enum ErrorCode {
     PROMOTION_MIN_STAY_NOT_MET(2110, "Minimum stay not satisfied", HttpStatus.BAD_REQUEST),
     PROMOTION_AGENCY_USAGE_EXCEEDED(2111, "Agency usage limit exceeded", HttpStatus.BAD_REQUEST),
 
-    HOLD_NOT_FOUND(2301, "Hold not found", HttpStatus.NOT_FOUND),
-    HOLD_EXPIRED(2302, "Hold has expired", HttpStatus.BAD_REQUEST),
+    //booking
+    HOLD_NOT_FOUND(2201, "Hold not found", HttpStatus.NOT_FOUND),
+    HOLD_EXPIRED(2202, "Hold has expired", HttpStatus.BAD_REQUEST),
+    BOOKING_UPDATE_NOT_ALLOWED(2203, "Booking cannot update guest information", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_FOUND(2204, "Booking not found", HttpStatus.NOT_FOUND),
+    ADDON_SERVICE_NOT_FOUND(2205, "Addon service not found", HttpStatus.NOT_FOUND),
+
+    //kyc
     AGENCY_NOT_FOUND(4001, "Agency not found", HttpStatus.NOT_FOUND),
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
-
-    ADDON_SERVICE_NOT_FOUND(4001, "Addon service not found", HttpStatus.NOT_FOUND),
-    BOOKING_NOT_FOUND(4002, "Booking not found", HttpStatus.NOT_FOUND),
-
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
     ;
 

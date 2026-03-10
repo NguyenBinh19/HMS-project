@@ -3,6 +3,7 @@ package com.HTPj.htpj.controller;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
+import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
 import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
 import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
 import com.HTPj.htpj.dto.response.booking.BookingDetailResponse;
@@ -96,6 +97,16 @@ public class BookingController {
     ) {
         return ApiResponse.<BookingDetailResponse>builder()
                 .result(bookingService.getBookingDetail(bookingCode))
+                .build();
+    }
+
+    //UC28
+    @PostMapping("/update-guest")
+    ApiResponse<BookingDetailResponse> updateGuestInformation(
+            @RequestBody UpdateGuestRequest request
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.updateGuestInformation(request))
                 .build();
     }
 
