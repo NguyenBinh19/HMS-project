@@ -32,6 +32,7 @@ import AgencyProfile from "@/pages/Agency/AgencyProfile.jsx";
 import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
 import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
 import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
+import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -81,6 +82,7 @@ const AppRoutes = () => {
                     <Route path="profile" element={<HotelProfile/>} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
+                    <Route path="front-desk" element={<FrontDesk/>} />
                 </Route>
 
                 {/*Luồng Admin System*/}
