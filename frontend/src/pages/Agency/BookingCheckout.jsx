@@ -121,14 +121,23 @@ export default function BookingCheckoutPage() {
     const totalAdults = data.selectedRooms?.reduce((sum, r) => sum + (r.maxAdults * r.count), 0) || 0;
     const totalChildren = data.selectedRooms?.reduce((sum, r) => sum + ((r.maxChildren || 0) * r.count), 0) || 0;
 
-    const finalTotal = data.totalPrice || 0;
-    const basePrice = finalTotal / 0.8;
-    const discount = basePrice - finalTotal;
+    const roomPrice = data.totalPrice || 0;
 
-    // Tổng tiền dịch vụ thêm (UC-026)
-    const addonsTotal = selectedAddons.reduce((sum, s) => sum + (s.quantity || 1) * (s.netPrice || 0), 0);
+    // ưu đãi agency (20%)
+    const basePrice = roomPrice / 0.8;
+    const agencyDiscount = basePrice - roomPrice;
 
-    const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+    // dịch vụ thêm
+    const addonsTotal = selectedAddons.reduce(
+        (sum, s) => sum + (s.quantity || 1) * (s.netPrice || 0),
+        0
+    );
+
+    // voucher
+    const promoDiscount = discountAmount || 0;
+
+    // tổng cuối
+    const grandTotal = roomPrice + addonsTotal - promoDiscount;
 
     const handleExpire = () => {
         alert("Phiên giữ chỗ đã hết hạn. Hệ thống sẽ quay về trang tìm kiếm.");
@@ -193,7 +202,7 @@ export default function BookingCheckoutPage() {
                             hotelImage: data.hotelImage,
                             checkInDate: data.checkInDate,
                             checkOutDate: data.checkOutDate,
-                            totalPrice: finalPrice,
+                            totalPrice: grandTotal,
                             paymentMethod: paymentMethod,
                             guestName: name.trim(),
                             guestPhone: phone,
@@ -202,7 +211,6 @@ export default function BookingCheckoutPage() {
                             checkOutDate: format(checkOutDate, "dd/MM/yyyy"),
                             totalNights: nights,
                             totalRooms: totalRooms,
-                            totalPrice: finalTotal,
                             paymentMethod: paymentMethod
                         }
                     }
@@ -232,7 +240,7 @@ export default function BookingCheckoutPage() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <Users size={20} className="text-blue-700"/> Thông tin khách
+                            <Users size={20} className="text-blue-700" /> Thông tin khách
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
@@ -290,11 +298,11 @@ export default function BookingCheckoutPage() {
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
+                            <CreditCard size={20} className="text-blue-700" /> Chọn nguồn tiền thanh toán
                         </h2>
                         <div className="space-y-3">
                             <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "WALLET" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "WALLET"} onChange={() => setPaymentMethod("WALLET")}/>
+                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "WALLET"} onChange={() => setPaymentMethod("WALLET")} />
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-pink-50 rounded-full flex items-center justify-center text-pink-500"><Wallet size={20} /></div>
                                     <div>
@@ -304,7 +312,7 @@ export default function BookingCheckoutPage() {
                                 </div>
                             </label>
                             <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "CREDIT" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "CREDIT"} onChange={() => setPaymentMethod("CREDIT")}/>
+                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "CREDIT"} onChange={() => setPaymentMethod("CREDIT")} />
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-600"><CreditCard size={20} /></div>
                                     <div>
@@ -335,11 +343,12 @@ export default function BookingCheckoutPage() {
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm text-slate-600">
                                         <span>Tiền phòng ({nights} đêm)</span>
-                                        <span className="font-bold text-slate-900">{formatCurrency(data.totalPrice)}</span>
+                                        <span className="font-bold text-slate-900">
+                                            {formatCurrency(roomPrice)}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
-                                        <span>Dịch vụ thêm</span>
-                                        <span className="font-medium text-emerald-600">+ 0 ₫</span>
+                                        
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
                                         <span>Thuế & Phí</span>
@@ -365,7 +374,7 @@ export default function BookingCheckoutPage() {
                                                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                                                 disabled={!!promoData}
                                             />
-                                            {isCheckingPromo && <Loader2 size={14} className="absolute right-3 top-3 animate-spin text-slate-400"/>}
+                                            {isCheckingPromo && <Loader2 size={14} className="absolute right-3 top-3 animate-spin text-slate-400" />}
                                         </div>
                                         <button
                                             onClick={() => promoData ? handleRemoveCoupon() : handleApplyCoupon()}
@@ -384,23 +393,35 @@ export default function BookingCheckoutPage() {
                                                         <div className="text-xs font-bold text-slate-700">{cp.code}</div>
                                                         <div className="text-[10px] text-slate-500">Giảm {cp.typeDiscount === "PERCENT" ? `${cp.discountVal}%` : formatCurrency(cp.discountVal)}</div>
                                                     </div>
-                                                    <ChevronRight size={14} className="text-slate-300"/>
+                                                    <ChevronRight size={14} className="text-slate-300" />
                                                 </div>
                                             )) : <div className="p-4 text-[11px] text-slate-400 text-center italic">Không có mã khả dụng</div>}
                                         </div>
                                     )}
 
-                                    {promoError && <div className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic"><AlertCircle size={12}/> {promoError}</div>}
-                                    {promoData && <div className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic"><CheckCircle2 size={12}/> Giảm thành công: -{formatCurrency(discountAmount)}</div>}
+                                    {promoError && <div className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic"><AlertCircle size={12} /> {promoError}</div>}
+                                    {promoData && <div className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic"><CheckCircle2 size={12} /> Giảm thành công: -{formatCurrency(discountAmount)}</div>}
                                 </div>
 
                                 <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-sm font-black text-slate-900">Tổng cộng</span>
+                                    <span className="text-sm font-black text-slate-900">Giá phòng cuối cùng:</span>
                                     <span className="text-xl font-black text-purple-600 leading-none">{formatCurrency(finalPrice)}</span>
                                 </div>
 
                                 {/* CHECKBOX ĐIỀU KHOẢN */}
-                                <div className="flex items-start gap-3 pt-2">
+                                
+                                <div className="border-t border-slate-100 pt-4 space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
+                                        <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>
+                                    </div>
+                                    {addonsTotal > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
+                                            <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-start gap-3 pt-2">
                                     <div className="flex items-center h-5">
                                         <input
                                             id="terms"
@@ -414,22 +435,12 @@ export default function BookingCheckoutPage() {
                                         Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
                                     </label>
                                 </div>
-                        <div className="border-t border-slate-100 pt-4 space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
-                                <span className="text-emerald-600 font-bold">-{formatCurrency(discount)}</span>
-                            </div>
-                            {addonsTotal > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
-                                    <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                    <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
+                                        <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
+                                        <span className="text-xl font-black">{formatCurrency(grandTotal)}</span>
+                                    </div>
+                                    
                                 </div>
-                            )}
-                            <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
-                                <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
-                                <span className="text-xl font-black">{formatCurrency(finalTotal + addonsTotal)}</span>
-                            </div>
-                        </div>
 
                                 <button
                                     onClick={handleConfirmBooking}
@@ -444,7 +455,7 @@ export default function BookingCheckoutPage() {
                         {/* BOX GIỮ CHỖ AN TOÀN  */}
                         <div className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldCheck size={80} /></div>
-                            <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck size={18}/> Giữ chỗ an toàn</h4>
+                            <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck size={18} /> Giữ chỗ an toàn</h4>
                             <p className="text-[11px] leading-relaxed opacity-90 font-medium">
                                 Hệ thống đang giữ giá tốt nhất cho bạn. Vui lòng thanh toán trước khi thời gian giữ phòng kết thúc.
                             </p>

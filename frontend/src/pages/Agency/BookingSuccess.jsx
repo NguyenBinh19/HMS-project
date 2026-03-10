@@ -51,10 +51,10 @@ const BookingSuccessPage = () => {
         hotelName: checkoutData?.hotelName || "Khách sạn chưa xác định",
         guestName: checkoutData?.guestName || "Khách hàng lẻ",
         guestPhone: checkoutData?.guestPhone || "Chưa có SĐT",
-        guestEmail: checkoutData?.email || "Chưa có email",
+        guestEmail:checkoutData?.guestEmail ||checkoutData?.email ||booking?.guestEmail ||"Chưa có email",
         checkIn: checkoutData?.checkInDate || "",
         checkOut: checkoutData?.checkOutDate || "",
-        totalPrice: booking?.finalAmount || checkoutData?.totalPrice || 0,
+        totalPrice:booking?.grandPrice ||checkoutData?.grandPrice ||booking?.totalPrice ||checkoutData?.totalPrice ||0,
         paymentMethod: checkoutData?.paymentMethod || "WALLET",
         rooms: checkoutData?.rooms?.length || 1,
         nights: checkoutData?.totalNights || 1
