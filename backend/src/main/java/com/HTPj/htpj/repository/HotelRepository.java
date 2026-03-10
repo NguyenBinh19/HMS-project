@@ -33,6 +33,8 @@ public interface HotelRepository extends JpaRepository<Hotel, Integer> {
            LOWER(h.hotelName) LIKE LOWER(CONCAT('%', :keyword, '%'))
         OR LOWER(h.address) LIKE LOWER(CONCAT('%', :keyword, '%'))
         OR LOWER(h.city) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(h.country) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(h.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
       )
     GROUP BY h.hotelId, h.hotelName, h.address,
              h.city, h.country, h.phone,

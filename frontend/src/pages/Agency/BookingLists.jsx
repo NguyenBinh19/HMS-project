@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
@@ -11,70 +11,91 @@ import {
     FileText,
     Clock
 } from 'lucide-react';
+import { bookingService } from '@/services/booking.service.js';
+
+const STATUS_TAB_MAP = {
+    "Sắp khởi hành": ["booked", "confirmed", "paid"],
+    "Đang lưu trú": ["checked_in"],
+    "Hoàn thành": ["completed"],
+    "Đã hủy": ["cancelled"],
+};
+
+const getStatusLabel = (bookingStatus, paymentStatus) => {
+    const s = bookingStatus?.toLowerCase();
+    if (s === "cancelled") return "ĐÃ HỦY";
+    if (s === "completed") return "HOÀN THÀNH";
+    if (paymentStatus?.toLowerCase() === "paid") return "PAID & CONFIRMED";
+    return (bookingStatus || "").toUpperCase();
+};
+
+const getTabFromStatus = (bookingStatus) => {
+    const s = bookingStatus?.toLowerCase();
+    if (["booked", "confirmed", "paid"].includes(s)) return "Sắp khởi hành";
+    if (s === "checked_in") return "Đang lưu trú";
+    if (s === "completed") return "Hoàn thành";
+    if (s === "cancelled") return "Đã hủy";
+    return "Sắp khởi hành";
+};
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
+const formatCurrency = (amount) => {
+    if (amount == null) return "—";
+    return Number(amount).toLocaleString("vi-VN") + " ₫";
+};
 
 const OrderListScreen = () => {
     const navigate = useNavigate();
-    // 1. Mock Data tạm thời
-    const [orders] = useState([
-        {
-            id: "#BK-2026-8899",
-            date: "24/01/2026 09:30",
-            hotelName: "Mường Thanh Luxury Da Nang",
-            customer: "Nguyen Van A (+3 người)",
-            stayPeriod: "20/05 - 22/05 (2 đêm)",
-            roomType: "2x Deluxe King",
-            price: "4.000.000 ₫",
-            status: "PAID & CONFIRMED",
-            tab: "Sắp khởi hành",
-            image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&h=150&fit=crop"
-        },
-        {
-            id: "#BK-2026-8900",
-            date: "23/01/2026 14:22",
-            hotelName: "Grand Hotel Saigon",
-            customer: "Le Thi B (+2 người)",
-            stayPeriod: "25/05 - 27/05 (2 đêm)",
-            roomType: "1x Executive Suite",
-            price: "5.200.000 ₫",
-            status: "PAID & CONFIRMED",
-            tab: "Sắp khởi hành",
-            image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=200&h=150&fit=crop"
-        },
-        {
-            id: "#BK-2026-8904",
-            date: "19/01/2026 12:20",
-            hotelName: "Sapa Legend Resort",
-            customer: "Nguyen Van F (+5 người)",
-            stayPeriod: "15/01 - 17/01 (2 đêm)",
-            roomType: "6x Mountain View Room",
-            price: "7.500.000 ₫",
-            status: "HOÀN THÀNH",
-            tab: "Hoàn thành",
-            image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=200&h=150&fit=crop"
-        },
-        {
-            id: "#BK-2026-8906",
-            date: "17/01/2026 15:45",
-            hotelName: "Dalat Palace Heritage",
-            customer: "Tran Thi H (+3 người)",
-            stayPeriod: "05/01 - 07/01 (2 đêm)",
-            roomType: "2x Family Room",
-            price: "4.800.000 ₫",
-            status: "ĐÃ HỦY",
-            tab: "Đã hủy",
-            image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200&h=150&fit=crop"
-        }
-    ]);
-
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [activeTab, setActiveTab] = useState("Sắp khởi hành");
+    const [searchText, setSearchText] = useState("");
 
-    // Các tabs trạng thái
     const tabs = [
-        { name: "Sắp khởi hành", count: 5 },
-        { name: "Đang lưu trú", count: 2 },
-        { name: "Hoàn thành", count: "10+" },
-        { name: "Đã hủy", count: 1 }
+        { name: "Sắp khởi hành" },
+        { name: "Đang lưu trú" },
+        { name: "Hoàn thành" },
+        { name: "Đã hủy" },
     ];
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            setLoading(true);
+            try {
+                const res = await bookingService.getBookingHistory(page, 20);
+                const data = res.result;
+                setOrders(data.content || []);
+                setTotalPages(data.totalPages || 0);
+            } catch (err) {
+                console.error("Lỗi khi tải lịch sử đặt phòng:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistory();
+    }, [page]);
+
+    const filteredOrders = orders.filter((o) => {
+        const matchTab = STATUS_TAB_MAP[activeTab]?.includes(o.bookingStatus?.toLowerCase());
+        const matchSearch = !searchText ||
+            o.bookingCode?.toLowerCase().includes(searchText.toLowerCase()) ||
+            o.guestName?.toLowerCase().includes(searchText.toLowerCase()) ||
+            o.hotelName?.toLowerCase().includes(searchText.toLowerCase());
+        return matchTab && matchSearch;
+    });
+
+    const tabCounts = Object.fromEntries(
+        Object.entries(STATUS_TAB_MAP).map(([tab, statuses]) => [
+            tab,
+            orders.filter(o => statuses.includes(o.bookingStatus?.toLowerCase())).length,
+        ])
+    );
 
     return (
         <div className="bg-slate-50 min-h-screen p-6 font-sans text-slate-700">
@@ -90,24 +111,11 @@ const OrderListScreen = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
                         type="text"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
                         placeholder="Tìm theo Mã đơn (#BK...), Tên khách, hoặc Tên khách sạn..."
                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
-                </div>
-
-                <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50">
-                    <span className="text-sm">Ngày đặt</span>
-                    <ChevronDown size={16} />
-                </div>
-
-                <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2">
-                    <input type="text" value="2024-01-01" className="text-sm w-20 outline-none bg-transparent" readOnly />
-                    <Calendar size={16} className="text-slate-400" />
-                </div>
-
-                <div className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2">
-                    <input type="text" value="2024-12-31" className="text-sm w-20 outline-none bg-transparent" readOnly />
-                    <Calendar size={16} className="text-slate-400" />
                 </div>
             </div>
 
@@ -125,8 +133,8 @@ const OrderListScreen = () => {
                         <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] ${
                             activeTab === tab.name ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
                         }`}>
-              {tab.count}
-            </span>
+                            {tabCounts[tab.name] ?? 0}
+                        </span>
                         {activeTab === tab.name && (
                             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-full"></div>
                         )}
@@ -135,55 +143,62 @@ const OrderListScreen = () => {
             </div>
 
             {/* Order List */}
+            {loading ? (
+                <div className="text-center text-slate-400 py-20">Đang tải dữ liệu...</div>
+            ) : filteredOrders.length === 0 ? (
+                <div className="text-center text-slate-400 py-20">Không có đơn hàng nào</div>
+            ) : (
             <div className="space-y-4">
-                {orders.filter(o => activeTab === "Sắp khởi hành" ? o.tab === "Sắp khởi hành" : o.tab === activeTab).map((order) => (
-                    <div key={order.id} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+                {filteredOrders.map((order) => {
+                    const statusLabel = getStatusLabel(order.bookingStatus, order.paymentStatus);
+                    const tab = getTabFromStatus(order.bookingStatus);
+                    return (
+                    <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
                         <div
-                            onClick={() =>
-                                navigate(`/booking-list/detail/${encodeURIComponent(order.id)}`)
-                            }
+                            onClick={() => navigate(`/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
                             className="flex justify-between items-start mb-4 cursor-pointer group"
                         >
                             <div>
-                                {/* Thêm hover cho ID để người dùng biết là click được */}
-                                <span
-                                    className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
-                {order.id}
-            </span>
-                                <p className="text-[11px] text-slate-400 mt-0.5">{order.date}</p>
+                                <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
+                                    {order.bookingCode}
+                                </span>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                    {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
+                                </p>
                             </div>
                             <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
-                                order.status === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
-                                    order.status === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                                statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
                             }`}>
-                                {order.status === 'PAID & CONFIRMED' && <CheckIcon/>}
-                                {order.status === 'HOÀN THÀNH' && <CheckIcon/>}
-                                {order.status === 'ĐÃ HỦY' && <span>✘</span>}
-                                {order.status}
+                                {statusLabel !== 'ĐÃ HỦY' && <CheckIcon />}
+                                {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
+                                {statusLabel}
                             </div>
                         </div>
 
                         <div className="flex gap-4">
-                            <img src={order.image} alt="hotel" className="w-24 h-24 rounded-lg object-cover"/>
                             <div className="flex-1">
                                 <h3 className="font-bold text-slate-800 mb-1">{order.hotelName}</h3>
                                 <div className="space-y-1">
                                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><UserIcon/></span> {order.customer}
+                                        <span className="w-4 flex justify-center"><UserIcon /></span>
+                                        {order.guestName}{order.totalGuests > 1 ? ` (+${order.totalGuests - 1} người)` : ""}
                                     </p>
                                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><Calendar size={14} /></span> {order.stayPeriod}
+                                        <span className="w-4 flex justify-center"><Calendar size={14} /></span>
+                                        {formatDate(order.checkInDate)} - {formatDate(order.checkOutDate)} ({order.nights} đêm)
                                     </p>
                                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><BedIcon /></span> {order.roomType}
+                                        <span className="w-4 flex justify-center"><BedIcon /></span>
+                                        {order.totalRooms} phòng
                                     </p>
                                 </div>
                             </div>
                             <div className="text-right flex flex-col justify-between items-end">
-                                <span className="text-emerald-600 font-bold text-lg">{order.price}</span>
+                                <span className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
 
                                 <div className="flex gap-2">
-                                    {order.tab === "Sắp khởi hành" && (
+                                    {tab === "Sắp khởi hành" && (
                                         <>
                                             <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
                                                 <Download size={14} /> Tải Voucher
@@ -193,7 +208,7 @@ const OrderListScreen = () => {
                                             </button>
                                         </>
                                     )}
-                                    {order.tab === "Hoàn thành" && (
+                                    {tab === "Hoàn thành" && (
                                         <>
                                             <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
                                                 <Star size={14} /> Đánh giá
@@ -203,7 +218,7 @@ const OrderListScreen = () => {
                                             </button>
                                         </>
                                     )}
-                                    {order.tab === "Đã hủy" && (
+                                    {tab === "Đã hủy" && (
                                         <button className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100">
                                             Xem lý do
                                         </button>
@@ -212,8 +227,31 @@ const OrderListScreen = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                    <button
+                        disabled={page === 0}
+                        onClick={() => setPage(p => p - 1)}
+                        className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-slate-100"
+                    >
+                        ← Trước
+                    </button>
+                    <span className="px-3 py-1.5 text-sm text-slate-600">Trang {page + 1} / {totalPages}</span>
+                    <button
+                        disabled={page >= totalPages - 1}
+                        onClick={() => setPage(p => p + 1)}
+                        className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-slate-100"
+                    >
+                        Tiếp →
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

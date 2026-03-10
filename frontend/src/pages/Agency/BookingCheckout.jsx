@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
 import { useBookingPromotion } from "@/components/agency/booking/useBookingPromotion.js";
+import { addonServiceApi } from "@/services/addonService.service.js";
+import ExtraServiceSection from "@/components/agency/booking/ExtraServiceSection.jsx";
 
 /* ================= TIMER BAR ================= */
 const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCount, maxExtensions }) => {
@@ -41,6 +43,7 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
                 <span className={`font-bold ${isLowTime ? "text-red-600" : "text-blue-600"}`}>
                     {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
                 </span>
+
                 <div className="ml-auto flex items-center gap-3">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                         Lượt gia hạn: {extendCount}/{maxExtensions}
@@ -65,10 +68,16 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
 export default function BookingCheckoutPage() {
     const location = useLocation();
     const navigate = useNavigate();
+
     const [data, setData] = useState(location.state || {});
     const [isExtending, setIsExtending] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("");
+
+    // UC-026 - Dịch vụ thêm
+    const [selectedAddons, setSelectedAddons] = useState([]);
+
+    // số lần gia hạn (Tối đa 3 lần)
     const [extendCount, setExtendCount] = useState(0);
     const MAX_EXTENSIONS = 3;
     const [isAgreed, setIsAgreed] = useState(false);
@@ -109,6 +118,31 @@ export default function BookingCheckoutPage() {
     const checkOutDate = parseISO(data.checkOutDate);
     const nights = Math.max(1, differenceInDays(checkOutDate, checkInDate));
     const totalRooms = data.selectedRooms?.reduce((sum, r) => sum + r.count, 0) || 0;
+    const totalAdults = data.selectedRooms?.reduce((sum, r) => sum + (r.maxAdults * r.count), 0) || 0;
+    const totalChildren = data.selectedRooms?.reduce((sum, r) => sum + ((r.maxChildren || 0) * r.count), 0) || 0;
+
+    const roomPrice = data.totalPrice || 0;
+
+    // ưu đãi agency (20%)
+    const basePrice = roomPrice / 0.8;
+    const agencyDiscount = basePrice - roomPrice;
+
+    // dịch vụ thêm
+    const addonsTotal = selectedAddons.reduce(
+        (sum, s) => sum + (s.quantity || 1) * (s.netPrice || 0),
+        0
+    );
+
+    // voucher
+    const promoDiscount = discountAmount || 0;
+
+    // tổng cuối
+    const grandTotal = roomPrice + addonsTotal - promoDiscount;
+
+    const handleExpire = () => {
+        alert("Phiên giữ chỗ đã hết hạn. Hệ thống sẽ quay về trang tìm kiếm.");
+        navigate("/homepage");
+    };
 
     const handleExtendHold = async () => {
         if (extendCount >= MAX_EXTENSIONS) return alert("Hết lượt gia hạn.");
@@ -147,6 +181,18 @@ export default function BookingCheckoutPage() {
             };
             const response = await bookingService.createBooking(payload);
             if (response?.result) {
+                // UC-026: Lưu dịch vụ thêm nếu có
+                if (selectedAddons.length > 0) {
+                    try {
+                        const addonPayload = selectedAddons.map(({ netPrice, ...rest }) => rest);
+                        await addonServiceApi.addServicesToBooking({
+                            bookingId: response.result.bookingId,
+                            services: addonPayload,
+                        });
+                    } catch (addonErr) {
+                        console.warn("Lưu dịch vụ thêm thất bại:", addonErr);
+                    }
+                }
                 // Gửi đầy đủ thông tin sang trang Success
                 navigate("/booking-success", {
                     state: {
@@ -156,20 +202,25 @@ export default function BookingCheckoutPage() {
                             hotelImage: data.hotelImage,
                             checkInDate: data.checkInDate,
                             checkOutDate: data.checkOutDate,
-                            totalPrice: finalPrice,
+                            totalPrice: grandTotal,
                             paymentMethod: paymentMethod,
                             guestName: name.trim(),
-                            guestPhone: phone.trim(),
-                            guestEmail: email.trim(),
+                            guestPhone: phone,
+                            guestEmail: email,
+                            checkInDate: format(checkInDate, "dd/MM/yyyy"),
+                            checkOutDate: format(checkOutDate, "dd/MM/yyyy"),
                             totalNights: nights,
-                            rooms: data.selectedRooms
+                            totalRooms: totalRooms,
+                            paymentMethod: paymentMethod
                         }
                     }
                 });
             }
         } catch (error) {
-            alert(`Lỗi hệ thống: ${error.response?.data?.message || "Không xác định"}`);
-        } finally { setIsSubmitting(false); }
+            alert(`Lỗi: ${error.response?.data?.message || "Lỗi hệ thống"}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -184,11 +235,12 @@ export default function BookingCheckoutPage() {
             />
 
             <div className="max-w-6xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* CỘT TRÁI: THÔNG TIN KHÁCH & PHÒNG */}
+
+                {/* CỘT TRÁI (THÔNG TIN KHÁCH & PHÒNG) */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <Users size={20} className="text-blue-700"/> Thông tin khách
+                            <Users size={20} className="text-blue-700" /> Thông tin khách
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
@@ -238,13 +290,19 @@ export default function BookingCheckoutPage() {
                         ))}
                     </div>
 
+                    {/* UC-026 - Dịch vụ thêm */}
+                    <ExtraServiceSection
+                        hotelId={data.hotelId}
+                        onChange={setSelectedAddons}
+                    />
+
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
+                            <CreditCard size={20} className="text-blue-700" /> Chọn nguồn tiền thanh toán
                         </h2>
                         <div className="space-y-3">
                             <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "WALLET" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "WALLET"} onChange={() => setPaymentMethod("WALLET")}/>
+                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "WALLET"} onChange={() => setPaymentMethod("WALLET")} />
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-pink-50 rounded-full flex items-center justify-center text-pink-500"><Wallet size={20} /></div>
                                     <div>
@@ -254,7 +312,7 @@ export default function BookingCheckoutPage() {
                                 </div>
                             </label>
                             <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "CREDIT" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "CREDIT"} onChange={() => setPaymentMethod("CREDIT")}/>
+                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "CREDIT"} onChange={() => setPaymentMethod("CREDIT")} />
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-600"><CreditCard size={20} /></div>
                                     <div>
@@ -285,11 +343,12 @@ export default function BookingCheckoutPage() {
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm text-slate-600">
                                         <span>Tiền phòng ({nights} đêm)</span>
-                                        <span className="font-bold text-slate-900">{formatCurrency(data.totalPrice)}</span>
+                                        <span className="font-bold text-slate-900">
+                                            {formatCurrency(roomPrice)}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
-                                        <span>Dịch vụ thêm</span>
-                                        <span className="font-medium text-emerald-600">+ 0 ₫</span>
+                                        
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
                                         <span>Thuế & Phí</span>
@@ -315,7 +374,7 @@ export default function BookingCheckoutPage() {
                                                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                                                 disabled={!!promoData}
                                             />
-                                            {isCheckingPromo && <Loader2 size={14} className="absolute right-3 top-3 animate-spin text-slate-400"/>}
+                                            {isCheckingPromo && <Loader2 size={14} className="absolute right-3 top-3 animate-spin text-slate-400" />}
                                         </div>
                                         <button
                                             onClick={() => promoData ? handleRemoveCoupon() : handleApplyCoupon()}
@@ -334,23 +393,35 @@ export default function BookingCheckoutPage() {
                                                         <div className="text-xs font-bold text-slate-700">{cp.code}</div>
                                                         <div className="text-[10px] text-slate-500">Giảm {cp.typeDiscount === "PERCENT" ? `${cp.discountVal}%` : formatCurrency(cp.discountVal)}</div>
                                                     </div>
-                                                    <ChevronRight size={14} className="text-slate-300"/>
+                                                    <ChevronRight size={14} className="text-slate-300" />
                                                 </div>
                                             )) : <div className="p-4 text-[11px] text-slate-400 text-center italic">Không có mã khả dụng</div>}
                                         </div>
                                     )}
 
-                                    {promoError && <div className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic"><AlertCircle size={12}/> {promoError}</div>}
-                                    {promoData && <div className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic"><CheckCircle2 size={12}/> Giảm thành công: -{formatCurrency(discountAmount)}</div>}
+                                    {promoError && <div className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic"><AlertCircle size={12} /> {promoError}</div>}
+                                    {promoData && <div className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic"><CheckCircle2 size={12} /> Giảm thành công: -{formatCurrency(discountAmount)}</div>}
                                 </div>
 
                                 <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-sm font-black text-slate-900">Tổng cộng</span>
+                                    <span className="text-sm font-black text-slate-900">Giá phòng cuối cùng:</span>
                                     <span className="text-xl font-black text-purple-600 leading-none">{formatCurrency(finalPrice)}</span>
                                 </div>
 
                                 {/* CHECKBOX ĐIỀU KHOẢN */}
-                                <div className="flex items-start gap-3 pt-2">
+                                
+                                <div className="border-t border-slate-100 pt-4 space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
+                                        <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>
+                                    </div>
+                                    {addonsTotal > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
+                                            <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-start gap-3 pt-2">
                                     <div className="flex items-center h-5">
                                         <input
                                             id="terms"
@@ -363,6 +434,12 @@ export default function BookingCheckoutPage() {
                                     <label htmlFor="terms" className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
                                         Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
                                     </label>
+                                </div>
+                                    <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
+                                        <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
+                                        <span className="text-xl font-black">{formatCurrency(grandTotal)}</span>
+                                    </div>
+                                    
                                 </div>
 
                                 <button
@@ -378,7 +455,7 @@ export default function BookingCheckoutPage() {
                         {/* BOX GIỮ CHỖ AN TOÀN  */}
                         <div className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldCheck size={80} /></div>
-                            <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck size={18}/> Giữ chỗ an toàn</h4>
+                            <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck size={18} /> Giữ chỗ an toàn</h4>
                             <p className="text-[11px] leading-relaxed opacity-90 font-medium">
                                 Hệ thống đang giữ giá tốt nhất cho bạn. Vui lòng thanh toán trước khi thời gian giữ phòng kết thúc.
                             </p>

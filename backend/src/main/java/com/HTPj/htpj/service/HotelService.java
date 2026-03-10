@@ -11,5 +11,5 @@ public interface HotelService {
 
     HotelDetailResponse getHotelDetailForView(Integer hotelId);
 
-    List<HotelDetailResponse> searchHotels(String keyword);
+    List<HotelDetailResponse> searchHotels(String keyword, java.time.LocalDate checkIn, java.time.LocalDate checkOut, Integer rooms);
 }

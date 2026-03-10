@@ -2,7 +2,7 @@ package com.HTPj.htpj.dto.response.hotel;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -27,5 +27,8 @@ public class HotelDetailResponse {
 
     private Double avgRating;
     private Integer totalReviews;
+
+    private BigDecimal minPrice;
+    private Integer totalAvailableRooms;
 }
 

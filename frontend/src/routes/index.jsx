@@ -18,6 +18,7 @@ import CouponManager from "@/pages/Hotel/CouponManager.jsx";
 import AgencyMain from "@/pages/Agency/AgencyDashboard.jsx";
 import MyBookingList from "@/pages/Agency/BookingLists.jsx"
 import BookingDetailPost from "@/pages/Agency/BookingDetailPost.jsx";
+import AddonServiceManager from "@/pages/Hotel/AddonServices.jsx";
 import KYCIntroduction from "@/pages/Auth/KYCIntroduction.jsx"
 import AdminLayout from "@/pages/Admin/AdminDashboard.jsx";
 import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
@@ -75,6 +76,7 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="coupons" replace />} />
                     <Route path="staff" element={<HotelStaffDashboard/>} />
                     <Route path="profile" element={<HotelProfile/>} />
+                    <Route path="addon-services" element={<AddonServiceManager />} />
                 </Route>
 
                 {/*Luồng Admin System*/}

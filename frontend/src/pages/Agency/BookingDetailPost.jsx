@@ -4,36 +4,75 @@ import {
     MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { bookingService } from '@/services/booking.service.js';
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
+const formatCurrency = (amount) => {
+    if (amount == null) return "—";
+    return Number(amount).toLocaleString("vi-VN") + " ₫";
+};
+
+const getStatusLabel = (bookingStatus, paymentStatus) => {
+    const s = bookingStatus?.toLowerCase();
+    if (s === "cancelled") return "ĐÃ HỦY";
+    if (s === "completed") return "HOÀN THÀNH";
+    if (s === "checked_in") return "ĐANG LƯU TRÚ";
+    if (paymentStatus?.toLowerCase() === "paid") return "ĐẶT PHÒNG THÀNH CÔNG";
+    return "ĐẶT PHÒNG THÀNH CÔNG";
+};
 
 const BookingDetailPost = () => {
     const navigate = useNavigate();
     const { id } = useParams();
-    const decodedId = decodeURIComponent(id || "");
+    const bookingCode = decodeURIComponent(id || "");
 
-    const [orderDetail, setOrderDetail] = useState({
-        id: decodedId || "#BK-2026-8899",
-        status: "ĐẶT PHÒNG THÀNH CÔNG",
-        hotelName: "Mường Thanh Luxury Da Nang",
-        rating: 5,
-        checkIn: "20/05/2026",
-        checkOut: "22/05/2026",
-        nights: 2,
-        guests: [
-            { room: "Phòng 1", name: "Nguyen Van A (Trưởng đoàn) - Double" },
-            { room: "Phòng 2", name: "Tran Thi B - Twin" }
-        ],
-        services: ["Ăn sáng"],
-        totalNet: "4.000.000 ₫",
-        paymentStatus: "Đã trừ Ví trả trước",
-        transactionId: "TRX-998877",
-        checkInTime: "14:00 / 12:00",
-        cancelPolicy: "Không hoàn tiền (Non-refundable). Hủy sẽ mất 100% phí."
-    });
+    const [booking, setBooking] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchDetail = async () => {
+            setLoading(true);
+            try {
+                const res = await bookingService.getBookingDetail(bookingCode);
+                setBooking(res.result);
+            } catch (err) {
+                setError("Không thể tải chi tiết đơn hàng. Vui lòng thử lại.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (bookingCode) fetchDetail();
+    }, [bookingCode]);
 
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
         alert("Đã sao chép: " + text);
     };
+
+    if (loading) {
+        return (
+            <div className="bg-[#f0f2f5] min-h-screen flex items-center justify-center">
+                <p className="text-slate-500">Đang tải chi tiết đơn hàng...</p>
+            </div>
+        );
+    }
+
+    if (error || !booking) {
+        return (
+            <div className="bg-[#f0f2f5] min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-rose-500">{error || "Không tìm thấy đơn hàng"}</p>
+                <button onClick={() => navigate(-1)} className="text-sm text-blue-600 underline">Quay lại</button>
+            </div>
+        );
+    }
+
+    const statusLabel = getStatusLabel(booking.bookingStatus, booking.paymentStatus);
 
     return (
         <div className="bg-[#f0f2f5] min-h-screen pb-12 font-sans text-slate-700">
@@ -45,26 +84,26 @@ const BookingDetailPost = () => {
                     <p className="text-xs text-slate-500">Quản lý và thực hiện các nghiệp vụ sau bán cho đơn hàng đã xác nhận</p>
                 </div>
 
-                {/* Banner Trạng thái - Bo nhẹ, màu xanh chuẩn blue-500 */}
+                {/* Banner Trạng thái */}
                 <div className="bg-[#3b82f6] rounded-lg p-4 mb-4 flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-3">
                         <div className="bg-white rounded-full p-1">
                             <CheckCircle2 className="text-[#3b82f6]" size={20} />
                         </div>
                         <div>
-                            <h2 className="text-white font-bold text-sm uppercase tracking-wide">{orderDetail.status}</h2>
-                            <p className="text-blue-100 text-xs">{orderDetail.id}</p>
+                            <h2 className="text-white font-bold text-sm uppercase tracking-wide">{statusLabel}</h2>
+                            <p className="text-blue-100 text-xs">{booking.bookingCode}</p>
                         </div>
                     </div>
                     <button
-                        onClick={() => handleCopy(orderDetail.id)}
+                        onClick={() => handleCopy(booking.bookingCode)}
                         className="flex items-center gap-1.5 text-white text-xs font-medium hover:underline"
                     >
                         <Copy size={14} /> Sao chép
                     </button>
                 </div>
 
-                {/* Main Card bọc toàn bộ nội dung trắng */}
+                {/* Main Card */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
                     {/* 1. Các tác vụ hậu mãi */}
@@ -95,16 +134,25 @@ const BookingDetailPost = () => {
                         <div className="border border-slate-200 rounded-xl p-6 relative">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h4 className="text-lg font-bold text-slate-900 leading-tight">{orderDetail.hotelName}</h4>
-                                    <div className="flex gap-0.5 mt-1">
-                                        {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="#fabb05" className="text-[#fabb05]" />)}
-                                        <span className="text-xs text-slate-400 ml-2">Khách sạn 5 sao</span>
-                                    </div>
+                                    <h4 className="text-lg font-bold text-slate-900 leading-tight">{booking.hotelName}</h4>
+                                    {booking.hotelStarRating > 0 && (
+                                        <div className="flex gap-0.5 mt-1">
+                                            {[...Array(booking.hotelStarRating)].map((_, i) => (
+                                                <Star key={i} size={14} fill="#fabb05" className="text-[#fabb05]" />
+                                            ))}
+                                            <span className="text-xs text-slate-400 ml-2">Khách sạn {booking.hotelStarRating} sao</span>
+                                        </div>
+                                    )}
+                                    {booking.hotelAddress && (
+                                        <p className="text-xs text-slate-400 mt-1">{booking.hotelAddress}</p>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] text-slate-400 font-bold uppercase">Stay Info</p>
-                                    <p className="text-sm font-bold text-slate-800">{orderDetail.checkIn} - {orderDetail.checkOut}</p>
-                                    <p className="text-[11px] text-slate-500">({orderDetail.nights} Đêm)</p>
+                                    <p className="text-sm font-bold text-slate-800">
+                                        {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500">({booking.nights} Đêm)</p>
                                 </div>
                             </div>
 
@@ -116,19 +164,68 @@ const BookingDetailPost = () => {
                                 <p className="text-[11px] text-slate-400">Quét mã QR để xác thực tại quầy lễ tân</p>
                             </div>
 
-                            {/* Guest List */}
+                            {/* Guest Info */}
                             <div className="space-y-3">
-                                <p className="text-xs font-bold text-slate-800">Danh sách khách lưu trú:</p>
-                                {orderDetail.guests.map((g, i) => (
-                                    <div key={i} className="text-xs flex gap-2">
-                                        <span className="font-bold text-slate-600">Phòng {i+1}:</span>
-                                        <span className="text-slate-500">{g.name}</span>
+                                <p className="text-xs font-bold text-slate-800">Thông tin khách lưu trú:</p>
+                                <div className="text-xs grid grid-cols-2 gap-2">
+                                    <div className="flex gap-2">
+                                        <span className="text-slate-400">Họ tên:</span>
+                                        <span className="font-semibold text-slate-700">{booking.guestName}</span>
                                     </div>
-                                ))}
-                                <div className="pt-4 flex justify-between items-center text-xs">
-                                    <span className="text-slate-400 italic">Dịch vụ bao gồm:</span>
-                                    <span className="font-bold text-slate-800">Ăn sáng</span>
+                                    <div className="flex gap-2">
+                                        <span className="text-slate-400">Điện thoại:</span>
+                                        <span className="font-semibold text-slate-700">{booking.guestPhone}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-slate-400">Email:</span>
+                                        <span className="font-semibold text-slate-700">{booking.guestEmail}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-slate-400">Số khách:</span>
+                                        <span className="font-semibold text-slate-700">{booking.totalGuests} người</span>
+                                    </div>
                                 </div>
+
+                                {/* Room Details */}
+                                {booking.roomDetails?.length > 0 && (
+                                    <div className="pt-3">
+                                        <p className="text-xs font-bold text-slate-800 mb-2">Danh sách phòng:</p>
+                                        <div className="space-y-2">
+                                            {booking.roomDetails.map((room, i) => (
+                                                <div key={i} className="text-xs flex justify-between bg-slate-50 rounded-lg px-3 py-2">
+                                                    <span className="font-semibold text-slate-700">
+                                                        {room.quantity}x {room.roomTitle}
+                                                    </span>
+                                                    <span className="text-slate-500">
+                                                        {room.bedType && `${room.bedType} · `}{room.maxGuests} khách tối đa
+                                                    </span>
+                                                    <span className="font-bold text-emerald-600">{formatCurrency(room.totalAmount)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Addon Services */}
+                                {booking.addonServices?.length > 0 && (
+                                    <div className="pt-2">
+                                        <p className="text-xs font-bold text-slate-800 mb-1">Dịch vụ thêm:</p>
+                                        <div className="space-y-1">
+                                            {booking.addonServices.map((s, i) => (
+                                                <div key={i} className="text-xs flex justify-between px-3 py-1.5 bg-blue-50 rounded-lg">
+                                                    <span className="text-slate-700">{s.serviceName} × {s.quantity}</span>
+                                                    <span className="font-bold text-blue-700">{formatCurrency(s.totalPrice)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {booking.notes && (
+                                    <div className="pt-2 text-xs text-slate-500 italic">
+                                        Ghi chú: {booking.notes}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -141,16 +238,28 @@ const BookingDetailPost = () => {
                             <div className="space-y-3">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thông tin thanh toán</p>
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Tổng tiền Net:</span>
-                                    <span className="font-bold text-slate-900">{orderDetail.totalNet}</span>
+                                    <span className="text-slate-500">Tổng tiền:</span>
+                                    <span className="font-bold text-slate-900">{formatCurrency(booking.totalAmount)}</span>
+                                </div>
+                                {booking.discountAmount > 0 && (
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-500">Giảm giá:</span>
+                                        <span className="font-bold text-rose-600">- {formatCurrency(booking.discountAmount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-xs border-t pt-2">
+                                    <span className="text-slate-600 font-semibold">Thành tiền:</span>
+                                    <span className="font-bold text-emerald-600 text-sm">{formatCurrency(booking.finalAmount)}</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Trạng thái:</span>
-                                    <span className="font-bold text-emerald-600 tracking-tight">{orderDetail.paymentStatus}</span>
+                                    <span className="text-slate-500">Phương thức TT:</span>
+                                    <span className="font-bold text-slate-900">{booking.paymentMethod || "—"}</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Mã giao dịch:</span>
-                                    <span className="font-bold text-slate-900">{orderDetail.transactionId}</span>
+                                    <span className="text-slate-500">Trạng thái TT:</span>
+                                    <span className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                                        {booking.paymentStatus?.toUpperCase() || "—"}
+                                    </span>
                                 </div>
                             </div>
 
@@ -158,19 +267,19 @@ const BookingDetailPost = () => {
                             <div className="space-y-3">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chính sách quan trọng</p>
                                 <div className="bg-[#f8f9fa] p-3 rounded-lg border-l-4 border-blue-500">
-                                    <p className="text-[11px] font-bold text-slate-700">Giờ nhận/trả phòng</p>
-                                    <p className="text-xs text-slate-600">{orderDetail.checkInTime}</p>
+                                    <p className="text-[11px] font-bold text-slate-700">Trạng thái đơn</p>
+                                    <p className="text-xs text-slate-600">{booking.bookingStatus?.toUpperCase()}</p>
                                 </div>
                                 <div className="bg-[#fef2f2] p-3 rounded-lg border-l-4 border-rose-500">
                                     <p className="text-[11px] font-bold text-rose-700">Chính sách hủy</p>
-                                    <p className="text-xs text-rose-600 leading-relaxed">{orderDetail.cancelPolicy}</p>
+                                    <p className="text-xs text-rose-600 leading-relaxed">Vui lòng liên hệ khách sạn để biết chính sách hủy.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Nút quay lại dưới cùng */}
+                {/* Nút quay lại */}
                 <div className="mt-6 flex justify-end">
                     <button
                         onClick={() => navigate(-1)}
@@ -185,3 +294,5 @@ const BookingDetailPost = () => {
 };
 
 export default BookingDetailPost;
+
+    

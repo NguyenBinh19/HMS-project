@@ -190,6 +190,7 @@ export default function HotelDetailPage() {
                         holdCode: res.result.holdCode,
                         expiredAt: res.result.expiredAt,
                         hotelName: hotel.hotelName,
+                        hotelId: hotel.hotelId,
                         address: hotel.address,
                         checkInDate: dates.checkIn,
                         checkOutDate: dates.checkOut,

@@ -13,7 +13,7 @@ const Sidebar = () => {
         { icon: <Hotel size={20} />, label: "QUẢN LÝ PHÒNG", path: "/hotel/room-types" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN", path: "/hotel/staff" },
         { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/room-types" },
-        { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/room-types" },
+        { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/addon-services" },
         { icon: <CalendarDays size={20} />, label: "LỊCH QUẢN LÝ TỒN KHO", path: "/hotel/room-types" },
         { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ TỰ ĐỘNG", path: "/hotel/dynamic-pricing" },
         { icon: <TicketPercent size={20} />, label: "QUẢN LÝ MÃ GIẢM GIÁ", path: "/hotel/coupons" },
