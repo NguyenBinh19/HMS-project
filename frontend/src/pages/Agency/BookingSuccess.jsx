@@ -28,7 +28,7 @@ const BookingSuccessPage = () => {
                     </div>
                     <h2 className="text-lg font-bold text-slate-800">Không tìm thấy đơn hàng</h2>
                     <p className="text-slate-500 text-sm mt-2">Vui lòng quay lại trang chủ để kiểm tra danh sách đơn hàng.</p>
-                    <button onClick={() => navigate("/")} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">VỀ TRANG CHỦ</button>
+                    <button onClick={() => navigate("/homepage")} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">VỀ TRANG CHỦ</button>
                 </div>
             </div>
         );

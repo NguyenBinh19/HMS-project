@@ -6,7 +6,7 @@ import {
 import { addonServiceApi } from "@/services/addonService.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
-const HOTEL_ID = 1;
+const HOTEL_ID = 2;
 
 const CATEGORIES = [
     { key: "all", label: "Tất cả" },

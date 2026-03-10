@@ -30,6 +30,8 @@ import StaffDashboard from "@/pages/Agency/StaffDashboard.jsx";
 import HotelStaffDashboard from "@/pages/Hotel/HotelStaffDashboard.jsx";
 import AgencyProfile from "@/pages/Agency/AgencyProfile.jsx";
 import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
+import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
+import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -63,6 +65,7 @@ const AppRoutes = () => {
                     </Route>
                     <Route path="staff" element={<StaffDashboard />} />
                     <Route path="agency-profile" element={<AgencyProfile />} />
+                    <Route path="feedback-history" element={<FeedbackHistory />} />
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
@@ -77,6 +80,7 @@ const AppRoutes = () => {
                     <Route path="staff" element={<HotelStaffDashboard/>} />
                     <Route path="profile" element={<HotelProfile/>} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
+                    <Route path="reviews" element={<HotelFeedbackManagement />} />
                 </Route>
 
                 {/*Luồng Admin System*/}
