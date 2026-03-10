@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -196,7 +197,7 @@ public class BookingServiceImpl implements BookingService {
 
         return totalPrice;
     }
-
+    @Transactional
     @Override
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
 
@@ -467,7 +468,7 @@ public class BookingServiceImpl implements BookingService {
                 .guestEmail(booking.getGuestEmail())
                 .notes(booking.getNotes())
                 .totalAmount(booking.getTotalAmount())
-                .discountAmount(booking.getDiscountAmount())
+                .discountAmount(booking.getDiscountTotal())
                 .finalAmount(booking.getFinalAmount())
                 .paymentMethod(booking.getPaymentMethod())
                 .paymentStatus(booking.getPaymentStatus())
