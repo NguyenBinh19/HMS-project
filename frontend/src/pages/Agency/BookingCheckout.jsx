@@ -200,10 +200,7 @@ export default function BookingCheckoutPage() {
                         checkoutData: {
                             hotelName: data.hotelName,
                             hotelImage: data.hotelImage,
-                            checkInDate: data.checkInDate,
-                            checkOutDate: data.checkOutDate,
                             totalPrice: grandTotal,
-                            paymentMethod: paymentMethod,
                             guestName: name.trim(),
                             guestPhone: phone,
                             guestEmail: email,
