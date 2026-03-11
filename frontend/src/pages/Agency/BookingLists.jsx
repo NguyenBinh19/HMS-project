@@ -15,26 +15,26 @@ import { bookingService } from '@/services/booking.service.js';
 
 const STATUS_TAB_MAP = {
     "Sắp khởi hành": ["booked", "confirmed", "paid"],
-    "Đang lưu trú": ["checked_in"],
-    "Hoàn thành": ["completed"],
-    "Đã hủy": ["cancelled"],
-};
-
-const getStatusLabel = (bookingStatus, paymentStatus) => {
-    const s = bookingStatus?.toLowerCase();
-    if (s === "cancelled") return "ĐÃ HỦY";
-    if (s === "completed") return "HOÀN THÀNH";
-    if (paymentStatus?.toLowerCase() === "paid") return "PAID & CONFIRMED";
-    return (bookingStatus || "").toUpperCase();
+    "Đang lưu trú": ["checked_in", "checkin"],
+    "Hoàn thành": ["completed", "checkout"],
+    "Đã hủy": ["cancelled", "noshow"],
 };
 
 const getTabFromStatus = (bookingStatus) => {
     const s = bookingStatus?.toLowerCase();
     if (["booked", "confirmed", "paid"].includes(s)) return "Sắp khởi hành";
-    if (s === "checked_in") return "Đang lưu trú";
-    if (s === "completed") return "Hoàn thành";
-    if (s === "cancelled") return "Đã hủy";
+    if (["checked_in", "checkin"].includes(s)) return "Đang lưu trú";
+    if (["completed", "checkout"].includes(s)) return "Hoàn thành";
+    if (["cancelled", "noshow"].includes(s)) return "Đã hủy";
     return "Sắp khởi hành";
+};
+
+const getStatusLabel = (bookingStatus, paymentStatus) => {
+    const s = bookingStatus?.toLowerCase();
+    if (s === "cancelled") return "ĐÃ HỦY";
+    if (s === "checkout" || s === "completed") return "HOÀN THÀNH";
+    if (paymentStatus?.toLowerCase() === "paid") return "PAID & CONFIRMED";
+    return (bookingStatus || "").toUpperCase();
 };
 
 const formatDate = (dateStr) => {
@@ -64,14 +64,23 @@ const OrderListScreen = () => {
         { name: "Đã hủy" },
     ];
 
+    // Reset về trang 0 khi thay đổi Tab hoặc Tìm kiếm
+    useEffect(() => {
+        setPage(0);
+    }, [activeTab, searchText]);
+
     useEffect(() => {
         const fetchHistory = async () => {
             setLoading(true);
             try {
-                const res = await bookingService.getBookingHistory(page, 20);
+                // API nhận tham số page hiện tại
+                const res = await bookingService.getBookingHistory(page, 10);
                 const data = res.result;
                 setOrders(data.content || []);
                 setTotalPages(data.totalPages || 0);
+
+                // Cuộn lên đầu trang khi chuyển trang thành công
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (err) {
                 console.error("Lỗi khi tải lịch sử đặt phòng:", err);
             } finally {
@@ -146,107 +155,131 @@ const OrderListScreen = () => {
             {loading ? (
                 <div className="text-center text-slate-400 py-20">Đang tải dữ liệu...</div>
             ) : filteredOrders.length === 0 ? (
-                <div className="text-center text-slate-400 py-20">Không có đơn hàng nào</div>
+                <div className="text-center text-slate-400 py-20">Không có đơn hàng nào trong mục này</div>
             ) : (
-            <div className="space-y-4">
-                {filteredOrders.map((order) => {
-                    const statusLabel = getStatusLabel(order.bookingStatus, order.paymentStatus);
-                    const tab = getTabFromStatus(order.bookingStatus);
-                    return (
-                    <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-                        <div
-                            onClick={() => navigate(`/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
-                            className="flex justify-between items-start mb-4 cursor-pointer group"
-                        >
-                            <div>
+                <div className="space-y-4">
+                    {filteredOrders.map((order) => {
+                        const statusLabel = getStatusLabel(order.bookingStatus, order.paymentStatus);
+                        const tab = getTabFromStatus(order.bookingStatus);
+                        return (
+                            <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div
+                                    onClick={() => navigate(`/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
+                                    className="flex justify-between items-start mb-4 cursor-pointer group"
+                                >
+                                    <div>
                                 <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
                                     {order.bookingCode}
                                 </span>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
-                                    {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
-                                </p>
-                            </div>
-                            <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
-                                statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
-                                statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
-                            }`}>
-                                {statusLabel !== 'ĐÃ HỦY' && <CheckIcon />}
-                                {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
-                                {statusLabel}
-                            </div>
-                        </div>
+                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                            {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
+                                        </p>
+                                    </div>
+                                    <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
+                                        statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                            statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                                    }`}>
+                                        {statusLabel !== 'ĐÃ HỦY' && <CheckIcon />}
+                                        {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
+                                        {statusLabel}
+                                    </div>
+                                </div>
 
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <h3 className="font-bold text-slate-800 mb-1">{order.hotelName}</h3>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><UserIcon /></span>
-                                        {order.guestName}{order.totalGuests > 1 ? ` (+${order.totalGuests - 1} người)` : ""}
-                                    </p>
-                                    <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><Calendar size={14} /></span>
-                                        {formatDate(order.checkInDate)} - {formatDate(order.checkOutDate)} ({order.nights} đêm)
-                                    </p>
-                                    <p className="text-xs text-slate-500 flex items-center gap-2">
-                                        <span className="w-4 flex justify-center"><BedIcon /></span>
-                                        {order.totalRooms} phòng
-                                    </p>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-slate-800 mb-1">{order.hotelName}</h3>
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-slate-500 flex items-center gap-2">
+                                                <span className="w-4 flex justify-center"><UserIcon /></span>
+                                                {order.guestName}{order.totalGuests > 1 ? ` (+${order.totalGuests - 1} người)` : ""}
+                                            </p>
+                                            <p className="text-xs text-slate-500 flex items-center gap-2">
+                                                <span className="w-4 flex justify-center"><Calendar size={14} /></span>
+                                                {formatDate(order.checkInDate)} - {formatDate(order.checkOutDate)} ({order.nights} đêm)
+                                            </p>
+                                            <p className="text-xs text-slate-500 flex items-center gap-2">
+                                                <span className="w-4 flex justify-center"><BedIcon /></span>
+                                                {order.totalRooms} phòng
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right flex flex-col justify-between items-end">
+                                        <span className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
+
+                                        <div className="flex gap-2">
+                                            {tab === "Sắp khởi hành" && (
+                                                <>
+                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
+                                                        <Download size={14} /> Tải Voucher
+                                                    </button>
+                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
+                                                        <MessageCircle size={14} /> Chat với KS
+                                                    </button>
+                                                </>
+                                            )}
+                                            {tab === "Hoàn thành" && (
+                                                <>
+                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
+                                                        <Star size={14} /> Đánh giá
+                                                    </button>
+                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
+                                                        <RefreshCcw size={14} /> Đặt lại
+                                                    </button>
+                                                </>
+                                            )}
+                                            {tab === "Đã hủy" && (
+                                                <button className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100">
+                                                    Xem lý do
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="text-right flex flex-col justify-between items-end">
-                                <span className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
-
-                                <div className="flex gap-2">
-                                    {tab === "Sắp khởi hành" && (
-                                        <>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                                                <Download size={14} /> Tải Voucher
-                                            </button>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                                                <MessageCircle size={14} /> Chat với KS
-                                            </button>
-                                        </>
-                                    )}
-                                    {tab === "Hoàn thành" && (
-                                        <>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
-                                                <Star size={14} /> Đánh giá
-                                            </button>
-                                            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
-                                                <RefreshCcw size={14} /> Đặt lại
-                                            </button>
-                                        </>
-                                    )}
-                                    {tab === "Đã hủy" && (
-                                        <button className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100">
-                                            Xem lý do
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
             )}
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-6">
+                <div className="flex justify-center items-center gap-2 mt-10 mb-6">
                     <button
                         disabled={page === 0}
                         onClick={() => setPage(p => p - 1)}
-                        className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-slate-100"
+                        className="px-4 py-2 rounded-lg border bg-white text-sm font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
                     >
                         ← Trước
                     </button>
-                    <span className="px-3 py-1.5 text-sm text-slate-600">Trang {page + 1} / {totalPages}</span>
+
+                    <div className="flex gap-1">
+                        {[...Array(totalPages)].map((_, i) => {
+                            // Chỉ hiển thị số trang trong khoảng gần trang hiện tại hoặc đầu/cuối
+                            if (i === 0 || i === totalPages - 1 || (i >= page - 1 && i <= page + 1)) {
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPage(i)}
+                                        className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+                                            page === i
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'bg-white border text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                );
+                            } else if (i === page - 2 || i === page + 2) {
+                                return <span key={i} className="px-1 text-slate-400 self-center">...</span>;
+                            }
+                            return null;
+                        })}
+                    </div>
+
                     <button
                         disabled={page >= totalPages - 1}
                         onClick={() => setPage(p => p + 1)}
-                        className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-slate-100"
+                        className="px-4 py-2 rounded-lg border bg-white text-sm font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
                     >
                         Tiếp →
                     </button>

@@ -67,11 +67,10 @@ const BookingDetailPost = () => {
 
 // Hàm xử lý sau khi Modal lưu thành công
     const handleUpdateSuccess = (updatedBooking) => {
-        // updatedBooking là kết quả trả về từ API (toàn bộ object mới)
         setBooking(updatedBooking);
     };
 
-    // Điều kiện cho phép sửa thông tin (UC-028)
+    // Điều kiện cho phép sửa thông tin
     const canEdit = () => {
         if (!booking) return false;
         const s = booking.bookingStatus?.toUpperCase();
@@ -81,12 +80,12 @@ const BookingDetailPost = () => {
         checkIn.setHours(0,0,0,0);
 
         // Chỉ cho sửa nếu chưa check-in và trạng thái hợp lệ
-        return (s === 'BOOKED' || s === 'CONFIRMED') && checkIn > today;
+        return (s === 'CONFIRMED') && checkIn > today;
     };
 
     const canCancel = () => {
         const s = booking?.bookingStatus?.toUpperCase();
-        return s === 'BOOKED' || s === 'CONFIRMED';
+        return s === 'CONFIRMED';
     };
 
     const handleCopy = (text) => {
@@ -94,7 +93,7 @@ const BookingDetailPost = () => {
         alert("Đã sao chép: " + text);
     };
 
-    // Điều kiện đánh giá (UC-032)
+    // Điều kiện đánh giá
     const canReview = () => {
         return booking?.bookingStatus?.toUpperCase() === 'CHECKOUT' && !booking.hasFeedback;
     };
@@ -162,7 +161,7 @@ const BookingDetailPost = () => {
                                 <Download size={14}/> Tải Voucher
                             </button>
 
-                            {/* Sửa khách: Tuân theo logic canEdit */}
+                            {/* Sửa khách */}
                             <button
                                 onClick={() => canEdit() ? setIsEditModalOpen(true) : alert("Không thể sửa thông tin tại thời điểm này.")}
                                 className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all border ${

@@ -94,16 +94,36 @@ const viewAllBookingByAdmin = async () => {
 // Update thông tin khách của Booking
 export const updateUserInfoBooking = async (requestData) => {
     try {
-        const response = await api.post('/bookings/update-guest', requestData);
-        // Trả về toàn bộ data để phía Modal xử lý logic response.code
+        const response = await api.post('/booking/update-guest', requestData);
         return response.data;
     } catch (error) {
-        // Giữ nguyên phần throw để Modal bắt được catch
         const errorMessage = error.response?.data?.message || "Lỗi cập nhật thông tin khách hàng";
         console.error("API Error UC-028:", errorMessage);
-        throw error; // Nên throw nguyên object error của axios
+        throw error;
     }
 };
+
+// Lấy danh sách check-in hôm nay
+export const getCheckInToday = async () => {
+    try {
+        const response = await api.get(`/booking/checkin/today`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
+
+// Lấy danh sách check-in theo ngày
+export const getCheckInByDate = async (date) => {
+    try {
+        const response = await api.get(`/booking/checkin/${date}`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
 
 export const bookingService = {
     checkAvailability,
@@ -115,4 +135,6 @@ export const bookingService = {
     getBookingDetail,
     viewAllBookingByAdmin,
     updateUserInfoBooking,
+    getCheckInToday,
+    getCheckInByDate,
 };
