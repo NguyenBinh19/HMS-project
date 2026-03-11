@@ -91,6 +91,18 @@ const viewAllBookingByAdmin = async () => {
     }
 }
 
+// Update thông tin khách của Booking
+export const updateUserInfoBooking = async (requestData) => {
+    try {
+        const response = await axios.post('/bookings/update-guest', requestData);
+        return response.data.result;
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || "Lỗi cập nhật thông tin khách hàng";
+        console.error("API Error UC-028:", errorMessage);
+        throw new Error(errorMessage);
+    }
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -100,4 +112,5 @@ export const bookingService = {
     getBookingHistory,
     getBookingDetail,
     viewAllBookingByAdmin,
+    updateUserInfoBooking,
 };
