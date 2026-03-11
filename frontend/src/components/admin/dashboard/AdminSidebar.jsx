@@ -11,13 +11,13 @@ import {
     Users,
     ClipboardList,
     ShieldCheck,
-    History
+    History,
+    Building2
 } from "lucide-react";
 
 const SidebarAdmin = () => {
     const location = useLocation();
 
-    // Danh sách menu
     const menuItems = [
         { icon: <LayoutDashboard size={20} />, label: "DASHBOARD", path: "/admin/dashboard" },
         { icon: <Settings size={20} />, label: "CẤU HÌNH HỆ THỐNG", path: "/admin/system-config" },
@@ -30,41 +30,38 @@ const SidebarAdmin = () => {
         { icon: <ClipboardList size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
         { icon: <Gavel size={20} />, label: "TRUNG TÂM GIẢI QUYẾT TRANH CHẤP", path: "/admin/dispute-center" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users" },
+        { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
         { icon: <History size={20} />, label: "NHẬT KÝ KIỂM TRA", path: "/admin/audit-logs" },
     ];
 
     return (
-        <aside className="w-[280px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0 font-sans">
-
-            {/* Header Sidebar - Màu xanh và icon Shield  */}
+        <aside className="w-[280px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0 font-sans shadow-lg">
             <div className="h-14 bg-[#337ab7] flex items-center px-4 flex-shrink-0">
                 <span className="text-white font-semibold text-base uppercase tracking-wider flex items-center gap-3">
-                    <ShieldCheck className="text-white" size={22} fill="white" fillOpacity={0.2} />
+                    <ShieldCheck size={22} fill="white" fillOpacity={0.2} />
                     SYSTEM ADMIN
                 </span>
             </div>
 
-            {/* Menu List */}
-            <div className="flex-1 py-2 overflow-y-auto">
+            <div className="flex-1 py-2 overflow-y-auto custom-scrollbar">
                 {menuItems.map((item, index) => {
-                    // Giả sử item đang active là KYC để giống ảnh demo
-                    const isActive = location.pathname === item.path || item.label === "HÀNG ĐỢI KYC";
+                    const isActive = location.pathname.startsWith(item.path);
 
                     return (
                         <Link
                             key={index}
                             to={item.path}
                             className={`
-                                flex items-center gap-4 px-5 py-3.5 transition-colors duration-150 group
+                                flex items-center gap-4 px-5 py-3.5 transition-all duration-200 group
                                 ${isActive
-                                ? "text-[#2e6da4] bg-[#f4f8fb] border-l-[3px] border-[#337ab7]"
-                                : "text-[#333] hover:bg-gray-50 border-l-[3px] border-transparent"}
+                                ? "text-[#2e6da4] bg-[#f4f8fb] border-l-[4px] border-[#337ab7]"
+                                : "text-[#333] hover:bg-gray-50 border-l-[4px] border-transparent"}
                             `}
                         >
-                            <span className={`flex-shrink-0 ${isActive ? "text-[#337ab7]" : "text-gray-700"}`}>
+                            <span className={`transition-colors ${isActive ? "text-[#337ab7]" : "text-gray-500 group-hover:text-slate-900"}`}>
                                 {item.icon}
                             </span>
-                            <span className={`text-[13px] font-medium leading-tight ${isActive ? "font-bold" : ""}`}>
+                            <span className={`text-[13px] tracking-tight ${isActive ? "font-bold" : "font-medium"}`}>
                                 {item.label}
                             </span>
                         </Link>

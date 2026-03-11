@@ -34,6 +34,8 @@ import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
 import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
 import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
 import AdminBookingDetail from "@/pages/Admin/AdminBookingDetail.jsx";
+import PartnerList from "@/pages/Admin/PartnerList.jsx";
+import PartnerDetail from "@/pages/Admin/PartnerDetail.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -91,6 +93,8 @@ const AppRoutes = () => {
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
                     <Route path="view-booking/:bookingCode" element={<AdminBookingDetail />} />
+                    <Route path="partners" element={<PartnerList />} />
+                    <Route path="partners/:id" element={<PartnerDetail />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
