@@ -63,7 +63,7 @@ public class BookingServiceImpl implements BookingService {
                         request.getHotelId(),
                         request.getCheckIn(),
                         request.getCheckOut(),
-                        List.of("CONFIRMED", "PAID")
+                        List.of("CONFIRMED")
                 );
 
         Map<Integer, Integer> bookedQuantityMap =
@@ -239,7 +239,7 @@ public class BookingServiceImpl implements BookingService {
                 .notes(request.getNotes())
                 .paymentMethod(request.getPaymentMethod())
                 .paymentStatus("unpaid")
-                .bookingStatus("booked")
+                .bookingStatus("BOOKED")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -523,5 +523,16 @@ public class BookingServiceImpl implements BookingService {
         Booking savedBooking = bookingRepository.save(booking);
 
         return bookingMapper.toBookingDetailResponse(savedBooking);
+    }
+
+    //UC-050 - View Daily Arrival List
+    @Override
+    public List<ListAllBookingsResponse> getTodayCheckinBookings() {
+        return bookingRepository.getTodayCheckinBookings();
+    }
+
+    @Override
+    public List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date) {
+        return bookingRepository.getBookingsByCheckinDate(date);
     }
 }
