@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -109,5 +110,22 @@ public class BookingController {
                 .result(bookingService.updateGuestInformation(request))
                 .build();
     }
+
+    @GetMapping("/checkin/today")
+    ApiResponse<List<ListAllBookingsResponse>> getTodayCheckinBookings() {
+        return ApiResponse.<List<ListAllBookingsResponse>>builder()
+                .result(bookingService.getTodayCheckinBookings())
+                .build();
+    }
+
+    @GetMapping("/checkin/{date}")
+    ApiResponse<List<ListAllBookingsResponse>> getBookingsByCheckinDate(
+            @PathVariable LocalDate date
+    ) {
+        return ApiResponse.<List<ListAllBookingsResponse>>builder()
+                .result(bookingService.getBookingsByCheckinDate(date))
+                .build();
+    }
+
 
 }

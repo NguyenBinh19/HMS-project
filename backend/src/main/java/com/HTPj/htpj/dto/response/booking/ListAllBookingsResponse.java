@@ -15,8 +15,6 @@ public class ListAllBookingsResponse {
     private String bookingCode;
     private LocalDateTime createdAt;
     private String guestName;
-//    private Long agencyId;
-//    private Integer hotelId;
     private String agencyName;
     private String hotelName;
     private LocalDate checkInDate;

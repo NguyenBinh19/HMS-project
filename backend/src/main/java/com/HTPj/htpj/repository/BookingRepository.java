@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,4 +67,49 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     JOIN Hotel h ON b.hotelId = h.hotelId
     """)
     List<ListAllBookingsResponse> getAllBookingsSummary();
+
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+        b.bookingCode,
+        b.createdAt,
+        b.guestName,
+        a.agencyName,
+        h.hotelName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN Hotel h ON b.hotelId = h.hotelId
+    WHERE b.bookingStatus = 'CONFIRMED'
+    AND b.checkInDate = :date
+    """)
+    List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);
+
+
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+        b.bookingCode,
+        b.createdAt,
+        b.guestName,
+        a.agencyName,
+        h.hotelName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN Hotel h ON b.hotelId = h.hotelId
+    WHERE b.bookingStatus = 'CONFIRMED'
+    AND b.checkInDate = CURRENT_DATE
+    """)
+    List<ListAllBookingsResponse> getTodayCheckinBookings();
 }

@@ -6,6 +6,7 @@ import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
 import com.HTPj.htpj.dto.response.booking.*;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BookingService {
@@ -24,5 +25,9 @@ public interface BookingService {
 
     //Uc28:
     BookingDetailResponse updateGuestInformation(UpdateGuestRequest request);
+    List<ListAllBookingsResponse> getTodayCheckinBookings();
+
+    List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);
+
 
 }
