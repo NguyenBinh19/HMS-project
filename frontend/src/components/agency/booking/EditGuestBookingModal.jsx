@@ -30,38 +30,31 @@ const EditGuestModal = ({ booking, isOpen, onClose, onSaveSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // 1. Validation Latin (BR-BKM-01)
-        const latinRegex = /^[A-Za-z0-9\s]*$/;
-        if (!latinRegex.test(formData.guestName)) {
-            alert("MSG-ERR-34: Vui lòng sử dụng ký tự Latin không dấu khớp với Hộ chiếu.");
-            return;
-        }
-
+        setIsLoading(true);
         try {
-            setIsLoading(true);
-
-            // 2. Chuẩn bị payload khớp chính xác với UpdateGuestRequest (Java)
             const requestPayload = {
-                bookingId: booking.id, // Lấy ID từ object booking được truyền vào
+                bookingId: booking.bookingId,
                 guestName: formData.guestName,
                 guestPhone: formData.guestPhone,
                 guestEmail: formData.guestEmail,
                 notes: formData.notes
             };
 
-            // 3. Gọi hàm update (UC-028)
-            const result = await bookingService.updateUserInfoBooking(requestPayload);
+            const response = await bookingService.updateUserInfoBooking(requestPayload);
 
-            // 4. Xử lý thành công
-            // Truyền result (toàn bộ thông tin booking mới) về màn hình cha để cập nhật UI
-            onSaveSuccess(result);
-
-            alert("MSG-SYS-23: Cập nhật thông tin khách hàng thành công!");
-            onClose();
+            // Kiểm tra mã code 1000 (Thành công theo chuẩn API của bạn)
+            if (response && response.code === 1000) {
+                onSaveSuccess(response.result); // Truyền đúng object booking vào cho Component cha
+                alert("Cập nhật thông tin khách hàng thành công!");
+                onClose();
+            } else {
+                alert(response?.message || "Có lỗi xảy ra từ Server");
+            }
         } catch (error) {
-            // Hiển thị thông báo lỗi từ server hoặc lỗi mặc định
-            alert(error.message || "Có lỗi xảy ra trong quá trình cập nhật.");
+            // Bây giờ error.response sẽ không còn bị undefined nữa
+            const msg = error.response?.data?.message || error.message;
+            console.error("Chi tiết lỗi tại Modal:", error.response?.data);
+            alert("Lỗi: " + msg);
         } finally {
             setIsLoading(false);
         }

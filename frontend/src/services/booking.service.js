@@ -94,12 +94,14 @@ const viewAllBookingByAdmin = async () => {
 // Update thông tin khách của Booking
 export const updateUserInfoBooking = async (requestData) => {
     try {
-        const response = await axios.post('/bookings/update-guest', requestData);
-        return response.data.result;
+        const response = await api.post('/bookings/update-guest', requestData);
+        // Trả về toàn bộ data để phía Modal xử lý logic response.code
+        return response.data;
     } catch (error) {
+        // Giữ nguyên phần throw để Modal bắt được catch
         const errorMessage = error.response?.data?.message || "Lỗi cập nhật thông tin khách hàng";
         console.error("API Error UC-028:", errorMessage);
-        throw new Error(errorMessage);
+        throw error; // Nên throw nguyên object error của axios
     }
 };
 
