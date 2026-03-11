@@ -80,6 +80,16 @@ const getBookingDetail = async (bookingCode) => {
     }
 };
 
+// 6. View all booking of Admin
+const viewAllBookingByAdmin = async () => {
+    try {
+        const response = await api.get(`/booking/listAll`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
 
 export const bookingService = {
     checkAvailability,
@@ -89,4 +99,5 @@ export const bookingService = {
     searchHotel,
     getBookingHistory,
     getBookingDetail,
+    viewAllBookingByAdmin,
 };

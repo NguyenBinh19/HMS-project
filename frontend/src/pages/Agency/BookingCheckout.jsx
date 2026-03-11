@@ -345,7 +345,7 @@ export default function BookingCheckoutPage() {
                                         </span>
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
-                                        
+
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-600">
                                         <span>Thuế & Phí</span>
@@ -406,7 +406,7 @@ export default function BookingCheckoutPage() {
                                 </div>
 
                                 {/* CHECKBOX ĐIỀU KHOẢN */}
-                                
+
                                 <div className="border-t border-slate-100 pt-4 space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
@@ -419,24 +419,24 @@ export default function BookingCheckoutPage() {
                                         </div>
                                     )}
                                     <div className="flex items-start gap-3 pt-2">
-                                    <div className="flex items-center h-5">
-                                        <input
-                                            id="terms"
-                                            type="checkbox"
-                                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                                            checked={isAgreed}
-                                            onChange={(e) => setIsAgreed(e.target.checked)}
-                                        />
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                id="terms"
+                                                type="checkbox"
+                                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                                                checked={isAgreed}
+                                                onChange={(e) => setIsAgreed(e.target.checked)}
+                                            />
+                                        </div>
+                                        <label htmlFor="terms" className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
+                                            Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
+                                        </label>
                                     </div>
-                                    <label htmlFor="terms" className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
-                                        Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
-                                    </label>
-                                </div>
                                     <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
                                         <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
                                         <span className="text-xl font-black">{formatCurrency(grandTotal)}</span>
                                     </div>
-                                    
+
                                 </div>
 
                                 <button

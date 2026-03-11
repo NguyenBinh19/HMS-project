@@ -365,8 +365,11 @@ public class BookingServiceImpl implements BookingService {
     public Page<BookingHistoryResponse> getBookingHistory(int page, int size) {
         String userId = extractUserId();
 
+        Users user = userRepository.findByUsername(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
         Page<Booking> bookingPage = bookingRepository.findHistoryByUserId(
-                userId, PageRequest.of(page, size));
+                user.getId(), PageRequest.of(page, size));
 
         // Batch-fetch hotel names để tránh N+1 — 1 query duy nhất cho tất cả hotelId
         List<Integer> hotelIds = bookingPage.getContent().stream()
@@ -405,9 +408,10 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDetailResponse getBookingDetail(String bookingCode) {
         String userId = extractUserId();
-
+        Users user = userRepository.findByUsername(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
         // Một query: load booking + tất cả bookingDetails (JOIN FETCH)
-        Booking booking = bookingRepository.findDetailByBookingCodeAndUserId(bookingCode, userId)
+        Booking booking = bookingRepository.findDetailByBookingCodeAndUserId(bookingCode, user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         Hotel hotel = hotelRepository.findById(booking.getHotelId()).orElse(null);

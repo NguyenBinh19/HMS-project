@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { bookingService } from '@/services/booking.service.js';
+import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.jsx';
+import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -34,6 +36,8 @@ const BookingDetailPost = () => {
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -50,9 +54,34 @@ const BookingDetailPost = () => {
         if (bookingCode) fetchDetail();
     }, [bookingCode]);
 
+// Hàm xử lý sau khi Modal lưu thành công
+    const handleUpdateSuccess = (updatedFields) => {
+        setBooking(prev => ({
+            ...prev,
+            ...updatedFields // Ghi đè các trường vừa sửa vào state hiện tại
+        }));
+    };
+
+    const canEdit = () => {
+        if (!booking) return false;
+        const today = new Date();
+        const checkIn = new Date(booking.checkInDate);
+        // Chặn nếu là ngày check-in hoặc muộn hơn
+        today.setHours(0,0,0,0);
+        checkIn.setHours(0,0,0,0);
+
+        return booking.bookingStatus?.toLowerCase() === 'booked' && checkIn > today;
+    };
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
         alert("Đã sao chép: " + text);
+    };
+
+    // Logic kiểm tra điều kiện đánh giá
+    const canReview = () => {
+        if (!booking) return false;
+        // Thỏa mãn khi trạng thái Hoàn thành và chưa có feedback (giả sử có trường hasFeedback từ API)
+        return booking.bookingStatus?.toLowerCase() === 'completed' && !booking.hasFeedback;
     };
 
     if (loading) {
@@ -112,18 +141,44 @@ const BookingDetailPost = () => {
                             <h3 className="text-sm font-bold text-slate-800">Các tác vụ hậu mãi</h3>
                             <span className="text-[10px] text-slate-400 font-medium">Chế độ ẩn giá (Agent Mode)</span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             <button className="flex items-center justify-center gap-2 bg-[#006ce4] text-white py-2.5 rounded-md text-xs font-bold hover:bg-blue-700 transition-colors">
-                                <Download size={14} /> Tải Voucher (PDF)
+                                <Download size={14}/> Tải Voucher
                             </button>
+
+                            <button
+                                onClick={() => {
+                                    if (canEdit()) setIsEditModalOpen(true);
+                                    else alert("Không thể sửa thông tin vào ngày Check-in hoặc đơn hàng không ở trạng thái chờ.");
+                                }}
+                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200"
+                            >
+                                <UserCircle size={14}/> Sửa khách
+                            </button>
+
+                            {/* NÚT ĐÁNH GIÁ (UC-032) */}
+                            {booking.bookingStatus?.toLowerCase() === 'completed' && (
+                                <button
+                                    onClick={() => setIsReviewModalOpen(true)}
+                                    disabled={booking.hasFeedback}
+                                    className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-colors ${
+                                        booking.hasFeedback
+                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                    }`}
+                                >
+                                    <Star size={14} fill={booking.hasFeedback ? "none" : "currentColor"}/>
+                                    {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá"}
+                                </button>
+                            )}
+
                             <button className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
-                                <UserCircle size={14} /> Sửa tên khách
+                                <FileText size={14}/> Hóa đơn
                             </button>
-                            <button className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
-                                <FileText size={14} /> Yêu cầu Hóa đơn
-                            </button>
+
                             <button className="flex items-center justify-center gap-2 bg-[#fef2f2] text-rose-600 py-2.5 rounded-md text-xs font-bold hover:bg-rose-100">
-                                <XCircle size={14} /> Hủy phòng
+                                <XCircle size={14}/> Hủy phòng
                             </button>
                         </div>
                     </div>
@@ -289,6 +344,28 @@ const BookingDetailPost = () => {
                     </button>
                 </div>
             </div>
+            {/* MODAL CHỈNH SỬA - TRUYỀN DỮ LIỆU BOOKING HIỆN TẠI VÀO */}
+            {booking && (
+                <EditGuestModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    booking={booking}
+                    onSaveSuccess={handleUpdateSuccess}
+                />
+            )}
+
+            {/* MODAL ĐÁNH GIÁ DỊCH VỤ (UC-032) */}
+            {booking && (
+                <SubmitFeedbackModal
+                    isOpen={isReviewModalOpen}
+                    onClose={() => setIsReviewModalOpen(false)}
+                    booking={booking}
+                    onSuccess={() => {
+                        // Cập nhật trạng thái đã đánh giá để ẩn nút hoặc đổi màu nút
+                        setBooking(prev => ({ ...prev, hasFeedback: true }));
+                    }}
+                />
+            )}
         </div>
     );
 };

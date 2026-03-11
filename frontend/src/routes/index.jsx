@@ -25,6 +25,14 @@ import KYCQueuePage from "@/pages/Admin/KYCQueue.jsx";
 import VerificationStatusPage from "@/pages/Auth/VerificationStatus.jsx";
 import ViewAboutUs from "@/pages/common/ViewAboutUs.jsx";
 import ViewContact from "@/pages/common/ViewContact.jsx";
+import ViewAllBooking from "@/pages/Admin/ViewAllBooking.jsx";
+import StaffDashboard from "@/pages/Agency/StaffDashboard.jsx";
+import HotelStaffDashboard from "@/pages/Hotel/HotelStaffDashboard.jsx";
+import AgencyProfile from "@/pages/Agency/AgencyProfile.jsx";
+import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
+import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
+import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
+import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -56,6 +64,9 @@ const AppRoutes = () => {
                         <Route index element={<MyBookingList />} />
                         <Route path="detail/:id" element={<BookingDetailPost />} />
                     </Route>
+                    <Route path="staff" element={<StaffDashboard />} />
+                    <Route path="agency-profile" element={<AgencyProfile />} />
+                    <Route path="feedback-history" element={<FeedbackHistory />} />
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
@@ -67,12 +78,17 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
+                    <Route path="staff" element={<HotelStaffDashboard/>} />
+                    <Route path="profile" element={<HotelProfile/>} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
+                    <Route path="reviews" element={<HotelFeedbackManagement />} />
+                    <Route path="front-desk" element={<FrontDesk/>} />
                 </Route>
 
                 {/*Luồng Admin System*/}
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
+                    <Route path="view-booking" element={<ViewAllBooking />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

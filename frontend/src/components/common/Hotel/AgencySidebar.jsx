@@ -32,7 +32,7 @@ const Sidebar = () => {
         {
             icon: <Users size={20} />,
             label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN",
-            path: "/homepage"
+            path: "/staff"
         },
         {
             icon: <Wallet size={20} />,
