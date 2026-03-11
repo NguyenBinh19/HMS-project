@@ -380,7 +380,7 @@ const gallery =
                 </span>
                                                         )}
 
-                                                        {/* Nút xem chi tiết luôn nổi bật để khách click */}
+                                                        {/* Nút xem chi tiết nổi bật để khách click */}
                                                         <button
                                                             onClick={() => setSelectedDetailRoom(room)}
                                                             className="group flex items-center gap-1.5 text-blue-600 text-[11px] font-black uppercase tracking-widest hover:text-blue-800 transition-all active:scale-95"
@@ -394,7 +394,7 @@ const gallery =
                                                 </div>
                                             </div>
 
-                                            {/* Thông số phòng - Làm gọn gàng bằng các Badge nhẹ */}
+                                            {/* Thông số phòng */}
                                             <div className="flex flex-wrap gap-2 mb-4">
                                                 <div
                                                     className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full text-[12px] text-slate-600 font-bold border border-slate-100">
@@ -410,7 +410,7 @@ const gallery =
                                                     </div>
                                                 )}
                                             </div>
-                                        </div>
+                                            </div>
 
                                         <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">
                                             <div

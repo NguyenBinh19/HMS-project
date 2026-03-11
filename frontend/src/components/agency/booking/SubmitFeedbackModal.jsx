@@ -7,7 +7,6 @@ const RATING_CRITERIA = [
     { id: 'service', label: 'Chất lượng phục vụ' }
 ];
 
-// ĐỔI TÊN THÀNH SubmitFeedbackModal để khớp với file BookingDetailPost
 const SubmitFeedbackModal = ({ isOpen, onClose, booking, onSuccess }) => {
     // Nếu isOpen = false thì không render gì cả
     if (!isOpen) return null;
