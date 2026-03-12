@@ -1,7 +1,9 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.response.hotel.HotelDetailListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
+import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelResponse;
 import com.HTPj.htpj.service.HotelService;
 import com.HTPj.htpj.service.impl.HotelServiceImpl;
@@ -47,6 +49,23 @@ public class HotelController {
     ) {
         return ApiResponse.<List<HotelDetailResponse>>builder()
                 .result(hotelServiceImpl.searchHotels(keyword, checkIn, checkOut, rooms))
+                .build();
+    }
+
+    //UC-075 - View Partner List
+    @GetMapping("/list")
+    public ApiResponse<List<HotelListResponse>> getAllHotels() {
+        return ApiResponse.<List<HotelListResponse>>builder()
+                .result(hotelServiceImpl.getAllHotels())
+                .build();
+    }
+    //UC-076 - View Partner Details
+    @GetMapping("/list/{hotelId}")
+    public ApiResponse<HotelDetailListResponse> getHotelDetail(
+            @PathVariable Integer hotelId) {
+
+        return ApiResponse.<HotelDetailListResponse>builder()
+                .result(hotelServiceImpl.getHotelDetail(hotelId))
                 .build();
     }
 }

@@ -1,8 +1,7 @@
 package com.HTPj.htpj.service.impl;
 
-import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
-import com.HTPj.htpj.dto.response.hotel.HotelResponse;
-import com.HTPj.htpj.dto.response.hotel.HotelSearchProjection;
+import com.HTPj.htpj.dto.response.hotel.*;
+import com.HTPj.htpj.dto.response.kyc.VerificationInfoResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
@@ -33,6 +32,8 @@ public class HotelServiceImpl implements HotelService {
     RoomTypeRepository roomTypeRepository;
     BookingDetailRepository bookingDetailRepository;
     RoomHoldRepository roomHoldRepository;
+    PartnerVerificationRepository partnerVerificationRepository;
+    
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -217,6 +218,38 @@ public class HotelServiceImpl implements HotelService {
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    @Override
+    public List<HotelListResponse> getAllHotels() {
+
+        List<Hotel> hotels = hotelRepository.findAll();
+
+        return hotels.stream()
+                .map(hotelMapper::toHotelListResponse)
+                .toList();
+    }
+
+    @Override
+    public HotelDetailListResponse getHotelDetail(Integer hotelId) {
+
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+        PartnerVerification verification =
+                partnerVerificationRepository
+                        .findByHotelOrderByVersionDesc(hotelId)
+                        .get(0);
+
+        HotelDetailListResponse response =
+                hotelMapper.toHotelDetailListResponse(hotel);
+
+        VerificationInfoResponse verificationInfo =
+                hotelMapper.toVerificationInfoResponse(verification);
+
+        response.setVerification(verificationInfo);
+
+        return response;
     }
 
 

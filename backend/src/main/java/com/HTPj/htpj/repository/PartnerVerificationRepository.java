@@ -38,4 +38,22 @@ public interface PartnerVerificationRepository
        """)
     Optional<PartnerVerification> findDetailById(Integer id);
 
+    @Query("""
+        SELECT v
+        FROM PartnerVerification v
+        LEFT JOIN FETCH v.legalInformation
+        WHERE v.agency.agencyId = :agencyId
+        ORDER BY v.version DESC
+    """)
+    List<PartnerVerification> findByAgencyOrderByVersionDesc(Long agencyId);
+
+    @Query("""
+        SELECT v
+        FROM PartnerVerification v
+        LEFT JOIN FETCH v.legalInformation
+        WHERE v.hotel.hotelId = :hotelId
+        ORDER BY v.version DESC
+    """)
+    List<PartnerVerification> findByHotelOrderByVersionDesc(Integer hotelId);
+
 }
