@@ -1,6 +1,8 @@
 package com.HTPj.htpj.service;
 
+import com.HTPj.htpj.dto.response.hotel.HotelDetailListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
+import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelResponse;
 
 import java.util.List;
@@ -12,4 +14,8 @@ public interface HotelService {
     HotelDetailResponse getHotelDetailForView(Integer hotelId);
 
     List<HotelDetailResponse> searchHotels(String keyword, java.time.LocalDate checkIn, java.time.LocalDate checkOut, Integer rooms);
+
+    List<HotelListResponse> getAllHotels();
+
+    HotelDetailListResponse getHotelDetail(Integer hotelId);
 }
