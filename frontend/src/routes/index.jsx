@@ -102,7 +102,8 @@ const AppRoutes = () => {
                     <Route path="view-booking" element={<ViewAllBooking />} />
                     <Route path="view-booking/:bookingCode" element={<AdminBookingDetail />} />
                     <Route path="partners" element={<PartnerList />} />
-                    <Route path="partners/:id" element={<PartnerDetail />} />
+                    <Route path="partners/agency/:id" element={<PartnerDetail />} />
+                    <Route path="partners/hotel/:id" element={<PartnerDetail />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

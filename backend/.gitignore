@@ -12,5 +12,3 @@ target/
 .DS_Store
 Thumbs.db
 
-# Ignore datasource config
-src/main/java/com/HTPj/htpj/configuration/DataSourceConfig.java
