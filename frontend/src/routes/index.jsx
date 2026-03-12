@@ -36,6 +36,9 @@ import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
 import AdminBookingDetail from "@/pages/Admin/AdminBookingDetail.jsx";
 import PartnerList from "@/pages/Admin/PartnerList.jsx";
 import PartnerDetail from "@/pages/Admin/PartnerDetail.jsx";
+import PrivatePolicy from "@/pages/common/PrivatePolicy.jsx";
+import TermsOfServicePage from "@/pages/common/TermsService.jsx";
+import UserGuidePage from "@/pages/common/UserGuide.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -43,13 +46,18 @@ const AppRoutes = () => {
 
             <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/homepage" element={<MainLayout />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+
+                {/*màn giới thiệu*/}
+                <Route path="/homepage" element={<MainLayout />} />
                 <Route path="/about-us" element={<ViewAboutUs />} />
                 <Route path="/contact" element={<ViewContact />} />
+                <Route path="/private-policy" element={<PrivatePolicy />} />
+                <Route path="/term-service" element={<TermsOfServicePage />} />
+                <Route path="/user-guide" element={<UserGuidePage />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />

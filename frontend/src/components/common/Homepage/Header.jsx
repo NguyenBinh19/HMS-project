@@ -15,7 +15,7 @@ const Header = () => {
     const navLinks = [
         { name: "Trang chủ", href: "/homepage" },
         { name: "Về chúng tôi", href: "/about-us" },
-        { name: "Hướng dẫn", href: "/homepage" },
+        { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
         { name: "Trải nghiệm hệ thống", href: "/homepage" },
     ];
