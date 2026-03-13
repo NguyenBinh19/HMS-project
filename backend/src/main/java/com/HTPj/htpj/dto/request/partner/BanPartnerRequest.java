@@ -6,17 +6,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BanPartnerRequest {
-
     String reason;
-
     String evidence;
-
-    String legalName;
-
-    String taxCode;
-
-    String businessLicenseNumber;
-
-    String representativeCicNumber;
-
 }
