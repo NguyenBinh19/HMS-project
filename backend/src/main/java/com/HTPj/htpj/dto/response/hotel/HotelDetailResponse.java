@@ -19,6 +19,7 @@ public class HotelDetailResponse {
     private String country;
     private String phone;
     private String description;
+    private String email;
 
     private Integer starRating;
 

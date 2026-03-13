@@ -4,11 +4,12 @@ import com.HTPj.htpj.entity.PartnerVerification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.List;
 
-
+@Repository
 public interface PartnerVerificationRepository
         extends JpaRepository<PartnerVerification, Integer> {
 
@@ -29,13 +30,23 @@ public interface PartnerVerificationRepository
             "WHERE v.submittedBy = :userId")
     List<PartnerVerification> findByUserIdWithLegalInformation(@Param("userId") String userId);
 
+//    @Query("""
+//       SELECT v
+//       FROM PartnerVerification v
+//       LEFT JOIN FETCH v.legalInformation
+//       LEFT JOIN FETCH v.documents
+//       WHERE v.id = :id
+//       """)
+//    Optional<PartnerVerification> findDetailById(Integer id);
     @Query("""
-       SELECT v
-       FROM PartnerVerification v
-       LEFT JOIN FETCH v.legalInformation
-       LEFT JOIN FETCH v.documents
-       WHERE v.id = :id
-       """)
+           SELECT v
+           FROM PartnerVerification v
+           LEFT JOIN FETCH v.legalInformation
+           LEFT JOIN FETCH v.documents
+           LEFT JOIN FETCH v.agency
+           LEFT JOIN FETCH v.hotel
+           WHERE v.id = :id
+           """)
     Optional<PartnerVerification> findDetailById(Integer id);
 
     @Query("""
@@ -52,8 +63,21 @@ public interface PartnerVerificationRepository
         FROM PartnerVerification v
         LEFT JOIN FETCH v.legalInformation
         WHERE v.hotel.hotelId = :hotelId
+            AND v.status = 'VERIFIED'
         ORDER BY v.version DESC
     """)
     List<PartnerVerification> findByHotelOrderByVersionDesc(Integer hotelId);
+
+    @Query("""
+    SELECT v
+    FROM PartnerVerification v
+    LEFT JOIN FETCH v.legalInformation
+    WHERE v.agency.agencyId = :agencyId
+      AND v.status = 'VERIFIED'
+    ORDER BY v.version DESC
+""")
+    List<PartnerVerification> findVerifiedByAgencyOrderByVersionDesc(Long agencyId);
+
+
 
 }

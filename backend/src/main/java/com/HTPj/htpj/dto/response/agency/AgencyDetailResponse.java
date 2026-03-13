@@ -13,7 +13,8 @@ public class AgencyDetailResponse {
     private Long agencyId;
     private String agencyName;
     private String email;
-    private String phone;
+    private String contactPhone;
+    private String hotline;
     private String address;
     private BigDecimal creditLimit;
     private BigDecimal currentCredit;

@@ -44,4 +44,6 @@ public interface HotelRepository extends JpaRepository<Hotel, Integer> {
 
     @Query("SELECT COALESCE(MAX(h.hotelId),0) + 1 FROM Hotel h")
     Integer generateHotelId();
+
+
 }

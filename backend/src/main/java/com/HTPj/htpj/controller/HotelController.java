@@ -1,6 +1,7 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.hotel.UpdateHotelRequest;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
@@ -11,7 +12,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -66,6 +69,18 @@ public class HotelController {
 
         return ApiResponse.<HotelDetailListResponse>builder()
                 .result(hotelServiceImpl.getHotelDetail(hotelId))
+                .build();
+    }
+
+    @PutMapping(value = "/update/{hotelId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<HotelDetailListResponse> updateHotel(
+            @PathVariable Integer hotelId,
+            @RequestPart("data") UpdateHotelRequest request,
+            @RequestPart(value = "newImages", required = false) MultipartFile[] newImages
+    ) {
+
+        return ApiResponse.<HotelDetailListResponse>builder()
+                .result(hotelServiceImpl.updateHotel(hotelId, request, newImages))
                 .build();
     }
 }

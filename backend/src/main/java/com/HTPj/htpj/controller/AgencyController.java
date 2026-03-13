@@ -1,6 +1,7 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
 import com.HTPj.htpj.service.AgencyService;
@@ -34,6 +35,16 @@ public class AgencyController {
     ) {
         return ApiResponse.<AgencyDetailResponse>builder()
                 .result(agencyService.getAgencyDetail(agencyId))
+                .build();
+    }
+
+    @PutMapping("/update/{agencyId}")
+    public ApiResponse<AgencyDetailResponse> updateAgency(
+            @PathVariable Long agencyId,
+            @RequestBody UpdateAgencyRequest request
+    ) {
+        return ApiResponse.<AgencyDetailResponse>builder()
+                .result(agencyService.updateAgency(agencyId, request))
                 .build();
     }
 }

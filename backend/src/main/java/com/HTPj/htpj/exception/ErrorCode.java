@@ -44,8 +44,12 @@ public enum ErrorCode {
 
     //kyc
     AGENCY_NOT_FOUND(4001, "Agency not found", HttpStatus.NOT_FOUND),
+    EMAIL_ALREADY_EXISTS(4002, "Email already exists", HttpStatus.BAD_REQUEST),
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
+    INVALID_PARTNER_TYPE(4005, "Invalid partner type", HttpStatus.NOT_FOUND),
+    VERIFICATION_NOT_FOUND(4006, "Invalid verfication", HttpStatus.NOT_FOUND),
+
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

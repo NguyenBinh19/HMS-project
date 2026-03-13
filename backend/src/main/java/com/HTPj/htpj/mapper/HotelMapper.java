@@ -1,7 +1,5 @@
 package com.HTPj.htpj.mapper;
 
-import com.HTPj.htpj.dto.request.hotel.CreateHotelRequest;
-import com.HTPj.htpj.dto.request.hotel.UpdateHotelRequest;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailListResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelDetailResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
@@ -16,8 +14,6 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface HotelMapper {
 
-    Hotel toHotel(CreateHotelRequest request);
-
     HotelResponse toHotelResponse(Hotel hotel);
 
     @Mapping(target = "amenities", ignore = true)
@@ -26,7 +22,6 @@ public interface HotelMapper {
     @Mapping(target = "totalReviews", ignore = true)
     HotelDetailResponse toHotelDetailResponse(Hotel hotel);
 
-    void updateHotel(@MappingTarget Hotel hotel, UpdateHotelRequest request);
 
     HotelListResponse toHotelListResponse(Hotel hotel);
 

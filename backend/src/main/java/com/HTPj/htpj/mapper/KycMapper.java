@@ -20,6 +20,8 @@ public interface KycMapper {
     @Mapping(source = "legalInformation.businessLicenseNumber", target = "businessLicenseNumber")
     @Mapping(source = "legalInformation.representativeCICDate", target = "representativeCICDate")
     @Mapping(source = "legalInformation.representativeCICPlace", target = "representativeCICPlace")
+    @Mapping(source = "agency.agencyId", target = "agencyId")
+    @Mapping(source = "hotel.hotelId", target = "hotelId")
     KycVerificationDetailResponse toDetailResponse(PartnerVerification entity);
 
 }
