@@ -39,6 +39,9 @@ import PartnerDetail from "@/pages/Admin/PartnerDetail.jsx";
 import PrivatePolicy from "@/pages/common/PrivatePolicy.jsx";
 import TermsOfServicePage from "@/pages/common/TermsService.jsx";
 import UserGuidePage from "@/pages/common/UserGuide.jsx";
+import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
+import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
+import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -78,11 +81,13 @@ const AppRoutes = () => {
                     <Route path="staff" element={<StaffDashboard />} />
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
+                    <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
                 <Route path="/hotel" element={<HotelMain />}>
+                    <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
                     <Route path="dynamic-pricing" element={<DynamicPricing />} />
@@ -98,6 +103,7 @@ const AppRoutes = () => {
 
                 {/*Luồng Admin System*/}
                 <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="dashboard" element={<AdminDashboardPage />} />
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
                     <Route path="view-booking/:bookingCode" element={<AdminBookingDetail />} />

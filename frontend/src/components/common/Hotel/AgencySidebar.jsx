@@ -22,7 +22,7 @@ const Sidebar = () => {
         {
             icon: <LayoutDashboard size={20} />,
             label: "DASHBOARD",
-            path: "/homepage"
+            path: "/agency-dashboard"
         },
         {
             icon: <Search size={20} />,
