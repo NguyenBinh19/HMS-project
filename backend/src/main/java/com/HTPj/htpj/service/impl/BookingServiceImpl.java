@@ -478,6 +478,7 @@ public class BookingServiceImpl implements BookingService {
                 .paymentStatus(booking.getPaymentStatus())
                 .bookingStatus(booking.getBookingStatus())
                 .createdAt(booking.getCreatedAt())
+                .hasFeedback(Boolean.TRUE.equals(booking.getHasFeedback()))
                 .roomDetails(roomDetails)
                 .addonServices(addonResponses)
                 .build();

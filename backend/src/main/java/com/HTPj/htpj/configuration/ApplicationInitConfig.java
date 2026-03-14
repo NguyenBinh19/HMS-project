@@ -40,23 +40,61 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         log.info("Initializing application.....");
         return args -> {
-            if (userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
+            // Initialize all roles
+            if (roleRepository.findById(PredefinedRole.USER_ROLE).isEmpty()) {
                 roleRepository.save(Role.builder()
                         .name(PredefinedRole.USER_ROLE)
                         .description("User role")
                         .build());
+            }
 
-                Role adminRole = roleRepository.save(Role.builder()
+            if (roleRepository.findById(PredefinedRole.HOTEL_MANAGER_ROLE).isEmpty()) {
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.HOTEL_MANAGER_ROLE)
+                        .description("Hotel Manager role")
+                        .build());
+            }
+
+            if (roleRepository.findById(PredefinedRole.HOTEL_STAFF_ROLE).isEmpty()) {
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.HOTEL_STAFF_ROLE)
+                        .description("Hotel Staff role")
+                        .build());
+            }
+
+            if (roleRepository.findById(PredefinedRole.AGENCY_MANAGER_ROLE).isEmpty()) {
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.AGENCY_MANAGER_ROLE)
+                        .description("Agency Manager role")
+                        .build());
+            }
+
+            if (roleRepository.findById(PredefinedRole.AGENCY_STAFF_ROLE).isEmpty()) {
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.AGENCY_STAFF_ROLE)
+                        .description("Agency Staff role")
+                        .build());
+            }
+
+            Role adminRole;
+            if (roleRepository.findById(PredefinedRole.ADMIN_ROLE).isEmpty()) {
+                adminRole = roleRepository.save(Role.builder()
                         .name(PredefinedRole.ADMIN_ROLE)
                         .description("Admin role")
                         .build());
+            } else {
+                adminRole = roleRepository.findById(PredefinedRole.ADMIN_ROLE).get();
+            }
 
+            if (userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
                 var roles = new HashSet<Role>();
                 roles.add(adminRole);
 
                 Users user = Users.builder()
                         .username(ADMIN_USER_NAME)
                         .password(passwordEncoder.encode(ADMIN_PASSWORD))
+                        .email("admin@hms.com")
+                        .status("ACTIVE")
                         .roles(roles)
                         .build();
 

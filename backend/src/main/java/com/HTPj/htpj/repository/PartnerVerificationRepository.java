@@ -15,6 +15,9 @@ public interface PartnerVerificationRepository
     Optional<PartnerVerification>
     findTopBySubmittedByOrderByVersionDesc(String submittedBy);
 
+    Optional<PartnerVerification>
+    findTopByHotel_HotelIdOrderByVersionDesc(Integer hotelId);
+
     @Query("SELECT v FROM PartnerVerification v " +
            "LEFT JOIN FETCH v.legalInformation")
     List<PartnerVerification> findAllWithLegalInformation();

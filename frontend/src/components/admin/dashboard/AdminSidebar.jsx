@@ -48,7 +48,7 @@ const SidebarAdmin = () => {
             <div className="flex-1 py-2 overflow-y-auto">
                 {menuItems.map((item, index) => {
                     // Giả sử item đang active là KYC để giống ảnh demo
-                    const isActive = location.pathname === item.path || item.label === "HÀNG ĐỢI KYC";
+                    const isActive = location.pathname.startsWith(item.path);
 
                     return (
                         <Link

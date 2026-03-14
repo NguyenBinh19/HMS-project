@@ -4,6 +4,8 @@ import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
 import ResetPassword from "../pages/Auth/ResetPassword";
 import VerifyEmail from "../pages/Auth/VerifyEmail";
+import VerifyOtp from "../pages/Auth/VerifyOtp";
+import OAuthCallback from "../pages/Auth/OAuthCallback";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
@@ -33,6 +35,9 @@ import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
 import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
 import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
 import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
+import UserProfile from "@/pages/common/UserProfile.jsx";
+import AdminUserList from "@/pages/Admin/AdminUserList.jsx";
+import AdminUserDetail from "@/pages/Admin/AdminUserDetail.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -45,11 +50,14 @@ const AppRoutes = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/verify-otp" element={<VerifyOtp />} />
+                <Route path="/oauth-callback" element={<OAuthCallback />} />
                 <Route path="/about-us" element={<ViewAboutUs />} />
                 <Route path="/contact" element={<ViewContact />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
+                <Route path="/profile" element={<UserProfile />} />
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
@@ -89,6 +97,8 @@ const AppRoutes = () => {
                 <Route path="/admin" element={<AdminLayout />}>
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
+                    <Route path="users" element={<AdminUserList />} />
+                    <Route path="users/:userId" element={<AdminUserDetail />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

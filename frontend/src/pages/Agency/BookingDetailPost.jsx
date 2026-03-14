@@ -19,13 +19,24 @@ const formatCurrency = (amount) => {
     return Number(amount).toLocaleString("vi-VN") + " ₫";
 };
 
-const getStatusLabel = (bookingStatus, paymentStatus) => {
-    const s = bookingStatus?.toLowerCase();
-    if (s === "cancelled") return "ĐÃ HỦY";
-    if (s === "completed") return "HOÀN THÀNH";
-    if (s === "checked_in") return "ĐANG LƯU TRÚ";
-    if (paymentStatus?.toLowerCase() === "paid") return "ĐẶT PHÒNG THÀNH CÔNG";
-    return "ĐẶT PHÒNG THÀNH CÔNG";
+const getStatusConfig = (status) => {
+    const s = status?.toUpperCase();
+    switch (s) {
+        case "BOOKED":
+            return { label: "CHỜ THANH TOÁN", color: "bg-amber-500", desc: "Đơn hàng sẽ bị hủy nếu không thanh toán đúng hạn." };
+        case "CONFIRMED":
+            return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
+        case "CHECKIN":
+            return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách hàng đã làm thủ tục nhận phòng." };
+        case "CHECKOUT":
+            return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch đã kết thúc." };
+        case "CANCELLED":
+            return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy hoặc quá hạn thanh toán." };
+        case "NOSHOW":
+            return { label: "KHÔNG ĐẾN", color: "bg-purple-600", desc: "Khách hàng không đến nhận phòng theo lịch." };
+        default:
+            return { label: s, color: "bg-slate-400", desc: "" };
+    }
 };
 
 const BookingDetailPost = () => {
@@ -55,33 +66,36 @@ const BookingDetailPost = () => {
     }, [bookingCode]);
 
 // Hàm xử lý sau khi Modal lưu thành công
-    const handleUpdateSuccess = (updatedFields) => {
-        setBooking(prev => ({
-            ...prev,
-            ...updatedFields // Ghi đè các trường vừa sửa vào state hiện tại
-        }));
+    const handleUpdateSuccess = (updatedBooking) => {
+        setBooking(updatedBooking);
     };
 
+    // Điều kiện cho phép sửa thông tin
     const canEdit = () => {
         if (!booking) return false;
+        const s = booking.bookingStatus?.toUpperCase();
         const today = new Date();
         const checkIn = new Date(booking.checkInDate);
-        // Chặn nếu là ngày check-in hoặc muộn hơn
         today.setHours(0,0,0,0);
         checkIn.setHours(0,0,0,0);
 
-        return booking.bookingStatus?.toLowerCase() === 'booked' && checkIn > today;
+        // Chỉ cho sửa nếu chưa check-in và trạng thái hợp lệ
+        return (s === 'CONFIRMED') && checkIn > today;
     };
+
+    const canCancel = () => {
+        const s = booking?.bookingStatus?.toUpperCase();
+        return s === 'CONFIRMED';
+    };
+
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
         alert("Đã sao chép: " + text);
     };
 
-    // Logic kiểm tra điều kiện đánh giá
+    // Điều kiện đánh giá
     const canReview = () => {
-        if (!booking) return false;
-        // Thỏa mãn khi trạng thái Hoàn thành và chưa có feedback (giả sử có trường hasFeedback từ API)
-        return booking.bookingStatus?.toLowerCase() === 'completed' && !booking.hasFeedback;
+        return booking?.bookingStatus?.toUpperCase() === 'COMPLETED' && !booking.hasFeedback;
     };
 
     if (loading) {
@@ -101,7 +115,7 @@ const BookingDetailPost = () => {
         );
     }
 
-    const statusLabel = getStatusLabel(booking.bookingStatus, booking.paymentStatus);
+    const statusConfig = getStatusConfig(booking.bookingStatus);
 
     return (
         <div className="bg-[#f0f2f5] min-h-screen pb-12 font-sans text-slate-700">
@@ -120,7 +134,7 @@ const BookingDetailPost = () => {
                             <CheckCircle2 className="text-[#3b82f6]" size={20} />
                         </div>
                         <div>
-                            <h2 className="text-white font-bold text-sm uppercase tracking-wide">{statusLabel}</h2>
+                            <h2 className="text-white font-bold text-sm uppercase tracking-wide">{statusConfig.label}</h2>
                             <p className="text-blue-100 text-xs">{booking.bookingCode}</p>
                         </div>
                     </div>
@@ -147,28 +161,28 @@ const BookingDetailPost = () => {
                                 <Download size={14}/> Tải Voucher
                             </button>
 
+                            {/* Sửa khách */}
                             <button
-                                onClick={() => {
-                                    if (canEdit()) setIsEditModalOpen(true);
-                                    else alert("Không thể sửa thông tin vào ngày Check-in hoặc đơn hàng không ở trạng thái chờ.");
-                                }}
-                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200"
+                                onClick={() => canEdit() ? setIsEditModalOpen(true) : alert("Không thể sửa thông tin tại thời điểm này.")}
+                                className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all border ${
+                                    canEdit() ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50" : "bg-slate-50 text-slate-300 border-transparent cursor-not-allowed"
+                                }`}
                             >
-                                <UserCircle size={14}/> Sửa khách
+                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa thông tin khách
                             </button>
 
-                            {/* NÚT ĐÁNH GIÁ (UC-032) */}
-                            {booking.bookingStatus?.toLowerCase() === 'completed' && (
+                            {/* Đánh giá: Hiện sau COMPLETED */}
+                            {booking.bookingStatus?.toUpperCase() === 'COMPLETED' && (
                                 <button
                                     onClick={() => setIsReviewModalOpen(true)}
                                     disabled={booking.hasFeedback}
-                                    className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-colors ${
+                                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all ${
                                         booking.hasFeedback
-                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                            ? "bg-slate-100 text-slate-400 border border-transparent"
+                                            : "bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                                     }`}
                                 >
-                                    <Star size={14} fill={booking.hasFeedback ? "none" : "currentColor"}/>
+                                    <Star size={18} fill={booking.hasFeedback ? "none" : "currentColor"}/>
                                     {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá"}
                                 </button>
                             )}
@@ -345,27 +359,20 @@ const BookingDetailPost = () => {
                 </div>
             </div>
             {/* MODAL CHỈNH SỬA - TRUYỀN DỮ LIỆU BOOKING HIỆN TẠI VÀO */}
-            {booking && (
-                <EditGuestModal
-                    isOpen={isEditModalOpen}
-                    onClose={() => setIsEditModalOpen(false)}
-                    booking={booking}
-                    onSaveSuccess={handleUpdateSuccess}
-                />
-            )}
+            {/* Modals */}
+            <EditGuestModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                booking={booking}
+                onSaveSuccess={handleUpdateSuccess}
+            />
 
-            {/* MODAL ĐÁNH GIÁ DỊCH VỤ (UC-032) */}
-            {booking && (
-                <SubmitFeedbackModal
-                    isOpen={isReviewModalOpen}
-                    onClose={() => setIsReviewModalOpen(false)}
-                    booking={booking}
-                    onSuccess={() => {
-                        // Cập nhật trạng thái đã đánh giá để ẩn nút hoặc đổi màu nút
-                        setBooking(prev => ({ ...prev, hasFeedback: true }));
-                    }}
-                />
-            )}
+            <SubmitFeedbackModal
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                booking={booking}
+                onSuccess={() => setBooking(prev => ({ ...prev, hasFeedback: true }))}
+            />
         </div>
     );
 };
