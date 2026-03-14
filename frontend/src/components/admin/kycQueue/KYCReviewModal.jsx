@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, Check, RotateCcw, Clock, Lock, Search, Maximize2, Building2, Hotel, User } from "lucide-react";
+import { X, AlertTriangle, Check, Clock, Building2, User, Maximize2, Info } from "lucide-react";
 import { kycService, KYC_STATUS } from '@/services/kyc.service.js';
 
 const KYCReviewModal = ({ data, onClose, onRefresh }) => {
     const [submitting, setSubmitting] = useState(false);
     const [currentDocIndex, setCurrentDocIndex] = useState(0);
 
-    // Hàm chuyển đổi nhãn đối tác sang Tiếng Việt
+    // Đảm bảo lấy đúng data từ API Response
+    const actualData = data?.result || data;
+    const documents = actualData?.documents || [];
+
     const getPartnerLabel = (type) => {
         const t = type?.toUpperCase();
         if (t === 'HOTEL') return "KHÁCH SẠN";
@@ -14,9 +17,8 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
         return t || "N/A";
     };
 
-    // Hàm chuyển đổi nhãn tài liệu sang Tiếng Việt
     const getDocTypeLabel = (type) => {
-        switch (type) {
+        switch (type?.toUpperCase()) {
             case 'BUSINESS_LICENSE': return "GP KINH DOANH";
             case 'REPRESENTATIVE_CIC_FRONT': return "CCCD MẶT TRƯỚC";
             case 'REPRESENTATIVE_CIC_BACK': return "CCCD MẶT SAU";
@@ -24,32 +26,40 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
         }
     };
 
-    const handleAction = async (status) => {
-        const vId = data?.verificationId || data?.id;
-
+    const handleAction = async (targetStatus) => {
+        const vId = actualData?.id;
         if (!vId) {
-            alert("Lỗi: Không tìm thấy ID hồ sơ trong dữ liệu!");
+            alert("Lỗi: Không tìm thấy ID hồ sơ!");
             return;
         }
 
         let reason = "";
-        if (status !== KYC_STATUS.VERIFIED) {
-            const statusLabel = status === KYC_STATUS.REJECT ? "TỪ CHỐI" : "YÊU CẦU BỔ SUNG";
+        const normalizedStatus = targetStatus.toUpperCase();
+        const isVerified = normalizedStatus === "VERIFIED";
+
+        // Nếu không phải phê duyệt, bắt buộc nhập lý do
+        if (!isVerified) {
+            const statusLabel = targetStatus === KYC_STATUS.REJECT ? "TỪ CHỐI" : "YÊU CẦU BỔ SUNG";
             reason = prompt(`Nhập lý do cho trạng thái [${statusLabel}]:`);
-            if (reason === null) return;
+
+            if (reason === null) return; // Người dùng nhấn Cancel prompt
             if (!reason.trim()) {
-                alert("Bắt buộc phải nhập lý do!");
+                alert("BẮT BUỘC: Bạn phải nhập lý do khi từ chối hoặc yêu cầu bổ sung!");
                 return;
             }
         }
 
         setSubmitting(true);
         try {
+            // Xác định đây là hồ sơ mới hay hồ sơ cập nhật (Update Flow)
+            const isUpdateFlow = !!(actualData.agencyId || actualData.hotelId);
+
             const payload = {
                 verificationId: Number(vId),
-                reviewedBy: "bf116d64-8e4e-42ee-b9c7-c8e6f2c907a8", // ID Admin tạm thời
-                status: status,
-                rejectionReason: status === KYC_STATUS.VERIFIED ? "" : reason
+                reviewedBy: "bf116d64-8e4e-42ee-b9c7-c8e6f2c907a8", // Admin ID tạm thời
+                status: targetStatus, // Giữ nguyên Case định nghĩa trong KYC_STATUS của service
+                rejectionReason: isVerified ? "" : reason,
+                verificationBefore: isUpdateFlow
             };
 
             await kycService.approveVerification(payload);
@@ -57,137 +67,167 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
             onRefresh();
             onClose();
         } catch (error) {
-            console.error("Lỗi duyệt hồ sơ:", error);
-            alert("Lỗi máy chủ: " + (error.response?.data?.message || error.message));
+            console.error("Approve Error:", error);
+            alert("Lỗi hệ thống: " + (error.response?.data?.message || error.message));
         } finally {
             setSubmitting(false);
         }
     };
 
-    if (!data) return null;
+    if (!actualData) return null;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white w-full max-w-7xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
-                {/* Header */}
-                <div className="px-6 py-4 border-b flex justify-between items-center bg-white">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-[1000] p-4 font-sans">
+            <div className="bg-white w-full max-w-7xl rounded-3xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden border border-slate-200">
+
+                {/* --- Header --- */}
+                <div className="px-8 py-5 border-b flex justify-between items-center bg-white shrink-0">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">Chi tiết hồ sơ xét duyệt #{data.verificationId || data.id}</h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded">
-                                {getPartnerLabel(data.partnerType)}
-                            </span>
-                            <p className="text-xs text-slate-500 uppercase tracking-tight">{data.legalName} • MST: {data.taxCode}</p>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic">
+                                Xét duyệt hồ sơ <span className="text-blue-600">#{actualData.id}</span>
+                            </h2>
+                            {(actualData.agencyId || actualData.hotelId) && (
+                                <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-sm">
+                                    Hồ sơ cập nhật
+                                </span>
+                            )}
                         </div>
+                        <p className="text-[11px] text-slate-400 mt-1 font-bold uppercase tracking-widest">
+                            {actualData.legalName} • MST: {actualData.taxCode}
+                        </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-all text-slate-400 hover:text-slate-800"
+                    >
+                        <X size={24} />
+                    </button>
                 </div>
 
-                {/* Content */}
+                {/* --- Main Content --- */}
                 <div className="flex-1 overflow-hidden flex">
-                    {/* Cột trái: Thông tin văn bản */}
-                    <div className="w-[45%] overflow-y-auto p-6 border-r space-y-8 bg-white">
-                        <div>
-                            <h4 className="text-[13px] font-bold text-blue-600 mb-4 uppercase tracking-widest flex items-center gap-2">
-                                <Building2 size={16} /> Thông tin doanh nghiệp
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InfoBox label="TÊN CÔNG TY / ĐƠN VỊ" value={data.legalName} />
-                                <InfoBox label="MÃ SỐ THUẾ" value={data.taxCode} />
-                                <InfoBox label="SỐ GIẤY PHÉP KD" value={data.businessLicenseNumber} />
-                                <InfoBox label="LOẠI ĐỐI TÁC" value={getPartnerLabel(data.partnerType)} />
-                                <div className="col-span-2">
-                                    <InfoBox label="ĐỊA CHỈ ĐĂNG KÝ" value={data.businessAddress} isTextArea />
+
+                    {/* Cột trái: Chi tiết dữ liệu */}
+                    <div className="w-[35%] overflow-y-auto p-8 border-r space-y-10 bg-white">
+                        <section>
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Building2 size={18} /></div>
+                                <h4 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Dữ liệu pháp nhân</h4>
+                            </div>
+                            <div className="grid grid-cols-1 gap-5">
+                                <InfoBox label="TÊN DOANH NGHIỆP" value={actualData.legalName} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InfoBox label="MÃ SỐ THUẾ" value={actualData.taxCode} />
+                                    <InfoBox label="SỐ GIẤY PHÉP KD" value={actualData.businessLicenseNumber} />
+                                </div>
+                                <InfoBox label="LOẠI ĐỐI TÁC" value={getPartnerLabel(actualData.partnerType)} />
+                                <InfoBox label="ĐỊA CHỈ TRỤ SỞ" value={actualData.businessAddress} isTextArea />
+                            </div>
+                        </section>
+
+                        <section className="pt-6 border-t border-slate-100">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><User size={18} /></div>
+                                <h4 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Người đại diện</h4>
+                            </div>
+                            <div className="grid grid-cols-1 gap-5">
+                                <InfoBox label="HỌ VÀ TÊN" value={actualData.representativeName} />
+                                <InfoBox label="SỐ CMND / CCCD" value={actualData.representativeCICNumber} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InfoBox label="NGÀY CẤP" value={actualData.representativeCICDate} />
+                                    <InfoBox label="NƠI CẤP" value={actualData.representativeCICPlace} />
                                 </div>
                             </div>
-                        </div>
-
-                        <div>
-                            <h4 className="text-[13px] font-bold text-blue-600 mb-4 uppercase tracking-widest flex items-center gap-2">
-                                <User size={16} /> Người đại diện pháp luật
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InfoBox label="HỌ VÀ TÊN" value={data.representativeName} />
-                                <InfoBox label="SỐ CMND / CCCD" value={data.representativeCICNumber} />
-                                <InfoBox label="NGÀY CẤP" value={data.representativeCICDate} />
-                                <InfoBox label="NƠI CẤP" value={data.representativeCICPlace} />
-                            </div>
-                        </div>
+                        </section>
                     </div>
 
-                    {/* Cột phải: Xem trước tài liệu */}
-                    <div className="flex-1 bg-slate-50 p-6 flex flex-col overflow-hidden">
-                        <div className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200">
-                            {data.documents?.map((doc, idx) => (
-                                <div
+                    {/* Cột phải: Trình xem tài liệu */}
+                    <div className="flex-1 bg-slate-50 p-8 flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Tài liệu đính kèm ({documents.length})</h4>
+                            <div className="flex gap-2">
+                                {documents.map((doc, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setCurrentDocIndex(idx)}
+                                        className={`w-3 h-3 rounded-full transition-all ${currentDocIndex === idx ? 'bg-blue-600 w-6' : 'bg-slate-300'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mb-6 overflow-x-auto pb-2 shrink-0 no-scrollbar">
+                            {documents.map((doc, idx) => (
+                                <button
                                     key={idx}
                                     onClick={() => setCurrentDocIndex(idx)}
-                                    className={`min-w-[120px] h-20 bg-white border-2 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all shadow-sm ${currentDocIndex === idx ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-200 hover:border-blue-300'}`}
+                                    className={`px-5 py-2.5 bg-white border-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap shadow-sm ${currentDocIndex === idx ? 'border-blue-600 text-blue-600 ring-2 ring-blue-50' : 'border-transparent text-slate-400 hover:border-slate-200'}`}
                                 >
-                                    <span className="text-[9px] text-center font-bold text-slate-500 px-2 leading-tight uppercase">
-                                        {getDocTypeLabel(doc.documentType)}
-                                    </span>
-                                    {currentDocIndex === idx && <div className="mt-1 w-1 h-1 bg-blue-500 rounded-full"></div>}
-                                </div>
+                                    {getDocTypeLabel(doc.documentType)}
+                                </button>
                             ))}
                         </div>
 
-                        <div className="flex-1 bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden shadow-inner relative group">
-                            <div className="flex-1 p-4 flex items-center justify-center overflow-auto bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
-                                {data.documents?.[currentDocIndex] ? (
+                        <div className="flex-1 bg-white border-2 border-slate-200 rounded-[2rem] flex items-center justify-center overflow-hidden shadow-2xl relative group">
+                            {documents[currentDocIndex] ? (
+                                <>
                                     <img
-                                        src={data.documents[currentDocIndex].fileUrl}
-                                        alt="document-preview"
-                                        className="max-w-full max-h-full object-contain shadow-lg"
+                                        key={documents[currentDocIndex].fileUrl}
+                                        src={documents[currentDocIndex].fileUrl}
+                                        alt="kyc-document"
+                                        className="max-w-[95%] max-h-[95%] object-contain rounded-lg transition-transform duration-500 group-hover:scale-[1.02]"
                                     />
-                                ) : (
-                                    <div className="text-center">
-                                        <AlertTriangle size={48} className="text-slate-300 mx-auto mb-2" />
-                                        <p className="text-slate-400 font-medium">Không tìm thấy ảnh tài liệu</p>
-                                    </div>
-                                )}
-                            </div>
-                            {/* Phóng to ảnh (Gợi ý tính năng) */}
-                            {data.documents?.[currentDocIndex] && (
-                                <a
-                                    href={data.documents[currentDocIndex].fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="absolute bottom-4 right-4 p-2 bg-white/80 backdrop-blur rounded-full shadow hover:bg-white transition-all opacity-0 group-hover:opacity-100"
-                                >
-                                    <Maximize2 size={16} className="text-slate-600" />
-                                </a>
+                                    <a
+                                        href={documents[currentDocIndex].fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="absolute bottom-6 right-6 p-4 bg-slate-900 text-white rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 flex items-center gap-2 text-xs font-bold shadow-xl translate-y-4 group-hover:translate-y-0"
+                                    >
+                                        <Maximize2 size={18} /> PHÓNG TO
+                                    </a>
+                                </>
+                            ) : (
+                                <div className="text-slate-300 flex flex-col items-center gap-4">
+                                    <div className="p-6 bg-slate-50 rounded-full"><AlertTriangle size={64} /></div>
+                                    <p className="text-sm font-black uppercase tracking-tighter text-slate-400">Thiếu dữ liệu hình ảnh</p>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Footer Action */}
-                <div className="p-5 border-t bg-[#f8fafc] flex justify-between items-center shrink-0">
-                    <p className="text-[11px] text-slate-400 font-medium italic">
-                        * Vui lòng kiểm tra kỹ thông tin đối chiếu với hình ảnh tài liệu trước khi phê duyệt.
-                    </p>
-                    <div className="flex gap-3">
+                {/* --- Footer --- */}
+                <div className="p-6 border-t bg-white flex justify-between items-center shrink-0 px-8">
+                    <div className="flex items-center gap-3 text-slate-400">
+                        <div className="p-2 bg-slate-100 rounded-full"><Clock size={16} /></div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thẩm định viên</span>
+                            <span className="text-[11px] font-medium italic">Vui lòng đối soát kỹ thông tin trước khi nhấn phê duyệt</span>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4">
                         <button
                             disabled={submitting}
                             onClick={() => handleAction(KYC_STATUS.NEED_MORE_INFO)}
-                            className="px-6 py-2.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                            className="px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 rounded-2xl text-[11px] font-black uppercase transition-all flex items-center gap-2"
                         >
-                            <RotateCcw size={16} /> BỔ SUNG
+                            Yêu cầu bổ sung
                         </button>
                         <button
                             disabled={submitting}
                             onClick={() => handleAction(KYC_STATUS.REJECT)}
-                            className="px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                            className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-[11px] font-black uppercase transition-all"
                         >
-                            <X size={16} /> TỪ CHỐI
+                            Từ chối hồ sơ
                         </button>
                         <button
                             disabled={submitting}
                             onClick={() => handleAction(KYC_STATUS.VERIFIED)}
-                            className="px-8 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-sm font-bold transition-all shadow-lg shadow-emerald-100 flex items-center gap-2"
+                            className="px-12 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-2xl text-[11px] font-black uppercase transition-all shadow-xl shadow-blue-200 flex items-center gap-2 disabled:opacity-50"
                         >
-                            <Check size={16} /> PHÊ DUYỆT
+                            {submitting ? "Đang xử lý..." : <><Check size={18} /> Phê duyệt đối tác</>}
                         </button>
                     </div>
                 </div>
@@ -196,13 +236,12 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
     );
 };
 
+// Component hiển thị thông tin con
 const InfoBox = ({ label, value, isTextArea }) => (
-    <div className="group">
-        <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider group-hover:text-blue-500 transition-colors">
-            {label}
-        </label>
-        <div className={`w-full px-4 py-2.5 border border-slate-100 rounded-lg bg-slate-50 text-[13px] font-medium text-slate-700 shadow-sm ${isTextArea ? 'min-h-[80px]' : ''}`}>
-            {value || <span className="text-slate-300 italic">Chưa cập nhật</span>}
+    <div className="space-y-1.5">
+        <label className="text-[10px] font-black text-slate-400 block ml-1 uppercase tracking-widest">{label}</label>
+        <div className={`w-full px-4 py-3 border-2 border-slate-50 rounded-2xl bg-slate-50/50 text-[12px] font-bold text-slate-700 shadow-sm transition-all hover:border-slate-100 ${isTextArea ? 'min-h-[60px] leading-relaxed' : ''}`}>
+            {value || <span className="text-slate-300 italic font-normal">Chưa cập nhật</span>}
         </div>
     </div>
 );

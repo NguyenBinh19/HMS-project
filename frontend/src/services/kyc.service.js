@@ -8,9 +8,11 @@ export const DOCUMENT_TYPES = {
 };
 
 export const KYC_STATUS = {
-    PENDING: "pending",
-    VERIFIED: "Verified",
-    REJECT: "reject",
+    PENDING: "Pending",
+    VERIFIED: "VERIFIED",
+    VERIFIED_ALT: "Verified",
+    REJECT: "REJECT",
+    REJECT_ALT: "reject",
     NEED_MORE_INFO: "NeedMoreInfo"
 };
 
@@ -82,13 +84,13 @@ const approveVerification = async (payload) => {
     }
 };
 
-// 6. Lấy chi tiết hồ sơ theo userId
-const getVerificationByUser = async (userId) => {
+// 6. Lấy list hồ sơ theo userId
+const getVerificationsByUserId = async (userId) => {
     try {
         const response = await api.get(`/kyc/user/${userId}`);
         return response.data;
     } catch (error) {
-        console.error("Get User KYC Error:", error);
+        console.error("Get Detail Error:", error);
         throw error;
     }
 };
@@ -99,5 +101,5 @@ export const kycService = {
     getPartnerVerificationsByStatus,
     getVerificationDetail,
     approveVerification,
-    getVerificationByUser
+    getVerificationsByUserId
 };
