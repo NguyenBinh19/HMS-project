@@ -21,4 +21,7 @@ public class ApproveVerificationRequest {
     @JsonProperty("rejectionReason")
     private String rejectionReason;
 
+    @JsonProperty("verificationBefore")
+    private Boolean verificationBefore;
+
 }

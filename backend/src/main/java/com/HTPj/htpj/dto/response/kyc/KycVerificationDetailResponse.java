@@ -36,6 +36,9 @@ public class KycVerificationDetailResponse {
     private LocalDate representativeCICDate;
     private String representativeCICPlace;
 
+    private Long agencyId;
+    private Integer hotelId;
+
     private List<KycDocumentResponse> documents;
 
 }

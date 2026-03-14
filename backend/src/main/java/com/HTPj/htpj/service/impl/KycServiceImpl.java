@@ -56,6 +56,21 @@ public class KycServiceImpl implements KycService {
                 .updatedAt(now)
                 .build();
 
+        if (request.getAgencyId() != null) {
+
+            Agency agency = agencyRepository.findById(request.getAgencyId())
+                    .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+
+            verification.setAgency(agency);
+        }
+
+        if (request.getHotelId() != null) {
+
+            Hotel hotel = hotelRepository.findById(request.getHotelId())
+                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+            verification.setHotel(hotel);
+        }
 
         verificationRepository.save(verification);
 
@@ -189,14 +204,18 @@ public class KycServiceImpl implements KycService {
                 throw new AppException(ErrorCode.KYC_VERIFICATION_NOT_FOUND);
             }
 
+            if (Boolean.TRUE.equals(request.getVerificationBefore())) {
+                verificationRepository.save(verification);
+                return;
+            }
+
+
             String legalName = verification.getLegalInformation().getLegalName();
             String address = verification.getLegalInformation().getBusinessAddress();
             String partnerType = verification.getPartnerType();
 
             if ("hotel".equalsIgnoreCase(partnerType)) {
-//                Integer newHotelId = hotelRepository.generateHotelId();
                 Hotel hotel = new Hotel();
-//                hotel.setHotelId(newHotelId);
                 hotel.setHotelName(legalName);
                 hotel.setAddress(address);
                 Hotel savedHotel = hotelRepository.save(hotel);
@@ -204,9 +223,7 @@ public class KycServiceImpl implements KycService {
             }
 
             else if ("agency".equalsIgnoreCase(partnerType)) {
-//                Long newAgencyId = agencyRepository.generateAgencyId();
                 Agency agency = new Agency();
-//                agency.setAgencyId(newAgencyId);
                 agency.setAgencyName(legalName);
                 agency.setAddress(address);
                 Agency savedAgency = agencyRepository.save(agency);

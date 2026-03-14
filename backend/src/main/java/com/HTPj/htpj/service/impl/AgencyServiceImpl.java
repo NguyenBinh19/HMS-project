@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
 import com.HTPj.htpj.entity.Agency;
@@ -13,6 +14,7 @@ import com.HTPj.htpj.service.AgencyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,11 +43,35 @@ public class AgencyServiceImpl implements AgencyService {
 
         PartnerVerification verification =
                 verificationRepository
-                        .findByAgencyOrderByVersionDesc(agencyId)
+                        .findVerifiedByAgencyOrderByVersionDesc(agencyId)
                         .stream()
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Verification not found"));
 
         return agencyMapper.toAgencyDetailResponse(agency, verification);
+    }
+
+    @Override
+    public AgencyDetailResponse updateAgency(Long agencyId, UpdateAgencyRequest request) {
+
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+
+        // check email duplicate
+        if (!agency.getEmail().equals(request.getEmail())
+                && agencyRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        agency.setAgencyName(request.getAgencyName());
+        agency.setEmail(request.getEmail());
+        agency.setHotline(request.getHotline());
+        agency.setContactPhone(request.getContactPhone());
+
+        agency.setUpdatedAt(LocalDateTime.now());
+
+        agencyRepository.save(agency);
+
+        return getAgencyDetail(agencyId);
     }
 }

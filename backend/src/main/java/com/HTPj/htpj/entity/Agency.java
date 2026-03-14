@@ -26,8 +26,11 @@ public class Agency {
     @Column(name = "email", length = 255)
     private String email;
 
-    @Column(name = "phone", length = 50)
-    private String phone;
+    @Column(name = "contact_phone", length = 50)
+    private String contactPhone;
+
+    @Column(name = "hotline", length = 50)
+    private String hotline;
 
     @Column(name = "address")
     private String address;
@@ -49,4 +52,5 @@ public class Agency {
 
     @OneToMany(mappedBy = "agency")
     private List<PartnerVerification> verifications;
+
 }

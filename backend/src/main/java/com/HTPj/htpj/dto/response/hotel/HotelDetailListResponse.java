@@ -2,7 +2,9 @@ package com.HTPj.htpj.dto.response.hotel;
 import com.HTPj.htpj.dto.response.kyc.VerificationInfoResponse;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class HotelDetailListResponse {
+
     Integer hotelId;
     String hotelName;
     String address;
@@ -18,9 +21,14 @@ public class HotelDetailListResponse {
     String phone;
     String description;
     Integer starRating;
-    String amenities;
     String status;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+    String email;
+    List<String> images;
+    List<String> amenitiesList;
+    Double avgRating;
+    Integer totalReviews;
+
     VerificationInfoResponse verification;
 }

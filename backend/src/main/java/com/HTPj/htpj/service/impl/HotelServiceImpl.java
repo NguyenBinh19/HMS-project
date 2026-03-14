@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.request.hotel.UpdateHotelRequest;
 import com.HTPj.htpj.dto.response.hotel.*;
 import com.HTPj.htpj.dto.response.kyc.VerificationInfoResponse;
 import com.HTPj.htpj.entity.*;
@@ -8,15 +9,20 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.HotelMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.HotelService;
+import com.HTPj.htpj.service.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +39,7 @@ public class HotelServiceImpl implements HotelService {
     BookingDetailRepository bookingDetailRepository;
     RoomHoldRepository roomHoldRepository;
     PartnerVerificationRepository partnerVerificationRepository;
+    S3Service s3Service;
     
 
     public List<HotelResponse> getHotelsForView() {
@@ -59,6 +66,7 @@ public class HotelServiceImpl implements HotelService {
                     .city(hotel.getCity())
                     .country(hotel.getCountry())
                     .starRating(hotel.getStarRating())
+                    .email(hotel.getEmail())
                     .coverImage(coverImage)
                     .avgRating(avgRating != null ? avgRating : 0.0)
                     .totalReviews(totalReviews)
@@ -89,6 +97,7 @@ public class HotelServiceImpl implements HotelService {
                 .city(hotel.getCity())
                 .country(hotel.getCountry())
                 .phone(hotel.getPhone())
+                .email(hotel.getEmail())
                 .description(hotel.getDescription())
                 .starRating(hotel.getStarRating())
                 .images(images)
@@ -204,6 +213,7 @@ public class HotelServiceImpl implements HotelService {
                                 .build()
                 ).toList();
     }
+
     private List<String> parseAmenities(String amenitiesJson) {
         if (amenitiesJson == null || amenitiesJson.isBlank()) {
             return List.of();
@@ -249,7 +259,128 @@ public class HotelServiceImpl implements HotelService {
 
         response.setVerification(verificationInfo);
 
+        List<String> images = hotelImageRepository
+                .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
+                .stream()
+                .map(HotelImage::getImageUrl)
+                .toList();
+
+        Double avgRating = hotelReviewRepository.getAvgRating(hotelId);
+        Integer totalReviews = hotelReviewRepository.countByHotelId(hotelId);
+
+        response.setImages(images);
+        response.setAmenitiesList(parseAmenities(hotel.getAmenities()));
+        response.setAvgRating(avgRating != null ? avgRating : 0.0);
+        response.setTotalReviews(totalReviews);
+
         return response;
+    }
+
+    @Override
+    public HotelDetailListResponse updateHotel(Integer hotelId, UpdateHotelRequest request, MultipartFile[] newImages
+    ) {
+
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+        // update basic fields
+        hotel.setHotelName(request.getHotelName());
+        hotel.setAddress(request.getAddress());
+        hotel.setCity(request.getCity());
+        hotel.setCountry(request.getCountry());
+        hotel.setPhone(request.getPhone());
+        hotel.setDescription(request.getDescription());
+        hotel.setEmail(request.getEmail());
+
+        // amenities -> json
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            hotel.setAmenities(mapper.writeValueAsString(request.getAmenitiesList()));
+        } catch (Exception e) {
+            hotel.setAmenities("[]");
+        }
+
+        hotel.setUpdatedAt(LocalDateTime.now());
+
+        hotelRepository.save(hotel);
+
+    /*
+     DELETE IMAGES
+     */
+        if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
+
+            List<HotelImage> imagesToDelete =
+                    hotelImageRepository.findAllById(request.getDeleteImageIds());
+
+            for (HotelImage image : imagesToDelete) {
+
+                String imageUrl = image.getImageUrl();
+
+                // extract key from url
+                String key = imageUrl.substring(imageUrl.indexOf(".com/") + 5);
+
+                s3Service.deleteFile(key);
+            }
+
+            hotelImageRepository.deleteByImageIdIn(request.getDeleteImageIds());
+        }
+
+    /*
+     UPLOAD NEW IMAGES
+     */
+        if (newImages != null && newImages.length > 0) {
+
+            int currentSize = hotelImageRepository
+                    .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
+                    .size();
+
+            for (int i = 0; i < newImages.length; i++) {
+
+                MultipartFile file = newImages[i];
+
+                String key = "hotels/" + hotelId + "/" +
+                        UUID.randomUUID() + "-" + file.getOriginalFilename();
+
+                try {
+                    s3Service.uploadFile(file, key);
+                } catch (IOException e) {
+                    throw new RuntimeException("Upload image failed");
+                }
+
+                String url = s3Service.getFileUrl(key);
+
+                HotelImage image = new HotelImage();
+                image.setHotel(hotel);
+                image.setImageUrl(url);
+                image.setIsCover(false);
+                image.setSortOrder(currentSize + i + 1);
+                image.setCreatedAt(LocalDateTime.now());
+
+                hotelImageRepository.save(image);
+            }
+        }
+
+    /*
+     UPDATE COVER IMAGE
+     */
+        if (request.getCoverImageId() != null) {
+
+            List<HotelImage> images =
+                    hotelImageRepository.findByHotelHotelIdOrderBySortOrderAsc(hotelId);
+
+            for (HotelImage img : images) {
+
+                if (img.getImageId().equals(request.getCoverImageId())) {
+                    img.setIsCover(true);
+                } else {
+                    img.setIsCover(false);
+                }
+            }
+
+            hotelImageRepository.saveAll(images);
+        }
+
+        return getHotelDetail(hotelId);
     }
 
 

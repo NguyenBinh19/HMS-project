@@ -37,11 +37,9 @@ public class Hotel {
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    // ⭐ SỐ SAO KHÁCH SẠN (1–5)
     @Column(name = "star_rating")
     private Integer starRating;
 
-    // 🏷 TIỆN ÍCH (JSON)
     @Column(name = "amenities", columnDefinition = "NVARCHAR(MAX)")
     private String amenities;
 
@@ -53,4 +51,9 @@ public class Hotel {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "email", length = 255)
+    private String email;
+
+
 }
