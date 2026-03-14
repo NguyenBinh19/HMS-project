@@ -13,7 +13,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(dirname, './src'),
     },
-    dedupe: ['react', 'react-dom'], 
+    dedupe: ['react', 'react-dom', 'react-router', 'react-router-dom'], 
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router', 'react-router-dom'],
   },
   define: {
     global: "window",

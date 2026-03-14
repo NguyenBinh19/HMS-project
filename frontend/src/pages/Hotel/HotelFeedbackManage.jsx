@@ -1,40 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Star, MessageCircle, AlertTriangle, Send,
     TrendingUp, TrendingDown, Flag, CheckCircle2,
-    Image as ImageIcon, Filter, MessageSquareQuote
+    Image as ImageIcon, Filter, MessageSquareQuote, Loader2
 } from 'lucide-react';
+import { bookingService } from '@/services/booking.service.js';
 
 const HotelFeedbackManagement = () => {
-    // Dữ liệu giả lập danh sách đánh giá từ Agencies
-    const [reviews, setReviews] = useState([
-        {
-            id: "REV-102",
-            agencyName: "VietTravel Agency",
-            bookingId: "#BK-8899",
-            rating: 2.5,
-            categories: { cleanliness: 3, service: 2, location: 4, cooperation: 2 },
-            content: "Khách phàn nàn điều hòa hỏng tại phòng 302, khách sạn đổi phòng rất chậm và thái độ nhân viên lễ tân chưa tốt.",
-            images: ["room1.jpg"],
-            date: "2026-03-05",
-            status: "pending", // pending, responded, reported
-            reply: ""
-        },
-        {
-            id: "REV-101",
-            agencyName: "Saigon Tourist",
-            bookingId: "#BK-7722",
-            rating: 4.8,
-            categories: { cleanliness: 5, service: 5, location: 4, cooperation: 5 },
-            content: "Dịch vụ tuyệt vời. Quy trình check-in cho đoàn khách của chúng tôi rất nhanh chóng. Sẽ tiếp tục hợp tác lâu dài.",
-            images: [],
-            date: "2026-03-01",
-            status: "responded",
-            reply: "Cảm ơn Saigon Tourist đã luôn tin tưởng. Chúng tôi luôn ưu tiên hỗ trợ tốt nhất cho các đoàn khách từ phía quý đại lý!"
-        }
-    ]);
-
+    const [reviews, setReviews] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [replyText, setReplyText] = useState({});
+    const [replyLoading, setReplyLoading] = useState({});
+
+    useEffect(() => {
+        fetchData();
+    }, [page]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [feedbackRes, statsRes] = await Promise.all([
+                bookingService.getHotelFeedback(page, 10),
+                bookingService.getHotelFeedbackStats()
+            ]);
+            const pageData = feedbackRes.result;
+            setReviews(pageData.content || []);
+            setTotalPages(pageData.totalPages || 0);
+            setStats(statsRes.result);
+        } catch (err) {
+            console.error("Fetch hotel feedback error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Hàm xác định màu sắc dựa trên số điểm
     const getScoreColor = (score) => {
@@ -44,12 +45,27 @@ const HotelFeedbackManagement = () => {
     };
 
     // Xử lý gửi phản hồi (UC055.0 - Bước 6, 7)
-    const handleSendReply = (id) => {
-        setReviews(reviews.map(rev =>
-            rev.id === id ? { ...rev, status: 'responded', reply: replyText[id] } : rev
-        ));
-        alert("Hệ thống đã lưu phản hồi và gửi thông báo tới Đại lý!");
+    const handleSendReply = async (reviewId) => {
+        if (!replyText[reviewId]) return;
+        setReplyLoading(prev => ({ ...prev, [reviewId]: true }));
+        try {
+            await bookingService.replyToFeedback(reviewId, replyText[reviewId]);
+            setReplyText(prev => ({ ...prev, [reviewId]: '' }));
+            fetchData();
+        } catch (err) {
+            alert(err.response?.data?.message || "Gửi phản hồi thất bại!");
+        } finally {
+            setReplyLoading(prev => ({ ...prev, [reviewId]: false }));
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-20">
+                <Loader2 size={32} className="animate-spin text-blue-500" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-8 bg-[#f8fafc] min-h-screen font-sans">
@@ -58,26 +74,36 @@ const HotelFeedbackManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Điểm trung bình</p>
-                    <h2 className="text-5xl font-black text-slate-800">4.5<span className="text-xl text-slate-400">/5.0</span></h2>
-                    <div className="flex items-center gap-1 mt-2 text-emerald-500 font-bold text-sm">
-                        <TrendingUp size={16} /> +0.2 tháng này
-                    </div>
+                    <h2 className="text-5xl font-black text-slate-800">{stats?.averageScore?.toFixed(1) || '0.0'}<span className="text-xl text-slate-400">/5.0</span></h2>
+                    <p className="text-xs text-slate-400 mt-2">{stats?.totalReviews || 0} đánh giá</p>
                 </div>
 
                 <div className="md:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                     <p className="text-sm font-bold text-slate-700 mb-4">Chi tiết tiêu chí (Breakdown)</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {['Vệ sinh', 'Dịch vụ', 'Vị trí', 'Hợp tác'].map((label, idx) => (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {[
+                            { label: 'Vệ sinh', value: stats?.cleanlinessAvg },
+                            { label: 'Dịch vụ', value: stats?.serviceAvg },
+                            { label: 'Tổng quan', value: stats?.averageScore },
+                        ].map((item, idx) => (
                             <div key={idx} className="space-y-2">
                                 <div className="flex justify-between text-xs font-bold text-slate-500">
-                                    <span>{label}</span>
-                                    <span>4.2</span>
+                                    <span>{item.label}</span>
+                                    <span>{item.value?.toFixed(1) || '0.0'}</span>
                                 </div>
                                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-500 rounded-full" style={{ width: '82%' }}></div>
+                                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${((item.value || 0) / 5) * 100}%` }}></div>
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="flex gap-4 mt-4 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                            <CheckCircle2 size={14} className="text-emerald-500" /> Đã phản hồi: {stats?.respondedCount || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <AlertTriangle size={14} className="text-amber-500" /> Chờ xử lý: {stats?.pendingCount || 0}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -94,28 +120,28 @@ const HotelFeedbackManagement = () => {
                 </div>
 
                 {reviews.map((rev) => (
-                    <div key={rev.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
+                    <div key={rev.reviewId} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
                         <div className="p-6">
                             <div className="flex flex-col md:flex-row justify-between gap-4">
                                 {/* Agency Info & Rating */}
                                 <div className="flex gap-4">
-                                    <div className={`w-14 h-14 rounded-2xl border flex flex-col items-center justify-center font-black ${getScoreColor(rev.rating)}`}>
-                                        {rev.rating}
+                                    <div className={`w-14 h-14 rounded-2xl border flex flex-col items-center justify-center font-black ${getScoreColor(rev.ratingScore)}`}>
+                                        {rev.ratingScore}
                                         <Star size={12} fill="currentColor" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-slate-800 text-lg">{rev.agencyName}</h4>
                                         <div className="flex items-center gap-3 text-xs font-bold text-slate-400 mt-1">
-                                            <span className="text-blue-600">Mã đơn: {rev.bookingId}</span>
+                                            <span className="text-blue-600">Mã đơn: {rev.bookingCode}</span>
                                             <span>•</span>
-                                            <span>Ngày gửi: {rev.date}</span>
+                                            <span>Ngày gửi: {rev.createdAt}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Status Badge */}
                                 <div className="flex items-start gap-2">
-                                    {rev.status === 'responded' ? (
+                                    {rev.status === 'RESPONDED' ? (
                                         <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase flex items-center gap-1">
                       <CheckCircle2 size={12} /> Đã phản hồi
                     </span>
@@ -129,42 +155,52 @@ const HotelFeedbackManagement = () => {
                                 </div>
                             </div>
 
+                            {/* Category Scores */}
+                            {(rev.cleanlinessScore || rev.serviceScore) && (
+                                <div className="mt-4 flex gap-3 text-xs">
+                                    {rev.cleanlinessScore && (
+                                        <span className={`px-2 py-1 rounded-lg border font-bold ${getScoreColor(rev.cleanlinessScore)}`}>
+                                            Vệ sinh: {rev.cleanlinessScore}/5
+                                        </span>
+                                    )}
+                                    {rev.serviceScore && (
+                                        <span className={`px-2 py-1 rounded-lg border font-bold ${getScoreColor(rev.serviceScore)}`}>
+                                            Dịch vụ: {rev.serviceScore}/5
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Content */}
                             <div className="mt-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 relative">
                                 <MessageSquareQuote className="absolute -top-3 -left-2 text-slate-200" size={32} />
-                                <p className="text-slate-700 text-sm leading-relaxed italic relative z-10">"{rev.content}"</p>
-
-                                {rev.images.length > 0 && (
-                                    <div className="mt-4 flex gap-2">
-                                        <div className="w-16 h-16 bg-slate-200 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-80">
-                                            <ImageIcon size={20} className="text-slate-400" />
-                                        </div>
-                                    </div>
-                                )}
+                                <p className="text-slate-700 text-sm leading-relaxed italic relative z-10">"{rev.comment}"</p>
                             </div>
 
                             {/* Reply Section */}
                             <div className="mt-6">
-                                {rev.status === 'responded' ? (
+                                {rev.status === 'RESPONDED' ? (
                                     <div className="ml-8 p-5 bg-blue-50 border-l-4 border-blue-400 rounded-r-2xl">
                                         <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Phản hồi của khách sạn</p>
                                         <p className="text-sm text-blue-800 font-medium leading-relaxed">{rev.reply}</p>
+                                        {rev.replyDate && <p className="text-[10px] text-blue-400 mt-2">{rev.replyDate}</p>}
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
                     <textarea
                         placeholder="Viết phản hồi của bạn để giải thích hoặc xin lỗi đại lý... (Bước 5)"
                         className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all"
-                        value={replyText[rev.id] || ""}
-                        onChange={(e) => setReplyText({...replyText, [rev.id]: e.target.value})}
+                        value={replyText[rev.reviewId] || ""}
+                        onChange={(e) => setReplyText({...replyText, [rev.reviewId]: e.target.value})}
                     />
                                         <div className="flex justify-end">
                                             <button
-                                                onClick={() => handleSendReply(rev.id)}
-                                                disabled={!replyText[rev.id]}
+                                                onClick={() => handleSendReply(rev.reviewId)}
+                                                disabled={!replyText[rev.reviewId] || replyLoading[rev.reviewId]}
                                                 className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all disabled:opacity-50"
                                             >
-                                                <Send size={16} /> Gửi phản hồi
+                                                {replyLoading[rev.reviewId] ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                                Gửi phản hồi
                                             </button>
                                         </div>
                                     </div>
@@ -174,6 +210,29 @@ const HotelFeedbackManagement = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 pt-4">
+                    <button
+                        disabled={page === 0}
+                        onClick={() => setPage(p => p - 1)}
+                        className="px-4 py-2 text-sm font-medium bg-white border border-slate-200 rounded-xl disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                    >
+                        Trước
+                    </button>
+                    <span className="text-sm text-slate-500">
+                        Trang {page + 1} / {totalPages}
+                    </span>
+                    <button
+                        disabled={page >= totalPages - 1}
+                        onClick={() => setPage(p => p + 1)}
+                        className="px-4 py-2 text-sm font-medium bg-white border border-slate-200 rounded-xl disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                    >
+                        Sau
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

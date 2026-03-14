@@ -101,6 +101,9 @@ public class Booking {
     )
     private List<BookingDetail> bookingDetails;
 
+    @Column(name = "has_feedback")
+    private Boolean hasFeedback;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;

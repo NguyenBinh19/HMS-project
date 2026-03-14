@@ -15,30 +15,28 @@ const login = async (email, password) => {
     if (response.data && response.data.result.token) { 
       const { token, user } = response.data.result; 
       localStorage.setItem("accessToken", token); 
-      // localStorage.setItem("user", JSON.stringify(user));
       return response.data; 
     }
     
-    // Trường hợp API trả về 200 nhưng không có data (Logic dự phòng)
     return response.data;
   } catch (error) {
-    // ⚠️ SỬA LỖI QUAN TRỌNG: 
-    // Phải ném error gốc ra để component Login bắt được error.response.status (401, 403)
     console.error("Auth Service Login Error:", error);
     throw error; 
   }
 };
 
-const register = async (username, email, password, confirmPassword) => {
+// 2. Đăng ký (với role selection)
+const register = async (username, email, password, phone, role) => {
   try {
     const response = await api.post(`/users/register`, {
       username,
       email,
-      password
+      password,
+      phone,
+      role,
     });
     return response.data;
   } catch (error) {
-    // Cũng nên throw error gốc để hứng lỗi Validate (400) hoặc Conflict (409)
     throw error;
   }
 };
@@ -46,7 +44,7 @@ const register = async (username, email, password, confirmPassword) => {
 // 3. Đăng xuất
 const logout = (token) => {
   if (token) {
-    api.post(`/auth/logout`, {}).catch(err => console.error(err));
+    api.post(`/auth/logout`, { token }).catch(err => console.error(err));
   }
   
   localStorage.removeItem("user");
@@ -86,7 +84,27 @@ const resetPassword = async (token, newPassword) => {
   }
 };
 
-// 8. Xác thực Email
+// 8. Xác thực Email OTP
+const verifyOtp = async (email, otp) => {
+  try {
+    const response = await api.post(`/auth/verify-otp`, { email, otp });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 9. Gửi lại OTP
+const resendOtp = async (email) => {
+  try {
+    const response = await api.post(`/auth/resend-otp`, { email });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 10. Xác thực Email (link - legacy)
 const verifyEmail = async (token) => {
   try {
     const response = await api.get(`/auth/verify-email`, { 
@@ -100,12 +118,12 @@ const verifyEmail = async (token) => {
 
 const fetchUserProfile = async () => {
   try {
-    const response = await api.get('/auth/me'); 
-    const userData = response.data.data;
+    const response = await api.get('/users/my-info'); 
+    const userData = response.data.result;
 
     if (!userData.roles && userData.authorities) {
       userData.roles = userData.authorities.map(auth => ({
-        roleName: auth.authority.replace("ROLE_", "") // Bỏ tiền tố ROLE_
+        roleName: auth.authority.replace("ROLE_", "")
       }));
     }
 
@@ -118,7 +136,6 @@ const fetchUserProfile = async () => {
 
 const unlinkSocialAccount = async (provider) => {
   try {
-    // Gọi method DELETE: /api/v1/auth/social/unlink?provider=google
     const response = await api.delete(`/auth/social/unlink`, {
       params: { provider }
     });
@@ -145,6 +162,8 @@ export const authService = {
   getAccessToken,
   forgotPassword,
   resetPassword,
+  verifyOtp,
+  resendOtp,
   verifyEmail,
   fetchUserProfile,
   unlinkSocialAccount,

@@ -39,6 +39,7 @@ public class BookingDetailResponse {
     private String bookingStatus;
 
     private LocalDateTime createdAt;
+    private Boolean hasFeedback;
 
     private List<BookingDetailItemResponse> roomDetails;
     private List<BookingAddonServiceResponse> addonServices;

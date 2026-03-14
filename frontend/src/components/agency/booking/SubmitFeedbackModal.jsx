@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, Send, X, ShieldCheck, Trophy, AlertCircle } from 'lucide-react';
+import { bookingService } from '@/services/booking.service.js';
 
 const RATING_CRITERIA = [
     { id: 'overall', label: 'Xếp hạng sao (Tổng quan)' },
@@ -16,7 +17,7 @@ const SubmitFeedbackModal = ({ isOpen, onClose, booking, onSuccess }) => {
         cleanliness: 5,
         service: 5,
         comment: '',
-        bookingId: booking?.id || '',
+        bookingId: booking?.bookingId || '',
         hotelId: booking?.hotelId || ''
     });
 
@@ -31,20 +32,27 @@ const SubmitFeedbackModal = ({ isOpen, onClose, booking, onSuccess }) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
-
+        console.log(booking)
         try {
             // Giả lập gọi API (Sau này thay bằng bookingService.submitFeedback)
             console.log("Dữ liệu gửi lên BE:", formData);
             await new Promise(resolve => setTimeout(resolve, 1000));
-
-            alert("Đánh giá thành công!");
+            await bookingService.submitFeedback({
+                bookingId: formData.bookingId,
+                hotelId: formData.hotelId,
+                overall: formData.overall,
+                cleanliness: formData.cleanliness,
+                service: formData.service,
+                comment: formData.comment,
+            });
 
             // Gọi onSuccess để cập nhật state 'hasFeedback' ở trang chi tiết
             if (onSuccess) onSuccess();
             // Đóng modal
             onClose();
         } catch (err) {
-            setError("Có lỗi xảy ra. Vui lòng thử lại.");
+            const msg = err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
+            setError(msg);
         } finally {
             setIsSubmitting(false);
         }

@@ -1,3 +1,4 @@
+// @refresh reset
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/auth.service';
 
@@ -96,8 +97,12 @@ export const AuthContextProvider = ({ children }) => {
     if (currentUser) {
       localStorage.setItem('user', JSON.stringify(currentUser));
     } else {
+      // Don't clear accessToken during OAuth2 callback (token is set before user is loaded)
+      const isOAuthCallback = window.location.pathname.includes('oauth-callback');
+      if (!isOAuthCallback) {
+        localStorage.removeItem('accessToken');
+      }
       localStorage.removeItem('user');
-      localStorage.removeItem('accessToken');
     }
   }, [currentUser]);
 

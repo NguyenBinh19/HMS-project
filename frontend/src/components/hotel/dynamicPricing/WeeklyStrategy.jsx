@@ -1,25 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { dynamicPricingService } from '@/services/dynamicPricing.service.js';
 
 const DAYS = [
-    { id: 1, label: 'Thứ Hai', code: 'T2' },
-    { id: 2, label: 'Thứ Ba', code: 'T3' },
-    { id: 3, label: 'Thứ Tư', code: 'T4' },
-    { id: 4, label: 'Thứ Năm', code: 'T5' },
-    { id: 5, label: 'Thứ Sáu', code: 'T6' },
-    { id: 6, label: 'Thứ Bảy', code: 'T7' },
-    { id: 0, label: 'Chủ Nhật', code: 'CN' },
+    { id: 1, label: 'Thứ Hai', code: 'T2', dbKey: 'Monday' },
+    { id: 2, label: 'Thứ Ba', code: 'T3', dbKey: 'Tuesday' },
+    { id: 3, label: 'Thứ Tư', code: 'T4', dbKey: 'Wednesday' },
+    { id: 4, label: 'Thứ Năm', code: 'T5', dbKey: 'Thursday' },
+    { id: 5, label: 'Thứ Sáu', code: 'T6', dbKey: 'Friday' },
+    { id: 6, label: 'Thứ Bảy', code: 'T7', dbKey: 'Saturday' },
+    { id: 0, label: 'Chủ Nhật', code: 'CN', dbKey: 'Sunday' },
 ];
 
-const WeeklyStrategy = ({ basePrice = 1500000 }) => {
+const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
     const [weeklyRules, setWeeklyRules] = useState(
         DAYS.map(day => ({
+            ruleId: null,
             day_of_week: day.id,
-            // cấu hình tạm
-            action: day.id === 6 ? 'INCREASE' : day.id === 0 ? 'DECREASE' : 'KEEP',
-            adjustment_value: day.id === 6 ? 100000 : day.id === 0 ? 200000 : 0,
+            dbKey: day.dbKey,
+            action: 'KEEP',
+            adjustment_value: 0,
             adjustment_type: 'FIXED'
         }))
     );
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (!roomTypeId) return;
+        const load = async () => {
+            try {
+                const rules = await dynamicPricingService.getRulesByRoomType(roomTypeId);
+                const weeklyFromApi = (rules.result || rules || []).filter(r => r.ruleType === 'WEEKLY');
+                setWeeklyRules(DAYS.map(day => {
+                    const found = weeklyFromApi.find(r => r.dayOfWeek === day.dbKey);
+                    if (found) {
+                        return {
+                            ruleId: found.ruleId,
+                            day_of_week: day.id,
+                            dbKey: day.dbKey,
+                            action: found.action || 'KEEP',
+                            adjustment_value: found.adjustmentValue || 0,
+                            adjustment_type: found.adjustmentType || 'FIXED'
+                        };
+                    }
+                    return { ruleId: null, day_of_week: day.id, dbKey: day.dbKey, action: 'KEEP', adjustment_value: 0, adjustment_type: 'FIXED' };
+                }));
+            } catch (err) {
+                console.error("Load weekly rules error:", err);
+            }
+        };
+        load();
+    }, [roomTypeId]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            for (const rule of weeklyRules) {
+                if (rule.action === 'KEEP' && rule.ruleId) {
+                    await dynamicPricingService.deleteRule(rule.ruleId);
+                } else if (rule.action !== 'KEEP') {
+                    const payload = {
+                        roomTypeId,
+                        ruleName: `Weekly - ${rule.dbKey}`,
+                        ruleType: 'WEEKLY',
+                        dayOfWeek: rule.dbKey,
+                        action: rule.action,
+                        adjustmentType: rule.adjustment_type,
+                        adjustmentValue: rule.adjustment_value,
+                        isActive: true
+                    };
+                    if (rule.ruleId) {
+                        await dynamicPricingService.updateRule(rule.ruleId, payload);
+                    } else {
+                        await dynamicPricingService.createRule(payload);
+                    }
+                }
+            }
+            alert("Đã lưu chiến lược tuần thành công!");
+        } catch (err) {
+            alert(err.response?.data?.message || "Lưu thất bại!");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleChange = (dayId, field, value) => {
         setWeeklyRules(prev => prev.map(item =>
@@ -134,6 +196,17 @@ const WeeklyStrategy = ({ basePrice = 1500000 }) => {
                 <div className="flex justify-between text-xs text-gray-400 mt-2 px-2">
                     <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                 </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end mt-6">
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+                >
+                    {saving ? "Đang lưu..." : "Lưu chiến lược tuần"}
+                </button>
             </div>
         </div>
     );

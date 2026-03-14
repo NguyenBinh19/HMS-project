@@ -12,3 +12,5 @@ target/
 .DS_Store
 Thumbs.db
 
+src/main/java/com/htpj/config/DataSourceConfig.java
+src/main/resources/application.yaml

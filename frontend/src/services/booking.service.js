@@ -125,6 +125,40 @@ export const getCheckInByDate = async (date) => {
     }
 }
 
+// ============================
+// UC-032, UC-033, UC-055: Feedback
+// ============================
+
+// UC-032: Submit feedback for a completed booking
+const submitFeedback = async (data) => {
+    const response = await api.post(`/feedbacks`, data);
+    return response.data;
+};
+
+// UC-033: Get my feedback history (Agency)
+const getMyFeedbackHistory = async (page = 0, size = 10) => {
+    const response = await api.get(`/feedbacks/history`, { params: { page, size } });
+    return response.data;
+};
+
+// UC-055: Get hotel's received feedback
+const getHotelFeedback = async (page = 0, size = 10) => {
+    const response = await api.get(`/feedbacks/my-hotel`, { params: { page, size } });
+    return response.data;
+};
+
+// UC-055: Get hotel feedback stats
+const getHotelFeedbackStats = async () => {
+    const response = await api.get(`/feedbacks/my-hotel/stats`);
+    return response.data;
+};
+
+// UC-055: Reply to a review
+const replyToFeedback = async (reviewId, reply) => {
+    const response = await api.post(`/feedbacks/${reviewId}/reply`, { reply });
+    return response.data;
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -137,4 +171,9 @@ export const bookingService = {
     updateUserInfoBooking,
     getCheckInToday,
     getCheckInByDate,
+    submitFeedback,
+    getMyFeedbackHistory,
+    getHotelFeedback,
+    getHotelFeedbackStats,
+    replyToFeedback,
 };
