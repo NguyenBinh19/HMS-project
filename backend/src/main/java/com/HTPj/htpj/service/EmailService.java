@@ -6,4 +6,5 @@ public interface EmailService {
     void sendResetPasswordEmail(String to, String resetLink, String username);
     void sendPasswordChangedNotification(String to, String username);
     void sendNewReviewNotification(String to, String hotelName, String agencyName, int ratingScore, String bookingCode);
+    void sendStaffAccountEmail(String to, String username, String password);
 }

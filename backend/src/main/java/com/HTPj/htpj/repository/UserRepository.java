@@ -1,5 +1,6 @@
 package com.HTPj.htpj.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.HTPj.htpj.entity.Users;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<Users, String> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByPhone(String phone);
     Optional<Users> findByEmail(String email);
 
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
@@ -53,4 +55,8 @@ public interface UserRepository extends JpaRepository<Users, String> {
                             Pageable pageable);
 
     long countByStatus(String status);
+
+    List<Users> findByHotel_HotelId(Integer hotelId);
+
+    List<Users> findByAgency_AgencyId(Long agencyId);
 }

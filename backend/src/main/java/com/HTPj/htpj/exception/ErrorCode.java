@@ -33,6 +33,14 @@ public enum ErrorCode {
     CANNOT_BAN_ADMIN(1023, "Không thể khóa tài khoản Admin.", HttpStatus.FORBIDDEN),
     INSUFFICIENT_PRIVILEGES(1024, "Không đủ quyền để thực hiện thao tác này.", HttpStatus.FORBIDDEN),
 
+    //staff
+    INVALID_MANAGER_ROLE(1100, "Invalid manager role", HttpStatus.FORBIDDEN),
+    MANAGER_NOT_FOUND(1101, "Manager not found", HttpStatus.NOT_FOUND),
+    ROLE_NOT_FOUND(1102, "Role not found", HttpStatus.NOT_FOUND),
+    USERNAME_EXISTED(1103, "Username already exists", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(1104, "Email already exists", HttpStatus.BAD_REQUEST),
+    PHONE_EXISTED(1105, "Phone already exists", HttpStatus.BAD_REQUEST),
+
     //hotel + room
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),

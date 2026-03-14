@@ -1,18 +1,31 @@
 package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.partner.BanPartnerRequest;
+import com.HTPj.htpj.dto.request.partner.CreateStaffRequest;
+import com.HTPj.htpj.dto.request.partner.UpdateStaffRequest;
+import com.HTPj.htpj.dto.response.partner.ListStaffResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
+import com.HTPj.htpj.mapper.PartnerMapper;
 import com.HTPj.htpj.repository.*;
+import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.PartnerService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +38,10 @@ public class PartnerServiceImpl implements PartnerService {
     UserRepository userRepository;
     PartnerBlacklistRepository blacklistRepository;
     PartnerVerificationRepository  partnerVerificationRepository;
+    RoleRepository roleRepository;
+    EmailService emailService;
+    PasswordEncoder passwordEncoder;
+    PartnerMapper partnerMapper;
 
     @Override
     public void banPartner(String partnerType, Long partnerId,BanPartnerRequest request,String adminId) {
@@ -87,5 +104,203 @@ public class PartnerServiceImpl implements PartnerService {
                 .build();
 
         blacklistRepository.save(blacklist);
+    }
+
+    private String generateRandomPassword(int length) {
+
+        final String UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String LOWER = "abcdefghijklmnopqrstuvwxyz";
+        final String NUMBER = "0123456789";
+        final String SPECIAL = "@#$%!&*";
+
+        final String ALL = UPPER + LOWER + NUMBER + SPECIAL;
+
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+
+        password.append(UPPER.charAt(random.nextInt(UPPER.length())));
+        password.append(LOWER.charAt(random.nextInt(LOWER.length())));
+        password.append(NUMBER.charAt(random.nextInt(NUMBER.length())));
+        password.append(SPECIAL.charAt(random.nextInt(SPECIAL.length())));
+
+        for (int i = 4; i < length; i++) {
+            password.append(ALL.charAt(random.nextInt(ALL.length())));
+        }
+
+        return password.toString();
+    }
+
+    @Override
+    @Transactional
+    public String createStaff(CreateStaffRequest request) {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Map<String, Object> claims = (Map<String, Object>) authentication.getDetails();
+
+        String managerId = (String) claims.get("userId");
+        String scope = (String) claims.get("scope");
+
+        Users manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USERNAME_EXISTED);
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
+
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new AppException(ErrorCode.PHONE_EXISTED);
+        }
+
+        Users staff = new Users();
+
+        staff.setUsername(request.getUsername());
+        staff.setEmail(request.getEmail());
+        staff.setPhone(request.getPhone());
+        staff.setStatus("ACTIVE");
+
+        String rawPassword = generateRandomPassword(8);
+
+        staff.setPassword(passwordEncoder.encode(rawPassword));
+
+        Set<Role> roles = new HashSet<>();
+        Role requestedRole = roleRepository.findByName(request.getPermission())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        if ("ROLE_HOTEL_MANAGER".equals(scope)) {
+
+            if (manager.getHotel() == null) {
+                throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+            }
+
+            staff.setHotel(manager.getHotel());
+            roles.add(requestedRole);
+
+        } else if ("ROLE_AGENCY_MANAGER".equals(scope)) {
+
+            if (manager.getAgency() == null) {
+                throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+            }
+
+            staff.setAgency(manager.getAgency());
+            roles.add(requestedRole);
+
+        } else {
+            throw new AppException(ErrorCode.INVALID_MANAGER_ROLE);
+        }
+
+        staff.setRoles(roles);
+
+        userRepository.save(staff);
+
+        emailService.sendStaffAccountEmail(
+                staff.getEmail(),
+                staff.getUsername(),
+                rawPassword
+        );
+
+        return "Staff created successfully";
+    }
+
+    @Override
+    public List<ListStaffResponse> getStaffList() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Map<String, Object> claims = (Map<String, Object>) authentication.getDetails();
+
+        String managerId = (String) claims.get("userId");
+        String scope = (String) claims.get("scope");
+
+        Users manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
+
+        List<Users> staffList;
+
+        if ("ROLE_HOTEL_MANAGER".equals(scope)) {
+
+            if (manager.getHotel() == null) {
+                throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+            }
+
+            staffList = userRepository.findByHotel_HotelId(
+                    manager.getHotel().getHotelId()
+            );
+
+        } else if ("ROLE_AGENCY_MANAGER".equals(scope)) {
+
+            if (manager.getAgency() == null) {
+                throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+            }
+
+            staffList = userRepository.findByAgency_AgencyId(
+                    manager.getAgency().getAgencyId()
+            );
+
+        } else {
+            throw new AppException(ErrorCode.INVALID_MANAGER_ROLE);
+        }
+
+        return staffList.stream()
+                .map(partnerMapper::toListStaffResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void lockStaff(String userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setStatus("LOCKED");
+
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void unLockStaff(String userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setStatus("ACTIVE");
+
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void updateStaff(UpdateStaffRequest request) {
+
+        Users user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setStatus(request.getStatus());
+
+        if (request.getPermission() != null) {
+
+            Role role = roleRepository.findById(request.getPermission())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+            Set<Role> roles = new HashSet<>();
+            roles.add(role);
+
+            user.setRoles(roles);
+        }
+
+        userRepository.save(user);
     }
 }

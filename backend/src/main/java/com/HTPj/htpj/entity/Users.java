@@ -23,6 +23,13 @@ public class Users {
 
     @Column(name = "username", unique = true, columnDefinition = "VARCHAR(255)")
     String username;
+
+    @Column(name = "first_name")
+    String firstName;
+
+    @Column(name = "last_name")
+    String lastName;
+
     String email;
     String password;
     String phone;
