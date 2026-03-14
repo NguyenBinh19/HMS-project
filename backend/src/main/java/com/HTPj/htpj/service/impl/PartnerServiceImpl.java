@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -138,25 +139,25 @@ public class PartnerServiceImpl implements PartnerService {
                 .getContext()
                 .getAuthentication();
 
-        Map<String, Object> claims = (Map<String, Object>) authentication.getDetails();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
 
-        String managerId = (String) claims.get("userId");
-        String scope = (String) claims.get("scope");
+        String managerId = jwt.getClaim("userId");
+        String scope = jwt.getClaim("scope");
 
         Users manager = userRepository.findById(managerId)
                 .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
 
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsername(request.getUsername()))
             throw new AppException(ErrorCode.USERNAME_EXISTED);
-        }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail()))
             throw new AppException(ErrorCode.EMAIL_EXISTED);
-        }
 
-        if (userRepository.existsByPhone(request.getPhone())) {
+        if (userRepository.existsByPhone(request.getPhone()))
             throw new AppException(ErrorCode.PHONE_EXISTED);
-        }
+
+        if (request.getPermission() == null)
+            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
 
         Users staff = new Users();
 
@@ -166,36 +167,30 @@ public class PartnerServiceImpl implements PartnerService {
         staff.setStatus("ACTIVE");
 
         String rawPassword = generateRandomPassword(8);
-
         staff.setPassword(passwordEncoder.encode(rawPassword));
 
-        Set<Role> roles = new HashSet<>();
-        Role requestedRole = roleRepository.findByName(request.getPermission())
+        Role role = roleRepository.findByName(request.getPermission())
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        staff.setRoles(Set.of(role));
 
         if ("ROLE_HOTEL_MANAGER".equals(scope)) {
 
-            if (manager.getHotel() == null) {
+            if (manager.getHotel() == null)
                 throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-            }
 
             staff.setHotel(manager.getHotel());
-            roles.add(requestedRole);
 
         } else if ("ROLE_AGENCY_MANAGER".equals(scope)) {
 
-            if (manager.getAgency() == null) {
+            if (manager.getAgency() == null)
                 throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
-            }
 
             staff.setAgency(manager.getAgency());
-            roles.add(requestedRole);
 
         } else {
             throw new AppException(ErrorCode.INVALID_MANAGER_ROLE);
         }
-
-        staff.setRoles(roles);
 
         userRepository.save(staff);
 
@@ -215,10 +210,10 @@ public class PartnerServiceImpl implements PartnerService {
                 .getContext()
                 .getAuthentication();
 
-        Map<String, Object> claims = (Map<String, Object>) authentication.getDetails();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
 
-        String managerId = (String) claims.get("userId");
-        String scope = (String) claims.get("scope");
+        String managerId = jwt.getClaim("userId");
+        String scope = jwt.getClaim("scope");
 
         Users manager = userRepository.findById(managerId)
                 .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
