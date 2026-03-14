@@ -25,7 +25,7 @@ public class HotelDetailListResponse {
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     String email;
-    List<String> images;
+    List<HotelImageResponse> images;
     List<String> amenitiesList;
     Double avgRating;
     Integer totalReviews;

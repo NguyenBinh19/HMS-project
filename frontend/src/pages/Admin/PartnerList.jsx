@@ -195,10 +195,19 @@ const PartnerList = () => {
                                         </div>
                                     </td>
                                     <td className="p-6">
-                                        <div className="text-sm font-black text-slate-700">{p.phone || "---"}</div>
-                                        <div className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">
-                                            {p.email || "Không có email"}
-                                        </div>
+                                        <td className="p-6">
+                                            {/* Kiểm tra cả contactPhone (Agency) và phone (Hotel) */}
+                                            <div className="text-sm font-black text-slate-700">
+                                                {p.contactPhone || p.phone || "---"}
+                                            </div>
+                                            <div
+                                                className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">
+                                                {p.email || "Không có email"}
+                                            </div>
+                                        </td>
+                                        {/*<div className="text-[11px] font-medium text-slate-400 truncate max-w-[150px]">*/}
+                                        {/*    {p.email || "Không có email"}*/}
+                                        {/*</div>*/}
                                     </td>
                                     <td className="p-6">
                                         <p className="text-sm font-bold text-slate-500 max-w-[200px] truncate leading-relaxed">

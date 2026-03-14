@@ -44,10 +44,47 @@ const getHotelPartnerDetail = async (hotelId) => {
     }
 };
 
+// Ban partner của Admin
+const banPartner = async (adminId, partnerType, partnerId, reasonRequest) => {
+    try {
+        const response = await api.put(`/partners/${adminId}/${partnerType.toUpperCase()}/${partnerId}/ban`,
+            reasonRequest
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Ban Partner Error:", error);
+        throw error;
+    }
+};
+
+// Update Hotel Profile
+const updateHotelProfile = async (hotelId, updateRequest, newImages) => {
+    try {
+        const formData = new FormData();
+        // Bọc JSON request vào Blob với type application/json
+        formData.append(
+            "data",
+            new Blob([JSON.stringify(updateRequest)], { type: "application/json" })
+        );
+        // Gửi danh sách ảnh mới kèm key "newImages"
+        if (newImages && newImages.length > 0) {
+            newImages.forEach((file) => {
+                formData.append("newImages", file);
+            });
+        }
+        const response = await api.put(`/hotels/update/${hotelId}`, formData);
+        return response.data;
+    } catch (error) {
+        console.error("Update Hotel Profile Error:", error);
+        throw error;
+    }
+};
+
 export const partnerService = {
     getAllAgencyPartner,
     getAllHotelPartner,
     getHotelPartnerDetail,
     getAgencyPartnerDetail,
-
+    banPartner,
+    updateHotelProfile
 };

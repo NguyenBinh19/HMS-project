@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -259,10 +260,13 @@ public class HotelServiceImpl implements HotelService {
 
         response.setVerification(verificationInfo);
 
-        List<String> images = hotelImageRepository
+        List<HotelImageResponse> images = hotelImageRepository
                 .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
                 .stream()
-                .map(HotelImage::getImageUrl)
+                .map(img -> HotelImageResponse.builder()
+                        .imageId(img.getImageId()) // Lấy ID thật từ DB
+                        .imageUrl(img.getImageUrl())
+                        .build())
                 .toList();
 
         Double avgRating = hotelReviewRepository.getAvgRating(hotelId);
@@ -277,6 +281,7 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @Transactional
     public HotelDetailListResponse updateHotel(Integer hotelId, UpdateHotelRequest request, MultipartFile[] newImages
     ) {
 

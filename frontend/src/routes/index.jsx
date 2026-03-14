@@ -65,7 +65,7 @@ const AppRoutes = () => {
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
 
-                {/*Luồng Agency Booking*/}
+                {/*Luồng Agency */}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="/" element={<AgencyMain />}>
                     <Route path="search-hotel">
@@ -85,7 +85,7 @@ const AppRoutes = () => {
                     {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
-                {/*Luồng Hotel Admin*/}
+                {/* Luồng Hotel */}
                 <Route path="/hotel" element={<HotelMain />}>
                     <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
