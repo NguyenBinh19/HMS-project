@@ -65,7 +65,7 @@ const Login = () => {
                 }
                 setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
                 setTimeout(() => {
-                    navigate(from, { replace: true });
+                    navigate("/homepage", { replace: true });
                 }, 800);
             }
         } catch (err) {

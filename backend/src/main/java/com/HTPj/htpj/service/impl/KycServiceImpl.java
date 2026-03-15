@@ -51,27 +51,12 @@ public class KycServiceImpl implements KycService {
         PartnerVerification verification = PartnerVerification.builder()
                 .submittedBy(userId)
                 .partnerType(request.getPartnerType())
-                .status("Pending")
+                .status("PENDING")
                 .version(newVersion)
                 .submittedAt(now)
                 .updatedAt(now)
                 .build();
 
-//        if (request.getAgencyId() != null) {
-//
-//            Agency agency = agencyRepository.findById(request.getAgencyId())
-//                    .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
-//
-//            verification.setAgency(agency);
-//        }
-//
-//        if (request.getHotelId() != null) {
-//
-//            Hotel hotel = hotelRepository.findById(request.getHotelId())
-//                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-//
-//            verification.setHotel(hotel);
-//        }
 
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -128,7 +113,7 @@ public class KycServiceImpl implements KycService {
                     .verification(verification)
                     .documentType(documentType)
                     .s3ObjectKey(key)
-                    .status("Pending")
+                    .status("PENDING")
                     .isDeleted(false)
                     .createdAt(now)
                     .updatedAt(now)
@@ -208,6 +193,9 @@ public class KycServiceImpl implements KycService {
         verification.setStatus(request.getStatus());
         verification.setRejectionReason(request.getRejectionReason());
 
+        Users user = userRepository.findById(verification.getSubmittedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
 
         if ("VERIFIED".equalsIgnoreCase(request.getStatus())) {
 
@@ -231,6 +219,8 @@ public class KycServiceImpl implements KycService {
                 hotel.setAddress(address);
                 Hotel savedHotel = hotelRepository.save(hotel);
                 verification.setHotel(savedHotel);
+                user.setHotel(savedHotel);
+                userRepository.save(user);
             }
 
             else if ("agency".equalsIgnoreCase(partnerType)) {
@@ -239,6 +229,8 @@ public class KycServiceImpl implements KycService {
                 agency.setAddress(address);
                 Agency savedAgency = agencyRepository.save(agency);
                 verification.setAgency(savedAgency);
+                user.setAgency(savedAgency);
+                userRepository.save(user);
             }
         }
 

@@ -169,7 +169,7 @@ export default function BookingCheckoutPage() {
         try {
             const payload = {
                 holdCode: data.holdCode,
-                agencyId: 1,
+                // agencyId: 1,
                 guestName: name.trim(),
                 guestPhone: phone.trim(),
                 guestEmail: email.trim(),
