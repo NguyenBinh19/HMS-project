@@ -9,7 +9,11 @@ import java.util.List;
 public interface AgencyService {
     List<AgencyResponse> getAllAgencies();
 
+    //admin
     AgencyDetailResponse getAgencyDetail(Long agencyId);
+
+    //agency
+    AgencyDetailResponse getAgencyDetail();
 
     AgencyDetailResponse updateAgency( UpdateAgencyRequest request);
 }

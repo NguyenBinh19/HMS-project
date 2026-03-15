@@ -40,6 +40,14 @@ public class AgencyController {
     }
 
     //agency
+    @GetMapping("/detail")
+    public ApiResponse<AgencyDetailResponse> getAgencyDetail() {
+        return ApiResponse.<AgencyDetailResponse>builder()
+                .result(agencyService.getAgencyDetail())
+                .build();
+    }
+
+    //agency
     @PutMapping("/update")
     public ApiResponse<AgencyDetailResponse> updateAgency(
             @RequestBody UpdateAgencyRequest request

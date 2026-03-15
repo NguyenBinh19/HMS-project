@@ -62,13 +62,21 @@ public class HotelController {
                 .result(hotelServiceImpl.getAllHotels())
                 .build();
     }
-    //UC-076 - View Partner Details
+    //UC-076 - View Partner Details(admin)
     @GetMapping("/list/{hotelId}")
     public ApiResponse<HotelDetailListResponse> getHotelDetail(
             @PathVariable Integer hotelId) {
 
         return ApiResponse.<HotelDetailListResponse>builder()
                 .result(hotelServiceImpl.getHotelDetail(hotelId))
+                .build();
+    }
+
+    @GetMapping("/detail")
+    public ApiResponse<HotelDetailListResponse> getHotelDetail() {
+
+        return ApiResponse.<HotelDetailListResponse>builder()
+                .result(hotelServiceImpl.getHotelDetail())
                 .build();
     }
 

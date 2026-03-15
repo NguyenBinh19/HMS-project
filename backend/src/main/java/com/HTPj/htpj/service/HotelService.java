@@ -19,7 +19,11 @@ public interface HotelService {
 
     List<HotelListResponse> getAllHotels();
 
+    //admin
     HotelDetailListResponse getHotelDetail(Integer hotelId);
+
+    //hotel
+    HotelDetailListResponse getHotelDetail();
 
     HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages
     );

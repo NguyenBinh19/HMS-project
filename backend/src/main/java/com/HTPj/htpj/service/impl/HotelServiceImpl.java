@@ -283,6 +283,61 @@ public class HotelServiceImpl implements HotelService {
         return response;
     }
 
+
+    public HotelDetailListResponse getHotelDetail() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+        Integer hotelId = hotel.getHotelId();
+
+        PartnerVerification verification =
+                partnerVerificationRepository
+                        .findByHotelOrderByVersionDesc(hotelId)
+                        .get(0);
+
+        HotelDetailListResponse response =
+                hotelMapper.toHotelDetailListResponse(hotel);
+
+        VerificationInfoResponse verificationInfo =
+                hotelMapper.toVerificationInfoResponse(verification);
+
+        response.setVerification(verificationInfo);
+
+        List<HotelImageResponse> images = hotelImageRepository
+                .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
+                .stream()
+                .map(img -> HotelImageResponse.builder()
+                        .imageId(img.getImageId()) // Lấy ID thật từ DB
+                        .imageUrl(img.getImageUrl())
+                        .build())
+                .toList();
+
+        Double avgRating = hotelReviewRepository.getAvgRating(hotelId);
+        Integer totalReviews = hotelReviewRepository.countByHotelId(hotelId);
+
+        response.setImages(images);
+        response.setAmenitiesList(parseAmenities(hotel.getAmenities()));
+        response.setAvgRating(avgRating != null ? avgRating : 0.0);
+        response.setTotalReviews(totalReviews);
+
+        return response;
+    }
+
+
     @Override
     @Transactional
     public HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages

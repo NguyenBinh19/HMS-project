@@ -202,15 +202,23 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
 
-        // LẤY USER TỪ JWT
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         Jwt jwt = (Jwt) authentication.getPrincipal();
 
-        String usernameFromJwt = jwt.getSubject();
-        Users user = userRepository.findByUsername(usernameFromJwt)
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Agency agency = user.getAgency();
+
+        if (agency == null) {
+            throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+        }
+
+        Long agencyId = agency.getAgencyId();
 
         RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
                 .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
@@ -228,8 +236,7 @@ public class BookingServiceImpl implements BookingService {
                 .bookingCode("BOOKING-" + UUID.randomUUID().toString().substring(0, 8))
                 .hotelId(hold.getHotelId())
                 .userId(user.getId())
-//                .userId(request.getUserId())       // tam thoi lay request
-                .agencyId(request.getAgencyId())
+                .agencyId(agencyId)
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
                 .nights(nights)
@@ -303,7 +310,7 @@ public class BookingServiceImpl implements BookingService {
             CheckPromotionCodeRequest promoRequest =
                     CheckPromotionCodeRequest.builder()
                             .code(request.getPromotionCode())
-                            .agencyId(request.getAgencyId())
+                            .agencyId(agencyId)
                             .billAmount(bookingTotal)
                             .checkin(checkIn)
                             .checkout(checkOut)

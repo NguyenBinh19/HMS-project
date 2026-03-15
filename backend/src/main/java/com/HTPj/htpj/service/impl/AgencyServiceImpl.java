@@ -58,6 +58,24 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    public AgencyDetailResponse getAgencyDetail() {
+
+        Long agencyId = getCurrentAgencyId();
+
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+
+        PartnerVerification verification =
+                verificationRepository
+                        .findVerifiedByAgencyOrderByVersionDesc(agencyId)
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Verification not found"));
+
+        return agencyMapper.toAgencyDetailResponse(agency, verification);
+    }
+
+    @Override
     public AgencyDetailResponse updateAgency(UpdateAgencyRequest request) {
         Long agencyId = getCurrentAgencyId();
 
