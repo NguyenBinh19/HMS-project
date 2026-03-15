@@ -11,5 +11,5 @@ public interface AgencyService {
 
     AgencyDetailResponse getAgencyDetail(Long agencyId);
 
-    AgencyDetailResponse updateAgency(Long agencyId, UpdateAgencyRequest request);
+    AgencyDetailResponse updateAgency( UpdateAgencyRequest request);
 }

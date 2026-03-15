@@ -13,7 +13,7 @@ public interface RoomTypeService {
 
     RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request, MultipartFile[] files);
 
-    List<RoomTypeResponse> getRoomTypesByHotelId(Integer hotelId);
+    List<RoomTypeResponse> getRoomTypesByHotelId();
 
     RoomTypeDetailResponse getRoomTypeDetail(Integer roomTypeId);
 

@@ -21,6 +21,6 @@ public class KycUploadRequest {
     private LocalDate representativeCICDate;
     private String representativeCICPlace;
     private List<String> documentTypes;
-    private Long agencyId;
-    private Integer hotelId;
+//    private Long agencyId;
+//    private Integer hotelId;
 }

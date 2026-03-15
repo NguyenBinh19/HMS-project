@@ -64,12 +64,10 @@ public class PromotionController {
                 .build();
     }
 
-    @GetMapping("/hotel/{hotelId}")
-    ApiResponse<List<PromotionListResponse>> getPromotionsByHotel(
-            @PathVariable Integer hotelId
-    ) {
+    @GetMapping("/listOfHotel")
+    ApiResponse<List<PromotionListResponse>> getPromotionsByHotel() {
         return ApiResponse.<List<PromotionListResponse>>builder()
-                .result(promotionService.getPromotionsByHotel(hotelId))
+                .result(promotionService.getPromotionsByHotel())
                 .build();
     }
 

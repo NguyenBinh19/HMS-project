@@ -21,6 +21,6 @@ public interface HotelService {
 
     HotelDetailListResponse getHotelDetail(Integer hotelId);
 
-    HotelDetailListResponse updateHotel(Integer hotelId, UpdateHotelRequest request, MultipartFile[] newImages
+    HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages
     );
 }

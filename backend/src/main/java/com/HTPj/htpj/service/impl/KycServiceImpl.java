@@ -36,6 +36,7 @@ public class KycServiceImpl implements KycService {
     private final S3Service s3Service;
     private final KycMapper kycMapper;
     private final HotelRepository hotelRepository;
+    private final UserRepository userRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -56,20 +57,30 @@ public class KycServiceImpl implements KycService {
                 .updatedAt(now)
                 .build();
 
-        if (request.getAgencyId() != null) {
+//        if (request.getAgencyId() != null) {
+//
+//            Agency agency = agencyRepository.findById(request.getAgencyId())
+//                    .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+//
+//            verification.setAgency(agency);
+//        }
+//
+//        if (request.getHotelId() != null) {
+//
+//            Hotel hotel = hotelRepository.findById(request.getHotelId())
+//                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+//
+//            verification.setHotel(hotel);
+//        }
 
-            Agency agency = agencyRepository.findById(request.getAgencyId())
-                    .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
-
-            verification.setAgency(agency);
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (user.getAgency() != null) {
+            verification.setAgency(user.getAgency());
         }
 
-        if (request.getHotelId() != null) {
-
-            Hotel hotel = hotelRepository.findById(request.getHotelId())
-                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-
-            verification.setHotel(hotel);
+        if (user.getHotel() != null) {
+            verification.setHotel(user.getHotel());
         }
 
         verificationRepository.save(verification);

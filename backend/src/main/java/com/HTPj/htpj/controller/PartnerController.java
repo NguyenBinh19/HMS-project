@@ -9,6 +9,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,13 +24,19 @@ import java.util.List;
 public class PartnerController {
     PartnerService partnerService;
 
-    @PutMapping("/{adminId}/{partnerType}/{partnerId}/ban")
+    @PutMapping("/{partnerType}/{partnerId}/ban")
     public ApiResponse<String> banPartner(
-            @PathVariable String adminId,
             @PathVariable String partnerType,
             @PathVariable Long partnerId,
             @RequestBody BanPartnerRequest request
     ) {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String adminId = jwt.getClaim("userId");
         partnerService.banPartner(partnerType, partnerId, request, adminId);
 
         return ApiResponse.<String>builder()

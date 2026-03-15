@@ -29,6 +29,7 @@ public class AgencyController {
                 .build();
     }
 
+    //admin
     @GetMapping("/{agencyId}")
     public ApiResponse<AgencyDetailResponse> getAgencyDetail(
             @PathVariable Long agencyId
@@ -38,13 +39,13 @@ public class AgencyController {
                 .build();
     }
 
-    @PutMapping("/update/{agencyId}")
+    //agency
+    @PutMapping("/update")
     public ApiResponse<AgencyDetailResponse> updateAgency(
-            @PathVariable Long agencyId,
             @RequestBody UpdateAgencyRequest request
     ) {
         return ApiResponse.<AgencyDetailResponse>builder()
-                .result(agencyService.updateAgency(agencyId, request))
+                .result(agencyService.updateAgency(request))
                 .build();
     }
 }

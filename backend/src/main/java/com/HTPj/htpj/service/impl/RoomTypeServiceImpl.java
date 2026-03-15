@@ -9,16 +9,21 @@ import com.HTPj.htpj.dto.response.roomtype.RoomTypeResponse;
 import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.RoomType;
 import com.HTPj.htpj.entity.RoomTypeImage;
+import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomTypeMapper;
 import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.repository.RoomTypeImageRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
+import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.RoomTypeService;
 import com.HTPj.htpj.service.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,12 +44,27 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RoomTypeImageRepository roomTypeImageRepository;
     private final S3Service s3Service;
+    private final UserRepository usersRepository;
 
 
     @Override
     public RoomTypeDetailResponse createRoomType(CreateRoomTypeRequest request, MultipartFile[] files) {
-        Hotel hotel = hotelRepository.findById(request.getHotelId())
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
 
         if (roomTypeRepository.existsByRoomCode(request.getRoomCode())) {
             throw new AppException(ErrorCode.ROOM_TYPE_EXISTED);
@@ -115,7 +135,25 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
 
     @Override
-    public List<RoomTypeResponse> getRoomTypesByHotelId(Integer hotelId) {
+    public List<RoomTypeResponse> getRoomTypesByHotelId() {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+
+        Integer hotelId = hotel.getHotelId();
+
         List<RoomType> roomTypes = roomTypeRepository.findByHotel_HotelId(hotelId);
 
         return roomTypes.stream()

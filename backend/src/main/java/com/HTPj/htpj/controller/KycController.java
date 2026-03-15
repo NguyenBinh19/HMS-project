@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,12 +29,18 @@ public class KycController {
 
     private final KycService kycService;
 
-    @PostMapping(value = "/upload/{userId}",consumes = "multipart/form-data")
+    @PostMapping(value = "/upload",consumes = "multipart/form-data")
     public ApiResponse<KycUploadResponse> uploadKyc(
-            @PathVariable String userId,
             @RequestPart("data") KycUploadRequest request,
             @RequestPart(value = "files", required = false) MultipartFile[] files
     ) {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
         return ApiResponse.<KycUploadResponse>builder()
                 .result(kycService.uploadKyc(userId, request, files))
                 .build();
@@ -52,12 +61,19 @@ public class KycController {
                 .build();
     }
 
-    @GetMapping("/user/{userId}")
-    public ApiResponse<List<KycQueueResponse>> getPartnerVerificationsByUserId(
-            @PathVariable String userId
-    ) {
+    @GetMapping("/user")
+    public ApiResponse<List<KycQueueResponse>> getPartnerVerificationsByUserId() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String managerId = jwt.getClaim("userId");
+
         return ApiResponse.<List<KycQueueResponse>>builder()
-                .result(kycService.getPartnerVerificationsByUserId(userId))
+                .result(kycService.getPartnerVerificationsByUserId(managerId))
                 .build();
     }
 

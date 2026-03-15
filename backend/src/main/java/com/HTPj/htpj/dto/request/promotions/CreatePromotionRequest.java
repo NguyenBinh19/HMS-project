@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreatePromotionRequest {
-    private Integer hotelId;
     private String code;
     private String name;
     private String typePromotion;

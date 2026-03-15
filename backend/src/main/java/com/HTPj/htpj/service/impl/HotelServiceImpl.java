@@ -16,6 +16,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,7 +44,7 @@ public class HotelServiceImpl implements HotelService {
     RoomHoldRepository roomHoldRepository;
     PartnerVerificationRepository partnerVerificationRepository;
     S3Service s3Service;
-    
+    UserRepository userRepository;
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -282,11 +285,25 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     @Transactional
-    public HotelDetailListResponse updateHotel(Integer hotelId, UpdateHotelRequest request, MultipartFile[] newImages
+    public HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages
     ) {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+        Integer hotelId = hotel.getHotelId();
 
         // update basic fields
         hotel.setHotelName(request.getHotelName());

@@ -7,14 +7,20 @@ import com.HTPj.htpj.dto.request.promotions.UpdatePromotionRequest;
 import com.HTPj.htpj.dto.response.promotions.ApplyPromotionResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionListResponse;
 import com.HTPj.htpj.dto.response.promotions.PromotionResponse;
+import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.Promotion;
+import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.PromotionMapper;
 import com.HTPj.htpj.repository.BookingRepository;
 import com.HTPj.htpj.repository.PromotionRepository;
+import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -29,9 +35,27 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionRepository promotionRepository;
     private final PromotionMapper promotionMapper;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
     @Override
     public PromotionResponse createPromotion(CreatePromotionRequest request) {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
 
         if (promotionRepository.existsByCode(request.getCode())) {
             throw new AppException(ErrorCode.PROMOTION_CODE_EXISTED);
@@ -39,6 +63,7 @@ public class PromotionServiceImpl implements PromotionService {
 
         Promotion promotion = promotionMapper.toEntity(request);
 
+        promotion.setHotelId(hotel.getHotelId());
         promotion.setUsedCount(0);
         promotion.setIsDeleted(false);
         promotion.setCreatedAt(LocalDateTime.now());
@@ -117,7 +142,25 @@ public class PromotionServiceImpl implements PromotionService {
     }
 
     @Override
-    public List<PromotionListResponse> getPromotionsByHotel(Integer hotelId) {
+    public List<PromotionListResponse> getPromotionsByHotel() {
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+
+        Integer hotelId = hotel.getHotelId();
 
         List<Promotion> promotions =
                 promotionRepository.findByHotelIdAndIsDeletedFalse(hotelId);
@@ -130,9 +173,27 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public List<ApplyPromotionResponse> getAvailablePromotions(ApplyPromotionRequest request) {
 
-        List<Promotion> promotions =
-                promotionRepository.findByHotelIdAndIsDeletedFalse(request.getHotelId());
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+
+        Integer hotelId = hotel.getHotelId();
+
+        List<Promotion> promotions =
+                promotionRepository.findByHotelIdAndIsDeletedFalse(hotelId);
         LocalDate now = LocalDate.now();
 
         long nights =
@@ -166,6 +227,27 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public ApplyPromotionResponse checkPromotionCode(CheckPromotionCodeRequest request) {
 
+        //hotelid
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Hotel hotel = user.getHotel();
+
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+
+        Integer hotelId = hotel.getHotelId();
+
+        //promotion
         Promotion promotion =
                 promotionRepository.findByCodeAndIsDeletedFalse(request.getCode())
                         .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_CODE_INVALID));
@@ -181,7 +263,7 @@ public class PromotionServiceImpl implements PromotionService {
         if (promotion.getUsedCount() >= promotion.getMaxUsage())
             throw new AppException(ErrorCode.PROMOTION_USAGE_EXCEEDED);
 
-        if (!promotion.getHotelId().equals(request.getHotelId()))
+        if (!promotion.getHotelId().equals(hotelId))
             throw new AppException(ErrorCode.PROMOTION_NOT_APPLICABLE_HOTEL);
 
         if (request.getBillAmount().compareTo(promotion.getMinOrderVal()) < 0)

@@ -72,15 +72,15 @@ public class HotelController {
                 .build();
     }
 
-    @PutMapping(value = "/update/{hotelId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //for hotel
+    @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<HotelDetailListResponse> updateHotel(
-            @PathVariable Integer hotelId,
             @RequestPart("data") UpdateHotelRequest request,
             @RequestPart(value = "newImages", required = false) MultipartFile[] newImages
     ) {
 
         return ApiResponse.<HotelDetailListResponse>builder()
-                .result(hotelServiceImpl.updateHotel(hotelId, request, newImages))
+                .result(hotelServiceImpl.updateHotel(request, newImages))
                 .build();
     }
 }

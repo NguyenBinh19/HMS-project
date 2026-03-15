@@ -15,7 +15,7 @@ public interface PromotionService {
     PromotionResponse updatePromotion(Integer id, UpdatePromotionRequest request);
     void deletePromotion(Integer id);
     PromotionResponse getPromotionDetail(Integer id);
-    List<PromotionListResponse> getPromotionsByHotel(Integer hotelId);
+    List<PromotionListResponse> getPromotionsByHotel();
     List<ApplyPromotionResponse> getAvailablePromotions(ApplyPromotionRequest request);
     ApplyPromotionResponse checkPromotionCode(CheckPromotionCodeRequest request);
 

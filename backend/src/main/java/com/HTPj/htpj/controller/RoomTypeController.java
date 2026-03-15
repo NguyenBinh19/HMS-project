@@ -26,12 +26,6 @@ public class RoomTypeController {
 
     RoomTypeService roomTypeService;
 
-//    @PostMapping
-//    ApiResponse<RoomTypeDetailResponse> create(@RequestBody CreateRoomTypeRequest request) {
-//        return ApiResponse.<RoomTypeDetailResponse>builder()
-//                .result(roomTypeService.createRoomType(request))
-//                .build();
-//    }
     @PostMapping(consumes = "multipart/form-data")
     ApiResponse<RoomTypeDetailResponse> create(
             @RequestPart("data") CreateRoomTypeRequest request,
@@ -43,11 +37,9 @@ public class RoomTypeController {
     }
 
     @GetMapping
-    ApiResponse<List<RoomTypeResponse>> getRoomTypesByHotelId(
-            @RequestParam Integer hotelId
-    ) {
+    ApiResponse<List<RoomTypeResponse>> getRoomTypesByHotelId() {
         return ApiResponse.<List<RoomTypeResponse>>builder()
-                .result(roomTypeService.getRoomTypesByHotelId(hotelId))
+                .result(roomTypeService.getRoomTypesByHotelId())
                 .build();
     }
 
