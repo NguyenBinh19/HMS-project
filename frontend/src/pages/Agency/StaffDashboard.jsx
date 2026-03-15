@@ -1,100 +1,160 @@
-import React, { useState, useMemo } from 'react';
-import { Plus, Search, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Loader2, CreditCard } from 'lucide-react';
 import StaffStats from '@/components/agency/subAccount/StaffStatistic.jsx';
 import StaffActionMenu from '@/components/agency/subAccount/StaffActionMenu.jsx';
 import StaffFormModal from '@/components/agency/subAccount/StaffModal.jsx';
+import StaffCreateModal from "@/components/agency/subAccount/StaffCreateModal.jsx";
+import React, { useState, useMemo, useEffect } from 'react';
+import { staffService } from '@/services/staff.service.js';
 
 const StaffDashboard = () => {
-    const [modalConfig, setModalConfig] = useState({ isOpen: false, data: null });
-
-    // --- Logic Phân Trang ---
+    const [staffs, setStaffs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        isOpen: false,
+        data: null,
+        isViewOnly: false
+    });
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; // Số lượng nhân viên mỗi trang
+    const itemsPerPage = 5;
 
-    const [staffs] = useState([
-        { id: 1, name: "Nguyễn Văn A", email: "nguyenvana@agency.com", role: "Nhân viên đặt phòng", used: 2000000, limit: 20000000, status: true, initial: "NV" },
-        { id: 2, name: "Trần Thị B", email: "tranthib@agency.com", role: "Nhân viên đặt phòng", used: 18500000, limit: 20000000, status: true, initial: "TH" },
-        { id: 3, name: "Lê Đức C", email: "leducc@agency.com", role: "Nhân viên đặt phòng", used: 5200000, limit: 15000000, status: false, initial: "LD" },
-        { id: 4, name: "Phạm Hồng D", email: "phamhongd@agency.com", role: "Nhân viên đặt phòng", used: 12800000, limit: 15000000, status: true, initial: "PH" },
-        { id: 5, name: "Hoàng Quang E", email: "hoangquange@agency.com", role: "Nhân viên đặt phòng", used: 0, limit: 10000000, status: true, initial: "HQ" },
-        { id: 6, name: "Vũ Văn F", email: "vuvanf@agency.com", role: "Nhân viên đặt phòng", used: 1000000, limit: 10000000, status: true, initial: "VF" },
-    ]);
+    const fetchStaffList = async () => {
+        try {
+            setLoading(true);
+            const response = await staffService.getStaffList();
+            // Lọc các tài khoản thuộc Agency
+            const agencyStaff = (response.result || []).filter(s =>
+                s.permission === 'AGENCY_STAFF' || s.permission === 'AGENCY_MANAGER'
+            );
+            setStaffs(agencyStaff);
+        } catch (error) {
+            console.error("Lỗi khi tải danh sách Agency:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    // Tính toán dữ liệu hiển thị cho trang hiện tại
+    useEffect(() => { fetchStaffList(); }, []);
+
+    const handleAddStaff = () => setIsCreateOpen(true);
+
+    const handleEditStaff = (staff) => {
+        setModalConfig({ isOpen: true, data: staff, isViewOnly: false });
+    };
+
+    const handleViewDetails = (staff) => {
+        setModalConfig({ isOpen: true, data: staff, isViewOnly: true });
+    };
+
+    const handleToggleStatus = async (staff) => {
+        const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
+        if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
+        try {
+            if (staff.status === 'ACTIVE') {
+                await staffService.lockStaff(staff.id);
+            } else {
+                await staffService.unLockStaff(staff.id);
+            }
+            fetchStaffList();
+        } catch (error) {
+            alert(`Lỗi khi ${actionText} tài khoản`);
+        }
+    };
+
     const currentTableData = useMemo(() => {
-        const firstPageIndex = (currentPage - 1) * itemsPerPage;
-        const lastPageIndex = firstPageIndex + itemsPerPage;
-        return staffs.slice(firstPageIndex, lastPageIndex);
+        const start = (currentPage - 1) * itemsPerPage;
+        return staffs.slice(start, start + itemsPerPage);
     }, [currentPage, staffs]);
 
-    const totalPages = Math.ceil(staffs.length / itemsPerPage);
-
-    const openAddModal = () => setModalConfig({ isOpen: true, data: null });
-    const openEditModal = (staff) => setModalConfig({ isOpen: true, data: staff });
-    const closeModal = () => setModalConfig({ isOpen: false, data: null });
+    const totalPages = Math.max(1, Math.ceil(staffs.length / itemsPerPage));
 
     return (
-        <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10 font-sans">
+        <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10">
             <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <h1 className="text-2xl font-bold text-slate-800">Quản lý Nhân viên & Phân quyền</h1>
-                    <button onClick={openAddModal} className="bg-[#006AFF] hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-95">
-                        <Plus size={20} /> Thêm nhân viên mới
+                {/* Header */}
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-2xl font-bold text-slate-800">Quản lý Nhân viên Đại lý</h1>
+                    <button
+                        onClick={handleAddStaff}
+                        className="bg-[#006AFF] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                    >
+                        <Plus size={20} /> Thêm nhân sự
                     </button>
                 </div>
 
-                <StaffStats />
+                {/* Thống kê cho Agency (Tổng hạn mức, số tiền đã dùng) */}
+                <StaffStats data={staffs} />
 
-                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="p-5 border-b border-slate-50">
-                        <div className="relative max-w-md">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input type="text" placeholder="Tìm kiếm theo tên hoặc email..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm" />
-                        </div>
-                    </div>
-
+                {/* Table */}
+                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden mt-8">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[900px]">
-                            <thead>
-                            <tr className="text-[11px] font-black text-slate-400 uppercase tracking-[2px] border-b border-slate-50 bg-slate-50/30">
-                                <th className="px-8 py-5">Thông tin nhân viên</th>
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50/30 border-b border-slate-50">
+                            <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th className="px-8 py-5">Nhân viên</th>
                                 <th className="px-8 py-5">Vai trò</th>
-                                <th className="px-8 py-5">Hạn mức chi tiêu ngày</th>
+                                <th className="px-8 py-5">Thông tin cá nhân</th>
                                 <th className="px-8 py-5 text-center">Trạng thái</th>
-                                <th className="px-8 py-5 text-right">Hành động</th>
+                                <th className="px-8 py-5 text-right">Thao tác</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                            {currentTableData.map((staff) => (
+                            {loading ? (
+                                <tr><td colSpan="5" className="text-center py-20"><Loader2 className="animate-spin mx-auto text-blue-500" /></td></tr>
+                            ) : staffs.length === 0 ? (
+                                <tr><td colSpan="5" className="text-center py-20 text-slate-400">Chưa có nhân viên đại lý nào.</td></tr>
+                            ) : currentTableData.map((staff) => (
                                 <tr key={staff.id} className="hover:bg-blue-50/30 transition-colors group">
                                     <td className="px-8 py-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-[#006AFF] font-bold text-[13px]">{staff.initial}</div>
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-[#006AFF] font-bold uppercase">
+                                                {(staff.lastName?.[0] || staff.username?.[0] || 'A')}
+                                            </div>
                                             <div>
-                                                <p className="font-bold text-slate-800 text-[15px]">{staff.name}</p>
+                                                <p className="font-bold text-slate-800">
+                                                    {staff.lastName || staff.firstName
+                                                        ? `${staff.lastName || ''} ${staff.firstName || ''}`.trim()
+                                                        : staff.username}
+                                                </p>
                                                 <p className="text-xs text-slate-400 font-medium">{staff.email}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className="bg-blue-50 text-[#006AFF] text-[10px] font-black px-3 py-1.5 rounded-lg uppercase border border-blue-100">{staff.role}</span>
+                                        <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${
+                                            staff.permission === 'AGENCY_MANAGER'
+                                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                                : 'bg-blue-50 text-[#006AFF] border-blue-100'
+                                        }`}>
+                                            {staff.permission === 'AGENCY_MANAGER' ? 'QUẢN LÝ' : 'NHÂN VIÊN'}
+                                        </span>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <p className="text-[11px] font-bold text-slate-600">
-                                                {staff.used.toLocaleString()} / <span className="text-slate-400">{staff.limit.toLocaleString()} đ</span>
-                                            </p>
-                                            <button onClick={() => openEditModal(staff)} className="text-blue-500 hover:text-blue-700"><Edit2 size={12}/></button>
-                                        </div>
-                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                            <div className={`h-full ${(staff.used/staff.limit) > 0.8 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${(staff.used/staff.limit)*100}%` }} />
-                                        </div>
+                                        <p className="text-sm text-slate-600 font-medium">{staff.phone || 'Chưa có SĐT'}</p>
+                                        <p className="text-[11px] text-slate-400 truncate max-w-[200px]">
+                                            {staff.address || 'Chưa có địa chỉ'}
+                                        </p>
+                                        {staff.dob && <p className="text-[10px] text-slate-400">NS: {staff.dob}</p>}
                                     </td>
                                     <td className="px-8 py-6 text-center">
-                                        <Toggle checked={staff.status} />
+                                        <div className="flex flex-col items-center gap-1">
+                                            <Toggle checked={staff.status === 'ACTIVE'}
+                                                    onChange={() => handleToggleStatus(staff)}/>
+                                            <span
+                                                className={`text-[9px] font-bold uppercase ${staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                {staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <StaffActionMenu onEdit={() => openEditModal(staff)} />
+                                        <StaffActionMenu
+                                            onEdit={() => handleEditStaff(staff)}
+                                            onToggle={() => handleToggleStatus(staff)}
+                                            onViewDetails={() => handleViewDetails(staff)}
+                                            onViewHistory={() => alert(`Lịch sử giao dịch: ${staff.username}`)}
+                                            status={staff.status}
+                                        />
                                     </td>
                                 </tr>
                             ))}
@@ -102,38 +162,33 @@ const StaffDashboard = () => {
                         </table>
                     </div>
 
-                    {/* --- Phần Phân Trang --- */}
-                    <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
+                    {/* Phân Trang */}
+                    <div
+                        className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => prev - 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 hover:border-blue-600 disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:text-slate-400 transition-all"
+                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
                             <ChevronLeft size={18} />
                         </button>
-
-                        {[...Array(totalPages)].map((_, index) => {
-                            const pageNumber = index + 1;
-                            // Logic hiển thị rút gọn trang (ví dụ 1, 2, 3... 10) có thể thêm ở đây nếu data lớn
-                            return (
-                                <button
-                                    key={pageNumber}
-                                    onClick={() => setCurrentPage(pageNumber)}
-                                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-                                        currentPage === pageNumber
-                                            ? 'bg-[#006AFF] text-white shadow-md shadow-blue-100'
-                                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    {pageNumber}
-                                </button>
-                            );
-                        })}
-
+                        {[...Array(totalPages)].map((_, index) => (
+                            <button
+                                key={index + 1}
+                                onClick={() => setCurrentPage(index + 1)}
+                                className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                                    currentPage === index + 1
+                                        ? 'bg-[#006AFF] text-white shadow-md'
+                                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                                }`}
+                            >
+                                {index + 1}
+                            </button>
+                        ))}
                         <button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(prev => prev + 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 hover:border-blue-600 disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:text-slate-400 transition-all"
+                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
                             <ChevronRight size={18} />
                         </button>
@@ -143,17 +198,24 @@ const StaffDashboard = () => {
 
             <StaffFormModal
                 isOpen={modalConfig.isOpen}
-                onClose={closeModal}
+                onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
                 initialData={modalConfig.data}
+                isViewOnly={modalConfig.isViewOnly}
+                onSuccess={fetchStaffList}
+            />
+            <StaffCreateModal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                onSuccess={fetchStaffList}
             />
         </div>
     );
 };
 
-const Toggle = ({ checked }) => (
+const Toggle = ({ checked, onChange }) => (
     <label className="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" className="sr-only peer" defaultChecked={checked} />
-        <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+        <input type="checkbox" className="sr-only peer" checked={checked} onChange={onChange} />
+        <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
     </label>
 );
 

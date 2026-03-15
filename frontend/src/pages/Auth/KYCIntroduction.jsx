@@ -9,7 +9,7 @@ import { useLocation } from 'react-router-dom';
 const KYCPage = () => {
     const location = useLocation();
     const [currentStep, setCurrentStep] = useState(1);
-    const [userId, setUserId] = useState("b00b85a6-6865-4f6a-a14f-fc7d6ff4d972"); // fix tam
+    const [userId, setUserId] = useState("d47b8c31-c65f-4931-bd04-2b895797ef4c"); // fix tam
 
     // Nếu có state từ màn hình Trạng thái truyền sang,
     // cho người dùng nhảy thẳng vào Step 2 (Form) luôn, bỏ qua Step 1 (Preparation)

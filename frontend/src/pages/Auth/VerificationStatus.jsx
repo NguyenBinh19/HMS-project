@@ -5,7 +5,7 @@ import { kycService } from "@/services/kyc.service.js";
 
 const VerificationStatusPage = () => {
     const navigate = useNavigate();
-    const userId = "b00b85a6-6865-4f6a-a14f-fc7d6ff4d972";
+    const userId = "109e6f2f-514e-4c97-95c3-ffee33a11410";
 
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);

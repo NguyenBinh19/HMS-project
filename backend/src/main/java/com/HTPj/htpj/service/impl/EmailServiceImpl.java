@@ -159,28 +159,36 @@ public class EmailServiceImpl implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+            helper.setFrom("bookingsphere@gmail.com");
             helper.setTo(to);
-            helper.setSubject("HMS - Staff Account Created");
+            helper.setSubject("HMS - Tài khoản nhân viên đã được tạo");
 
             String htmlContent =
                     "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;'>"
+
                             + "<div style='background: linear-gradient(135deg,#10b981,#14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align:center;'>"
                             + "<h1 style='color:white;margin:0;'>HMS - BookingSphere</h1>"
                             + "</div>"
 
                             + "<div style='background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 16px 16px;'>"
-                            + "<h2>Welcome to HMS!</h2>"
 
-                            + "<p>Your staff account has been created successfully.</p>"
+                            + "<h2>Chào mừng bạn đến với HMS!</h2>"
+
+                            + "<p>Tài khoản nhân viên của bạn đã được tạo thành công.</p>"
 
                             + "<div style='background:#f8fafc;padding:16px;border-radius:8px;margin:20px 0;'>"
-                            + "<p><b>Username:</b> " + username + "</p>"
-                            + "<p><b>Temporary Password:</b> " + password + "</p>"
+                            + "<p><b>Tên đăng nhập:</b> " + username + "</p>"
+                            + "<p><b>Mật khẩu tạm thời:</b> " + password + "</p>"
                             + "</div>"
 
-                            + "<p style='color:#ef4444;'><b>For security reasons, please change your password immediately after logging in.</b></p>"
+                            + "<p style='color:#ef4444;'><b>Vì lý do bảo mật, vui lòng đổi mật khẩu ngay sau khi đăng nhập.</b></p>"
 
-                            + "<p>Login to HMS system to start working.</p>"
+                            + "<p>Bạn có thể đăng nhập vào hệ thống HMS để bắt đầu làm việc.</p>"
+
+                            + "<p style='color:#64748b;font-size:13px;margin-top:20px;'>"
+                            + "Nếu bạn không yêu cầu tạo tài khoản này, vui lòng liên hệ quản trị viên hệ thống."
+                            + "</p>"
+
                             + "</div></div>";
 
             helper.setText(htmlContent, true);

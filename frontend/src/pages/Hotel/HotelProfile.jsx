@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 
 const HotelProfileManager = () => {
     const navigate = useNavigate(); // 2. Khởi tạo navigate
-    const HOTEL_ID = 2; // ID của khách sạn hiện tại
+    const HOTEL_ID = 1015; // ID của khách sạn hiện tại
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
