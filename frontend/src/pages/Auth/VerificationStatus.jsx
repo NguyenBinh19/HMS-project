@@ -5,7 +5,6 @@ import { kycService } from "@/services/kyc.service.js";
 
 const VerificationStatusPage = () => {
     const navigate = useNavigate();
-    const userId = "109e6f2f-514e-4c97-95c3-ffee33a11410";
 
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);
@@ -16,7 +15,7 @@ const VerificationStatusPage = () => {
     const fetchStatus = async () => {
         setLoading(true);
         try {
-            const res = await kycService.getVerificationsByUserId(userId);
+            const res = await kycService.getVerificationsByUserId();
             const list = res?.result || [];
             // Sắp xếp theo ID giảm dần để bản mới nhất luôn ở đầu
             const sortedList = list.sort((a, b) => b.id - a.id);

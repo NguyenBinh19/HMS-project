@@ -8,7 +8,7 @@ import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetai
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
-const HOTEL_ID = 2;
+// const HOTEL_ID = 2;
 
 const ManageRoomTypes = () => {
     const [roomTypes, setRoomTypes] = useState([]);
@@ -23,8 +23,7 @@ const ManageRoomTypes = () => {
     const fetchRoomTypes = async () => {
         try {
             setLoading(true);
-            console.log("Đang gọi API cho Hotel ID:", HOTEL_ID);
-            const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
+            const res = await roomTypeService.getRoomTypesByHotelId();
 
             const dataFromApi = res?.result || (Array.isArray(res) ? res : []);
 
@@ -264,7 +263,7 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                 {/* MODAL 1 */}
                 {showAddModal && (
                     <RoomTypeModal
-                        hotelId={HOTEL_ID}
+                        // hotelId={HOTEL_ID}
                         onClose={() => setShowAddModal(false)}
                         onSuccess={() => handleSuccess("Thêm hạng phòng mới thành công!")}
                     />

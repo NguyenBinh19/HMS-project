@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2, Check, RefreshCw, Info, Globe, Lock } from "lucide-react";
 import { promotionService } from "@/services/coupon.service.js";
 
-const getInitialState = (hotelId) => ({
-    hotelId: hotelId || 2,
+const getInitialState = () => ({
     code: "",
     name: "",
     typePromotion: "PUBLIC",
@@ -22,17 +21,17 @@ const getInitialState = (hotelId) => ({
     createdBy: "ADMIN_TEST"
 });
 
-export default function CreateCouponModal({ isOpen, onClose, onSuccess, hotelId }) {
+export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState(getInitialState(hotelId));
+    const [formData, setFormData] = useState(getInitialState());
 
     useEffect(() => {
         if (isOpen) {
-            setFormData(getInitialState(hotelId));
+            setFormData(getInitialState());
             setStep(1);
         }
-    }, [isOpen, hotelId]);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -102,7 +101,6 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess, hotelId 
             // Ép kiểu dữ liệu chuẩn xác trước khi gửi về BE
             const payload = {
                 ...formData,
-                hotelId: Number(formData.hotelId),
                 discountVal: Number(formData.discountVal || 0),
                 maxDiscount: Number(formData.maxDiscount || 0),
                 minOrderVal: Number(formData.minOrderVal || 0),

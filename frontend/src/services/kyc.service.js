@@ -17,7 +17,7 @@ export const KYC_STATUS = {
 };
 
 // 1. Upload KYC (Tạo mới hoặc cập nhật khi status là NeedMoreInfo)
-const uploadKyc = async (userId, data, files) => {
+const uploadKyc = async (data, files) => {
     try {
         const formData = new FormData();
 
@@ -30,7 +30,7 @@ const uploadKyc = async (userId, data, files) => {
             formData.append("files", file);
         });
 
-        const response = await api.post(`/kyc/upload/${userId}`, formData);
+        const response = await api.post(`/kyc/upload`, formData);
         return response.data;
     } catch (error) {
         console.error("Backend Error Detail:", error.response?.data);
@@ -85,9 +85,9 @@ const approveVerification = async (payload) => {
 };
 
 // 6. Lấy list hồ sơ theo userId
-const getVerificationsByUserId = async (userId) => {
+const getVerificationsByUserId = async () => {
     try {
-        const response = await api.get(`/kyc/user/${userId}`);
+        const response = await api.get(`/kyc/user`);
         return response.data;
     } catch (error) {
         console.error("Get Detail Error:", error);

@@ -92,7 +92,9 @@ const deleteRoomType = async (roomTypeId) => {
 /** 6. Lấy chi tiết thông tin loại phòng theo khách sạn */
 const getRoomTypesDetailByHotelId = async (hotelId) => {
     try {
-        const response = await api.get(`/room-types`, { params: { hotelId } });
+        const response = await api.get(`/room-types/details`, {
+            params: { hotelId: hotelId }
+        });
         // Thử log ở đây để xem cấu trúc thật
         console.log("Dữ liệu từ BE:", response.data);
         return response.data;

@@ -62,11 +62,9 @@ const PartnerDetail = () => {
 
         setIsBanning(true);
         try {
-            // AdminID tạm thời fix cứng
-            const adminId = "ADMIN_01";
             const partnerType = isAgency ? "AGENCY" : "HOTEL";
 
-            await partnerService.banPartner(adminId, partnerType, id, {
+            await partnerService.banPartner(partnerType, id, {
                 reason: reason,
                 evidence: "Thao tác trực tiếp từ trang quản trị"
             });

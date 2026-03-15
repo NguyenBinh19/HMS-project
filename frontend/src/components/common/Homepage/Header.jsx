@@ -8,13 +8,14 @@ import {
     X,
     LogOut,
     UserCircle,
-    ChevronDown
+    ChevronDown, ShieldCheck
 } from "lucide-react";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const needsKyc = user && (user.status === "PENDING" || !user.isKyc);
 
     useEffect(() => {
         try {
@@ -87,6 +88,16 @@ const Header = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                                {/* NEW: Nút KYC - Chỉ hiện khi tài khoản mới/chưa xác minh */}
+                                {needsKyc && (
+                                    <button
+                                        onClick={() => navigate("/kyc-intro")}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm shadow-md shadow-amber-100 hover:bg-amber-600 animate-pulse transition-all"
+                                    >
+                                        <ShieldCheck size={18} />
+                                        Xác minh tài khoản
+                                    </button>
+                                )}
                                 {/* Profile Link */}
                                 <Link
                                     to="/profile"

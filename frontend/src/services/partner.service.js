@@ -45,9 +45,9 @@ const getHotelPartnerDetail = async (hotelId) => {
 };
 
 // Ban partner của Admin
-const banPartner = async (adminId, partnerType, partnerId, reasonRequest) => {
+const banPartner = async (partnerType, partnerId, reasonRequest) => {
     try {
-        const response = await api.put(`/partners/${adminId}/${partnerType.toUpperCase()}/${partnerId}/ban`,
+        const response = await api.put(`/partners/${partnerType.toUpperCase()}/${partnerId}/ban`,
             reasonRequest
         );
         return response.data;
@@ -58,7 +58,7 @@ const banPartner = async (adminId, partnerType, partnerId, reasonRequest) => {
 };
 
 // Update Hotel Profile
-const updateHotelProfile = async (hotelId, updateRequest, newImages) => {
+const updateHotelProfile = async (updateRequest, newImages) => {
     try {
         const formData = new FormData();
         // Bọc JSON request vào Blob với type application/json
@@ -72,7 +72,7 @@ const updateHotelProfile = async (hotelId, updateRequest, newImages) => {
                 formData.append("newImages", file);
             });
         }
-        const response = await api.put(`/hotels/update/${hotelId}`, formData);
+        const response = await api.put(`/hotels/update`, formData);
         return response.data;
     } catch (error) {
         console.error("Update Hotel Profile Error:", error);

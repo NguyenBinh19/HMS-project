@@ -12,7 +12,6 @@ import { toast } from "react-hot-toast";
 
 const AgencyProfile = () => {
     const navigate = useNavigate();
-    const AGENCY_ID = 2; // ID cứng hoặc lấy từ Auth Context
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -36,7 +35,7 @@ const AgencyProfile = () => {
     const fetchAgencyDetail = async () => {
         setLoading(true);
         try {
-            const response = await partnerService.getAgencyPartnerDetail(AGENCY_ID);
+            const response = await partnerService.getAgencyPartnerDetail();
             const res = response.result;
             setOriginalData(res);
 
@@ -66,7 +65,6 @@ const AgencyProfile = () => {
         // Gửi kèm agencyId và kycId sang màn hình KYC
         navigate('/kyc/status', {
             state: {
-                agencyId: AGENCY_ID,
                 oldKycId: originalData?.verification?.id,
                 partnerType: 'AGENCY'
             }
@@ -82,7 +80,7 @@ const AgencyProfile = () => {
                 hotline: profile.hotline?.trim(),
                 contactPhone: profile.contactPhone?.trim()
             };
-            const response = await agencyService.upAgencyProfileDetail(AGENCY_ID, updateBody);
+            const response = await agencyService.upAgencyProfileDetail(updateBody);
             if (response.code === 1000) {
                 toast.success("Cập nhật thành công!");
                 setShowSuccessBanner(true);

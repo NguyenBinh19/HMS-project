@@ -8,7 +8,21 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
 
     // Đảm bảo lấy đúng data từ API Response
     const actualData = data?.result || data;
-    const documents = actualData?.documents || [];
+
+    const allDocuments = actualData?.documents || [];
+    const existingUrls = actualData?.existingDocuments || [];
+
+    const displayDocs = [
+        ...allDocuments,
+        ...existingUrls.map((url, idx) => ({
+            id: `old-${idx}`,
+            fileUrl: url,
+            documentType: "OLD_DOCUMENT",
+            isOld: true // Thêm dòng này
+        }))
+    ];
+
+    const currentDoc = displayDocs[currentDocIndex];
 
     const getPartnerLabel = (type) => {
         const t = type?.toUpperCase();
@@ -17,13 +31,32 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
         return t || "N/A";
     };
 
-    const getDocTypeLabel = (type) => {
-        switch (type?.toUpperCase()) {
-            case 'BUSINESS_LICENSE': return "GP KINH DOANH";
-            case 'REPRESENTATIVE_CIC_FRONT': return "CCCD MẶT TRƯỚC";
-            case 'REPRESENTATIVE_CIC_BACK': return "CCCD MẶT SAU";
-            default: return type?.replace(/_/g, ' ') || "TÀI LIỆU";
+    const getDocTypeLabel = (doc) => {
+        // Lấy string type từ object doc, nếu không có thì mặc định là chuỗi rỗng
+        const typeString = doc?.documentType || "";
+
+        // Kiểm tra xem đây có phải ảnh cũ không (dựa trên flag hoặc tên file)
+        const isOld = doc?.isOld || doc?.fileUrl?.includes('old_');
+
+        let label = "";
+        switch (typeString.toUpperCase()) {
+            case 'BUSINESS_LICENSE':
+                label = "GP KINH DOANH";
+                break;
+            case 'REPRESENTATIVE_CIC_FRONT':
+                label = "CCCD MẶT TRƯỚC";
+                break;
+            case 'REPRESENTATIVE_CIC_BACK':
+                label = "CCCD MẶT SAU";
+                break;
+            case 'OLD_DOCUMENT':
+                label = "DỮ LIỆU CŨ";
+                break;
+            default:
+                label = typeString ? typeString.replace(/_/g, ' ') : "TÀI LIỆU";
         }
+
+        return isOld ? `[CŨ] ${label}` : label;
     };
 
     const handleAction = async (targetStatus) => {
@@ -56,8 +89,7 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
 
             const payload = {
                 verificationId: Number(vId),
-                reviewedBy: "bf116d64-8e4e-42ee-b9c7-c8e6f2c907a8", // Admin ID tạm thời
-                status: targetStatus, // Giữ nguyên Case định nghĩa trong KYC_STATUS của service
+                status: targetStatus,
                 rejectionReason: isVerified ? "" : reason,
                 verificationBefore: isUpdateFlow
             };
@@ -145,9 +177,14 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                     {/* Cột phải: Trình xem tài liệu */}
                     <div className="flex-1 bg-slate-50 p-8 flex flex-col overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Tài liệu đính kèm ({documents.length})</h4>
+                            {/* CHỖ SỬA 1: Tổng số lượng ảnh */}
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                                Tài liệu đính kèm ({displayDocs.length})
+                            </h4>
+
+                            {/* CHỖ SỬA 2: Các dấu chấm nhỏ */}
                             <div className="flex gap-2">
-                                {documents.map((doc, idx) => (
+                                {displayDocs.map((_, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentDocIndex(idx)}
@@ -158,28 +195,30 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                         </div>
 
                         <div className="flex gap-3 mb-6 overflow-x-auto pb-2 shrink-0 no-scrollbar">
-                            {documents.map((doc, idx) => (
+                            {/* CHỖ SỬA 3: Các nút Tabs chọn loại tài liệu */}
+                            {displayDocs.map((doc, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentDocIndex(idx)}
                                     className={`px-5 py-2.5 bg-white border-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap shadow-sm ${currentDocIndex === idx ? 'border-blue-600 text-blue-600 ring-2 ring-blue-50' : 'border-transparent text-slate-400 hover:border-slate-200'}`}
                                 >
-                                    {getDocTypeLabel(doc.documentType)}
+                                    {getDocTypeLabel(doc)}
                                 </button>
                             ))}
                         </div>
 
                         <div className="flex-1 bg-white border-2 border-slate-200 rounded-[2rem] flex items-center justify-center overflow-hidden shadow-2xl relative group">
-                            {documents[currentDocIndex] ? (
+                            {/* CHỖ SỬA 4: Hiển thị nội dung ảnh chính */}
+                            {currentDoc ? (
                                 <>
                                     <img
-                                        key={documents[currentDocIndex].fileUrl}
-                                        src={documents[currentDocIndex].fileUrl}
+                                        key={currentDoc.fileUrl}
+                                        src={currentDoc.fileUrl}
                                         alt="kyc-document"
                                         className="max-w-[95%] max-h-[95%] object-contain rounded-lg transition-transform duration-500 group-hover:scale-[1.02]"
                                     />
                                     <a
-                                        href={documents[currentDocIndex].fileUrl}
+                                        href={currentDoc.fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="absolute bottom-6 right-6 p-4 bg-slate-900 text-white rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 flex items-center gap-2 text-xs font-bold shadow-xl translate-y-4 group-hover:translate-y-0"

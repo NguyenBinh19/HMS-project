@@ -25,6 +25,11 @@ const Sidebar = () => {
             path: "/agency-dashboard"
         },
         {
+            icon: <Users size={20} />,
+            label: "HỒ SƠ ĐẠI LÝ",
+            path: "/agency-profile"
+        },
+        {
             icon: <Search size={20} />,
             label: "TÌM KIẾM PHÒNG",
             path: "/search-hotel"

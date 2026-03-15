@@ -3,31 +3,35 @@ import KYCPreparation from '@/components/kyc/KYCPreparation.jsx';
 import KYCUploadForm from '@/components/kyc/KYCUploadForm.jsx';
 import KYCSuccessView from '@/components/kyc/KYCSuccessView.jsx';
 import StepProgressBar from '@/components/common/KYC/StepProgressBar.jsx';
-import {kycService} from "@/services/kyc.service.js";
+import { kycService } from "@/services/kyc.service.js";
 import { useLocation } from 'react-router-dom';
 
 const KYCPage = () => {
     const location = useLocation();
     const [currentStep, setCurrentStep] = useState(1);
-    const [userId, setUserId] = useState("d47b8c31-c65f-4931-bd04-2b895797ef4c"); // fix tam
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Nếu có state từ màn hình Trạng thái truyền sang,
-    // cho người dùng nhảy thẳng vào Step 2 (Form) luôn, bỏ qua Step 1 (Preparation)
     useEffect(() => {
-        if (location.state?.initialData) {
+        // Nếu chuyển hướng từ màn hình danh sách/trạng thái kèm theo ID hồ sơ cũ
+        if (location.state?.oldKycId || location.state?.initialData) {
             setCurrentStep(2);
         }
     }, [location]);
-    // const handleStart = () => setCurrentStep(2);
 
     const handleSubmission = async (payload) => {
+        setIsSubmitting(true);
         try {
             const { data, files } = payload;
-            const response = await kycService.uploadKyc(userId, data, files);
-            console.log("KYC Upload Success:", response);
+
+            // data lúc này đã bao gồm verificationId và documentTypes đúng chuẩn
+            await kycService.uploadKyc(data, files);
+
             setCurrentStep(3);
         } catch (error) {
-            alert(error.message || "Có lỗi xảy ra khi nộp hồ sơ");
+            const msg = error.response?.data?.message || "Có lỗi xảy ra khi nộp hồ sơ";
+            alert(msg);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -36,16 +40,21 @@ const KYCPage = () => {
             <div className="max-w-4xl mx-auto">
                 <StepProgressBar currentStep={currentStep} />
 
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
+                    {/* Overlay loading khi đang upload file */}
+                    {isSubmitting && (
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center">
+                            <RefreshCw className="animate-spin text-blue-600 mb-2" size={32} />
+                            <p className="text-sm font-bold text-slate-600">Đang tải hồ sơ lên hệ thống...</p>
+                        </div>
+                    )}
+
                     {currentStep === 1 && <KYCPreparation onStart={() => setCurrentStep(2)} />}
 
                     {currentStep === 2 && (
                         <KYCUploadForm
-                            // Nếu quay lại từ luồng sửa, ta về lại Step 1 hoặc trang cũ tùy bạn
                             onBack={() => setCurrentStep(1)}
                             onSubmit={handleSubmission}
-                            // Truyền data cũ xuống nếu có
-                            initialData={location.state?.initialData}
                         />
                     )}
 

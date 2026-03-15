@@ -43,8 +43,6 @@ const InputField = ({ label, name, value, onChange, error, type = "text", placeh
 const SUGGESTED_AMENITIES = ["Wifi tốc độ cao", "Smart TV", "Bồn tắm", "Máy sấy", "Loa Bluetooth", "Ban công", "Hướng biển", "Hướng phố"];
 
 const RoomTypeModal = ({ onClose, onSuccess }) => {
-    // --- KHAI BÁO BIẾN CỐ ĐỊNH ---
-    const FIXED_HOTEL_ID = 2;
 
     // --- STATE ---
     const [form, setForm] = useState({
@@ -177,7 +175,6 @@ const RoomTypeModal = ({ onClose, onSuccess }) => {
 
             // 1. Tạo object payload i
             const payload = {
-                hotelId: FIXED_HOTEL_ID,
                 roomCode: form.roomCode.toUpperCase(),
                 roomTitle: form.roomTitle,
                 description: form.description,

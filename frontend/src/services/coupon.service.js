@@ -45,9 +45,9 @@ const getPromotionDetail = async (id) => {
 };
 
 // 5. Lấy danh sách khuyến mãi theo Hotel ID
-const getPromotionsByHotel = async (hotelId) => {
+const getPromotionsByHotel = async () => {
     try {
-        const response = await api.get(`/promotions/hotel/${hotelId}`);
+        const response = await api.get(`/promotions/listOfHotel`);
         return response.data;
     } catch (error) {
         console.error("Get Promotions By Hotel Error:", error.response?.data || error);

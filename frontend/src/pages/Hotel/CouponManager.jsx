@@ -4,7 +4,7 @@ import CreateCouponModal from "@/components/hotel/coupon/CreateCouponModal.jsx";
 import UpdateCouponModal from "@/components/hotel/coupon/UpdateCouponModal.jsx";
 import { promotionService } from "@/services/coupon.service.js";
 
-export default function CouponManagement({ hotelId = 2 }) {
+export default function CouponManagement() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isUpdateOpen, setIsUpdateOpen] = useState(false);
     const [selectedCouponId, setSelectedCouponId] = useState(null);
@@ -15,7 +15,7 @@ export default function CouponManagement({ hotelId = 2 }) {
     const fetchCoupons = async () => {
         setIsLoading(true);
         try {
-            const res = await promotionService.getPromotionsByHotel(hotelId);
+            const res = await promotionService.getPromotionsByHotel();
             const data = res.result || [];
 
             let filtered = [];
@@ -34,7 +34,7 @@ export default function CouponManagement({ hotelId = 2 }) {
 
     useEffect(() => {
         fetchCoupons();
-    }, [activeTab, hotelId]);
+    }, [activeTab]);
 
     const handleOpenUpdate = (id) => {
         setSelectedCouponId(id);
@@ -158,7 +158,7 @@ export default function CouponManagement({ hotelId = 2 }) {
                 )}
             </div>
 
-            <CreateCouponModal isOpen={isCreateOpen} hotelId={hotelId} onClose={() => setIsCreateOpen(false)} onSuccess={fetchCoupons} />
+            <CreateCouponModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSuccess={fetchCoupons} />
             <UpdateCouponModal
                 isOpen={isUpdateOpen}
                 couponId={selectedCouponId}

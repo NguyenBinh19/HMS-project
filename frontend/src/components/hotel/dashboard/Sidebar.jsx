@@ -9,6 +9,7 @@ const Sidebar = () => {
 
     const menuItems = [
         { icon: <Home size={20} />, label: "Dashboard", path: "/hotel/dashboard" },
+        { icon: <Users size={20} />, label: "HỒ SƠ KHÁCH SẠN", path: "/hotel/profile" },
         { icon: <Hotel size={20} />, label: "QUẢN LÝ PHÒNG", path: "/hotel/room-types" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN", path: "/hotel/staff" },
         { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/room-types" },

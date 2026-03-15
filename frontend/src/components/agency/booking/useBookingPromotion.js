@@ -14,7 +14,7 @@ export const useBookingPromotion = (bookingData, navigate) => {
     const fetchWalletCoupons = async () => {
         try {
             const payload = {
-                hotelId: bookingData.hotelId,
+
                 agencyId: 1,
                 checkin: bookingData.checkInDate,
                 checkout: bookingData.checkOutDate,
@@ -51,7 +51,6 @@ export const useBookingPromotion = (bookingData, navigate) => {
         setPromoError("");
         try {
             const payload = {
-                hotelId: bookingData.hotelId,
                 agencyId: 1,
                 code: targetCode.trim(),
                 checkin: bookingData.checkInDate,

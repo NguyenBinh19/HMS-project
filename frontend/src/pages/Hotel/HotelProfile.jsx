@@ -8,8 +8,7 @@ import { partnerService } from "@/services/partner.service.js";
 import { toast } from "react-hot-toast";
 
 const HotelProfileManager = () => {
-    const navigate = useNavigate(); // 2. Khởi tạo navigate
-    const HOTEL_ID = 1015; // ID của khách sạn hiện tại
+    const navigate = useNavigate(); //
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -34,7 +33,6 @@ const HotelProfileManager = () => {
     const handleGoToKYC = () => {
         navigate('/kyc/status', {
             state: {
-                hotelId: HOTEL_ID,
                 oldKycId: originalData?.verification?.id,
                 partnerType: 'HOTEL'
             }
@@ -79,7 +77,7 @@ const HotelProfileManager = () => {
                 ...formData,
                 deleteImageIds: deleteImageIds
             };
-            const response = await partnerService.updateHotelProfile(HOTEL_ID, updateRequest, newImages);
+            const response = await partnerService.updateHotelProfile(updateRequest, newImages);
 
             if (response.code === 1000) {
                 toast.success("Cập nhật thành công!");
