@@ -1,0 +1,72 @@
+server:
+  servlet:
+    context-path: /hms
+  port: 8080
+
+spring:
+  application:
+    name: hms
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate.dialect: org.hibernate.dialect.SQLServerDialect
+  cloud:
+    vault:
+      kv:
+        enabled: true
+        backend: secret
+        default-context: application
+        profile-separator: '/'
+      authentication: TOKEN
+      token: hms@2026
+      scheme: http
+      host: 103.167.89.125
+      port: 8200
+  config:
+    import: vault://
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid, profile, email
+            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: bookingsphere@gmail.com
+    password: vztu qatl dbij hvpg
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  valid-duration: 6000 # in second
+  refreshable-duration: 36000 # in seconds
+
+app:
+  frontend-url: http://localhost:5173
+
+springdoc:
+  api-docs:
+    path: /api-docs
+
+temporal:
+  connection:
+    target: localhost:7233
+  namespace: default
