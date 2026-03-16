@@ -95,7 +95,7 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         corsConfiguration.addAllowedOriginPattern("http://localhost:*");
-        corsConfiguration.addAllowedOriginPattern("https://justhotel.site");
+        corsConfiguration.addAllowedOriginPattern("https://www.justhotel.site");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true);
