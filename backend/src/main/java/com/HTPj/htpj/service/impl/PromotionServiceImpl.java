@@ -173,51 +173,24 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public List<ApplyPromotionResponse> getAvailablePromotions(ApplyPromotionRequest request) {
 
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-
-        String userId = jwt.getClaim("userId");
-
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        Hotel hotel = user.getHotel();
-
-        if (hotel == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-        }
-
-        Integer hotelId = hotel.getHotelId();
-
-        List<Promotion> promotions =
-                promotionRepository.findByHotelIdAndIsDeletedFalse(hotelId);
+        Long agencyId = getAgencyIdFromToken();
+        Integer hotelId = request.getHotelId();
+        List<Promotion> promotions =promotionRepository.findByHotelIdAndIsDeletedFalse(hotelId);
         LocalDate now = LocalDate.now();
-
-        long nights =
-                ChronoUnit.DAYS.between(request.getCheckin(), request.getCheckout());
+        long nights =ChronoUnit.DAYS.between(request.getCheckin(), request.getCheckout());
 
         return promotions.stream()
                 .filter(p -> "PUBLIC".equalsIgnoreCase(p.getTypePromotion()))
                 .filter(p -> Boolean.FALSE.equals(p.getIsDeleted()))
                 .filter(p -> "ACTIVE".equalsIgnoreCase(p.getStatus()))
                 .filter(p -> p.getUsedCount() < p.getMaxUsage())
-                .filter(p -> request.getBillAmount()
-                        .compareTo(p.getMinOrderVal()) >= 0)
-                .filter(p -> !now.isBefore(p.getApplyStartDate())
-                        && !now.isAfter(p.getApplyEndDate()))
+                .filter(p -> request.getBillAmount().compareTo(p.getMinOrderVal()) >= 0)
+                .filter(p -> !now.isBefore(p.getApplyStartDate()) && !now.isAfter(p.getApplyEndDate()))
                 .filter(p -> !request.getCheckin().isBefore(p.getStayStartDate())
                         && !request.getCheckout().isAfter(p.getStayEndDate()))
                 .filter(p -> nights >= p.getMinStay())
                 .filter(p -> {
-                    Long used =
-                            bookingRepository.countAgencyPromotionUsage(
-                                    request.getAgencyId(),
-                                    p.getCode()
-                            );
-
+                    Long used = bookingRepository.countAgencyPromotionUsage(agencyId, p.getCode());
                     return used < p.getAgencyUsageLimit();
                 })
                 .map(promotionMapper::toApplyPromotionResponse)
@@ -227,31 +200,10 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public ApplyPromotionResponse checkPromotionCode(CheckPromotionCodeRequest request) {
 
-        //hotelid
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
-
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-
-        String userId = jwt.getClaim("userId");
-
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        Hotel hotel = user.getHotel();
-
-        if (hotel == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-        }
-
-        Integer hotelId = hotel.getHotelId();
-
-        //promotion
-        Promotion promotion =
-                promotionRepository.findByCodeAndIsDeletedFalse(request.getCode())
+        Long agencyId = getAgencyIdFromToken();
+        Integer hotelId = request.getHotelId();
+        Promotion promotion = promotionRepository.findByCodeAndIsDeletedFalse(request.getCode())
                         .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_CODE_INVALID));
-
         LocalDate now = LocalDate.now();
 
         long nights =
@@ -280,15 +232,26 @@ public class PromotionServiceImpl implements PromotionService {
         if (nights < promotion.getMinStay())
             throw new AppException(ErrorCode.PROMOTION_MIN_STAY_NOT_MET);
 
-        Long used =
-                bookingRepository.countAgencyPromotionUsage(
-                        request.getAgencyId(),
-                        promotion.getCode()
-                );
+        Long used = bookingRepository.countAgencyPromotionUsage(agencyId, promotion.getCode());
 
         if (used >= promotion.getAgencyUsageLimit())
             throw new AppException(ErrorCode.PROMOTION_AGENCY_USAGE_EXCEEDED);
 
         return promotionMapper.toApplyPromotionResponse(promotion);
+    }
+
+    private Long getAgencyIdFromToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (user.getAgency() == null) {
+            throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+        }
+
+        return user.getAgency().getAgencyId();
     }
 }

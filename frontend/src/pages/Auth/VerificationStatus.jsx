@@ -59,7 +59,7 @@ const VerificationStatusPage = () => {
 
     // ĐIỀU KIỆN: Chỉ bản ghi mới nhất VÀ có trạng thái cho phép mới được hiện nút Cập nhật
     const isLatest = kycDetail?.id === kycList[0]?.id;
-    const statusAllowsUpdate = ["VERIFIED", "REJECT", "NEEDMOREINFO"].includes(kycDetail?.status?.toUpperCase());
+    const statusAllowsUpdate = ["VERIFIED", "REJECTED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase());
     const canUpdate = isLatest && statusAllowsUpdate;
 
     return (
@@ -78,7 +78,7 @@ const VerificationStatusPage = () => {
                         <p className="text-slate-600 font-medium max-w-2xl">{theme.desc}</p>
 
                         {/* HIỂN THỊ LÝ DO TỪ CHỐI (Nếu có) */}
-                        {kycDetail?.status?.toUpperCase() === "REJECT" && kycDetail?.rejectionReason && (
+                        {kycDetail?.status?.toUpperCase() === "REJECTED" && kycDetail?.rejectionReason && (
                             <div className="mt-4 p-4 bg-red-100 border-l-4 border-red-500 rounded-r-xl animate-in slide-in-from-left">
                                 <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Lý do từ chối từ hệ thống:</p>
                                 <p className="text-sm font-bold text-red-800 mt-1 italic">"{kycDetail.rejectionReason}"</p>
@@ -213,14 +213,14 @@ const getStatusTheme = (status) => {
                 text: "text-emerald-700", badgeBg: "bg-emerald-100",
                 label: "Đã xác thực", desc: "Tài khoản của bạn đã được kích hoạt đầy đủ các tính năng dành cho đối tác chính thức."
             };
-        case "REJECT":
+        case "REJECTED":
             return {
                 icon: <AlertCircle size={48} className="text-red-500" />,
                 bg: "bg-red-50/50", border: "border-red-100",
                 text: "text-red-700", badgeBg: "bg-red-100",
                 label: "Bị từ chối", desc: "Rất tiếc, hồ sơ định danh không được thông qua. Vui lòng xem lý do và cập nhật lại thông tin."
             };
-        case "NEEDMOREINFO":
+        case "NEED_MORE_INFORMATION":
             return {
                 icon: <Info size={48} className="text-blue-500" />,
                 bg: "bg-blue-50/50", border: "border-blue-100",

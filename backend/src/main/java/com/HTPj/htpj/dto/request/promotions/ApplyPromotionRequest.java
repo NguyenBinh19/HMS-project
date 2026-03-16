@@ -10,8 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ApplyPromotionRequest {
-//    private Integer hotelId;
-    private Long agencyId;
+    private Integer hotelId;
+//    private Long agencyId;
     private LocalDate checkin;
     private LocalDate checkout;
     private BigDecimal billAmount;

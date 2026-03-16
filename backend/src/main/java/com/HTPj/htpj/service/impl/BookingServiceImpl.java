@@ -310,7 +310,7 @@ public class BookingServiceImpl implements BookingService {
             CheckPromotionCodeRequest promoRequest =
                     CheckPromotionCodeRequest.builder()
                             .code(request.getPromotionCode())
-                            .agencyId(agencyId)
+                            .hotelId(hold.getHotelId())
                             .billAmount(bookingTotal)
                             .checkin(checkIn)
                             .checkout(checkOut)
