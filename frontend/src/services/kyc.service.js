@@ -8,12 +8,10 @@ export const DOCUMENT_TYPES = {
 };
 
 export const KYC_STATUS = {
-    PENDING: "Pending",
+    PENDING: "PENDING",
+    REJECTED: "REJECTED",
     VERIFIED: "VERIFIED",
-    VERIFIED_ALT: "Verified",
-    REJECT: "REJECT",
-    REJECT_ALT: "reject",
-    NEED_MORE_INFO: "NeedMoreInfo"
+    NEED_MORE_INFORMATION: "NEED_MORE_INFORMATION"
 };
 
 // 1. Upload KYC (Tạo mới hoặc cập nhật khi status là NeedMoreInfo)

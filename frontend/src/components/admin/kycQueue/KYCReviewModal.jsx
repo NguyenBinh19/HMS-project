@@ -72,7 +72,7 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
 
         // Nếu không phải phê duyệt, bắt buộc nhập lý do
         if (!isVerified) {
-            const statusLabel = targetStatus === KYC_STATUS.REJECT ? "TỪ CHỐI" : "YÊU CẦU BỔ SUNG";
+            const statusLabel = targetStatus === KYC_STATUS.REJECTED ? "TỪ CHỐI" : "YÊU CẦU BỔ SUNG";
             reason = prompt(`Nhập lý do cho trạng thái [${statusLabel}]:`);
 
             if (reason === null) return; // Người dùng nhấn Cancel prompt
@@ -249,14 +249,14 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                     <div className="flex gap-4">
                         <button
                             disabled={submitting}
-                            onClick={() => handleAction(KYC_STATUS.NEED_MORE_INFO)}
+                            onClick={() => handleAction(KYC_STATUS.NEED_MORE_INFORMATION)}
                             className="px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 rounded-2xl text-[11px] font-black uppercase transition-all flex items-center gap-2"
                         >
                             Yêu cầu bổ sung
                         </button>
                         <button
                             disabled={submitting}
-                            onClick={() => handleAction(KYC_STATUS.REJECT)}
+                            onClick={() => handleAction(KYC_STATUS.REJECTED)}
                             className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-[11px] font-black uppercase transition-all"
                         >
                             Từ chối hồ sơ

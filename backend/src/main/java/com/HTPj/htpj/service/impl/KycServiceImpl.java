@@ -217,6 +217,7 @@ public class KycServiceImpl implements KycService {
                 Hotel hotel = new Hotel();
                 hotel.setHotelName(legalName);
                 hotel.setAddress(address);
+                hotel.setStatus("ACTIVE");
                 Hotel savedHotel = hotelRepository.save(hotel);
                 verification.setHotel(savedHotel);
                 user.setHotel(savedHotel);
@@ -227,6 +228,7 @@ public class KycServiceImpl implements KycService {
                 Agency agency = new Agency();
                 agency.setAgencyName(legalName);
                 agency.setAddress(address);
+                agency.setStatus("ACTIVE");
                 Agency savedAgency = agencyRepository.save(agency);
                 verification.setAgency(savedAgency);
                 user.setAgency(savedAgency);

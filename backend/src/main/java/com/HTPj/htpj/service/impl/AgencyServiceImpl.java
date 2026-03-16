@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -83,7 +84,7 @@ public class AgencyServiceImpl implements AgencyService {
                 .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
 
         // check email duplicate
-        if (!agency.getEmail().equals(request.getEmail())
+        if (!Objects.equals(agency.getEmail(), request.getEmail())
                 && agencyRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }

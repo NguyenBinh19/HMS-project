@@ -42,7 +42,7 @@ const HotelProfileManager = () => {
     const fetchDetail = async () => {
         setLoading(true);
         try {
-            const response = await partnerService.getHotelPartnerDetail(HOTEL_ID);
+            const response = await partnerService.getHotelProfileDetail();
             const res = response.result;
             setOriginalData(res);
 

@@ -5,6 +5,7 @@ import KYCSuccessView from '@/components/kyc/KYCSuccessView.jsx';
 import StepProgressBar from '@/components/common/KYC/StepProgressBar.jsx';
 import { kycService } from "@/services/kyc.service.js";
 import { useLocation } from 'react-router-dom';
+import { RefreshCw} from "lucide-react";
 
 const KYCPage = () => {
     const location = useLocation();

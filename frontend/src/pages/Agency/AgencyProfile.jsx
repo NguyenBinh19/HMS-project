@@ -35,7 +35,7 @@ const AgencyProfile = () => {
     const fetchAgencyDetail = async () => {
         setLoading(true);
         try {
-            const response = await partnerService.getAgencyPartnerDetail();
+            const response = await agencyService.getAgencyProfileDetail();
             const res = response.result;
             setOriginalData(res);
 

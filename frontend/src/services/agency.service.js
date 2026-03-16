@@ -11,10 +11,10 @@ const upAgencyProfileDetail = async (updateData) => {
     }
 };
 
-// Lấy thông tin chi tiết Agency theo agencyId
+// Lấy thông tin chi tiết Agency
 const getAgencyProfileDetail = async () => {
     try {
-        const response = await api.get(`/agencies/my-profile`);
+        const response = await api.get(`/agencies/detail`);
         return response.data;
     } catch (error) {
         console.error("Get Agency Partner Detail Error:", error);

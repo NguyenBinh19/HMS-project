@@ -408,10 +408,10 @@ export default function BookingCheckoutPage() {
                                 {/* CHECKBOX ĐIỀU KHOẢN */}
 
                                 <div className="border-t border-slate-100 pt-4 space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>
-                                        <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>
-                                    </div>
+                                    {/*<div className="flex justify-between text-sm">*/}
+                                    {/*    <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>*/}
+                                    {/*    <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>*/}
+                                    {/*</div>*/}
                                     {addonsTotal > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="text-slate-600 font-bold">Dịch vụ thêm</span>

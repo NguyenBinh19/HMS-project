@@ -80,11 +80,23 @@ const updateHotelProfile = async (updateRequest, newImages) => {
     }
 };
 
+// Lấy thông tin chi tiết Hotel
+const getHotelProfileDetail = async () => {
+    try {
+        const response = await api.get(`/hotels/detail`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Agency Partner Detail Error:", error);
+        throw error;
+    }
+};
+
 export const partnerService = {
     getAllAgencyPartner,
     getAllHotelPartner,
     getHotelPartnerDetail,
     getAgencyPartnerDetail,
     banPartner,
-    updateHotelProfile
+    updateHotelProfile,
+    getHotelProfileDetail
 };
