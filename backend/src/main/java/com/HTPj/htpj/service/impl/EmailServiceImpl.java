@@ -2,15 +2,16 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.service.EmailService;
 import jakarta.mail.internet.MimeMessage;
-import jakarta.validation.constraints.Email;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class EmailServiceImpl implements EmailService {
 
     @Autowired
@@ -31,7 +32,174 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(htmlContent, true);
             mailSender.send(message);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to send welcome email to {}", to, e);
         }
     }
+
+    @Override
+    public void sendOtpEmail(String to, String otp, String username) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Mã xác thực OTP của bạn");
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #10b981, #14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + username + ",</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Mã xác thực OTP của bạn là:</p>"
+                    + "<div style='text-align: center; margin: 24px 0;'>"
+                    + "<span style='font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #10b981; background: #f0fdf4; padding: 16px 32px; border-radius: 12px; border: 2px dashed #10b981;'>"
+                    + otp + "</span></div>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Mã này sẽ hết hạn sau <strong>5 phút</strong>.</p>"
+                    + "<p style='color: #94a3b8; font-size: 13px; margin-top: 24px;'>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send OTP email to {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendResetPasswordEmail(String to, String resetLink, String username) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Đặt lại mật khẩu");
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + username + ",</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>"
+                    + "<div style='text-align: center; margin: 24px 0;'>"
+                    + "<a href='" + resetLink + "' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 16px;'>Đặt lại mật khẩu</a>"
+                    + "</div>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Liên kết sẽ hết hạn sau <strong>15 phút</strong>.</p>"
+                    + "<p style='color: #94a3b8; font-size: 13px; margin-top: 24px;'>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send reset password email to {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendNewReviewNotification(String to, String hotelName, String agencyName, int ratingScore, String bookingCode) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Đánh giá mới cho " + hotelName);
+
+            StringBuilder stars = new StringBuilder();
+            for (int i = 0; i < ratingScore; i++) stars.append("\u2605");
+            for (int i = ratingScore; i < 5; i++) stars.append("\u2606");
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #10b981, #14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Đánh giá mới cho " + hotelName + "</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Đại lý <strong>" + agencyName + "</strong> vừa gửi đánh giá cho đơn đặt phòng <strong>#" + bookingCode + "</strong>.</p>"
+                    + "<div style='text-align: center; margin: 24px 0;'>"
+                    + "<span style='font-size: 32px; color: #f59e0b;'>" + stars + "</span>"
+                    + "<p style='color: #64748b; font-size: 14px; margin-top: 4px;'>" + ratingScore + "/5</p>"
+                    + "</div>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Hãy đăng nhập vào hệ thống để xem chi tiết và phản hồi đánh giá.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("New review notification sent to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send new review notification to {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendPasswordChangedNotification(String to, String username) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Mật khẩu đã được thay đổi");
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #f59e0b, #d97706); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + username + ",</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Mật khẩu tài khoản HMS của bạn vừa được thay đổi thành công.</p>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Nếu bạn không thực hiện hành động này, vui lòng liên hệ với chúng tôi ngay lập tức.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("Failed to send password changed notification to {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendStaffAccountEmail(String to, String username, String password) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom("bookingsphere@gmail.com");
+            helper.setTo(to);
+            helper.setSubject("HMS - Tài khoản nhân viên đã được tạo");
+
+            String htmlContent =
+                    "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;'>"
+
+                            + "<div style='background: linear-gradient(135deg,#10b981,#14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align:center;'>"
+                            + "<h1 style='color:white;margin:0;'>HMS - BookingSphere</h1>"
+                            + "</div>"
+
+                            + "<div style='background:white;padding:30px;border:1px solid #e2e8f0;border-radius:0 0 16px 16px;'>"
+
+                            + "<h2>Chào mừng bạn đến với HMS!</h2>"
+
+                            + "<p>Tài khoản nhân viên của bạn đã được tạo thành công.</p>"
+
+                            + "<div style='background:#f8fafc;padding:16px;border-radius:8px;margin:20px 0;'>"
+                            + "<p><b>Tên đăng nhập:</b> " + username + "</p>"
+                            + "<p><b>Mật khẩu tạm thời:</b> " + password + "</p>"
+                            + "</div>"
+
+                            + "<p style='color:#ef4444;'><b>Vì lý do bảo mật, vui lòng đổi mật khẩu ngay sau khi đăng nhập.</b></p>"
+
+                            + "<p>Bạn có thể đăng nhập vào hệ thống HMS để bắt đầu làm việc.</p>"
+
+                            + "<p style='color:#64748b;font-size:13px;margin-top:20px;'>"
+                            + "Nếu bạn không yêu cầu tạo tài khoản này, vui lòng liên hệ quản trị viên hệ thống."
+                            + "</p>"
+
+                            + "</div></div>";
+
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+
+            log.info("Staff account email sent to {}", to);
+
+        } catch (Exception e) {
+            log.error("Failed to send staff account email to {}", to, e);
+        }
+    }
+
 }

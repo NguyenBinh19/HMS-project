@@ -2,16 +2,26 @@ package com.HTPj.htpj.dto.request.hotel;
 
 import lombok.*;
 
+import java.util.List;
+
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UpdateHotelRequest {
-    private String hotelName;
-    private String address;
-    private String city;
-    private String phone;
-    private String description;
-    private String status;
+    String hotelName;
+    String address;
+    String city;
+    String country;
+    String phone;
+    String description;
+    String email;
+
+    List<String> amenitiesList;
+
+    List<Integer> deleteImageIds;
+
+    Integer coverImageId;
 }

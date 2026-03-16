@@ -18,23 +18,20 @@ public class TemporalConfig {
 
     private final RoomHoldRepository roomHoldRepository;
 
-    // ⭐ Temporal Service
     @Bean
     public WorkflowServiceStubs workflowServiceStubs() {
         return WorkflowServiceStubs.newInstance(
                 WorkflowServiceStubsOptions.newBuilder()
-                        .setTarget("127.0.0.1:7233")
+                        .setTarget("hms-temporal:7233")
                         .build()
         );
     }
 
-    // ⭐ Workflow Client
     @Bean
     public WorkflowClient workflowClient(WorkflowServiceStubs serviceStubs) {
         return WorkflowClient.newInstance(serviceStubs);
     }
 
-    // ⭐ Worker
     @Bean
     public WorkerFactory workerFactory(WorkflowClient workflowClient) {
 

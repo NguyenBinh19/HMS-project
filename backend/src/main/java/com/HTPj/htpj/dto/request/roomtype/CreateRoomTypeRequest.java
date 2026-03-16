@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 public class CreateRoomTypeRequest {
 
-    private Integer hotelId;
+//    private Integer hotelId;
     private String roomCode;
     private String roomTitle;
     private String description;

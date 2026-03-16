@@ -8,7 +8,7 @@ import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetai
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
-const HOTEL_ID = 1;
+// const HOTEL_ID = 2;
 
 const ManageRoomTypes = () => {
     const [roomTypes, setRoomTypes] = useState([]);
@@ -23,28 +23,33 @@ const ManageRoomTypes = () => {
     const fetchRoomTypes = async () => {
         try {
             setLoading(true);
-            const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
-            const dataList = res?.result || [];
+            const res = await roomTypeService.getRoomTypesByHotelId();
 
-            const mappedData = dataList.map(item => {
-                const rawStatus = item.room_status || item.roomStatus || '';
+            const dataFromApi = res?.result || (Array.isArray(res) ? res : []);
+
+            const mappedData = dataFromApi.map(item => {
+                // Xử lý status: Dữ liệu thực tế là "ACTIVE" hoặc "inactive"
+                const rawStatus = item.roomStatus || '';
                 const isActive = rawStatus.toLowerCase() === 'active';
 
                 return {
                     ...item,
-                    id: item.roomTypeId || item.room_type_id,
-                    title: item.roomTitle || item.room_title,
-                    area: item.room_area || item.roomArea || 0,
-                    adults: item.max_adults || item.maxAdults || 0,
-                    children: item.max_children  || 0,
-                    totalRooms: item.total_rooms || item.totalRooms || 0,
+                    id: item.roomTypeId,
+                    title: item.roomTitle || "Không có tên",
+                    // Khớp chính xác với JSON: max_adults, max_children, room_area
+                    adults: item.max_adults ?? 0,
+                    children: item.max_children ?? 0,
+                    area: item.room_area ?? 0,
+                    totalRooms: item.totalRooms ?? 0,
                     isActive: isActive
                 };
             });
 
+            console.log("Dữ liệu sau khi map:", mappedData);
             setRoomTypes(mappedData);
         } catch (err) {
             console.error("Lỗi tải danh sách phòng:", err);
+            setRoomTypes([]); // Tránh để state cũ
         } finally {
             setLoading(false);
         }
@@ -65,10 +70,20 @@ const ManageRoomTypes = () => {
     };
 
     const handleDelete = async (id) => {
-        const confirmDelete = window.confirm("Bạn có chắc chắn muốn hủy giao bán hạng phòng này không?");
+        // Nội dung cảnh báo chi tiết
+        const warningMessage =
+            `⚠️ CẢNH BÁO QUAN TRỌNG:
+
+1. Bạn đang thực hiện gỡ bỏ hoàn toàn hạng phòng này khỏi hệ thống.
+2. Bạn PHẢI tự kiểm tra và xử lý các đơn hàng của hạng phòng này trong thời gian tới.
+3. Hệ thống sẽ KHÔNG chịu trách nhiệm về các vấn đề phát sinh hoặc khiếu nại liên quan đến việc thiếu phòng cho khách đã đặt trước.
+Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và muốn tiếp tục xóa?`;
+
+        const confirmDelete = window.confirm(warningMessage);
         if (!confirmDelete) return;
 
         try {
+            setLoading(true); // Hiển thị trạng thái loading khi đang xóa
             await roomTypeService.deleteRoomType(id);
 
             // Thông báo thành công
@@ -86,10 +101,12 @@ const ManageRoomTypes = () => {
             // Thông báo lỗi
             if (toastRef.current) {
                 toastRef.current.addMessage({
-                    mode: "error", // Sửa lại mode nếu component Toast của bạn hỗ trợ 'error'
-                    message: "Có lỗi xảy ra khi xóa hạng phòng."
+                    mode: "error",
+                    message: "Có lỗi xảy ra hoặc hạng phòng này đang có đơn hàng ràng buộc nên không thể xóa."
                 });
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -246,7 +263,7 @@ const ManageRoomTypes = () => {
                 {/* MODAL 1 */}
                 {showAddModal && (
                     <RoomTypeModal
-                        hotelId={HOTEL_ID}
+                        // hotelId={HOTEL_ID}
                         onClose={() => setShowAddModal(false)}
                         onSuccess={() => handleSuccess("Thêm hạng phòng mới thành công!")}
                     />
@@ -255,9 +272,13 @@ const ManageRoomTypes = () => {
                 {/* MODAL 2 */}
                 {selectedRoomId && (
                     <RoomTypeDetailModal
+                        key={selectedRoomId} // Thêm key ở đây
                         roomId={selectedRoomId}
                         onClose={() => setSelectedRoomId(null)}
-                        onSuccess={() => handleSuccess("Cập nhật thông tin thành công!")}
+                        onSuccess={() => {
+                            fetchRoomTypes();
+                            setSelectedRoomId(null);
+                        }}
                     />
                 )}
             </div>

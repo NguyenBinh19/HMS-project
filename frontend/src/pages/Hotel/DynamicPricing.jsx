@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Save } from 'lucide-react';
 import WeeklyStrategy from '@/components/hotel/dynamicPricing/WeeklyStrategy.jsx';
 import SpecialEvents from '@/components/hotel/dynamicPricing/SpecialEvents.jsx';
 import OccupancyRules from '@/components/hotel/dynamicPricing/OccupancyRules.jsx';
+import { roomTypeService } from '@/services/roomtypes.service.js';
+
+const HOTEL_ID = 2;
 
 const DynamicPricing = () => {
     const [activeTab, setActiveTab] = useState('WEEKLY'); // WEEKLY, EVENT, OCCUPANCY
     const [isAutoPricingOn, setIsAutoPricingOn] = useState(true);
+    const [roomTypes, setRoomTypes] = useState([]);
+    const [selectedRoomTypeId, setSelectedRoomTypeId] = useState(null);
 
-    // Giả lập config chung
-    const basePrice = 1500000;
+    // Load room types
+    useEffect(() => {
+        const loadRoomTypes = async () => {
+            try {
+                const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
+                const list = res.result || res || [];
+                setRoomTypes(list);
+                if (list.length > 0) setSelectedRoomTypeId(list[0].roomTypeId);
+            } catch (err) {
+                console.error("Load room types error:", err);
+            }
+        };
+        loadRoomTypes();
+    }, []);
+
+    const selectedRoom = roomTypes.find(r => r.roomTypeId === selectedRoomTypeId);
+    const basePrice = selectedRoom?.basePrice || 1500000;
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-900">
@@ -72,10 +92,16 @@ const DynamicPricing = () => {
                             </p>
 
                             <div className="mt-auto">
-                                <select className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none font-medium cursor-pointer hover:bg-gray-100 transition-colors">
-                                    <option value="ALL">Tất cả loại phòng</option>
-                                    <option value="DELUXE">Deluxe King</option>
-                                    <option value="SUPERIOR">Superior Twin</option>
+                                <select
+                                    value={selectedRoomTypeId || ''}
+                                    onChange={(e) => setSelectedRoomTypeId(Number(e.target.value))}
+                                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none font-medium cursor-pointer hover:bg-gray-100 transition-colors"
+                                >
+                                    {roomTypes.map(rt => (
+                                        <option key={rt.roomTypeId} value={rt.roomTypeId}>
+                                            {rt.typeName || rt.roomTypeName || `Room Type #${rt.roomTypeId}`}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -134,8 +160,8 @@ const DynamicPricing = () => {
 
                     {/* TAB CONTENT */}
                     <div className="p-6">
-                        {activeTab === 'WEEKLY' && <WeeklyStrategy basePrice={basePrice} />}
-                        {activeTab === 'EVENT' && <SpecialEvents />}
+                        {selectedRoomTypeId && activeTab === 'WEEKLY' && <WeeklyStrategy basePrice={basePrice} roomTypeId={selectedRoomTypeId} />}
+                        {selectedRoomTypeId && activeTab === 'EVENT' && <SpecialEvents roomTypeId={selectedRoomTypeId} />}
                         {activeTab === 'OCCUPANCY' && <OccupancyRules />}
                     </div>
                 </div>

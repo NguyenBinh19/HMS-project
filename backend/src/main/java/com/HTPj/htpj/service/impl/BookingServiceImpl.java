@@ -2,8 +2,13 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
+import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
+import com.HTPj.htpj.dto.response.booking.*;
+import com.HTPj.htpj.dto.request.promotions.CheckPromotionCodeRequest;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
+import com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
+import com.HTPj.htpj.dto.response.promotions.ApplyPromotionResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
@@ -11,14 +16,19 @@ import com.HTPj.htpj.mapper.BookingMapper;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.BookingService;
+import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -35,6 +45,11 @@ public class BookingServiceImpl implements BookingService {
     private final RoomPricingRuleRepository roomPricingRuleRepository;
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
+    private final HotelRepository hotelRepository;
+    private final BookingAddonServiceRepository bookingAddonServiceRepository;
+    private final PromotionService promotionService;
+    private final PromotionRepository promotionRepository;
+    private final UserRepository userRepository;
 
 
     @Override
@@ -48,7 +63,7 @@ public class BookingServiceImpl implements BookingService {
                         request.getHotelId(),
                         request.getCheckIn(),
                         request.getCheckOut(),
-                        List.of("CONFIRMED", "PAID")
+                        List.of("CONFIRMED")
                 );
 
         Map<Integer, Integer> bookedQuantityMap =
@@ -183,17 +198,27 @@ public class BookingServiceImpl implements BookingService {
 
         return totalPrice;
     }
-
+    @Transactional
     @Override
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
 
-        // LẤY USER TỪ JWT
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         Jwt jwt = (Jwt) authentication.getPrincipal();
 
-        String userId = jwt.getSubject();
+        String userId = jwt.getClaim("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Agency agency = user.getAgency();
+
+        if (agency == null) {
+            throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+        }
+
+        Long agencyId = agency.getAgencyId();
 
         RoomHold hold = roomHoldRepository.findByHoldCode(request.getHoldCode())
                 .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
@@ -210,9 +235,8 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = Booking.builder()
                 .bookingCode("BOOKING-" + UUID.randomUUID().toString().substring(0, 8))
                 .hotelId(hold.getHotelId())
-                .userId(userId)
-//                .userId(request.getUserId())       // tam thoi lay request
-                .agencyId(request.getAgencyId())
+                .userId(user.getId())
+                .agencyId(agencyId)
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
                 .nights(nights)
@@ -222,7 +246,7 @@ public class BookingServiceImpl implements BookingService {
                 .notes(request.getNotes())
                 .paymentMethod(request.getPaymentMethod())
                 .paymentStatus("unpaid")
-                .bookingStatus("booked")
+                .bookingStatus("BOOKED")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -277,20 +301,245 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingDetails(bookingDetails);
         booking.setTotalRooms(totalRooms);
         booking.setTotalGuests(request.getTotalGuests());
-
-        BigDecimal discount = request.getDiscountAmount() == null
-                ? BigDecimal.ZERO
-                : request.getDiscountAmount();
-
         booking.setTotalAmount(bookingTotal);
-        booking.setDiscountAmount(discount);
-        booking.setFinalAmount(bookingTotal.subtract(discount));
+
+        BigDecimal discountTotal = BigDecimal.ZERO;
+
+        if (request.getPromotionCode() != null && !request.getPromotionCode().isBlank()) {
+
+            CheckPromotionCodeRequest promoRequest =
+                    CheckPromotionCodeRequest.builder()
+                            .code(request.getPromotionCode())
+                            .hotelId(hold.getHotelId())
+                            .billAmount(bookingTotal)
+                            .checkin(checkIn)
+                            .checkout(checkOut)
+                            .build();
+
+            ApplyPromotionResponse promo =
+                    promotionService.checkPromotionCode(promoRequest);
+
+            booking.setPromotionCode(promo.getCode());
+            booking.setDiscountVal(promo.getDiscountVal());
+            booking.setTypeDiscount(promo.getTypeDiscount());
+
+            Promotion promotionEntity = promotionRepository.findById(promo.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_CODE_INVALID));
+
+            booking.setPromotion(promotionEntity);
+
+            if ("PERCENT".equalsIgnoreCase(promo.getTypeDiscount())) {
+
+                BigDecimal percentAmount =
+                        bookingTotal.multiply(promo.getDiscountVal())
+                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                if (promo.getMaxDiscount() != null &&
+                        percentAmount.compareTo(promo.getMaxDiscount()) >= 0) {
+
+                    discountTotal = promo.getMaxDiscount();
+                } else {
+                    discountTotal = percentAmount;
+                }
+
+            } else if ("AMOUNT".equalsIgnoreCase(promo.getTypeDiscount())) {
+                discountTotal = promo.getDiscountVal();
+            }
+        }
+        if (discountTotal.compareTo(bookingTotal) > 0) {
+            discountTotal = bookingTotal;
+        }
+        booking.setDiscountTotal(discountTotal);
+        booking.setFinalAmount(bookingTotal.subtract(discountTotal));
 
         Booking saved = bookingRepository.save(booking);
+
+        //count +1
+        if (saved.getPromotion() != null) {
+            promotionRepository.increaseUsedCount(saved.getPromotion().getId());
+        }
 
         hold.setStatus("BOOKED");
         roomHoldRepository.save(hold);
 
         return bookingMapper.toResponse(saved);
+    }
+
+    // =========================================================================
+    // UC-029: Lịch sử đặt phòng (phân trang)
+    // =========================================================================
+    @Override
+    public Page<BookingHistoryResponse> getBookingHistory(int page, int size) {
+        String userId = extractUserId();
+
+        Users user = userRepository.findByUsername(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        Page<Booking> bookingPage = bookingRepository.findHistoryByUserId(
+                user.getId(), PageRequest.of(page, size));
+
+        // Batch-fetch hotel names để tránh N+1 — 1 query duy nhất cho tất cả hotelId
+        List<Integer> hotelIds = bookingPage.getContent().stream()
+                .map(Booking::getHotelId)
+                .distinct()
+                .toList();
+
+        Map<Integer, Hotel> hotelMap = hotelRepository.findAllById(hotelIds)
+                .stream()
+                .collect(Collectors.toMap(Hotel::getHotelId, h -> h));
+
+        return bookingPage.map(booking -> {
+            Hotel hotel = hotelMap.get(booking.getHotelId());
+            return BookingHistoryResponse.builder()
+                    .bookingId(booking.getBookingId())
+                    .bookingCode(booking.getBookingCode())
+                    .hotelId(booking.getHotelId())
+                    .hotelName(hotel != null ? hotel.getHotelName() : null)
+                    .checkInDate(booking.getCheckInDate())
+                    .checkOutDate(booking.getCheckOutDate())
+                    .nights(booking.getNights())
+                    .totalRooms(booking.getTotalRooms())
+                    .totalGuests(booking.getTotalGuests())
+                    .finalAmount(booking.getFinalAmount())
+                    .bookingStatus(booking.getBookingStatus())
+                    .paymentStatus(booking.getPaymentStatus())
+                    .guestName(booking.getGuestName())
+                    .createdAt(booking.getCreatedAt())
+                    .build();
+        });
+    }
+
+    // =========================================================================
+    // UC-030: Chi tiết booking — JOIN FETCH tránh N+1
+    // =========================================================================
+    @Override
+    public BookingDetailResponse getBookingDetail(String bookingCode) {
+        String userId = extractUserId();
+        Users user = userRepository.findByUsername(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        // Một query: load booking + tất cả bookingDetails (JOIN FETCH)
+        Booking booking = bookingRepository.findDetailByBookingCodeAndUserId(bookingCode, user.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        Hotel hotel = hotelRepository.findById(booking.getHotelId()).orElse(null);
+
+        // Một query: load addon services + tên dịch vụ (JOIN FETCH addonService)
+        List<BookingAddonService> addonServices =
+                bookingAddonServiceRepository.findByBookingIdWithService(booking.getBookingId());
+
+        List<BookingDetailItemResponse> roomDetails = booking.getBookingDetails()
+                .stream()
+                .map(bd -> BookingDetailItemResponse.builder()
+                        .bookingDetailId(bd.getBookingDetailId())
+                        .roomTitle(bd.getRoomTitle())
+                        .quantity(bd.getQuantity())
+                        .roomCode(bd.getRoomCode())
+                        .bedType(bd.getBedType())
+                        .roomArea(bd.getRoomArea())
+                        .maxAdults(bd.getMaxAdults())
+                        .maxChildren(bd.getMaxChildren())
+                        .maxGuests(bd.getMaxGuests())
+                        .amenities(bd.getAmenities())
+                        .pricePerNight(bd.getPricePerNight())
+                        .subtotalAmount(bd.getSubtotalAmount())
+                        .totalAmount(bd.getTotalAmount())
+                        .nights(bd.getNights())
+                        .build())
+                .toList();
+
+        List<BookingAddonServiceResponse> addonResponses = addonServices.stream()
+                .map(bas -> BookingAddonServiceResponse.builder()
+                        .id(bas.getId())
+                        .serviceName(bas.getAddonService().getServiceName())
+                        .serviceType(bas.getAddonService().getCategory())
+                        .quantity(bas.getQuantity())
+                        .unitPrice(bas.getUnitPrice())
+                        .totalPrice(bas.getTotalPrice())
+                        .serviceDate(bas.getServiceDate())
+                        .flightNumber(bas.getFlightNumber())
+                        .flightTime(bas.getFlightTime())
+                        .specialNote(bas.getSpecialNote())
+                        .build())
+                .toList();
+
+        return BookingDetailResponse.builder()
+                .bookingId(booking.getBookingId())
+                .bookingCode(booking.getBookingCode())
+                .hotelId(booking.getHotelId())
+                .hotelName(hotel != null ? hotel.getHotelName() : null)
+                .hotelAddress(hotel != null ? hotel.getAddress() : null)
+                .hotelStarRating(hotel != null ? hotel.getStarRating() : null)
+                .checkInDate(booking.getCheckInDate())
+                .checkOutDate(booking.getCheckOutDate())
+                .nights(booking.getNights())
+                .totalRooms(booking.getTotalRooms())
+                .totalGuests(booking.getTotalGuests())
+                .guestName(booking.getGuestName())
+                .guestPhone(booking.getGuestPhone())
+                .guestEmail(booking.getGuestEmail())
+                .notes(booking.getNotes())
+                .totalAmount(booking.getTotalAmount())
+                .discountAmount(booking.getDiscountTotal())
+                .finalAmount(booking.getFinalAmount())
+                .paymentMethod(booking.getPaymentMethod())
+                .paymentStatus(booking.getPaymentStatus())
+                .bookingStatus(booking.getBookingStatus())
+                .createdAt(booking.getCreatedAt())
+                .hasFeedback(Boolean.TRUE.equals(booking.getHasFeedback()))
+                .roomDetails(roomDetails)
+                .addonServices(addonResponses)
+                .build();
+    }
+
+    // =========================================================================
+    // Helpers
+    // =========================================================================
+    private String extractUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) auth.getPrincipal();
+        return jwt.getSubject();
+    }
+
+    //UC79
+    @Override
+    public List<ListAllBookingsResponse> getAllBookings() {
+        return bookingRepository.getAllBookingsSummary();
+    }
+
+    //UC28:
+    @Override
+    public BookingDetailResponse updateGuestInformation(UpdateGuestRequest request) {
+
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        LocalDate currentDate = LocalDate.now();
+
+        if (!"CONFIRMED".equals(booking.getBookingStatus())
+                || !currentDate.isBefore(booking.getCheckInDate())) {
+            throw new AppException(ErrorCode.BOOKING_UPDATE_NOT_ALLOWED);
+        }
+
+        booking.setGuestName(request.getGuestName());
+        booking.setGuestPhone(request.getGuestPhone());
+        booking.setGuestEmail(request.getGuestEmail());
+        booking.setNotes(request.getNotes());
+
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return bookingMapper.toBookingDetailResponse(savedBooking);
+    }
+
+    //UC-050 - View Daily Arrival List
+    @Override
+    public List<ListAllBookingsResponse> getTodayCheckinBookings() {
+        return bookingRepository.getTodayCheckinBookings();
+    }
+
+    @Override
+    public List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date) {
+        return bookingRepository.getBookingsByCheckinDate(date);
     }
 }

@@ -58,10 +58,122 @@ const searchHotel = async (payload) => {
     }
 }
 
+// UC-029: Lịch sử đặt phòng (phân trang)
+const getBookingHistory = async (page = 0, size = 10) => {
+    try {
+        const response = await api.get(`/booking/history`, { params: { page, size } });
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking History Error:", error);
+        throw error;
+    }
+};
+
+// UC-030: Chi tiết booking theo booking code
+const getBookingDetail = async (bookingCode) => {
+    try {
+        const response = await api.get(`/booking/detail/${bookingCode}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking Detail Error:", error);
+        throw error;
+    }
+};
+
+// 6. View all booking of Admin
+const viewAllBookingByAdmin = async () => {
+    try {
+        const response = await api.get(`/booking/listAll`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
+
+// Update thông tin khách của Booking
+export const updateUserInfoBooking = async (requestData) => {
+    try {
+        const response = await api.post('/booking/update-guest', requestData);
+        return response.data;
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || "Lỗi cập nhật thông tin khách hàng";
+        console.error("API Error UC-028:", errorMessage);
+        throw error;
+    }
+};
+
+// Lấy danh sách check-in hôm nay
+export const getCheckInToday = async () => {
+    try {
+        const response = await api.get(`/booking/checkin/today`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
+
+// Lấy danh sách check-in theo ngày
+export const getCheckInByDate = async (date) => {
+    try {
+        const response = await api.get(`/booking/checkin/${date}`);
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
+
+// ============================
+// UC-032, UC-033, UC-055: Feedback
+// ============================
+
+// UC-032: Submit feedback for a completed booking
+const submitFeedback = async (data) => {
+    const response = await api.post(`/feedbacks`, data);
+    return response.data;
+};
+
+// UC-033: Get my feedback history (Agency)
+const getMyFeedbackHistory = async (page = 0, size = 10) => {
+    const response = await api.get(`/feedbacks/history`, { params: { page, size } });
+    return response.data;
+};
+
+// UC-055: Get hotel's received feedback
+const getHotelFeedback = async (page = 0, size = 10) => {
+    const response = await api.get(`/feedbacks/my-hotel`, { params: { page, size } });
+    return response.data;
+};
+
+// UC-055: Get hotel feedback stats
+const getHotelFeedbackStats = async () => {
+    const response = await api.get(`/feedbacks/my-hotel/stats`);
+    return response.data;
+};
+
+// UC-055: Reply to a review
+const replyToFeedback = async (reviewId, reply) => {
+    const response = await api.post(`/feedbacks/${reviewId}/reply`, { reply });
+    return response.data;
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
     extendHold,
     createBooking,
     searchHotel,
+    getBookingHistory,
+    getBookingDetail,
+    viewAllBookingByAdmin,
+    updateUserInfoBooking,
+    getCheckInToday,
+    getCheckInByDate,
+    submitFeedback,
+    getMyFeedbackHistory,
+    getHotelFeedback,
+    getHotelFeedbackStats,
+    replyToFeedback,
 };

@@ -22,7 +22,6 @@ public class DataSourceConfig {
             "jdbc:sqlserver://;serverName=%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
             props.getIp(), props.getName()
         );
-
         DriverManagerDataSource ds = new DriverManagerDataSource();
         ds.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
         ds.setUrl(url);

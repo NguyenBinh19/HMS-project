@@ -48,6 +48,11 @@ const CompareBar = () => {
 export default function HotelSearchContainer() {
     const [searchParams] = useSearchParams();
     const keyword = searchParams.get("keyword") || "";
+    const checkIn = searchParams.get("checkIn") || "";
+    const checkOut = searchParams.get("checkOut") || "";
+    const rooms = searchParams.get("rooms") || "";
+    const adults = searchParams.get("adults") || "";
+    const children = searchParams.get("children") || "";
 
     // State lưu data gốc từ API
     const [hotels, setHotels] = useState([]);
@@ -67,10 +72,15 @@ export default function HotelSearchContainer() {
 
             try {
                 setIsLoading(true);
-                setCurrentPage(1); // Reset trang khi tìm từ khóa mới
-                setFilters({ stars: [], amenities: [] }); // Reset filter khi tìm từ khóa mới
+                setCurrentPage(1);
+                setFilters({ stars: [], amenities: [] });
 
-                const response = await bookingService.searchHotel({ keyword });
+                const params = { keyword };
+                if (checkIn) params.checkIn = checkIn;
+                if (checkOut) params.checkOut = checkOut;
+                if (rooms) params.rooms = rooms;
+
+                const response = await bookingService.searchHotel(params);
 
                 if (response.code === 1000 && response.result) {
                     setHotels(response.result);
@@ -86,7 +96,7 @@ export default function HotelSearchContainer() {
         };
 
         fetchHotels();
-    }, [keyword]);
+    }, [keyword, checkIn, checkOut, rooms]);
 
     // 2. Lọc Dữ Liệu (Chạy tự động mỗi khi `hotels` hoặc `filters` thay đổi)
     const filteredHotels = useMemo(() => {
@@ -148,8 +158,9 @@ export default function HotelSearchContainer() {
                             </h2>
                             <div className="flex items-center gap-4 text-slate-400 text-[12px] font-bold mt-2 italic">
                                 <span className="flex items-center gap-1"><MapPin size={14} className="text-blue-500"/> {keyword}</span>
-                                <span>📅 24/01 - 26/01</span>
-                                <span>👥 2 Người lớn</span>
+                                {checkIn && checkOut && <span>📅 {checkIn} → {checkOut}</span>}
+                                {rooms && <span>🏨 {rooms} phòng</span>}
+                                {adults && <span>👥 {adults} Người lớn{children && children !== "0" ? `, ${children} Trẻ em` : ""}</span>}
                             </div>
                         </div>
                         <div className="flex gap-2">

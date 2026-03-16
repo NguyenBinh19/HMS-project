@@ -13,6 +13,7 @@ public class HotelResponse {
     private String city;
     private String country;
     private Integer starRating;
+    private String email;
 
     private String coverImage;
 

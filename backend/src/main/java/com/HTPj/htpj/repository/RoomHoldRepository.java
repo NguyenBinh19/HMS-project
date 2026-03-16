@@ -29,4 +29,19 @@ public interface RoomHoldRepository extends JpaRepository<RoomHold, Long> {
             @Param("checkIn") LocalDate checkIn,
             @Param("checkOut") LocalDate checkOut
     );
+
+    @Query("""
+    SELECT d
+    FROM RoomHoldDetail d
+    JOIN d.roomHold rh
+    WHERE rh.hotelId IN :hotelIds
+      AND UPPER(rh.status) = 'HOLDING'
+      AND rh.checkInDate < :checkOut
+      AND rh.checkOutDate > :checkIn
+    """)
+    List<RoomHoldDetail> findActiveOverlappingHoldDetailsForHotels(
+            @Param("hotelIds") List<Integer> hotelIds,
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut
+    );
 }

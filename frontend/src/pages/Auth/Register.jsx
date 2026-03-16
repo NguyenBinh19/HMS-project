@@ -15,11 +15,14 @@ import {
     ShieldCheck,
     MailCheck,
     ArrowRight,
+    Phone,
+    Building2,
+    Briefcase,
 } from "lucide-react";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
 import LegalModal from "../../components/auth/LegalModal.jsx";
 
-const API_BASE_URL = "http://localhost:8386";
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL =
     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2074&auto=format&fit=crop";
 
@@ -54,7 +57,7 @@ const PRIVACY_CONTENT = (
     </div>
 );
 
-const RegistrationSuccessModal = ({ isOpen, email, countdown, onLoginNow }) => {
+const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => {
     if (!isOpen) return null;
 
     return (
@@ -71,20 +74,17 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onLoginNow }) => {
                     </div>
 
                     <h2 className="text-2xl font-black text-slate-800 mb-2">
-                        Đăng ký thành công! 🎉
+                        Đăng ký thành công!
                     </h2>
 
                     <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                        Chúc mừng bạn đã tạo tài khoản thành công tại{" "}
-                        <strong>TravelMate</strong>.
-                        <br />
-                        Vui lòng kiểm tra hộp thư đến của email:
+                        Chúng tôi đã gửi mã xác thực OTP 6 số đến email:
                         <br />
                         <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block">
                             {email}
                         </span>
                         <br />
-                        và nhấp vào liên kết xác thực để kích hoạt tài khoản.
+                        Vui lòng kiểm tra hộp thư và nhập mã OTP để kích hoạt tài khoản.
                     </p>
 
                     <div className="mb-6">
@@ -106,10 +106,10 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onLoginNow }) => {
                     </div>
 
                     <button
-                        onClick={onLoginNow}
+                        onClick={onVerifyNow}
                         className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
-                        Đăng nhập ngay <ArrowRight size={18} />
+                        Xác thực OTP ngay <ArrowRight size={18} />
                     </button>
                 </div>
             </div>
@@ -121,9 +121,13 @@ const Register = () => {
     const navigate = useNavigate();
     const scrollContainerRef = useRef(null);
 
+    const [step, setStep] = useState(1); // 1: Role selection, 2: Form
+    const [selectedRole, setSelectedRole] = useState(""); // HOTEL_MANAGER or AGENCY_MANAGER
+
     const [formData, setFormData] = useState({
         username: "",
         email: "",
+        phone: "",
         password: "",
         confirmPassword: "",
     });
@@ -155,10 +159,10 @@ const Register = () => {
         if (showSuccessModal && countdown > 0) {
             timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
         } else if (showSuccessModal && countdown === 0) {
-            navigate("/login");
+            navigate(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
         }
         return () => clearTimeout(timer);
-    }, [showSuccessModal, countdown, navigate]);
+    }, [showSuccessModal, countdown, navigate, formData.email]);
 
     useEffect(() => {
         const pwd = formData.password;
@@ -206,7 +210,13 @@ const Register = () => {
             return;
         }
 
-        const { username, email, password, confirmPassword } = formData;
+        if (!selectedRole) {
+            setError("Vui lòng chọn loại tài khoản.");
+            setStep(1);
+            return;
+        }
+
+        const { username, email, phone, password, confirmPassword } = formData;
 
         if (!username || !email || !password || !confirmPassword) {
             setError("Vui lòng điền đầy đủ thông tin.");
@@ -234,7 +244,9 @@ const Register = () => {
             const res = await authService.register(
                 username,
                 email,
-                password
+                password,
+                phone,
+                selectedRole,
             );
 
             if (res) {
@@ -301,7 +313,7 @@ const Register = () => {
     };
 
     const isFormValid =
-        passwordScore >= 2 && formData.username && formData.email && agreed;
+        passwordScore >= 2 && formData.username && formData.email && agreed && selectedRole;
 
     return (
         <div className="relative h-screen w-screen overflow-hidden flex items-center justify-center font-sans bg-slate-900">
@@ -346,13 +358,15 @@ const Register = () => {
                         <div className="max-w-md mx-auto w-full mt-4 md:mt-8 pb-40">
                             <div className="mb-8">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-4 border border-emerald-100">
-                                    <UserPlus size={14} /> Thành viên mới
+                                    <UserPlus size={14} /> Đăng ký đối tác
                                 </div>
                                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-                                    Bắt đầu hành trình.
+                                    {step === 1 ? "Bạn là ai?" : "Tạo tài khoản"}
                                 </h1>
                                 <p className="text-slate-500 font-medium">
-                                    Tạo tài khoản miễn phí trong 30 giây.
+                                    {step === 1
+                                        ? "Chọn loại tài khoản phù hợp với bạn."
+                                        : "Điền thông tin để hoàn tất đăng ký."}
                                 </p>
                             </div>
 
@@ -361,6 +375,78 @@ const Register = () => {
                                     <X size={16} /> {error}
                                 </div>
                             )}
+
+                            {/* Step 1: Role Selection */}
+                            {step === 1 && (
+                                <div className="space-y-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSelectedRole("HOTEL_MANAGER"); setStep(2); setError(""); }}
+                                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-300 text-left group hover:shadow-lg ${
+                                            selectedRole === "HOTEL_MANAGER"
+                                                ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10"
+                                                : "border-slate-100 bg-white hover:border-emerald-300"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
+                                                selectedRole === "HOTEL_MANAGER"
+                                                    ? "bg-emerald-500 text-white"
+                                                    : "bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600"
+                                            }`}>
+                                                <Building2 size={28} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-black text-slate-800 text-lg">Tôi là Khách sạn</h3>
+                                                <p className="text-sm text-slate-500 mt-0.5">Quản lý khách sạn, phòng, giá cả và đặt phòng</p>
+                                            </div>
+                                            <ArrowRight size={20} className={`transition-colors ${
+                                                selectedRole === "HOTEL_MANAGER" ? "text-emerald-500" : "text-slate-300"
+                                            }`} />
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSelectedRole("AGENCY_MANAGER"); setStep(2); setError(""); }}
+                                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-300 text-left group hover:shadow-lg ${
+                                            selectedRole === "AGENCY_MANAGER"
+                                                ? "border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/10"
+                                                : "border-slate-100 bg-white hover:border-blue-300"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
+                                                selectedRole === "AGENCY_MANAGER"
+                                                    ? "bg-blue-500 text-white"
+                                                    : "bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600"
+                                            }`}>
+                                                <Briefcase size={28} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-black text-slate-800 text-lg">Tôi là Đại lý</h3>
+                                                <p className="text-sm text-slate-500 mt-0.5">Tìm kiếm, đặt phòng và quản lý booking cho khách hàng</p>
+                                            </div>
+                                            <ArrowRight size={20} className={`transition-colors ${
+                                                selectedRole === "AGENCY_MANAGER" ? "text-blue-500" : "text-slate-300"
+                                            }`} />
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Step 2: Registration Form */}
+                            {step === 2 && (
+                            <>
+                            {/* Back to role selection */}
+                            <button
+                                type="button"
+                                onClick={() => setStep(1)}
+                                className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+                            >
+                                <ArrowLeft size={16} />
+                                {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"} — Thay đổi
+                            </button>
 
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 {/* username */}
@@ -410,6 +496,31 @@ const Register = () => {
                                                 : "border-slate-100 hover:border-slate-300"
                                             }`}
                                         placeholder="Email"
+                                    />
+                                </div>
+
+                                {/* Phone */}
+                                <div className="relative group">
+                                    <div
+                                        className={`absolute left-4 top-3.5 transition-colors ${focusedField === "phone"
+                                                ? "text-emerald-600"
+                                                : "text-slate-400"
+                                            }`}
+                                    >
+                                        <Phone size={20} />
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        onFocus={() => setFocusedField("phone")}
+                                        onBlur={() => setFocusedField(null)}
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "phone"
+                                                ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                : "border-slate-100 hover:border-slate-300"
+                                            }`}
+                                        placeholder="Số điện thoại (tuỳ chọn)"
                                     />
                                 </div>
 
@@ -650,6 +761,8 @@ const Register = () => {
                                     Đăng nhập
                                 </Link>
                             </p>
+                            </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -659,7 +772,7 @@ const Register = () => {
                 isOpen={showSuccessModal}
                 email={formData.email}
                 countdown={countdown}
-                onLoginNow={() => navigate("/login")}
+                onLoginNow={() => navigate(`/verify-otp?email=${encodeURIComponent(formData.email)}`)}
             />
 
             <LegalModal

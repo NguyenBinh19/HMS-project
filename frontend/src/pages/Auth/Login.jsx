@@ -9,7 +9,7 @@ import Toast from "../../components/common/notification/Toast.jsx";
 import ToastPortal from "../../components/common/notification/ToastPortal.jsx";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
 
-const API_BASE_URL = "http://localhost:8386";
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop";
 
 const Login = () => {
@@ -65,7 +65,7 @@ const Login = () => {
                 }
                 setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
                 setTimeout(() => {
-                    navigate(from, { replace: true });
+                    navigate("/homepage", { replace: true });
                 }, 800);
             }
         } catch (err) {
