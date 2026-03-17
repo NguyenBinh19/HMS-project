@@ -47,6 +47,7 @@ import UserGuidePage from "@/pages/common/UserGuide.jsx";
 import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
 import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
 import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
+import RegulationPage from "@/pages/common/Regulation.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -66,6 +67,7 @@ const AppRoutes = () => {
                 <Route path="/private-policy" element={<PrivatePolicy />} />
                 <Route path="/term-service" element={<TermsOfServicePage />} />
                 <Route path="/user-guide" element={<UserGuidePage />} />
+                <Route path="/regulation" element={<RegulationPage />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
