@@ -27,7 +27,7 @@ const SidebarAdmin = () => {
         { icon: <ShieldCheck size={20} />, label: "HÀNG ĐỢI KYC", path: "/admin/kyc-queue" },
         { icon: <History size={20} />, label: "LỊCH SỬ GIAO DỊCH", path: "/admin/payment-transaction" },
         { icon: <CreditCard size={20} />, label: "HÀNG ĐỢI TÍN DỤNG", path: "/admin/credit-queue" },
-        { icon: <Wallet size={20} />, label: "HÀNG ĐỢI THANH TOÁN", path: "/admin/payment-queue" },
+        { icon: <Wallet size={20} />, label: "HÀNG ĐỢI THANH TOÁN", path: "/admin/payout-list" },
         { icon: <ClipboardList size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
         { icon: <Gavel size={20} />, label: "TRUNG TÂM GIẢI QUYẾT TRANH CHẤP", path: "/admin/dispute-center" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users" },

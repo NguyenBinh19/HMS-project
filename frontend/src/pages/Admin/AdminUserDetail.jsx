@@ -3,9 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     ArrowLeft, User, Mail, Phone, MapPin, Shield, Calendar,
     Clock, Loader2, AlertCircle, ShieldBan, ShieldCheck,
-    CheckCircle2, Ban
+    CheckCircle2, Ban, Award
 } from "lucide-react";
 import { userService } from "@/services/user.service.js";
+import AgencyRankingTab from "./SetAgencyRanking.jsx";
+import SetHotelCommissions from "./SetHotelCommission.jsx";
 
 const AdminUserDetail = () => {
     const { userId } = useParams();
@@ -14,6 +16,7 @@ const AdminUserDetail = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState("general"); // "general" or "commercial"
 
     // Ban/Unban state
     const [banLoading, setBanLoading] = useState(false);
@@ -143,6 +146,9 @@ const AdminUserDetail = () => {
     const isAdmin = user.roles && [...user.roles].some((r) => r.name === "ADMIN");
     const isBanned = user.status === "BANNED";
 
+    const isAgency = user?.roles?.some(r => r.name.includes("AGENCY_MANAGER"));
+    const isHotel = user?.roles?.some(r => r.name.includes("HOTEL_MANAGER"));
+
     return (
         <div className="p-8 bg-slate-50 min-h-screen font-sans">
             {/* Back Button */}
@@ -150,13 +156,14 @@ const AdminUserDetail = () => {
                 onClick={() => navigate("/admin/users")}
                 className="flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 font-medium text-sm"
             >
-                <ArrowLeft size={16} /> Quay lại danh sách người dùng
+                <ArrowLeft size={16}/> Quay lại danh sách người dùng
             </button>
 
             {/* Success/Error Messages */}
             {actionSuccess && (
-                <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-xl flex items-center gap-3 max-w-4xl">
-                    <CheckCircle2 size={20} />
+                <div
+                    className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-xl flex items-center gap-3 max-w-4xl">
+                    <CheckCircle2 size={20}/>
                     <span className="text-sm font-bold">{actionSuccess}</span>
                 </div>
             )}
@@ -165,11 +172,12 @@ const AdminUserDetail = () => {
                 {/* Header Card */}
                 <div className={`rounded-2xl p-6 mb-6 border shadow-sm ${statusConfig.headerBg}`}>
                     <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                        <div
+                            className="w-20 h-20 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0">
                             {user.avatarUrl ? (
-                                <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                <img src={user.avatarUrl} alt="" className="w-full h-full object-cover"/>
                             ) : (
-                                <User size={32} className="text-slate-400" />
+                                <User size={32} className="text-slate-400"/>
                             )}
                         </div>
                         <div className="flex-1">
@@ -185,7 +193,8 @@ const AdminUserDetail = () => {
                                     [...user.roles].map((role) => {
                                         const badge = getRoleBadge(role.name);
                                         return (
-                                            <span key={role.name} className={`px-3 py-1 rounded-full text-xs font-bold ${badge.color}`}>
+                                            <span key={role.name}
+                                                  className={`px-3 py-1 rounded-full text-xs font-bold ${badge.color}`}>
                                                 {badge.label}
                                             </span>
                                         );
@@ -199,110 +208,138 @@ const AdminUserDetail = () => {
                                         onClick={() => openBanModal("unban")}
                                         className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 transition-all"
                                     >
-                                        <ShieldCheck size={16} /> Mở khóa
+                                        <ShieldCheck size={16}/> Mở khóa
                                     </button>
                                 ) : (
                                     <button
                                         onClick={() => openBanModal("ban")}
                                         className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-200 transition-all"
                                     >
-                                        <ShieldBan size={16} /> Khóa tài khoản
+                                        <ShieldBan size={16}/> Khóa tài khoản
                                     </button>
                                 )
                             )}
                         </div>
                     </div>
-                </div>
+                    {/* Navigation Tabs */}
+                    <div className="flex gap-6 mt-8 border-t border-slate-100 pt-2">
+                        <button
+                            onClick={() => setActiveTab("general")}
+                            className={`py-2 text-sm font-bold transition-all border-b-2 ${activeTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}
+                        >
+                            Thông tin cơ bản
+                        </button>
 
-                {/* Info Sections */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Section A: Identity & Contact */}
-                    <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
-                            <User size={18} className="text-slate-400" /> Thông tin liên hệ
-                        </h3>
-                        <div className="space-y-4">
-                            <InfoRow icon={<Mail size={15} />} label="Email" value={user.email} />
-                            <InfoRow icon={<Phone size={15} />} label="Số điện thoại" value={user.phone || "Chưa cập nhật"} />
-                            <InfoRow icon={<MapPin size={15} />} label="Địa chỉ" value={user.address || "Chưa cập nhật"} />
-                            <InfoRow icon={<Calendar size={15} />} label="Ngày sinh" value={user.dob || "Chưa cập nhật"} />
-                        </div>
-                    </section>
-
-                    {/* Section B: Security Telemetry */}
-                    <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
-                            <Shield size={18} className="text-slate-400" /> Bảo mật
-                        </h3>
-                        <div className="space-y-4">
-                            <InfoRow
-                                icon={<Clock size={15} />}
-                                label="Đăng nhập cuối"
-                                value={formatDate(user.lastLogin)}
-                            />
-                            <InfoRow
-                                icon={<Shield size={15} />}
-                                label="Trạng thái tài khoản"
-                                value={
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusConfig.color}`}>
-                                        {statusConfig.label}
-                                    </span>
-                                }
-                            />
-                            <InfoRow
-                                icon={<Shield size={15} />}
-                                label="Mật khẩu"
-                                value="••••••••"
-                            />
-                        </div>
-                    </section>
-                </div>
-            </div>
-
-            {/* Ban/Unban Modal */}
-            {showBanModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                        <div className="flex items-center gap-3 mb-5">
-                            {banAction === "ban" ? (
-                                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                                    <Ban size={20} className="text-red-600" />
-                                </div>
-                            ) : (
-                                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                                    <ShieldCheck size={20} className="text-emerald-600" />
-                                </div>
-                            )}
-                            <div>
-                                <h3 className="font-bold text-slate-800">
-                                    {banAction === "ban" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                                </h3>
-                                <p className="text-sm text-slate-500">{user.username} ({user.email})</p>
-                            </div>
-                        </div>
-
-                        <div className="mb-5">
-                            <label className="text-sm font-bold text-slate-600 mb-1.5 block">
-                                Lý do {banAction === "ban" ? "khóa" : "mở khóa"}
-                            </label>
-                            <textarea
-                                value={banReason}
-                                onChange={(e) => setBanReason(e.target.value)}
-                                rows={3}
-                                placeholder="Nhập lý do..."
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 outline-none resize-none"
-                            />
-                        </div>
-
-                        {actionError && (
-                            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
-                                <AlertCircle size={14} /> {actionError}
-                            </div>
+                        {isAgency && (
+                            <button
+                                onClick={() => setActiveTab("ranking")}
+                                className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'ranking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}
+                            >
+                                <Award size={16}/> Phân hạng đại lý
+                            </button>
                         )}
 
-                        <div className="flex gap-3 justify-end">
+                        {isHotel && (
                             <button
-                                onClick={() => setShowBanModal(false)}
+                                onClick={() => setActiveTab("commission")}
+                                className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'commission' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}
+                            >
+                                <Award size={16}/> Cấu hình chiết khấu
+                            </button>
+                        )}
+                    </div>
+                </div>
+                {/* Content Area */}
+                <div className="animate-in fade-in duration-300">
+                    {/* Tab 1: Thông tin chung */}
+                    {activeTab === "general" && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                                <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2"><User
+                                    size={18} className="text-slate-400"/> Thông tin liên hệ</h3>
+                                <div className="space-y-4">
+                                    <InfoRow icon={<Mail size={15}/>} label="Email" value={user.email}/>
+                                    <InfoRow icon={<Phone size={15}/>} label="Số điện thoại"
+                                             value={user.phone || "Chưa cập nhật"}/>
+                                    <InfoRow icon={<MapPin size={15}/>} label="Địa chỉ"
+                                             value={user.address || "Chưa cập nhật"}/>
+                                    <InfoRow icon={<Calendar size={15}/>} label="Ngày sinh"
+                                             value={user.dob || "Chưa cập nhật"}/>
+                                </div>
+                            </section>
+                            <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                                <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2"><Shield
+                                    size={18} className="text-slate-400"/> Bảo mật</h3>
+                                <div className="space-y-4">
+                                    <InfoRow icon={<Clock size={15}/>} label="Đăng nhập cuối"
+                                             value={formatDate(user.lastLogin)}/>
+                                    <InfoRow icon={<Shield size={15}/>} label="Trạng thái tài khoản" value={<span
+                                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusConfig.color}`}>{statusConfig.label}</span>}/>
+                                    <InfoRow icon={<Shield size={15}/>} label="Mật khẩu" value="••••••••"/>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {/* Tab 2: Agency Ranking (Chỉ hiện nếu là Agency) */}
+                    {isAgency && activeTab === "ranking" && (
+                        <AgencyRankingTab user={user}/>
+                    )}
+
+                    {/* Tab 3: Hotel Commission (Chỉ hiện nếu là Hotel) */}
+                    {isHotel && activeTab === "commission" && (
+                        <SetHotelCommissions hotelId={user.id}/>
+                    )}
+                </div>
+        </div>
+
+    {/* Ban/Unban Modal */
+    }
+    {
+        showBanModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                    <div className="flex items-center gap-3 mb-5">
+                        {banAction === "ban" ? (
+                            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                <Ban size={20} className="text-red-600"/>
+                            </div>
+                        ) : (
+                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                                <ShieldCheck size={20} className="text-emerald-600"/>
+                            </div>
+                        )}
+                        <div>
+                            <h3 className="font-bold text-slate-800">
+                                {banAction === "ban" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            </h3>
+                            <p className="text-sm text-slate-500">{user.username} ({user.email})</p>
+                        </div>
+                    </div>
+
+                    <div className="mb-5">
+                        <label className="text-sm font-bold text-slate-600 mb-1.5 block">
+                            Lý do {banAction === "ban" ? "khóa" : "mở khóa"}
+                        </label>
+                        <textarea
+                            value={banReason}
+                            onChange={(e) => setBanReason(e.target.value)}
+                            rows={3}
+                            placeholder="Nhập lý do..."
+                            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 outline-none resize-none"
+                        />
+                    </div>
+
+                    {actionError && (
+                        <div
+                            className="mb-4 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+                            <AlertCircle size={14}/> {actionError}
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 justify-end">
+                        <button
+                            onClick={() => setShowBanModal(false)}
                                 disabled={banLoading}
                                 className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200"
                             >

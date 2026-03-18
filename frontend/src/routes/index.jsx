@@ -50,6 +50,9 @@ import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
 import RegulationPage from "@/pages/common/Regulation.jsx";
 import TransactionPage from "@/pages/Admin/AgencyPayTransaction.jsx"
 import RankingRulesPage from "@/pages/Admin/RankingRules.jsx"
+import RevenueReport from "@/pages/Hotel/RevenueReport.jsx";
+import PayoutStatement from "@/pages/Hotel/PayoutStatement.jsx";
+import PayoutList from "@/pages/Admin/PayoutList.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -109,6 +112,8 @@ const AppRoutes = () => {
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
                     <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="revenue-report" element={<RevenueReport/>} />
+                    <Route path="payout-state" element={<PayoutStatement/>} />
                 </Route>
 
                 {/*Luồng Admin System*/}
@@ -125,6 +130,7 @@ const AppRoutes = () => {
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
                     {/*Luồng Admin Financial*/}
                     <Route path="payment-transaction" element={<TransactionPage />} />
+                    <Route path="payout-list" element={<PayoutList />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
