@@ -48,6 +48,8 @@ import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
 import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
 import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
 import RegulationPage from "@/pages/common/Regulation.jsx";
+import TransactionPage from "@/pages/Admin/AgencyPayTransaction.jsx"
+import RankingRulesPage from "@/pages/Admin/RankingRules.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -120,6 +122,9 @@ const AppRoutes = () => {
                     <Route path="partners/hotel/:id" element={<PartnerDetail />} />
                     <Route path="users" element={<AdminUserList />} />
                     <Route path="users/:userId" element={<AdminUserDetail />} />
+                    <Route path="ranking-rules" element={<RankingRulesPage />} />
+                    {/*Luồng Admin Financial*/}
+                    <Route path="payment-transaction" element={<TransactionPage />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
