@@ -78,10 +78,22 @@ const VerificationStatusPage = () => {
                         <p className="text-slate-600 font-medium max-w-2xl">{theme.desc}</p>
 
                         {/* HIỂN THỊ LÝ DO TỪ CHỐI (Nếu có) */}
-                        {kycDetail?.status?.toUpperCase() === "REJECTED" && kycDetail?.rejectionReason && (
-                            <div className="mt-4 p-4 bg-red-100 border-l-4 border-red-500 rounded-r-xl animate-in slide-in-from-left">
-                                <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Lý do từ chối từ hệ thống:</p>
-                                <p className="text-sm font-bold text-red-800 mt-1 italic">"{kycDetail.rejectionReason}"</p>
+                        {["REJECTED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase()) && kycDetail?.rejectionReason && (
+                            <div className={`mt-4 p-4 border-l-4 rounded-r-xl animate-in slide-in-from-left shadow-sm ${
+                                kycDetail.status.toUpperCase() === "REJECTED"
+                                    ? "bg-red-50 border-red-500"
+                                    : "bg-blue-50 border-blue-500"
+                            }`}>
+                                <p className={`text-[10px] font-black uppercase tracking-wider ${
+                                    kycDetail.status.toUpperCase() === "REJECTED" ? "text-red-600" : "text-blue-600"
+                                }`}>
+                                    {kycDetail.status.toUpperCase() === "REJECTED" ? "Lý do từ hệ thống:" : "Ghi chú bổ sung từ kiểm duyệt viên:"}
+                                </p>
+                                <p className={`text-sm font-bold mt-1 italic ${
+                                    kycDetail.status.toUpperCase() === "REJECTED" ? "text-red-900" : "text-blue-900"
+                                }`}>
+                                    "{kycDetail.rejectionReason}"
+                                </p>
                             </div>
                         )}
                     </div>
@@ -170,7 +182,7 @@ const VerificationStatusPage = () => {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-xs font-black text-slate-800">Phiên bản #{item.id}</p>
+                                                    <p className="text-xs font-black text-slate-800">Phiên bản </p>
                                                     {index === 0 && <span className="text-[8px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase">Mới nhất</span>}
                                                 </div>
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">

@@ -260,13 +260,6 @@ const Login = () => {
                                 >
                                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G" className="w-5 h-5 group-hover:scale-110 transition-transform" /> Google
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin('facebook')}
-                                    className="flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-[#1877F2]/5 hover:border-[#1877F2]/20 hover:text-[#1877F2] transition-all font-bold text-slate-600 text-sm group"
-                                >
-                                    <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="F" className="w-5 h-5 group-hover:scale-110 transition-transform" /> Facebook
-                                </button>
                             </div>
                         </div>
 

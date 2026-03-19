@@ -77,9 +77,35 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         }
     };
 
+    // 1. Chỉ cho phép nhập số
+    const onlyNumbers = (val) => val.replace(/[^0-9]/g, "");
+
+    // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
+    const formatTaxCode = (val) => {
+        const digits = onlyNumbers(val).slice(0, 13);
+        if (digits.length > 10) {
+            return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
+        }
+        return digits;
+    };
+
+    // 3. Format CCCD (Max 12 số)
+    const formatCIC = (val) => onlyNumbers(val).slice(0, 12);
+
     const handleFinalSubmit = async () => {
         if (!formData.legalName || !formData.taxCode) {
             alert("Vui lòng điền các thông tin bắt buộc!");
+            return;
+        }
+        const rawTaxCode = formData.taxCode.replace("-", "");
+
+        if (rawTaxCode.length !== 10 && rawTaxCode.length !== 13) {
+            alert("Mã số thuế phải có 10 hoặc 13 số!");
+            return;
+        }
+
+        if (formData.representativeCICNumber.length !== 12 && formData.representativeCICNumber.length !== 9) {
+            alert("Số CCCD phải có 12 số (hoặc 9 số với CMND cũ)!");
             return;
         }
 
@@ -208,8 +234,16 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                 <div className="space-y-3">
                     <OCRInput label="Tên Doanh nghiệp" name="legalName" value={formData.legalName} onChange={(e) => setFormData(p => ({...p, legalName: e.target.value}))}/>
                     <div className="grid grid-cols-2 gap-3">
-                        <OCRInput label="Mã số thuế" name="taxCode" value={formData.taxCode} onChange={(e) => setFormData(p => ({...p, taxCode: e.target.value}))}/>
-                        <OCRInput label="Số GPKD" name="businessLicenseNumber" value={formData.businessLicenseNumber} onChange={(e) => setFormData(p => ({...p, businessLicenseNumber: e.target.value}))}/>
+                        <OCRInput
+                            label="Mã số thuế"
+                            value={formData.taxCode}
+                            onChange={(e) => setFormData(p => ({...p, taxCode: formatTaxCode(e.target.value)}))}
+                        />
+                        <OCRInput
+                            label="Số GPKD"
+                            value={formData.businessLicenseNumber}
+                            onChange={(e) => setFormData(p => ({...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10)}))}
+                        />
                     </div>
                     <OCRInput label="Địa chỉ trụ sở" name="businessAddress" value={formData.businessAddress} isTextArea onChange={(e) => setFormData(p => ({...p, businessAddress: e.target.value}))}/>
                 </div>
@@ -217,7 +251,11 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                 <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest pt-4"><User size={16} className="text-blue-600" /> Người đại diện</h3>
                 <div className="space-y-3">
                     <OCRInput label="Họ và tên" name="representativeName" value={formData.representativeName} onChange={(e) => setFormData(p => ({...p, representativeName: e.target.value}))}/>
-                    <OCRInput label="Số CCCD" name="representativeCICNumber" value={formData.representativeCICNumber} onChange={(e) => setFormData(p => ({...p, representativeCICNumber: e.target.value}))}/>
+                    <OCRInput
+                        label="Số CCCD"
+                        value={formData.representativeCICNumber}
+                        onChange={(e) => setFormData(p => ({...p, representativeCICNumber: formatCIC(e.target.value)}))}
+                    />
                     <div className="grid grid-cols-2 gap-3">
                         <OCRInput label="Ngày cấp" name="representativeCICDate" type="date" value={formData.representativeCICDate} onChange={(e) => setFormData(p => ({...p, representativeCICDate: e.target.value}))}/>
                         <OCRInput label="Nơi cấp" name="representativeCICPlace" value={formData.representativeCICPlace} onChange={(e) => setFormData(p => ({...p, representativeCICPlace: e.target.value}))}/>

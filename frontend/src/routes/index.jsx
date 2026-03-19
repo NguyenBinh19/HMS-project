@@ -60,7 +60,7 @@ const AppRoutes = () => {
 
             <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/homepage" element={<MainLayout />} />
+                <Route path="/" element={<MainLayout />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
@@ -80,7 +80,7 @@ const AppRoutes = () => {
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
-                <Route path="/" element={<AgencyMain />}>
+                <Route element={<AgencyMain />}>
                     <Route path="search-hotel">
                         <Route index element={<SearchHotelEngine />} />
                         <Route path="list" element={<ListSearchResult />} />
@@ -95,7 +95,6 @@ const AppRoutes = () => {
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
-                    {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
@@ -133,7 +132,8 @@ const AppRoutes = () => {
                     <Route path="payout-list" element={<PayoutList />} />
                 </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/homepage" element={<Navigate to="/" replace />} />
+                {/*<Route path="*" element={<Navigate to="/homepage" replace />} />*/}
             </Routes>
         </>
     );

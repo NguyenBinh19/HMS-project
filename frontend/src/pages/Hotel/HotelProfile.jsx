@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 
 const HotelProfileManager = () => {
     const navigate = useNavigate(); //
-
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [originalData, setOriginalData] = useState(null);
@@ -37,6 +37,26 @@ const HotelProfileManager = () => {
                 partnerType: 'HOTEL'
             }
         });
+    };
+
+    const validateForm = () => {
+        let newErrors = {};
+
+        if (!formData.hotelName.trim()) newErrors.hotelName = "Tên khách sạn không được để trống";
+
+        if (!/^\d{10,11}$/.test(formData.phone.replace(/\s/g, ""))) {
+            newErrors.phone = "Số điện thoại không hợp lệ (10-11 số)";
+        }
+
+       if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Định dạng email không hợp lệ";
+        }
+
+        if (!formData.city.trim()) newErrors.city = "Vui lòng nhập thành phố";
+        if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ chi tiết";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const fetchDetail = async () => {
@@ -71,6 +91,10 @@ const HotelProfileManager = () => {
     };
 
     const handleSave = async () => {
+        if (!validateForm()) {
+            toast.error("Vui lòng kiểm tra lại các trường thông tin!");
+            return;
+        }
         setSaving(true);
         try {
             const updateRequest = {
@@ -153,10 +177,30 @@ const HotelProfileManager = () => {
                         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
                             <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-8 flex items-center gap-2"><Info size={16}/> Thông tin chung</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <InputField label="Tên khách sạn" value={formData.hotelName} onChange={v => setFormData({...formData, hotelName: v})} />
-                                <InputField label="Số điện thoại" value={formData.phone} onChange={v => setFormData({...formData, phone: v})} />
-                                <InputField label="Email" value={formData.email} onChange={v => setFormData({...formData, email: v})} />
-                                <InputField label="Thành phố" value={formData.city} onChange={v => setFormData({...formData, city: v})} />
+                                <InputField
+                                    label="Tên khách sạn"
+                                    value={formData.hotelName}
+                                    onChange={v => setFormData({...formData, hotelName: v})}
+                                    error={errors.hotelName}
+                                />
+                                <InputField
+                                    label="Số điện thoại"
+                                    value={formData.phone}
+                                    onChange={v => setFormData({...formData, phone: v})}
+                                    error={errors.phone}
+                                />
+                                <InputField
+                                    label="Email"
+                                    value={formData.email}
+                                    onChange={v => setFormData({...formData, email: v})}
+                                    error={errors.email}
+                                />
+                                <InputField
+                                    label="Thành phố"
+                                    value={formData.city}
+                                    onChange={v => setFormData({...formData, city: v})}
+                                    error={errors.city}
+                                />
                                 <div className="md:col-span-2">
                                     <InputField label="Địa chỉ chi tiết" value={formData.address} onChange={v => setFormData({...formData, address: v})} />
                                 </div>
@@ -243,10 +287,20 @@ const HotelProfileManager = () => {
 };
 
 // Sub-components
-const InputField = ({ label, value, onChange }) => (
+const InputField = ({ label, value, onChange, error }) => (
     <div className="space-y-2">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
-        <input type="text" value={value} onChange={e => onChange(e.target.value)} className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-600 font-bold text-sm transition-all text-slate-700" />
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {label}
+        </label>
+        <input
+            type="text"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className={`w-full px-5 py-3.5 bg-slate-50 border-2 rounded-2xl outline-none transition-all font-bold text-sm text-slate-700 ${
+                error ? 'border-rose-500 focus:border-rose-600' : 'border-slate-100 focus:border-blue-600'
+            }`}
+        />
+        {error && <p className="text-[10px] text-rose-500 font-bold italic ml-2 tracking-tight">{error}</p>}
     </div>
 );
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Đã thêm useLocation
 import {
     Building2,
     LogIn,
@@ -8,15 +8,37 @@ import {
     X,
     LogOut,
     UserCircle,
-    ChevronDown, ShieldCheck
+    ChevronDown,
+    ShieldCheck
 } from "lucide-react";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation(); // Hook để lấy thông tin đường dẫn hiện tại
+
     const needsKyc = user && (user.status === "PENDING" || !user.isKyc);
 
+    // 1. Logic cập nhật tiêu đề trình duyệt (Browser Title)
+    useEffect(() => {
+        const titleMap = {
+            "/homepage": "Trang chủ | HMS-B2B",
+            "/about-us": "Về chúng tôi | HMS-B2B",
+            "/user-guide": "Hướng dẫn | HMS-B2B",
+            "/contact": "Liên hệ | HMS-B2B",
+            "/profile": "Hồ sơ cá nhân | HMS-B2B",
+            "/login": "Đăng nhập | HMS-B2B",
+            "/register": "Đăng ký đối tác | HMS-B2B",
+            "/kyc-intro": "Xác minh tài khoản | HMS-B2B"
+        };
+
+        // Cập nhật document.title dựa trên location.pathname
+        // Nếu không tìm thấy trong map, để mặc định là HMS-B2B
+        document.title = titleMap[location.pathname] || "HMS-B2B";
+    }, [location.pathname]); // Chạy lại mỗi khi URL thay đổi
+
+    // 2. Logic lấy thông tin user từ LocalStorage
     useEffect(() => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -62,7 +84,11 @@ const Header = () => {
                             <Link
                                 key={link.name}
                                 to={link.href}
-                                className="px-4 py-2 text-[15px] font-bold text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${
+                                    location.pathname === link.href
+                                        ? "text-blue-600 bg-blue-50"
+                                        : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                }`}
                             >
                                 {link.name}
                             </Link>
@@ -88,7 +114,6 @@ const Header = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                                {/* NEW: Nút KYC - Chỉ hiện khi tài khoản mới/chưa xác minh */}
                                 {needsKyc && (
                                     <button
                                         onClick={() => navigate("/kyc-intro")}
@@ -98,7 +123,6 @@ const Header = () => {
                                         Xác minh tài khoản
                                     </button>
                                 )}
-                                {/* Profile Link */}
                                 <Link
                                     to="/profile"
                                     className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-200 transition-all group"
@@ -116,7 +140,6 @@ const Header = () => {
                                     </div>
                                 </Link>
 
-                                {/* Logout Button */}
                                 <button
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-rose-600 font-bold text-sm transition-colors"
@@ -149,7 +172,11 @@ const Header = () => {
                                 key={link.name}
                                 to={link.href}
                                 onClick={() => setIsMenuOpen(false)}
-                                className="px-4 py-3 text-lg font-bold text-slate-700 hover:bg-slate-50 rounded-xl"
+                                className={`px-4 py-3 text-lg font-bold rounded-xl ${
+                                    location.pathname === link.href
+                                        ? "text-blue-600 bg-blue-50"
+                                        : "text-slate-700 hover:bg-slate-50"
+                                }`}
                             >
                                 {link.name}
                             </Link>

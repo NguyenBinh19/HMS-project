@@ -45,11 +45,6 @@ const StaffActionMenu = ({ onEdit, onToggle, onViewDetails, onViewHistory, statu
                         <span className="font-medium">Chỉnh sửa thông tin</span>
                     </button>
 
-                    <button onClick={() => handleAction(onViewHistory)} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-all">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><History size={16} /></div>
-                        <span className="font-medium">Lịch sử đặt phòng</span>
-                    </button>
-
                 </div>
             )}
         </div>
