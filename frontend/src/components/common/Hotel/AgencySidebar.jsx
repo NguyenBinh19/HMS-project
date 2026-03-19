@@ -56,13 +56,13 @@ const Sidebar = () => {
         {
             icon: <CalendarDays size={20} />,
             label: "QUẢN LÝ BOOKING",
-            path: "/agency/",
+            path: "/agency/booking-list", // ❗ đổi lại
             subItems: [
                 // { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/agency/booking-checkout" },
                 { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/agency/booking-list" },
                 { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
             ]
-        },
+        }
     ];
 
     return (
@@ -81,7 +81,7 @@ const Sidebar = () => {
 
                     const isParentActive = item.subItems
                         ? item.subItems.some(sub => location.pathname.startsWith(sub.path))
-                        : isExactActive;
+                        : location.pathname === item.path;
 
                     return (
                         <div key={index} className="flex flex-col">
@@ -91,8 +91,8 @@ const Sidebar = () => {
                                 className={`
                                     flex items-center gap-4 px-6 py-3 cursor-pointer transition-all duration-200 group
                                     ${isExactActive
-                                    ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-bold"
-                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"}
+                                        ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-bold"
+                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"}
                                 `}
                             >
                                 <span className={`${isExactActive ? "" : "group-hover:scale-110 transition-transform"}`}>
@@ -113,8 +113,8 @@ const Sidebar = () => {
                                                 className={`
                                                     flex items-center gap-3 pl-14 pr-6 py-2.5 transition-colors
                                                     ${isSubActive
-                                                    ? "text-blue-600 font-semibold"
-                                                    : "text-slate-500 hover:text-slate-800"}
+                                                        ? "text-blue-600 font-semibold"
+                                                        : "text-slate-500 hover:text-slate-800"}
                                                 `}
                                             >
                                                 <span className="opacity-70">{sub.icon}</span>
