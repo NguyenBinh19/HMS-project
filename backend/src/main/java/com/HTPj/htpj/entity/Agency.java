@@ -53,4 +53,8 @@ public class Agency {
     @OneToMany(mappedBy = "agency")
     private List<PartnerVerification> verifications;
 
+    @ManyToOne
+    @JoinColumn(name = "rank_id")
+    private Rank rank;
+
 }

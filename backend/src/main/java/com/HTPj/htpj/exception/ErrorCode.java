@@ -81,6 +81,11 @@ public enum ErrorCode {
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
 
+    RANK_NOT_FOUND(4101, "Rank not found", HttpStatus.NOT_FOUND),
+    RANK_NAME_EXISTED(4102, "Rank name already exists", HttpStatus.BAD_REQUEST),
+    RANK_PRIORITY_EXISTED(4103, "Priority already exists", HttpStatus.BAD_REQUEST),
+    RANK_IN_USE(4104, "Rank is being used by agencies", HttpStatus.BAD_REQUEST),
+
 
     ;
 
