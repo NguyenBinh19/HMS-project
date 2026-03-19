@@ -77,12 +77,11 @@ const Sidebar = () => {
             {/* Menu List */}
             <div className="flex-1 py-6 overflow-y-auto">
                 {menuItems.map((item, index) => {
-                    // Kiểm tra xem trang hiện tại có thuộc menu này hoặc menu con của nó không
-                    const isParentActive =
-                        location.pathname === item.path ||
-                        location.pathname.startsWith(item.path + "/");
+                    const isExactActive = location.pathname === item.path;
 
-                    const isExactActive = isParentActive;
+                    const isParentActive = item.subItems
+                        ? item.subItems.some(sub => location.pathname.startsWith(sub.path))
+                        : isExactActive;
 
                     return (
                         <div key={index} className="flex flex-col">

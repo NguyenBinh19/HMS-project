@@ -1,8 +1,31 @@
 import React from 'react';
-import { Hotel, User, Building, Building2 } from "lucide-react";
+import { Hotel, User, Building, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { KYC_STATUS } from '@/services/kyc.service.js';
 
-const KYCTable = ({ data, onReview, loading }) => {
+const KYCTable = ({ data, onReview, loading, pagination }) => {
     if (loading) return <div className="bg-white p-10 text-center border">Đang tải dữ liệu...</div>;
+    const { total, current, size, onPageChange } = pagination;
+    const totalPages = Math.ceil(total / size);
+
+    const renderPageNumbers = () => {
+        const pages = [];
+        for (let i = 0; i < totalPages; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => onPageChange(i)}
+                    className={`w-8 h-8 rounded-lg text-[13px] font-bold transition-all ${
+                        current === i
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                            : "hover:bg-slate-200 text-slate-600"
+                    }`}
+                >
+                    {i + 1}
+                </button>
+            );
+        }
+        return pages;
+    };
 
     const getPartnerInfo = (type) => {
         switch (type?.toUpperCase()) {
@@ -55,12 +78,14 @@ const KYCTable = ({ data, onReview, loading }) => {
                                     {row.submittedAt ? new Date(row.submittedAt).toLocaleDateString('vi-VN') : "N/A"}
                                 </td>
                                 <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border ${partner.class}`}>
+                                        <span
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border ${partner.class}`}>
                                             {partner.icon} {partner.label}
                                         </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="text-[13px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                                    <div
+                                        className="text-[13px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
                                         {row.legalName}
                                     </div>
                                 </td>
@@ -73,9 +98,13 @@ const KYCTable = ({ data, onReview, loading }) => {
                                 <td className="px-6 py-4 text-right">
                                     <button
                                         onClick={() => onReview(row)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 rounded-lg text-[13px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+                                        className={`${
+                                            row.status === KYC_STATUS.PENDING
+                                                ? "bg-blue-600 hover:bg-blue-700"
+                                                : "bg-slate-600 hover:bg-slate-700"
+                                        } text-white px-5 py-1.5 rounded-lg text-[13px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95`}
                                     >
-                                        Xem hồ sơ
+                                        {row.status === KYC_STATUS.PENDING ? "Duyệt hồ sơ" : "Xem chi tiết"}
                                     </button>
                                 </td>
                             </tr>
@@ -84,6 +113,38 @@ const KYCTable = ({ data, onReview, loading }) => {
                 )}
                 </tbody>
             </table>
+            {/* Pagination Footer */}
+            {total > 0 && (
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                    <div className="text-[13px] text-slate-500">
+                        Đang xem bản ghi <b>{current * size + 1}</b> - <b>{Math.min((current + 1) * size, total)}</b> trên tổng số <b>{total}</b>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            disabled={current === 0}
+                            onClick={() => onPageChange(current - 1)}
+                            className="p-2 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                            {renderPageNumbers()}
+                        </div>
+
+                        <button
+                            type="button"
+                            disabled={current >= totalPages - 1}
+                            onClick={() => onPageChange(current + 1)}
+                            className="p-2 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -38,7 +38,7 @@ const Footer = () => {
                         <ul className="space-y-3 text-sm">
                             <li><a href="/term-service" className="hover:text-blue-400 transition-colors">Điều khoản sử dụng</a></li>
                             <li><a href="/private-policy" className="hover:text-blue-400 transition-colors">Chính sách bảo mật</a></li>
-                            <li><a href="/homepage" className="hover:text-blue-400 transition-colors">Quy chế hoạt động sàn</a></li>
+                            <li><a href="/regulation" className="hover:text-blue-400 transition-colors">Quy chế hoạt động sàn</a></li>
                             <li><a href="/user-guide" className="hover:text-blue-400 transition-colors">Hướng dẫn sử dụng</a></li>
                         </ul>
                     </div>

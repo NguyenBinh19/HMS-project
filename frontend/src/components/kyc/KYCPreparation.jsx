@@ -1,7 +1,9 @@
 import React from 'react';
 import { FileText, CreditCard, Sparkles } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 const KYCPreparation = ({ onStart }) => {
+    const navigate = useNavigate();
     return (
         <div className="p-10 text-center">
             <h1 className="text-2xl font-bold text-slate-800 mb-2">Xác minh danh tính người dùng</h1>
@@ -32,6 +34,7 @@ const KYCPreparation = ({ onStart }) => {
                 Bắt đầu xác minh ngay
             </button>
             <button
+                onClick={() => navigate("/")}
                 className="w-full max-w-md bg-gray-400 mt-3 text-white py-4 rounded-xl font-bold hover:bg-gray-500 transition-all shadow-lg shadow-blue-200"
             >
                 Để sau (Đăng xuất)

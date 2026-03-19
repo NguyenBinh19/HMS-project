@@ -4,7 +4,7 @@ import {
     Building2, Info, Phone, Mail, MapPin,
     Globe, CheckCircle2, Loader2, Smartphone,
     CreditCard, Wallet, ArrowUpRight, Check,
-    ShieldCheck, Edit3
+    ShieldCheck, Edit3, AlertCircle
 } from 'lucide-react';
 import { agencyService } from "@/services/agency.service.js";
 import { partnerService } from "@/services/partner.service.js";
@@ -17,6 +17,7 @@ const AgencyProfile = () => {
     const [saving, setSaving] = useState(false);
     const [showSuccessBanner, setShowSuccessBanner] = useState(false);
     const [originalData, setOriginalData] = useState(null);
+    const [errors, setErrors] = useState({});
 
     const [profile, setProfile] = useState({
         agencyName: "",
@@ -31,6 +32,39 @@ const AgencyProfile = () => {
         creditLimit: 0,
         currentCredit: 0
     });
+
+    // 2. Hàm Validate logic
+    const validateForm = () => {
+        let newErrors = {};
+
+        // Validate Tên đại lý
+        if (!profile.agencyName?.trim()) {
+            newErrors.agencyName = "Tên hiển thị không được để trống";
+        }
+
+        // Validate Email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(profile.email)) {
+            newErrors.email = "Định dạng email không hợp lệ";
+        }
+
+        // Validate Hotline (Cho phép 10-11 số)
+        if (profile.hotline && profile.hotline.trim() !== "") {
+            if (!phoneRegex.test(profile.hotline.replace(/\s/g, ""))) {
+                newErrors.hotline = "Hotline phải từ 10-11 số";
+            }
+        }
+
+        // Validate SĐT liên hệ
+        if (profile.contactPhone && profile.contactPhone.trim() !== "") {
+            if (!phoneRegex.test(profile.contactPhone.replace(/\s/g, ""))) {
+                newErrors.contactPhone = "Số điện thoại không hợp lệ";
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const fetchAgencyDetail = async () => {
         setLoading(true);
@@ -72,6 +106,10 @@ const AgencyProfile = () => {
     };
 
     const handleSave = async () => {
+        if (!validateForm()) {
+            toast.error("Vui lòng kiểm tra lại các thông tin nhập liệu!");
+            return;
+        }
         setSaving(true);
         try {
             const updateBody = {
@@ -143,10 +181,33 @@ const AgencyProfile = () => {
                         <section className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm">
                             <h2 className="text-xs font-black text-blue-600 tracking-[0.2em] uppercase mb-8 flex items-center gap-2"><Globe size={18} /> Liên hệ & Thương hiệu</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <EditableField label="Tên hiển thị" value={profile.agencyName} onChange={(v) => setProfile({...profile, agencyName: v})} />
-                                <EditableField label="Email" value={profile.email} icon={<Mail size={16} />} onChange={(v) => setProfile({...profile, email: v})} />
-                                <EditableField label="Hotline" value={profile.hotline} icon={<Phone size={16} />} onChange={(v) => setProfile({...profile, hotline: v})} />
-                                <EditableField label="SĐT Liên hệ" value={profile.contactPhone} icon={<Smartphone size={16} />} onChange={(v) => setProfile({...profile, contactPhone: v})} />
+                                <EditableField
+                                    label="Tên hiển thị"
+                                    value={profile.agencyName}
+                                    onChange={(v) => setProfile({...profile, agencyName: v})}
+                                    error={errors.agencyName}
+                                />
+                                <EditableField
+                                    label="Email"
+                                    value={profile.email}
+                                    icon={<Mail size={16} />}
+                                    onChange={(v) => setProfile({...profile, email: v})}
+                                    error={errors.email}
+                                />
+                                <EditableField
+                                    label="Hotline"
+                                    value={profile.hotline}
+                                    icon={<Phone size={16} />}
+                                    onChange={(v) => setProfile({...profile, hotline: v})}
+                                    error={errors.hotline}
+                                />
+                                <EditableField
+                                    label="SĐT Liên hệ"
+                                    value={profile.contactPhone}
+                                    icon={<Smartphone size={16} />}
+                                    onChange={(v) => setProfile({...profile, contactPhone: v})}
+                                    error={errors.contactPhone}
+                                />
                             </div>
                         </section>
                     </div>
@@ -187,13 +248,30 @@ const ReadOnlyField = ({ label, value }) => (
     </div>
 );
 
-const EditableField = ({ label, value, onChange, icon }) => (
+const EditableField = ({ label, value, onChange, icon, error }) => (
     <div className="space-y-2">
-        <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{label}</label>
+        <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{label}</label>
         <div className="relative">
-            {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{icon}</div>}
-            <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-blue-600 outline-none transition-all text-sm font-bold text-slate-700 shadow-sm`} />
+            {icon && (
+                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-rose-500' : 'text-slate-400'}`}>
+                    {icon}
+                </div>
+            )}
+            <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-4 bg-white border-2 rounded-2xl outline-none transition-all text-sm font-bold shadow-sm ${
+                    error ? 'border-rose-500 text-rose-700 bg-rose-50/30' : 'border-slate-100 focus:border-blue-600 text-slate-700'
+                }`}
+            />
         </div>
+        {error && (
+            <div className="flex items-center gap-1 mt-1 ml-1 text-rose-500">
+                <AlertCircle size={12} />
+                <span className="text-[10px] font-black italic uppercase tracking-tighter">{error}</span>
+            </div>
+        )}
     </div>
 );
 

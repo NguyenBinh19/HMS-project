@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate} from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -47,6 +47,12 @@ import UserGuidePage from "@/pages/common/UserGuide.jsx";
 import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
 import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
 import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
+import RegulationPage from "@/pages/common/Regulation.jsx";
+import TransactionPage from "@/pages/Admin/AgencyPayTransaction.jsx"
+import RankingRulesPage from "@/pages/Admin/RankingRules.jsx"
+import RevenueReport from "@/pages/Hotel/RevenueReport.jsx";
+import PayoutStatement from "@/pages/Hotel/PayoutStatement.jsx";
+import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
@@ -57,7 +63,7 @@ const AppRoutes = () => {
             <Routes>
                 <Route path="/" element={<MainLayout />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/homepage" element={<MainLayout />} />
+                <Route path="/" element={<MainLayout />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
@@ -69,6 +75,7 @@ const AppRoutes = () => {
                 <Route path="/private-policy" element={<PrivatePolicy />} />
                 <Route path="/term-service" element={<TermsOfServicePage />} />
                 <Route path="/user-guide" element={<UserGuidePage />} />
+                <Route path="/regulation" element={<RegulationPage />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
@@ -98,7 +105,6 @@ const AppRoutes = () => {
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
-                    {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
@@ -120,7 +126,9 @@ const AppRoutes = () => {
                     <Route path="profile" element={<HotelProfile />} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
-                    <Route path="front-desk" element={<FrontDesk />} />
+                    <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="revenue-report" element={<RevenueReport/>} />
+                    <Route path="payout-state" element={<PayoutStatement/>} />
                 </Route>
 
                 {/*Luồng Admin System*/}
@@ -139,6 +147,10 @@ const AppRoutes = () => {
                     <Route path="partners/hotel/:id" element={<PartnerDetail />} />
                     <Route path="users" element={<AdminUserList />} />
                     <Route path="users/:userId" element={<AdminUserDetail />} />
+                    <Route path="ranking-rules" element={<RankingRulesPage />} />
+                    {/*Luồng Admin Financial*/}
+                    <Route path="payment-transaction" element={<TransactionPage />} />
+                    <Route path="payout-list" element={<PayoutList />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

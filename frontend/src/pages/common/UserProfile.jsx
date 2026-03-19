@@ -25,6 +25,7 @@ const UserProfile = () => {
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [saveError, setSaveError] = useState(null);
+    const [errors, setErrors] = useState({});
 
     // Avatar state
     const [avatarUploading, setAvatarUploading] = useState(false);
@@ -53,9 +54,27 @@ const UserProfile = () => {
         }
     };
 
+    const validateForm = () => {
+        let newErrors = {};
+        const phoneRegex = /^(0[3|5|7|8|9])([0-9]{8})$/;
+
+        // Validate Phone
+        if (editData.phone) {
+            const cleanPhone = editData.phone.replace(/\s/g, "");
+            if (!phoneRegex.test(cleanPhone)) {
+                newErrors.phone = "Số điện thoại không hợp lệ (phải có 10 số, bắt đầu bằng 03, 05, 07, 08, 09).";
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSave = async () => {
+        if (!validateForm()) return;
         setSaving(true);
         setSaveError(null);
+        setErrors({});
         setSaveSuccess(false);
         try {
             const data = await userService.updateMyProfile(editData);
@@ -214,7 +233,7 @@ const UserProfile = () => {
                 {saveSuccess && (
                     <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-xl flex items-center gap-3">
                         <CheckCircle2 size={20} />
-                        <span className="text-sm font-bold">Cập nhật hồ sơ thành công! (MSG-SYS-12)</span>
+                        <span className="text-sm font-bold">Cập nhật hồ sơ thành công!</span>
                     </div>
                 )}
                 {saveError && (
@@ -323,29 +342,40 @@ const UserProfile = () => {
 
                         {/* Editable fields */}
                         {editMode ? (
-                            <>
+                                <>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                        <Phone size={14} className="text-slate-400" /> Số điện thoại
+                                    <label
+                                        className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                        <Phone size={14} className="text-slate-400"/> Số điện thoại
                                     </label>
                                     <input
                                         type="text"
                                         value={editData.phone}
-                                        onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))}
+                                        onChange={(e) => {
+                                            setEditData((p) => ({...p, phone: e.target.value}));
+                                            if (errors.phone) setErrors(prev => ({...prev, phone: null})); // Clear lỗi khi đang gõ
+                                        }}
                                         placeholder="Nhập số điện thoại"
-                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
+                                        className={`w-full px-4 py-3 border rounded-xl font-medium outline-none transition-all ${
+                                            errors.phone
+                                                ? "border-red-500 bg-red-50 focus:ring-red-100"
+                                                : "border-slate-200 focus:ring-blue-200 focus:border-blue-400"
+                                        }`}
                                     />
+                                    {errors.phone &&
+                                        <p className="text-red-500 text-[11px] font-bold mt-1 ml-1 animate-shake">{errors.phone}</p>}
                                 </div>
-                                <div className="md:col-span-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                        <MapPin size={14} className="text-slate-400" /> Địa chỉ
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editData.address}
-                                        onChange={(e) => setEditData((p) => ({ ...p, address: e.target.value }))}
-                                        placeholder="Nhập địa chỉ"
-                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
+                            <div className="md:col-span-2">
+                                <label
+                                    className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                    <MapPin size={14} className="text-slate-400"/> Địa chỉ
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editData.address}
+                                    onChange={(e) => setEditData((p) => ({...p, address: e.target.value}))}
+                                    placeholder="Nhập địa chỉ"
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
                                     />
                                 </div>
                             </>

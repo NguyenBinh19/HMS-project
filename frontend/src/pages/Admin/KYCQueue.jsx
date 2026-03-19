@@ -4,27 +4,41 @@ import KYCReviewModal from '@/components/admin/kycQueue/KYCReviewModal.jsx';
 import { kycService, KYC_STATUS } from '@/services/kyc.service.js';
 
 const KYCQueuePage = () => {
-    const [data, setData] = useState([]);
+    const [allData, setAllData] = useState([]); // Lưu toàn bộ dữ liệu trả về
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(KYC_STATUS.PENDING);
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const pageSize = 10;
 
     const fetchData = async () => {
         setLoading(true);
         try {
+
             const res = await kycService.getPartnerVerificationsByStatus(activeTab);
-            setData(res.result || res || []);
+            const responseData = res.result || res;
+
+            const fullList = Array.isArray(responseData) ? responseData : (responseData.content || []);
+            setAllData(fullList);
         } catch (error) {
             console.error("Lỗi lấy danh sách KYC:", error);
+            setAllData([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        setCurrentPage(0);
         fetchData();
     }, [activeTab]);
+
+
+    const paginatedData = allData.slice(
+        currentPage * pageSize,
+        (currentPage + 1) * pageSize
+    );
 
     const handleOpenReview = async (item) => {
         try {
@@ -76,7 +90,17 @@ const KYCQueuePage = () => {
 
     {/* Table */
     }
-    <KYCTable data={data} onReview={handleOpenReview} loading={loading}/>
+            <KYCTable
+                data={paginatedData} // Chỉ truyền dữ liệu của trang hiện tại
+                onReview={handleOpenReview}
+                loading={loading}
+                pagination={{
+                    total: allData.length, // Tổng số bản ghi thực tế
+                    current: currentPage,
+                    size: pageSize,
+                    onPageChange: (newPage) => setCurrentPage(newPage)
+                }}
+            />
 
     {/* Modal Detail */
     }

@@ -61,7 +61,6 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
     const handleSubmit = async () => {
         if (!form.serviceName.trim()) return alert("Vui lòng nhập tên dịch vụ!");
         if (!form.category) return alert("Vui lòng chọn danh mục!");
-        if (!form.netPrice || isNaN(Number(form.netPrice))) return alert("Vui lòng nhập Giá Net hợp lệ!");
         if (!form.unit) return alert("Vui lòng chọn đơn vị tính!");
 
         setSaving(true);
@@ -69,7 +68,7 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
             const payload = {
                 ...form,
                 hotelId: HOTEL_ID,
-                netPrice: Number(form.netPrice),
+                netPrice: 0,
                 publicPrice: form.publicPrice ? Number(form.publicPrice) : null,
             };
             if (mode === "create") {
@@ -84,161 +83,149 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
             setSaving(false);
         }
     };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                    <h2 className="text-base font-bold text-slate-800">
-                        {mode === "create" ? "Thêm Dịch Vụ Mới" : "Sửa thông tin dịch vụ"}
-                    </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
-                </div>
-
-                <div className="p-6 space-y-5">
-                    {/* Thông tin chung */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">Thông tin chung</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs text-slate-500 mb-1 block">Tên dịch vụ *</label>
-                                <input
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="VD: Gala Dinner Buffet"
-                                    value={form.serviceName}
-                                    onChange={(e) => handleChange("serviceName", e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 mb-1 block">Danh mục *</label>
-                                <select
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={form.category}
-                                    onChange={(e) => handleChange("category", e.target.value)}
-                                >
-                                    <option value="">Chọn danh mục</option>
-                                    {CATEGORIES.filter((c) => c.key !== "all").map((c) => (
-                                        <option key={c.key} value={c.key}>{c.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="mt-3">
-                            <label className="text-xs text-slate-500 mb-1 block">Mô tả</label>
-                            <textarea
-                                rows={2}
-                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                placeholder="Giới thiệu ngắn gọn để hiện trên App Đại lý"
-                                value={form.description}
-                                onChange={(e) => handleChange("description", e.target.value)}
-                            />
-                        </div>
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
+                        <h2 className="text-base font-bold text-slate-800">
+                            {mode === "create" ? "Thêm Dịch Vụ Mới" : "Sửa thông tin dịch vụ"}
+                        </h2>
+                        <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
                     </div>
 
-                    {/* Giá & Đơn vị */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">Giá &amp; Đơn vị</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs text-slate-500 mb-1 block">Giá Net (B2B Price) *</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">đ</span>
+                    {/* Body: Có scroll nếu nội dung quá dài */}
+                    <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                        {/* Thông tin chung */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-semibold text-slate-700">Thông tin chung</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-slate-500 mb-1 block">Tên dịch vụ *</label>
                                     <input
-                                        type="number"
-                                        className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="500000"
-                                        value={form.netPrice}
-                                        onChange={(e) => handleChange("netPrice", e.target.value)}
+                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="VD: Gala Dinner Buffet"
+                                        value={form.serviceName}
+                                        onChange={(e) => handleChange("serviceName", e.target.value)}
                                     />
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Số tiền Agency phải trả cho KS</p>
+                                <div>
+                                    <label className="text-xs text-slate-500 mb-1 block">Danh mục *</label>
+                                    <select
+                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={form.category}
+                                        onChange={(e) => handleChange("category", e.target.value)}
+                                    >
+                                        <option value="">Chọn danh mục</option>
+                                        {CATEGORIES.filter((c) => c.key !== "all").map((c) => (
+                                            <option key={c.key} value={c.key}>{c.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <div>
-                                <label className="text-xs text-slate-500 mb-1 block">Giá công bố (Public Price - Tuỳ chọn)</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">đ</span>
-                                    <input
-                                        type="number"
-                                        className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="700000"
-                                        value={form.publicPrice}
-                                        onChange={(e) => handleChange("publicPrice", e.target.value)}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Để Agency tham khảo mức giá bán lẻ</p>
+                                <label className="text-xs text-slate-500 mb-1 block">Mô tả</label>
+                                <textarea
+                                    rows={2}
+                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    placeholder="Giới thiệu ngắn gọn để hiện trên App Đại lý"
+                                    value={form.description}
+                                    onChange={(e) => handleChange("description", e.target.value)}
+                                />
                             </div>
                         </div>
-                        <div className="mt-3">
-                            <label className="text-xs text-slate-500 mb-1 block">Đơn vị tính *</label>
-                            <select
-                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={form.unit}
-                                onChange={(e) => handleChange("unit", e.target.value)}
-                            >
-                                <option value="">Chọn đơn vị tính</option>
-                                {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                        </div>
-                    </div>
 
-                    {/* Cấu hình trường nhập liệu */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-700 mb-1">Cấu hình trường nhập liệu</h3>
-                        <p className="text-xs text-slate-400 mb-3">Khi Agency chọn dịch vụ này, họ cần nhập thêm thông tin gì?</p>
-                        <div className="space-y-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={form.requireServiceDate}
-                                    onChange={(e) => handleChange("requireServiceDate", e.target.checked)}
-                                    className="w-4 h-4 accent-blue-600"
-                                />
-                                <span className="text-sm text-slate-700">Yêu cầu nhập Ngày sử dụng (Service Date)</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={form.requireFlightInfo}
-                                    onChange={(e) => handleChange("requireFlightInfo", e.target.checked)}
-                                    className="w-4 h-4 accent-blue-600"
-                                />
-                                <span className="text-sm text-slate-700">
-                                    Yêu cầu thông tin Chuyến bay (Số hiệu, Giờ hạ cánh)
-                                    <span className="ml-1 text-[10px] text-slate-400">(*) Chỉ đặt cho mục Vận chuyển</span>
+                        {/* Giá & Đơn vị */}
+                        <div className="space-y-4 pt-2">
+                            <h3 className="text-sm font-semibold text-slate-700">Giá &amp; Đơn vị</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-slate-500 mb-1 block">Giá công bố (Tuỳ chọn)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">đ</span>
+                                        <input
+                                            type="number"
+                                            className="w-full border border-slate-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="700000"
+                                            value={form.publicPrice}
+                                            onChange={(e) => handleChange("publicPrice", e.target.value)}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1 italic">Để Agency tham khảo giá lẻ</p>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500 mb-1 block">Đơn vị tính *</label>
+                                    <select
+                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={form.unit}
+                                        onChange={(e) => handleChange("unit", e.target.value)}
+                                    >
+                                        <option value="">Chọn đơn vị tính</option>
+                                        {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Cấu hình trường nhập liệu */}
+                        <div className="pt-2">
+                            <h3 className="text-sm font-semibold text-slate-700 mb-1">Cấu hình trường nhập liệu</h3>
+                            <p className="text-xs text-slate-400 mb-3">Khi Agency đặt, họ cần nhập thêm thông tin gì?</p>
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.requireServiceDate}
+                                        onChange={(e) => handleChange("requireServiceDate", e.target.checked)}
+                                        className="w-4 h-4 accent-blue-600 rounded"
+                                    />
+                                    <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Yêu cầu Ngày sử dụng (Service Date)</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.requireFlightInfo}
+                                        onChange={(e) => handleChange("requireFlightInfo", e.target.checked)}
+                                        className="w-4 h-4 accent-blue-600 rounded"
+                                    />
+                                    <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">
+                                    Thông tin Chuyến bay (Số hiệu, Giờ hạ cánh)
+                                    <span className="ml-1 text-[10px] text-slate-400">(*) Vận chuyển</span>
                                 </span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={form.requireSpecialNote}
-                                    onChange={(e) => handleChange("requireSpecialNote", e.target.checked)}
-                                    className="w-4 h-4 accent-blue-600"
-                                />
-                                <span className="text-sm text-slate-700">Yêu cầu nhập Ghi chú đặc biệt (Dị ứng, Ăn chay...)</span>
-                            </label>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.requireSpecialNote}
+                                        onChange={(e) => handleChange("requireSpecialNote", e.target.checked)}
+                                        className="w-4 h-4 accent-blue-600 rounded"
+                                    />
+                                    <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Ghi chú đặc biệt (Dị ứng, Ăn chay...)</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                        Hủy
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving}
-                        className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-                    >
-                        {saving ? "Đang lưu..." : "Lưu dịch vụ"}
-                    </button>
+                    {/* Footer: Cố định phía dưới */}
+                    <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-white">
+                        <button
+                            onClick={onClose}
+                            className="px-5 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={saving}
+                            className="px-6 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-60 disabled:shadow-none"
+                        >
+                            {saving ? "Đang lưu..." : "Lưu dịch vụ"}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
-};
+        );
+    };
 
 /* ========== MAIN PAGE ========== */
 const AddonServiceManager = () => {
@@ -307,7 +294,7 @@ const AddonServiceManager = () => {
                     onClick={() => { setEditTarget(null); setShowModal(true); }}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
                 >
-                    <Plus size={16} /> + Thêm dịch vụ mới
+                    <Plus size={16} /> Thêm dịch vụ mới
                 </button>
             </div>
 
@@ -335,7 +322,7 @@ const AddonServiceManager = () => {
                         <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
                             <th className="px-6 py-3 text-left">Dịch vụ</th>
                             <th className="px-4 py-3 text-left">Loại</th>
-                            <th className="px-4 py-3 text-left">Giá Net B2B</th>
+                            {/*<th className="px-4 py-3 text-left">Giá Net B2B</th>*/}
                             <th className="px-4 py-3 text-left">Đơn vị tính</th>
                             <th className="px-4 py-3 text-left">Trạng thái</th>
                             <th className="px-4 py-3 text-center">Hành động</th>
@@ -374,9 +361,9 @@ const AddonServiceManager = () => {
                                                 {CATEGORY_LABELS[svc.category] || svc.category}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-4 text-slate-700 font-medium">
-                                            {formatPrice(svc.netPrice)}
-                                        </td>
+                                        {/*<td className="px-4 py-4 text-slate-700 font-medium">*/}
+                                        {/*    {formatPrice(svc.netPrice)}*/}
+                                        {/*</td>*/}
                                         <td className="px-4 py-4 text-slate-600">{svc.unit}</td>
                                         <td className="px-4 py-4">
                                             <div className="flex items-center gap-2">
