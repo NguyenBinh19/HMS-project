@@ -40,7 +40,7 @@ export default function HotelSearchForm({ variant = "hero" }) {
         params.set("rooms", String(roomCount));
         params.set("adults", String(adults));
         params.set("children", String(children));
-        navigate(`/search-hotel/list?${params.toString()}`);
+        navigate(`/agency/search-hotel/list?${params.toString()}`);
     };
 
     const guestSummary = `${roomCount} phòng, ${adults} người lớn, ${children} trẻ em`;

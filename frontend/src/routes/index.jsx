@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -47,12 +47,15 @@ import UserGuidePage from "@/pages/common/UserGuide.jsx";
 import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
 import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
 import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
     return (
         <>
             <SessionExpiredHandler />
 
             <Routes>
+                <Route path="/" element={<MainLayout />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/homepage" element={<MainLayout />} />
                 <Route path="/register" element={<Register />} />
@@ -69,11 +72,18 @@ const AppRoutes = () => {
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
-                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/profile" element={
+                    <ProtectedRoute>
+                        <UserProfile />
+                    </ProtectedRoute>} />
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
-                <Route path="/" element={<AgencyMain />}>
+                <Route path="/agency" element={
+                        <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
+                            <AgencyMain />
+                        </ProtectedRoute>
+                    }>
                     <Route path="search-hotel">
                         <Route index element={<SearchHotelEngine />} />
                         <Route path="list" element={<ListSearchResult />} />
@@ -92,7 +102,13 @@ const AppRoutes = () => {
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
-                <Route path="/hotel" element={<HotelMain />}>
+                <Route
+                    path="/hotel"
+                    element={
+                        <ProtectedRoute roles={ROLE_GROUP.HOTEL}>
+                            <HotelMain />
+                        </ProtectedRoute>
+                    }>
                     <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
@@ -100,15 +116,20 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
-                    <Route path="staff" element={<HotelStaffDashboard/>} />
-                    <Route path="profile" element={<HotelProfile/>} />
+                    <Route path="staff" element={<HotelStaffDashboard />} />
+                    <Route path="profile" element={<HotelProfile />} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
-                    <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="front-desk" element={<FrontDesk />} />
                 </Route>
 
                 {/*Luồng Admin System*/}
-                <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin"
+                    element={
+                        <ProtectedRoute roles={[ROLES.ADMIN]}>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }>
                     <Route path="dashboard" element={<AdminDashboardPage />} />
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />

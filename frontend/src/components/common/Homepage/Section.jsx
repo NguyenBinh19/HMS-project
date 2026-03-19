@@ -59,7 +59,7 @@ const HomePage = () => {
         params.set("adults", String(adults));
         params.set("children", String(children));
 
-        navigate(`/search-hotel/list?${params.toString()}`);
+        navigate(`agency/search-hotel/list?${params.toString()}`);
     };
 
     // 5. Hàm điều hướng cho 2 nút Agency/Hotel
@@ -104,7 +104,7 @@ const HomePage = () => {
 
                     {/* Role Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                        <button onClick={() => handleRoleNav("/agency-dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#00A651] hover:bg-[#008f45] text-white font-bold transition-all active:scale-95 shadow-lg">
+                        <button onClick={() => handleRoleNav("/agency/agency-dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#00A651] hover:bg-[#008f45] text-white font-bold transition-all active:scale-95 shadow-lg">
                             <UserCheck size={20} /> Tôi là Đại lý
                         </button>
                         <button onClick={() => handleRoleNav("/hotel/dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#F36F21] hover:bg-[#d85e17] text-white font-bold transition-all active:scale-95 shadow-lg">

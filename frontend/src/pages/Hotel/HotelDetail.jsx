@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import { format, addDays, parseISO, differenceInSeconds, isBefore, isAfter } from "date-fns";
 import {
     MapPin, Wifi, Coffee, Users, Snowflake,
@@ -12,7 +13,7 @@ import publicApi from "../../services/axios.config.js";
 import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import RoomDetailModal from "@/components/agency/booking/RoomDetailModal.jsx"
-
+import { ROLES, ROLE_GROUP } from "../../constant/roles.js";
 // --- 1. SUB-COMPONENT: TIMER MODAL ---
 const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
     const [timeLeft, setTimeLeft] = useState(0);
@@ -78,7 +79,22 @@ export default function HotelDetailPage() {
     const [selectedRooms, setSelectedRooms] = useState([]);
     const [bookingSession, setBookingSession] = useState(null);
     const [isExtending, setIsExtending] = useState(false);
+    const token = localStorage.getItem("accessToken");
+console.log(token)
+    let roles = [];
 
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            roles = decoded.scope || []; // tuỳ backend trả về
+            console.log(roles)
+        } catch (err) {
+            console.error("Invalid token");
+        }
+    }
+    const isAgency = ROLE_GROUP.AGENCY.some(role =>
+    roles.includes(role)
+);
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
     // Tính toán tổng tiền dự kiến dựa trên mảng selectedRooms
@@ -233,7 +249,7 @@ export default function HotelDetailPage() {
             setIsExtending(false);
         }
     };
-const gallery =
+    const gallery =
         hotel?.images?.length > 0
             ? hotel.images
             : ["https://pix8.agoda.net/hotelImages/186/186135/186135_17083113400050872001.jpg"];
@@ -320,13 +336,13 @@ const gallery =
                             </div>
                         </div>
                     </section>
-                   {openGallery && (
-                    <GalleryModal
-                        images={gallery}
-                        onClose={() => setOpenGallery(false)}
-                    />
-                )}
-                    <div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
+                    {openGallery && (
+                        <GalleryModal
+                            images={gallery}
+                            onClose={() => setOpenGallery(false)}
+                        />
+                    )}
+                    {isAgency && (<div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                         <div className="flex-1 space-y-2">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
@@ -336,7 +352,7 @@ const gallery =
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                         </div>
                         <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">Cập nhật ngày</button>
-                    </div>
+                    </div>)}
 
                     <div className="space-y-6">
                         <h2 className="text-2xl font-black text-slate-800">Chọn phòng và xem giá</h2>
@@ -353,11 +369,10 @@ const gallery =
                             return (
                                 <div
                                     key={room.id}
-                                    className={`bg-white border rounded-[24px] flex flex-col md:flex-row p-5 gap-6 transition-all duration-300 ${
-                                        isSelected
+                                    className={`bg-white border rounded-[24px] flex flex-col md:flex-row p-5 gap-6 transition-all duration-300 ${isSelected
                                             ? "border-blue-500 shadow-[0_12px_40px_rgba(37,99,235,0.1)] ring-1 ring-blue-500"
                                             : "border-slate-100 shadow-sm hover:border-blue-200"
-                                    } ${room.isSoldOut ? 'opacity-75 grayscale-[0.5]' : ''}`} // Thêm độ mờ và xám nhẹ nếu hết phòng/inactive
+                                        } ${room.isSoldOut ? 'opacity-75 grayscale-[0.5]' : ''}`} // Thêm độ mờ và xám nhẹ nếu hết phòng/inactive
                                 >
                                     {/* 1. KHU VỰC THÔNG TIN CHÍNH (BÊN TRÁI) */}
                                     <div className="flex-1 flex flex-col justify-between">
@@ -371,13 +386,13 @@ const gallery =
                                                         {room.isSoldOut ? (
                                                             <span
                                                                 className="bg-slate-100 text-slate-500 text-[10px] px-2.5 py-1 rounded-md font-black uppercase tracking-wider border border-slate-200">
-                    Hết phòng
-                </span>
+                                                                Hết phòng
+                                                            </span>
                                                         ) : (
                                                             <span
                                                                 className="bg-emerald-50 text-emerald-600 text-[10px] px-2.5 py-1 rounded-md font-black uppercase tracking-wider border border-emerald-100">
-                    Khả dụng
-                </span>
+                                                                Khả dụng
+                                                            </span>
                                                         )}
 
                                                         {/* Nút xem chi tiết nổi bật để khách click */}
@@ -386,7 +401,7 @@ const gallery =
                                                             className="group flex items-center gap-1.5 text-blue-600 text-[11px] font-black uppercase tracking-widest hover:text-blue-800 transition-all active:scale-95"
                                                         >
                                                             <Info size={14}
-                                                                  className="group-hover:rotate-12 transition-transform"/>
+                                                                className="group-hover:rotate-12 transition-transform" />
                                                             <span
                                                                 className="border-b border-blue-200 group-hover:border-blue-600">Xem chi tiết</span>
                                                         </button>
@@ -398,26 +413,26 @@ const gallery =
                                             <div className="flex flex-wrap gap-2 mb-4">
                                                 <div
                                                     className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full text-[12px] text-slate-600 font-bold border border-slate-100">
-                                                    <Users size={14} className="text-slate-400"/>
+                                                    <Users size={14} className="text-slate-400" />
                                                     {room.maxAdults} Người
                                                     lớn {room.maxChildren > 0 && `& ${room.maxChildren} Trẻ em`}
                                                 </div>
                                                 {room.area > 0 && (
                                                     <div
                                                         className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full text-[12px] text-slate-600 font-bold border border-slate-100">
-                                                        <Maximize size={14} className="text-slate-400"/>
+                                                        <Maximize size={14} className="text-slate-400" />
                                                         {room.area} m²
                                                     </div>
                                                 )}
                                             </div>
-                                            </div>
+                                        </div>
 
                                         <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">
                                             <div
                                                 className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
                                                 <div
                                                     className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3}/>
+                                                    <Check size={12} strokeWidth={3} />
                                                 </div>
                                                 Xác nhận ngay
                                             </div>
@@ -425,7 +440,7 @@ const gallery =
                                                 className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
                                                 <div
                                                     className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3}/>
+                                                    <Check size={12} strokeWidth={3} />
                                                 </div>
                                                 Miễn phí hủy phòng
                                             </div>
@@ -440,15 +455,15 @@ const gallery =
                                                 Giá phòng/đêm từ
                                             </p>
                                             <div className="flex flex-col">
-        <span className={`text-3xl font-black tracking-tighter ${room.isSoldOut ? 'text-slate-300' : 'text-blue-600'}`}>
-          {room.price > 0 ? formatCurrency(room.price) : "—"}
-        </span>
+                                                <span className={`text-3xl font-black tracking-tighter ${room.isSoldOut ? 'text-slate-300' : 'text-blue-600'}`}>
+                                                    {room.price > 0 ? formatCurrency(room.price) : "—"}
+                                                </span>
                                             </div>
                                         </div>
 
                                         <div className="w-full space-y-4 mt-6">
 
-                                            <div className="flex flex-col gap-2">
+                                            {isAgency && (<div className="flex flex-col gap-2">
                                                 <div
                                                     className="flex items-center justify-between bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                                                     <button
@@ -456,7 +471,7 @@ const gallery =
                                                         disabled={currentCount === 0}
                                                         className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-30"
                                                     >
-                                                        <Minus size={18} strokeWidth={2.5}/>
+                                                        <Minus size={18} strokeWidth={2.5} />
                                                     </button>
 
                                                     <div className="flex flex-col items-center">
@@ -475,24 +490,23 @@ const gallery =
                                                         disabled={room.isSoldOut || currentCount >= room.quantity}
                                                         className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-30"
                                                     >
-                                                        <Plus size={18} strokeWidth={2.5}/>
+                                                        <Plus size={18} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
 
                                                 {/* Trạng thái trống */}
                                                 {room.quantity > 0 && (
                                                     <div
-                                                        className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-500 ${
-                                                            room.quantity <= 3
+                                                        className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-500 ${room.quantity <= 3
                                                                 ? 'bg-red-50 text-red-600 animate-pulse'
                                                                 : 'bg-emerald-50 text-emerald-700'
-                                                        }`}>
+                                                            }`}>
                                                         <span
                                                             className={`w-1.5 h-1.5 rounded-full ${room.quantity <= 3 ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
                                                         Còn {room.quantity} phòng trống
                                                     </div>
                                                 )}
-                                            </div>
+                                            </div>)}
                                         </div>
                                     </div>
                                 </div>
@@ -501,7 +515,7 @@ const gallery =
                     </div>
                 </main>
 
-                <div
+                {isAgency && (<div
                     className="sticky bottom-0 bg-white border-t border-slate-200 p-6 z-40 shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
                     <div className="max-w-[1200px] mx-auto flex justify-between items-center">
                         <div className="flex items-center gap-6">
@@ -509,7 +523,7 @@ const gallery =
                                 <>
                                     <div
                                         className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-100">
-                                        <Utensils size={24}/>
+                                        <Utensils size={24} />
                                     </div>
                                     <div>
                                         <span
@@ -524,7 +538,7 @@ const gallery =
                                 <div className="flex items-center gap-4 text-slate-400 italic">
                                     <div
                                         className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center">
-                                        <AlertCircle size={24}/></div>
+                                        <AlertCircle size={24} /></div>
                                     <span className="font-bold text-sm uppercase tracking-widest">Chưa chọn phòng</span>
                                 </div>
                             )}
@@ -543,11 +557,11 @@ const gallery =
                                 disabled={selectedRooms.length === 0}
                                 className={`px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center gap-3 shadow-2xl active:scale-95 ${selectedRooms.length > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                             >
-                                {selectedRooms.length > 0 ? "ĐẶT NGAY" : "CHỌN PHÒNG"} <ChevronRight size={20}/>
+                                {selectedRooms.length > 0 ? "ĐẶT NGAY" : "CHỌN PHÒNG"} <ChevronRight size={20} />
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>)}
             </div>
             {selectedDetailRoom && (
                 <RoomDetailModal

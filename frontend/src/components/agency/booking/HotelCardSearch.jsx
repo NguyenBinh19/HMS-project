@@ -19,7 +19,7 @@ const HotelCard = ({ hotel }) => {
         : "Chưa có";
 
     const handleViewDetail = (e) => {
-        navigate(`/search-hotel/hotels/${hotel.hotelId}`);
+        navigate(`/agency/search-hotel/hotels/${hotel.hotelId}`);
     };
 
     const handleToggleCompare = (e) => {

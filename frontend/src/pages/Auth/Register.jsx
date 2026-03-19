@@ -176,14 +176,7 @@ const Register = () => {
         setPasswordCriteria(criteria);
         setPasswordScore(Object.values(criteria).filter(Boolean).length);
 
-        if (pwd.length === 1 && scrollContainerRef.current) {
-            setTimeout(() => {
-                scrollContainerRef.current.scrollTo({
-                    top: scrollContainerRef.current.scrollHeight,
-                    behavior: "smooth",
-                });
-            }, 200);
-        }
+       
     }, [formData.password]);
 
     const getPasswordCriteria = (pwd = "") => ({

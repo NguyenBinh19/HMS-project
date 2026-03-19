@@ -22,22 +22,22 @@ const Sidebar = () => {
         {
             icon: <LayoutDashboard size={20} />,
             label: "DASHBOARD",
-            path: "/agency-dashboard"
+            path: "/agency/agency-dashboard"
         },
         {
             icon: <Users size={20} />,
             label: "HỒ SƠ ĐẠI LÝ",
-            path: "/agency-profile"
+            path: "/agency/agency-profile"
         },
         {
             icon: <Search size={20} />,
             label: "TÌM KIẾM PHÒNG",
-            path: "/search-hotel"
+            path: "/agency/search-hotel"
         },
         {
             icon: <Users size={20} />,
             label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN",
-            path: "/staff"
+            path: "/agency/staff"
         },
         {
             icon: <Wallet size={20} />,
@@ -56,10 +56,10 @@ const Sidebar = () => {
         {
             icon: <CalendarDays size={20} />,
             label: "QUẢN LÝ BOOKING",
-            path: "/",
+            path: "/agency/",
             subItems: [
-                { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/booking-checkout" },
-                { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/booking-list" },
+                // { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/agency/booking-checkout" },
+                { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/agency/booking-list" },
                 { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
             ]
         },
