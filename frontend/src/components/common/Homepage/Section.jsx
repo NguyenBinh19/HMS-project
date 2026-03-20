@@ -5,6 +5,8 @@ import {
     Building2, UserCheck, ShieldCheck, Bot, Wallet,
     Users, Plus, Minus, ChevronDown
 } from "lucide-react";
+import { useLocation } from 'react-router-dom';
+import { jwtDecode } from "jwt-decode";
 import homepage from "@/assets/images/homepage.jpg";
 
 const HomePage = () => {
@@ -27,7 +29,32 @@ const HomePage = () => {
 
     const today = new Date().toISOString().split("T")[0];
     const guestSummary = `${roomCount} phòng, ${adults} người lớn, ${children} trẻ em`;
+    const getRoleFromToken = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) return "HOTEL"; // fallback
 
+            const decoded = jwtDecode(token);
+            let roles = decoded?.scope;
+
+            if (!Array.isArray(roles)) {
+                roles = roles ? [roles] : [];
+            }
+
+            if (roles.some(r => r.startsWith("ROLE_AGENCY"))) {
+                return "AGENCY";
+            }
+
+            if (roles.some(r => r.startsWith("ROLE_HOTEL"))) {
+                return "HOTEL";
+            }
+
+            return "HOTEL"; // fallback
+        } catch (err) {
+            console.error("Decode token lỗi:", err);
+            return "HOTEL";
+        }
+    };
     // 3. Đóng guest picker khi click ngoài
     useEffect(() => {
         const handler = (e) => {
@@ -51,6 +78,8 @@ const HomePage = () => {
             return;
         }
 
+        const currentRole = getRoleFromToken();
+
         const params = new URLSearchParams();
         params.set("keyword", keyword.trim());
         if (checkIn) params.set("checkIn", checkIn);
@@ -59,7 +88,14 @@ const HomePage = () => {
         params.set("adults", String(adults));
         params.set("children", String(children));
 
-        navigate(`agency/search-hotel/list?${params.toString()}`);
+        // Điều hướng dựa trên Role
+        if (currentRole === "HOTEL") {
+            // Nếu là HOTEL -> đi đến hotel/list-hotel
+            navigate(`/hotel/list-hotel?${params.toString()}`);
+        } else {
+            // Nếu là AGENCY (hoặc mặc định) -> giữ nguyên agency/search-hotel/list
+            navigate(`/agency/search-hotel/list?${params.toString()}`);
+        }
     };
 
     // 5. Hàm điều hướng cho 2 nút Agency/Hotel

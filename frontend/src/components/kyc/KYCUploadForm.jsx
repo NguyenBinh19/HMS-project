@@ -193,6 +193,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         }
     };
 
+
     if (isFetchingOldData) {
         return (
             <div className="p-20 text-center flex flex-col items-center gap-4">

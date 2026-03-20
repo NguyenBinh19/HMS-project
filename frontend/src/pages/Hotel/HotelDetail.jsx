@@ -206,7 +206,7 @@ console.log(token)
             const res = await bookingService.holdRoom(payload);
 
             if (res?.result) {
-                navigate("/booking-checkout", {
+                navigate("/agency/booking-checkout", {
                     state: {
                         holdCode: res.result.holdCode,
                         expiredAt: res.result.expiredAt,

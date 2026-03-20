@@ -2,12 +2,35 @@ import { useNavigate } from "react-router-dom";
 import { Eye, MapPin, Star, CheckCircle2, Plus } from "lucide-react"; // Thêm icon để trực quan hơn
 import React from "react";
 import { useCompare } from '@/context/CompareContext.jsx';
+import { jwtDecode } from "jwt-decode";
 
 const HotelCard = ({ hotel }) => {
     const navigate = useNavigate();
     const { compareItems, toggleCompareItem } = useCompare();
 
     const isSelected = compareItems.some(item => item.hotelId === hotel.hotelId);
+
+    const getRoleFromToken = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) return "AGENCY";
+
+            const decoded = jwtDecode(token);
+            let roles = decoded?.scope;
+
+            if (!Array.isArray(roles)) {
+                roles = roles ? [roles] : [];
+            }
+
+            // Ưu tiên kiểm tra ROLE_HOTEL
+            if (roles.some(r => r.startsWith("ROLE_HOTEL"))) {
+                return "HOTEL";
+            }
+            return "AGENCY";
+        } catch (err) {
+            return "AGENCY";
+        }
+    };
 
     const coverImg = hotel.images && hotel.images.length > 0
         ? hotel.images[0]
@@ -19,7 +42,13 @@ const HotelCard = ({ hotel }) => {
         : "Chưa có";
 
     const handleViewDetail = (e) => {
-        navigate(`/agency/search-hotel/hotels/${hotel.hotelId}`);
+        if (e) e.stopPropagation();
+        const userRole = getRoleFromToken();
+        if (userRole === "HOTEL") {
+            navigate(`/hotel/list-hotel/hotels/${hotel.hotelId}`);
+        } else {
+            navigate(`/agency/search-hotel/hotels/${hotel.hotelId}`);
+        }
     };
 
     const handleToggleCompare = (e) => {

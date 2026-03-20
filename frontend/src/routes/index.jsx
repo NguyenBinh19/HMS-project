@@ -54,6 +54,8 @@ import RevenueReport from "@/pages/Hotel/RevenueReport.jsx";
 import PayoutStatement from "@/pages/Hotel/PayoutStatement.jsx";
 import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
+import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
+import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
     return (
@@ -115,6 +117,8 @@ const AppRoutes = () => {
                             <HotelMain />
                         </ProtectedRoute>
                     }>
+                    <Route path="list-hotel" element={<HotelSearchResult />} />
+                    <Route path="list-hotel/hotels/:id" element={<RoomTypeDetailList />} />
                     <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
