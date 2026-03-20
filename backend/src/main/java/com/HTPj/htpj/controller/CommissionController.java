@@ -3,6 +3,7 @@ package com.HTPj.htpj.controller;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
+import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.service.CommissionService;
@@ -49,6 +50,13 @@ public class CommissionController {
     public ApiResponse<CommissionDetailResponse> getDetail(@PathVariable Long id) {
         return ApiResponse.<CommissionDetailResponse>builder()
                 .result(commissionService.getDetail(id))
+                .build();
+    }
+
+    @PutMapping
+    public ApiResponse<String> update(@RequestBody UpdateCommissionRequest request) {
+        return ApiResponse.<String>builder()
+                .result(commissionService.update(request))
                 .build();
     }
 }

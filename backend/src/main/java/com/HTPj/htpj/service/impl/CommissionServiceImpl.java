@@ -2,6 +2,7 @@ package com.HTPj.htpj.service.impl;
 
 import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
+import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.entity.Commission;
@@ -10,7 +11,6 @@ import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.CommissionHotelRepository;
-import com.HTPj.htpj.repository.CommissionLogRepository;
 import com.HTPj.htpj.repository.CommissionRepository;
 import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.service.CommissionService;
@@ -32,7 +32,6 @@ public class CommissionServiceImpl implements CommissionService {
 
     CommissionRepository commissionRepository;
     CommissionHotelRepository commissionHotelRepository;
-    CommissionLogRepository commissionLogRepository;
     HotelRepository hotelRepository;
 
     private String getUserId() {
@@ -84,8 +83,8 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setCommissionType("HOTEL");
             commission.setRateType(request.getRateType());
             commission.setCommissionValue(request.getCommissionValue());
-            commission.setStartDate(request.getStartDate());
-            commission.setEndDate(request.getEndDate());
+            commission.setStartDate(null);
+            commission.setEndDate(null);
             commission.setIsActive(request.getIsActive());
             commission.setNote(request.getNote());
         }
@@ -176,10 +175,6 @@ public class CommissionServiceImpl implements CommissionService {
         CommissionDetailResponse response = new CommissionDetailResponse();
         response.setCommission(commission);
 
-        // DEFAULT
-        if ("DEFAULT".equals(commission.getCommissionType())) {
-            response.setLogs(commissionLogRepository.findByCommissionId(commissionId));
-        }
 
         // HOTEL
         if ("HOTEL".equals(commission.getCommissionType())) {
@@ -193,5 +188,117 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         return response;
+    }
+
+    @Override
+    public String update(UpdateCommissionRequest request) {
+
+        Commission commission = commissionRepository.findById(request.getCommissionId())
+                .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
+
+        String userId = getUserId();
+        LocalDateTime now = LocalDateTime.now();
+
+        String type = commission.getCommissionType();
+
+        // default
+        if ("DEFAULT".equals(type)) {
+            commission.setRateType(request.getRateType());
+            commission.setCommissionValue(request.getCommissionValue());
+            commission.setNote(request.getNote());
+            commission.setReason(request.getReason());
+        }
+
+        // deal
+        else if ("DEAL".equals(type)) {
+            List<Hotel> hotelsUsingCommission =
+                    hotelRepository.findByCommissionId(commission.getCommissionId());
+
+            boolean isUsed = hotelsUsingCommission != null && !hotelsUsingCommission.isEmpty();
+
+            // đã sd
+            if (isUsed) {
+                commission.setStartDate(request.getStartDate());
+                commission.setEndDate(request.getEndDate());
+                commission.setNote(request.getNote());
+                commission.setReason(request.getReason());
+
+            //chua sd
+            } else {
+                commission.setRateType(request.getRateType());
+                commission.setCommissionValue(request.getCommissionValue());
+                commission.setStartDate(request.getStartDate());
+                commission.setEndDate(request.getEndDate());
+                commission.setNote(request.getNote());
+                commission.setReason(request.getReason());
+            }
+        }
+
+        // hotel
+        else {
+
+            commission.setRateType(request.getRateType());
+            commission.setCommissionValue(request.getCommissionValue());
+            commission.setNote(request.getNote());
+            commission.setReason(request.getReason());
+
+            //check hotel exits
+            List<CommissionHotel> existingHotels =
+                    commissionHotelRepository.findByCommissionId(commission.getCommissionId());
+
+            boolean existed = existingHotels != null && !existingHotels.isEmpty();
+
+            if (existed) {
+                for (CommissionHotel ch : existingHotels) {
+
+                    Hotel hotel = hotelRepository.findById(ch.getHotelId())
+                            .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+                    hotel.setUpdatedAt(now);
+
+                    hotel.setCommissionValue(request.getCommissionValue());
+                    hotel.setRateType(request.getRateType());
+
+                    hotel.setCommissionUpdatedAt(now);
+                    hotel.setCommissionUpdatedBy(userId);
+
+                    hotelRepository.save(hotel);
+                }
+            }
+            else {
+
+                for (Integer hotelId : request.getHotelIds()) {
+
+                    // insert mapping
+                    CommissionHotel ch = new CommissionHotel();
+                    ch.setCommissionId(commission.getCommissionId());
+                    ch.setHotelId(hotelId);
+                    commissionHotelRepository.save(ch);
+
+                    Hotel hotel = hotelRepository.findById(hotelId)
+                            .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+                    hotel.setUpdatedAt(now);
+
+                    hotel.setCommissionValue(request.getCommissionValue());
+                    hotel.setRateType(request.getRateType());
+                    hotel.setCommissionId(commission.getCommissionId());
+                    hotel.setCommissionType("HOTEL");
+
+                    hotel.setCommissionUpdatedAt(now);
+                    hotel.setCommissionUpdatedBy(userId);
+
+                    hotelRepository.save(hotel);
+                }
+            }
+        }
+
+        // common update
+        commission.setUpdatedAt(now);
+        commission.setUpdatedBy(userId);
+
+        commissionRepository.save(commission);
+
+        return "Update successfully";
     }
 }

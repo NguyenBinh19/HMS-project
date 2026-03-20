@@ -2,6 +2,7 @@ package com.HTPj.htpj.service;
 
 import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
+import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 
@@ -15,4 +16,6 @@ public interface CommissionService {
     List<CommissionResponse> getAll();
 
     CommissionDetailResponse getDetail(Long commissionId);
+
+    String update(UpdateCommissionRequest request);
 }
