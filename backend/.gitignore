@@ -12,4 +12,7 @@ target/
 .DS_Store
 Thumbs.db
 
-src/main/java/com/htpj/config/DataSourceConfig.java
+src/main/java/com/HTTPj/htpj/config/DataSourceConfig.java
+src/main/java/com/HTTPj/httpj/temporal/config/TemporalConfig.java
+src/main/java/com/HTTPj/httpj/temporal/client/RoomHoldWorkflowClient.java
+src/main/java/com/HTTPj/httpj/service/impl/RoomHoldServiceImpl.java

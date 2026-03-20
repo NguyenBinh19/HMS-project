@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Building, User, Edit3, CheckCircle2, Plus, X, RefreshCw } from 'lucide-react';
 import { kycService } from '@/services/kyc.service.js';
 import { useLocation } from 'react-router-dom';
-
+import { jwtDecode } from "jwt-decode";
 const KYCUploadForm = ({ onBack, onSubmit }) => {
     const location = useLocation();
     const [loading, setLoading] = useState(false);
@@ -10,8 +10,37 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
+    const getPartnerTypeFromToken = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) return "HOTEL";
+
+            const decoded = jwtDecode(token);
+
+            // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
+
+            // 2. Chuẩn hóa về mảng String để dễ xử lý
+            const rolesArray = Array.isArray(rawRoles)
+                ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
+                : String(rawRoles).split(" ");
+
+            if (rolesArray.some(role => role.includes("AGENCY"))) {
+                return "AGENCY";
+            }
+
+            if (rolesArray.some(role => role.includes("HOTEL"))) {
+                return "HOTEL";
+            }
+
+            return "HOTEL";
+        } catch (err) {
+            console.error("Lỗi Decode Token trong KYC Form:", err);
+            return "HOTEL";
+        }
+    };
     const [formData, setFormData] = useState({
-        partnerType: navPartnerType || "HOTEL",
+        partnerType: getPartnerTypeFromToken(),
         legalName: "",
         taxCode: "",
         businessAddress: "",
@@ -77,9 +106,35 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         }
     };
 
+    // 1. Chỉ cho phép nhập số
+    const onlyNumbers = (val) => val.replace(/[^0-9]/g, "");
+
+    // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
+    const formatTaxCode = (val) => {
+        const digits = onlyNumbers(val).slice(0, 13);
+        if (digits.length > 10) {
+            return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
+        }
+        return digits;
+    };
+
+    // 3. Format CCCD (Max 12 số)
+    const formatCIC = (val) => onlyNumbers(val).slice(0, 12);
+
     const handleFinalSubmit = async () => {
         if (!formData.legalName || !formData.taxCode) {
             alert("Vui lòng điền các thông tin bắt buộc!");
+            return;
+        }
+        const rawTaxCode = formData.taxCode.replace("-", "");
+
+        if (rawTaxCode.length !== 10 && rawTaxCode.length !== 13) {
+            alert("Mã số thuế phải có 10 hoặc 13 số!");
+            return;
+        }
+
+        if (formData.representativeCICNumber.length !== 12 && formData.representativeCICNumber.length !== 9) {
+            alert("Số CCCD phải có 12 số (hoặc 9 số với CMND cũ)!");
             return;
         }
 
@@ -141,6 +196,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         }
     };
 
+
     if (isFetchingOldData) {
         return (
             <div className="p-20 text-center flex flex-col items-center gap-4">
@@ -153,74 +209,75 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
     return (
         <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white max-h-[90vh] overflow-y-auto">
             <div className="space-y-6">
-                {isUpdateMode ? (
-                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-start gap-3 mb-6">
-                        <RefreshCw className="text-blue-600 shrink-0 mt-1" size={20}/>
-                        <div>
-                            <p className="text-xs font-black text-blue-800 uppercase tracking-tight">Chế độ: Cập nhật thông tin</p>
-                            <p className="text-[11px] text-blue-700 mt-1 font-medium italic">Bạn đang gửi yêu cầu thay đổi cho hồ sơ pháp lý hiện tại.</p>
-                        </div>
+                
+                <div className="mb-6">
+                    <label className="text-xs font-bold text-slate-400 uppercase">Loại đối tác</label>
+                    <div className="mt-2 px-4 py-3 bg-slate-100 rounded-xl font-bold text-blue-600 text-sm">
+                        {formData.partnerType === "HOTEL" ? "KHÁCH SẠN" : "ĐẠI LÝ"}
                     </div>
-                ) : (
-                    <div className="mb-6">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 ml-1">Loại đối tác:</label>
-                        <div className="flex gap-4 p-1 bg-slate-100 rounded-2xl">
-                            {['HOTEL', 'AGENCY'].map((type) => (
-                                <button key={type} type="button" onClick={() => setFormData(prev => ({...prev, partnerType: type}))} className={`flex-1 py-3 rounded-xl font-bold text-xs transition-all ${formData.partnerType === type ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}>{type === 'HOTEL' ? 'KHÁCH SẠN' : 'ĐẠI LÝ'}</button>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                </div>
 
                 <div className="space-y-3">
                     <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">1. Giấy phép kinh doanh</label>
                     <div className="grid grid-cols-2 gap-3">
                         {oldUrls.gpkd.map((url, idx) => (
                             <div key={`old-${idx}`} className="relative aspect-video rounded-xl overflow-hidden border-2 border-slate-100 group">
-                                <img src={url} className="w-full h-full object-cover" alt="old-gpkd"/>
+                                <img src={url} className="w-full h-full object-cover" alt="old-gpkd" />
                                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                                     <span className="text-[8px] bg-white/90 text-slate-800 px-2 py-1 rounded font-bold uppercase tracking-tighter">Ảnh đã lưu</span>
                                 </div>
-                                <button type="button" onClick={() => setOldUrls(prev => ({...prev, gpkd: prev.gpkd.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10}/></button>
+                                <button type="button" onClick={() => setOldUrls(prev => ({ ...prev, gpkd: prev.gpkd.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
                             </div>
                         ))}
                         {files.gpkd.map((file, idx) => (
                             <div key={`new-${idx}`} className="relative aspect-video rounded-xl overflow-hidden border-2 border-emerald-400">
-                                <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="new-gpkd"/>
-                                <button type="button" onClick={() => setFiles(p => ({...p, gpkd: p.gpkd.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><X size={10}/></button>
+                                <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="new-gpkd" />
+                                <button type="button" onClick={() => setFiles(p => ({ ...p, gpkd: p.gpkd.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><X size={10} /></button>
                             </div>
                         ))}
                         <label className="border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center hover:bg-blue-50 cursor-pointer min-h-[100px]">
-                            <input type="file" hidden multiple onChange={(e) => setFiles(prev => ({...prev, gpkd: [...prev.gpkd, ...Array.from(e.target.files)]}))} accept="image/*"/>
-                            <Plus size={20} className="text-slate-400"/><span className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Thêm mới</span>
+                            <input type="file" hidden multiple onChange={(e) => setFiles(prev => ({ ...prev, gpkd: [...prev.gpkd, ...Array.from(e.target.files)] }))} accept="image/*" />
+                            <Plus size={20} className="text-slate-400" /><span className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Thêm mới</span>
                         </label>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <UploadBox title="2. CCCD mặt trước" file={files.front} oldUrl={oldUrls.front} onFileSelect={(file) => { setFiles(p => ({...p, front: file})); setOldUrls(p => ({...p, front: null})); }} />
-                    <UploadBox title="3. CCCD mặt sau" file={files.back} oldUrl={oldUrls.back} onFileSelect={(file) => { setFiles(p => ({...p, back: file})); setOldUrls(p => ({...p, back: null})); }} />
+                    <UploadBox title="2. CCCD mặt trước" file={files.front} oldUrl={oldUrls.front} onFileSelect={(file) => { setFiles(p => ({ ...p, front: file })); setOldUrls(p => ({ ...p, front: null })); }} />
+                    <UploadBox title="3. CCCD mặt sau" file={files.back} oldUrl={oldUrls.back} onFileSelect={(file) => { setFiles(p => ({ ...p, back: file })); setOldUrls(p => ({ ...p, back: null })); }} />
                 </div>
             </div>
 
             <div className="space-y-6">
-                <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest"><Building size={16} className="text-blue-600"/> Thông tin pháp lý</h3>
+                <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest"><Building size={16} className="text-blue-600" /> Thông tin pháp lý</h3>
                 <div className="space-y-3">
-                    <OCRInput label="Tên Doanh nghiệp" name="legalName" value={formData.legalName} onChange={(e) => setFormData(p => ({...p, legalName: e.target.value}))}/>
+                    <OCRInput label="Tên Doanh nghiệp" name="legalName" value={formData.legalName} onChange={(e) => setFormData(p => ({ ...p, legalName: e.target.value }))} />
                     <div className="grid grid-cols-2 gap-3">
-                        <OCRInput label="Mã số thuế" name="taxCode" value={formData.taxCode} onChange={(e) => setFormData(p => ({...p, taxCode: e.target.value}))}/>
-                        <OCRInput label="Số GPKD" name="businessLicenseNumber" value={formData.businessLicenseNumber} onChange={(e) => setFormData(p => ({...p, businessLicenseNumber: e.target.value}))}/>
+                        <OCRInput
+                            label="Mã số thuế"
+                            value={formData.taxCode}
+                            onChange={(e) => setFormData(p => ({ ...p, taxCode: formatTaxCode(e.target.value) }))}
+                        />
+                        <OCRInput
+                            label="Số GPKD"
+                            value={formData.businessLicenseNumber}
+                            onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
+                        />
                     </div>
-                    <OCRInput label="Địa chỉ trụ sở" name="businessAddress" value={formData.businessAddress} isTextArea onChange={(e) => setFormData(p => ({...p, businessAddress: e.target.value}))}/>
+                    <OCRInput label="Địa chỉ trụ sở" name="businessAddress" value={formData.businessAddress} isTextArea onChange={(e) => setFormData(p => ({ ...p, businessAddress: e.target.value }))} />
                 </div>
 
                 <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest pt-4"><User size={16} className="text-blue-600" /> Người đại diện</h3>
                 <div className="space-y-3">
-                    <OCRInput label="Họ và tên" name="representativeName" value={formData.representativeName} onChange={(e) => setFormData(p => ({...p, representativeName: e.target.value}))}/>
-                    <OCRInput label="Số CCCD" name="representativeCICNumber" value={formData.representativeCICNumber} onChange={(e) => setFormData(p => ({...p, representativeCICNumber: e.target.value}))}/>
+                    <OCRInput label="Họ và tên" name="representativeName" value={formData.representativeName} onChange={(e) => setFormData(p => ({ ...p, representativeName: e.target.value }))} />
+                    <OCRInput
+                        label="Số CCCD"
+                        value={formData.representativeCICNumber}
+                        onChange={(e) => setFormData(p => ({ ...p, representativeCICNumber: formatCIC(e.target.value) }))}
+                    />
                     <div className="grid grid-cols-2 gap-3">
-                        <OCRInput label="Ngày cấp" name="representativeCICDate" type="date" value={formData.representativeCICDate} onChange={(e) => setFormData(p => ({...p, representativeCICDate: e.target.value}))}/>
-                        <OCRInput label="Nơi cấp" name="representativeCICPlace" value={formData.representativeCICPlace} onChange={(e) => setFormData(p => ({...p, representativeCICPlace: e.target.value}))}/>
+                        <OCRInput label="Ngày cấp" name="representativeCICDate" type="date" value={formData.representativeCICDate} onChange={(e) => setFormData(p => ({ ...p, representativeCICDate: e.target.value }))} />
+                        <OCRInput label="Nơi cấp" name="representativeCICPlace" value={formData.representativeCICPlace} onChange={(e) => setFormData(p => ({ ...p, representativeCICPlace: e.target.value }))} />
                     </div>
                 </div>
 
@@ -245,7 +302,7 @@ const UploadBox = ({ title, onFileSelect, file, oldUrl }) => {
                 <input type="file" hidden ref={inputRef} onChange={(e) => onFileSelect(e.target.files[0])} accept="image/*" />
                 {previewSrc ? (
                     <div className="relative w-full h-full group">
-                        <img src={previewSrc} className="w-full h-full object-cover" alt="preview"/>
+                        <img src={previewSrc} className="w-full h-full object-cover" alt="preview" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity text-white">
                             <Camera size={24} /><p className="text-[10px] font-black mt-2">THAY ĐỔI ẢNH</p>
                         </div>

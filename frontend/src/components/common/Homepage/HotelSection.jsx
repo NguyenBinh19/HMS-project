@@ -59,7 +59,7 @@ const HotelSection = () => {
                     {hotels.map((home) => (
                         <div
                             key={home.id}
-                            onClick={() => navigate(`/search-hotel/hotels/${home.id}`)}
+                            onClick={() => navigate(`/agency/search-hotel/hotels/${home.id}`)}
                             className="bg-white rounded-xl shadow-md hover:shadow-lg transition cursor-pointer"
                         >
                             {/* Image */}

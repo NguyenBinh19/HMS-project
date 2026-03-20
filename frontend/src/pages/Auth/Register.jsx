@@ -18,6 +18,7 @@ import {
     Phone,
     Building2,
     Briefcase,
+    AlertCircle
 } from "lucide-react";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
 import LegalModal from "../../components/auth/LegalModal.jsx";
@@ -149,6 +150,7 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
     const [error, setError] = useState("");
     const [focusedField, setFocusedField] = useState(null);
 
@@ -176,15 +178,35 @@ const Register = () => {
         setPasswordCriteria(criteria);
         setPasswordScore(Object.values(criteria).filter(Boolean).length);
 
-        if (pwd.length === 1 && scrollContainerRef.current) {
-            setTimeout(() => {
-                scrollContainerRef.current.scrollTo({
-                    top: scrollContainerRef.current.scrollHeight,
-                    behavior: "smooth",
-                });
-            }, 200);
-        }
+       
     }, [formData.password]);
+
+    const validateForm = () => {
+        let newErrors = {};
+
+        // Validate Họ tên
+        if (!formData.username.trim()) {
+            newErrors.username = "Họ và tên không được để trống";
+        } else if (formData.username.trim().length < 2) {
+            newErrors.username = "Họ và tên quá ngắn";
+        }
+
+        // Validate Email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!formData.email) {
+            newErrors.email = "Email không được để trống";
+        } else if (!emailRegex.test(formData.email)) {
+            newErrors.email = "Định dạng email không hợp lệ";
+        }
+
+        // Validate Số điện thoại (Nếu nhập thì phải đúng 10 số)
+        if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\s/g, ""))) {
+            newErrors.phone = "Số điện thoại phải gồm 10 chữ số";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const getPasswordCriteria = (pwd = "") => ({
         length: pwd.length >= 6,
@@ -194,8 +216,17 @@ const Register = () => {
     });
 
     const handleChange = (e) => {
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-        if (error) setError("");
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        // Xóa lỗi của trường đang nhập
+        if (errors[name]) {
+            setErrors(prev => {
+                const newErrs = { ...prev };
+                delete newErrs[name];
+                return newErrs;
+            });
+        }
     };
 
     const handleSocialLogin = (provider) => {
@@ -204,6 +235,15 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(""); // Xóa lỗi tổng quát (nếu còn dùng)
+
+        if (!validateForm()) {
+            // Tự động cuộn lên lỗi đầu tiên
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+            }
+            return;
+        }
 
         if (!agreed) {
             setError("Bạn cần đồng ý với Điều khoản dịch vụ để tiếp tục.");
@@ -472,6 +512,11 @@ const Register = () => {
                                             }`}
                                         placeholder="Họ và tên đầy đủ"
                                     />
+                                    {errors.username && (
+                                        <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
+                                            <AlertCircle size={12} /> {errors.username}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Email */}
@@ -497,6 +542,11 @@ const Register = () => {
                                             }`}
                                         placeholder="Email"
                                     />
+                                    {errors.email && (
+                                        <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
+                                            <AlertCircle size={12} /> {errors.email}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Phone */}
@@ -522,6 +572,11 @@ const Register = () => {
                                             }`}
                                         placeholder="Số điện thoại (tuỳ chọn)"
                                     />
+                                    {errors.phone && (
+                                        <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
+                                            <AlertCircle size={12} /> {errors.phone}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Password */}
@@ -736,19 +791,6 @@ const Register = () => {
                                         className="w-5 h-5 group-hover:scale-110 transition-transform"
                                     />{" "}
                                     Google
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin("facebook")}
-                                    className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl hover:bg-[#1877F2]/5 hover:text-[#1877F2] font-bold text-slate-600 text-sm group"
-                                >
-                                    <img
-                                        src="https://www.svgrepo.com/show/475647/facebook-color.svg"
-                                        alt="F"
-                                        className="w-5 h-5 group-hover:scale-110 transition-transform"
-                                    />{" "}
-                                    Facebook
                                 </button>
                             </div>
 

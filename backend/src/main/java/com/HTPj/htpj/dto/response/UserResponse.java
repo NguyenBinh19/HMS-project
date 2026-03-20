@@ -25,4 +25,6 @@ public class UserResponse {
     LocalDate dob;
     LocalDateTime lastLogin;
     Set<RoleResponse> roles;
+    Long agencyId;
+    Integer hotelId;
 }

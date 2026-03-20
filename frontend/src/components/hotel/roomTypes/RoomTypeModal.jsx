@@ -183,7 +183,7 @@ const RoomTypeModal = ({ onClose, onSuccess }) => {
                 maxChildren: Number(form.maxChildren),
                 roomArea: Number(form.roomArea) || 0,
                 bedType: form.bedType,
-                keywords: form.keywords,
+                // keywords: form.keywords,
                 totalRooms: Number(form.totalRooms),
                 amenities: form.amenities,
                 roomStatus: form.roomStatus
@@ -248,7 +248,7 @@ const RoomTypeModal = ({ onClose, onSuccess }) => {
                     <section>
                         <h3 className="text-sm font-bold text-slate-900 mb-4">Mô tả phòng (Marketing)</h3>
                         <div className="space-y-4">
-                            <InputField label="Từ khóa chính (SEO)" name="keywords" value={form.keywords} onChange={handleChange} icon={Tag} placeholder="view biển, ban công..." />
+                            {/*<InputField label="Từ khóa chính (SEO)" name="keywords" value={form.keywords} onChange={handleChange} icon={Tag} placeholder="view biển, ban công..." />*/}
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-slate-700">Mô tả chi tiết</label>
                                 <div className="relative">

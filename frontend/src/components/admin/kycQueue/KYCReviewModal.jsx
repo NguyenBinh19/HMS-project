@@ -117,7 +117,7 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                     <div>
                         <div className="flex items-center gap-3">
                             <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase italic">
-                                Xét duyệt hồ sơ <span className="text-blue-600">#{actualData.id}</span>
+                                Xét duyệt hồ sơ <span className="text-blue-600">Version {actualData.version}</span>
                             </h2>
                             {(actualData.agencyId || actualData.hotelId) && (
                                 <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-sm">
@@ -236,40 +236,39 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                     </div>
                 </div>
 
-                {/* --- Footer --- */}
-                <div className="p-6 border-t bg-white flex justify-between items-center shrink-0 px-8">
-                    <div className="flex items-center gap-3 text-slate-400">
-                        <div className="p-2 bg-slate-100 rounded-full"><Clock size={16} /></div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thẩm định viên</span>
-                            <span className="text-[11px] font-medium italic">Vui lòng đối soát kỹ thông tin trước khi nhấn phê duyệt</span>
+                {/* --- Footer Logic đã sửa --- */}
+                {actualData?.status === KYC_STATUS.PENDING ? (
+                    <div className="p-6 border-t bg-white flex justify-between items-center shrink-0 px-8">
+                        <div className="flex items-center gap-3 text-slate-400">
+                            <div className="p-2 bg-slate-100 rounded-full"><Clock size={16} /></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thẩm định viên</span>
+                                <span className="text-[11px] font-medium italic">Vui lòng đối soát kỹ thông tin</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <button disabled={submitting} onClick={() => handleAction(KYC_STATUS.NEED_MORE_INFORMATION)} className="px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 rounded-2xl text-[11px] font-black uppercase transition-all">
+                                Yêu cầu bổ sung
+                            </button>
+                            <button disabled={submitting} onClick={() => handleAction(KYC_STATUS.REJECTED)} className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-[11px] font-black uppercase transition-all">
+                                Từ chối hồ sơ
+                            </button>
+                            <button disabled={submitting} onClick={() => handleAction(KYC_STATUS.VERIFIED)} className="px-12 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-2xl text-[11px] font-black uppercase transition-all shadow-xl">
+                                {submitting ? "Đang xử lý..." : <div className="flex items-center gap-2"><Check size={18} /> Phê duyệt</div>}
+                            </button>
                         </div>
                     </div>
-
-                    <div className="flex gap-4">
-                        <button
-                            disabled={submitting}
-                            onClick={() => handleAction(KYC_STATUS.NEED_MORE_INFORMATION)}
-                            className="px-6 py-3 bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 rounded-2xl text-[11px] font-black uppercase transition-all flex items-center gap-2"
-                        >
-                            Yêu cầu bổ sung
-                        </button>
-                        <button
-                            disabled={submitting}
-                            onClick={() => handleAction(KYC_STATUS.REJECTED)}
-                            className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-[11px] font-black uppercase transition-all"
-                        >
-                            Từ chối hồ sơ
-                        </button>
-                        <button
-                            disabled={submitting}
-                            onClick={() => handleAction(KYC_STATUS.VERIFIED)}
-                            className="px-12 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-2xl text-[11px] font-black uppercase transition-all shadow-xl shadow-blue-200 flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {submitting ? "Đang xử lý..." : <><Check size={18} /> Phê duyệt đối tác</>}
+                ) : (
+                    <div className="p-6 border-t bg-slate-50 flex justify-between items-center shrink-0 px-8">
+                        <div className="flex items-center gap-3 text-slate-500">
+                            <Info size={20} className="text-blue-500" />
+                            <span className="text-sm font-bold italic">Chế độ xem hồ sơ {actualData?.status}</span>
+                        </div>
+                        <button onClick={onClose} className="px-8 py-3 bg-slate-800 text-white rounded-2xl text-[11px] font-black uppercase hover:bg-slate-900 transition-all">
+                            Đóng cửa sổ
                         </button>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

@@ -5,6 +5,8 @@ import {
     Building2, UserCheck, ShieldCheck, Bot, Wallet,
     Users, Plus, Minus, ChevronDown
 } from "lucide-react";
+import { useLocation } from 'react-router-dom';
+import { jwtDecode } from "jwt-decode";
 import homepage from "@/assets/images/homepage.jpg";
 
 const HomePage = () => {
@@ -27,7 +29,37 @@ const HomePage = () => {
 
     const today = new Date().toISOString().split("T")[0];
     const guestSummary = `${roomCount} phòng, ${adults} người lớn, ${children} trẻ em`;
+    const getRoleFromToken = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) return "HOTEL"; // Fallback nếu chưa đăng nhập
 
+            const decoded = jwtDecode(token);
+
+            // 1. Quét tất cả các trường có thể chứa Role (Đồng bộ với ProtectedRoute)
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
+
+            // 2. Chuyển thành mảng String chuẩn
+            const rolesArray = Array.isArray(rawRoles)
+                ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
+                : String(rawRoles).split(" ");
+
+            // 3. Ưu tiên kiểm tra AGENCY trước để điều hướng Agency Search
+            if (rolesArray.some(role => role.includes("AGENCY"))) {
+                return "AGENCY";
+            }
+
+            // 4. Nếu có Role HOTEL
+            if (rolesArray.some(role => role.includes("HOTEL"))) {
+                return "HOTEL";
+            }
+
+            return "HOTEL"; // Mặc định nếu không khớp
+        } catch (err) {
+            console.error("Lỗi giải mã Token tại HomePage:", err);
+            return "HOTEL";
+        }
+    };
     // 3. Đóng guest picker khi click ngoài
     useEffect(() => {
         const handler = (e) => {
@@ -51,6 +83,8 @@ const HomePage = () => {
             return;
         }
 
+        const currentRole = getRoleFromToken();
+
         const params = new URLSearchParams();
         params.set("keyword", keyword.trim());
         if (checkIn) params.set("checkIn", checkIn);
@@ -59,7 +93,14 @@ const HomePage = () => {
         params.set("adults", String(adults));
         params.set("children", String(children));
 
-        navigate(`/search-hotel/list?${params.toString()}`);
+        // Điều hướng dựa trên Role
+        if (currentRole === "HOTEL") {
+            // Nếu là HOTEL -> đi đến hotel/list-hotel
+            navigate(`/hotel/list-hotel?${params.toString()}`);
+        } else {
+            // Nếu là AGENCY (hoặc mặc định) -> giữ nguyên agency/search-hotel/list
+            navigate(`/agency/search-hotel/list?${params.toString()}`);
+        }
     };
 
     // 5. Hàm điều hướng cho 2 nút Agency/Hotel
@@ -104,7 +145,7 @@ const HomePage = () => {
 
                     {/* Role Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                        <button onClick={() => handleRoleNav("/agency-dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#00A651] hover:bg-[#008f45] text-white font-bold transition-all active:scale-95 shadow-lg">
+                        <button onClick={() => handleRoleNav("/agency/agency-dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#00A651] hover:bg-[#008f45] text-white font-bold transition-all active:scale-95 shadow-lg">
                             <UserCheck size={20} /> Tôi là Đại lý
                         </button>
                         <button onClick={() => handleRoleNav("/hotel/dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#F36F21] hover:bg-[#d85e17] text-white font-bold transition-all active:scale-95 shadow-lg">

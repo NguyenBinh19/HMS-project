@@ -26,12 +26,6 @@ const StaffActionMenu = ({ onEdit, onViewDetails, onToggle, status, onViewHistor
             onClick: onEdit,
             color: 'text-slate-600'
         },
-        {
-            label: 'Xem lịch sử đặt phòng',
-            icon: <History size={16} />,
-            onClick: onViewHistory || (() => {}),
-            color: 'text-slate-600'
-        }
     ];
 
     return (

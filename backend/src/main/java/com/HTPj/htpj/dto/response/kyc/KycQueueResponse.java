@@ -17,4 +17,6 @@ public class KycQueueResponse {
     private String reviewedBy;
     private String legalName;
     private String taxCode;
+    private Long agencyId;
+    private Integer hotelId;
 }

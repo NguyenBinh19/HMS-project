@@ -108,10 +108,11 @@ const ContactPage = () => {
                                 </div>
                             ) : (
                                 <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.48553029696!2d105.52487567503102!3d21.013249980631785!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e65fb%3A0xaae60343c93c45a4!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBGUFQgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1700000000000"
-                                    className="w-full h-full border-0 grayscale invert contrast-125 opacity-40 hover:opacity-70 transition-opacity duration-700"
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.506341935394!2d105.52271427503094!3d21.012416680632863!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e65fb%3A0xaae60567ad023452!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBGUFQgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1709280000000!5m2!1svi!2s"
+                                    className="w-full h-full border-0 opacity-100 transition-opacity duration-700"
                                     allowFullScreen=""
                                     loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
                                     onError={() => setMapError(true)}
                                     title="FPT University Location"
                                 ></iframe>
@@ -125,7 +126,7 @@ const ContactPage = () => {
                                 Giải quyết mọi phiền toái <br/> trong vận hành
                             </h2>
                             <p className="text-slate-400 mb-12 text-lg leading-relaxed font-medium">
-                                Đội ngũ sinh viên nhiệt huyết từ ĐH FPT cam kết đồng hành và hỗ trợ các chủ khách sạn tối ưu hóa quy trình kinh doanh bằng công nghệ thuần Việt.
+                            Đội ngũ sinh viên nhiệt huyết từ ĐH FPT cam kết đồng hành và hỗ trợ các chủ khách sạn tối ưu hóa quy trình kinh doanh bằng công nghệ thuần Việt.
                             </p>
 
                             <button

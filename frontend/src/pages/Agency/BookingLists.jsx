@@ -164,7 +164,7 @@ const OrderListScreen = () => {
                         return (
                             <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
                                 <div
-                                    onClick={() => navigate(`/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
+                                    onClick={() => navigate(`/agency/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
                                     className="flex justify-between items-start mb-4 cursor-pointer group"
                                 >
                                     <div>

@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { authService } from "../../services/auth.service.js";
+import { jwtDecode } from "jwt-decode";
 import {
     Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, LogIn, Plane, X, ShieldAlert
 } from "lucide-react";
 import Toast from "../../components/common/notification/Toast.jsx";
 import ToastPortal from "../../components/common/notification/ToastPortal.jsx";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
+const token = localStorage.getItem("accessToken");
 
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop";
@@ -16,7 +18,28 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { updateUser } = useAuth();
+    const getRolesFromToken = () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return [];
 
+    try {
+        const decoded = jwtDecode(token);
+
+        if (decoded.roles) return decoded.roles;
+        if (decoded.authorities) return decoded.authorities;
+        if (decoded.scope) return decoded.scope.split(" ");
+
+        return [];
+    } catch (e) {
+        return [];
+    }
+};
+
+const getRedirectByRole = (roles = []) => {
+    if (roles.includes("ROLE_ADMIN")) return "/admin";
+    
+    return "/homepage";
+};
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -64,8 +87,13 @@ const Login = () => {
                     await updateUser(res.user);
                 }
                 setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
+                const roles = getRolesFromToken();
+
+                const redirectPath =
+                    from !== "/" ? from : getRedirectByRole(roles);
+
                 setTimeout(() => {
-                    navigate("/homepage", { replace: true });
+                    navigate(redirectPath, { replace: true });
                 }, 800);
             }
         } catch (err) {
@@ -189,9 +217,9 @@ const Login = () => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'email' || formData.email
-                                        ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
-                                        : 'top-4 text-slate-400 font-medium'
-                                    }
+                                            ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
+                                            : 'top-4 text-slate-400 font-medium'
+                                        }
                              `}>
                                         Email đăng nhập
                                     </label>
@@ -216,9 +244,9 @@ const Login = () => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'password' || formData.password
-                                        ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
-                                        : 'top-4 text-slate-400 font-medium'
-                                    }
+                                            ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
+                                            : 'top-4 text-slate-400 font-medium'
+                                        }
                              `}>
                                         Mật khẩu
                                     </label>
@@ -259,13 +287,6 @@ const Login = () => {
                                     className="flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-600 text-sm group"
                                 >
                                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G" className="w-5 h-5 group-hover:scale-110 transition-transform" /> Google
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin('facebook')}
-                                    className="flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-[#1877F2]/5 hover:border-[#1877F2]/20 hover:text-[#1877F2] transition-all font-bold text-slate-600 text-sm group"
-                                >
-                                    <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="F" className="w-5 h-5 group-hover:scale-110 transition-transform" /> Facebook
                                 </button>
                             </div>
                         </div>

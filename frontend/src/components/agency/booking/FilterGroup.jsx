@@ -61,17 +61,17 @@ export default function FilterSidebar({ onApplyFilter }) {
                 </div>
             </div>
 
-            {/* CHÍNH SÁCH B2B (Giao diện tĩnh) */}
-            <div className="mb-6 pb-6 border-b border-slate-100">
-                <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
-                    <ShieldCheck size={14} className="text-blue-600" /> Chính sách B2B
-                </h4>
-                <div className="space-y-3">
-                    <FilterItem label="Instant Confirmation" icon={<Zap size={14} className="text-yellow-500" />} />
-                    <FilterItem label="Flash Sale" icon={<Tag size={14} className="text-red-500" />} />
-                    <FilterItem label="Free Cancellation" icon={<CheckCircle2 size={14} className="text-green-500" />} defaultChecked />
-                </div>
-            </div>
+            {/*/!* CHÍNH SÁCH B2B (Giao diện tĩnh) *!/*/}
+            {/*<div className="mb-6 pb-6 border-b border-slate-100">*/}
+            {/*    <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">*/}
+            {/*        <ShieldCheck size={14} className="text-blue-600" /> Chính sách B2B*/}
+            {/*    </h4>*/}
+            {/*    <div className="space-y-3">*/}
+            {/*        <FilterItem label="Instant Confirmation" icon={<Zap size={14} className="text-yellow-500" />} />*/}
+            {/*        <FilterItem label="Flash Sale" icon={<Tag size={14} className="text-red-500" />} />*/}
+            {/*        <FilterItem label="Free Cancellation" icon={<CheckCircle2 size={14} className="text-green-500" />} defaultChecked />*/}
+            {/*    </div>*/}
+            {/*</div>*/}
 
             {/* LỌC THEO TIỆN ÍCH */}
             <div className="mb-6 pb-6 border-b border-slate-100">

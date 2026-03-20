@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -47,14 +47,25 @@ import UserGuidePage from "@/pages/common/UserGuide.jsx";
 import AgencyDashboardPage from "@/pages/Agency/AgencyDashboardPage.jsx";
 import HotelDashboardPage from "@/pages/Hotel/HotelDashboardPage.jsx";
 import AdminDashboardPage from "@/pages/Admin/AdminDashboardPage.jsx";
+import RegulationPage from "@/pages/common/Regulation.jsx";
+import TransactionPage from "@/pages/Admin/AgencyPayTransaction.jsx"
+import RankingRulesPage from "@/pages/Admin/RankingRules.jsx"
+import RevenueReport from "@/pages/Hotel/RevenueReport.jsx";
+import PayoutStatement from "@/pages/Hotel/PayoutStatement.jsx";
+import PayoutList from "@/pages/Admin/PayoutList.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
+import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
+import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
     return (
         <>
             <SessionExpiredHandler />
 
             <Routes>
+                <Route path="/" element={<MainLayout />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/homepage" element={<MainLayout />} />
+                <Route path="/" element={<MainLayout />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
@@ -66,14 +77,22 @@ const AppRoutes = () => {
                 <Route path="/private-policy" element={<PrivatePolicy />} />
                 <Route path="/term-service" element={<TermsOfServicePage />} />
                 <Route path="/user-guide" element={<UserGuidePage />} />
+                <Route path="/regulation" element={<RegulationPage />} />
 
                 <Route path="/kyc-intro" element={<KYCIntroduction />} />
                 <Route path="/kyc/status" element={<VerificationStatusPage />} />
-                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/profile" element={
+                    <ProtectedRoute>
+                        <UserProfile />
+                    </ProtectedRoute>} />
 
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
-                <Route path="/" element={<AgencyMain />}>
+                <Route path="/agency" element={
+                    <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
+                        <AgencyMain />
+                    </ProtectedRoute>
+                }>
                     <Route path="search-hotel">
                         <Route index element={<SearchHotelEngine />} />
                         <Route path="list" element={<ListSearchResult />} />
@@ -88,11 +107,18 @@ const AppRoutes = () => {
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
-                    {/*<Route path="booking-success" element={<BookingSuccessPage />} />*/}
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
-                <Route path="/hotel" element={<HotelMain />}>
+                <Route
+                    path="/hotel"
+                    element={
+                        <ProtectedRoute roles={ROLE_GROUP.HOTEL}>
+                            <HotelMain />
+                        </ProtectedRoute>
+                    }>
+                    <Route path="list-hotel" element={<HotelSearchResult />} />
+                    <Route path="list-hotel/hotels/:id" element={<RoomTypeDetailList />} />
                     <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />
@@ -100,15 +126,22 @@ const AppRoutes = () => {
                     <Route index element={<Navigate to="dynamic-pricing" replace />} />
                     <Route path="coupons" element={<CouponManager />} />
                     <Route index element={<Navigate to="coupons" replace />} />
-                    <Route path="staff" element={<HotelStaffDashboard/>} />
-                    <Route path="profile" element={<HotelProfile/>} />
+                    <Route path="staff" element={<HotelStaffDashboard />} />
+                    <Route path="profile" element={<HotelProfile />} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
-                    <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="front-desk" element={<FrontDesk />} />
+                    <Route path="revenue-report" element={<RevenueReport />} />
+                    <Route path="payout-state" element={<PayoutStatement />} />
                 </Route>
 
                 {/*Luồng Admin System*/}
-                <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin"
+                    element={
+                        <ProtectedRoute roles={[ROLES.ADMIN]}>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }>
                     <Route path="dashboard" element={<AdminDashboardPage />} />
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
@@ -118,6 +151,10 @@ const AppRoutes = () => {
                     <Route path="partners/hotel/:id" element={<PartnerDetail />} />
                     <Route path="users" element={<AdminUserList />} />
                     <Route path="users/:userId" element={<AdminUserDetail />} />
+                    <Route path="ranking-rules" element={<RankingRulesPage />} />
+                    {/*Luồng Admin Financial*/}
+                    <Route path="payment-transaction" element={<TransactionPage />} />
+                    <Route path="payout-list" element={<PayoutList />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

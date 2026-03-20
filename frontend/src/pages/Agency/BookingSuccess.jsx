@@ -170,11 +170,6 @@ const BookingSuccessPage = () => {
                         <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">Gửi Zalo cho khách</span>
                     </button>
 
-                    <button className="flex flex-col items-center justify-center p-6 bg-[#9333ea] text-white rounded-2xl hover:bg-purple-700 transition-all group shadow-lg shadow-purple-100">
-                        <Plus className="mb-2 group-hover:scale-110 transition-transform" size={24} />
-                        <span className="font-black text-sm uppercase">Thêm vào Lịch trình</span>
-                        <span className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">Tạo Tour mới</span>
-                    </button>
 
                     <button
                         onClick={() => navigate("/homepage")}

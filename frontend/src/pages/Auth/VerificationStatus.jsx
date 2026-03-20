@@ -9,7 +9,7 @@ const VerificationStatusPage = () => {
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const [isUpdating, setIsUpdating] = useState(false);
     useEffect(() => { fetchStatus(); }, []);
 
     const fetchStatus = async () => {
@@ -17,15 +17,39 @@ const VerificationStatusPage = () => {
         try {
             const res = await kycService.getVerificationsByUserId();
             const list = res?.result || [];
-            // Sắp xếp theo ID giảm dần để bản mới nhất luôn ở đầu
-            const sortedList = list.sort((a, b) => b.id - a.id);
+            const sortedList = [...list].sort((a, b) => b.id - a.id);
             setKycList(sortedList);
 
             if (sortedList.length > 0) {
-                handleViewDetail(sortedList[0].id);
+                const latestKyc = sortedList[0];
+                handleViewDetail(latestKyc.id);
+
+                const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+                // 1. Tìm trong danh sách xem ĐÃ TỪNG có bản ghi nào VERIFIED chưa
+                const verifiedRecord = sortedList.find(item => item.status === "VERIFIED");
+
+                if (verifiedRecord) {
+                    // NẾU ĐÃ TỪNG ĐƯỢC DUYỆT: Giữ nguyên ID (Lấy ID từ bản verified đó)
+                    const updatedUser = {
+                        ...storedUser,
+                        agencyId: verifiedRecord.agencyId,
+                        hotelId: verifiedRecord.hotelId,
+                        kycStatus: latestKyc.status // Vẫn hiển thị status mới nhất (VD: PENDING)
+                    };
+                    localStorage.setItem("user", JSON.stringify(updatedUser));
+                } else {
+                    // NẾU CHƯA TỪNG ĐƯỢC DUYỆT (Tất cả đều PENDING hoặc REJECTED)
+                    localStorage.setItem("user", JSON.stringify({
+                        ...storedUser,
+                        agencyId: null,
+                        hotelId: null,
+                        kycStatus: latestKyc.status
+                    }));
+                }
             }
         } catch (error) {
-            console.error("KYC Status Error:", error);
+            console.error("Lỗi KYC:", error);
         } finally {
             setLoading(false);
         }
@@ -41,7 +65,6 @@ const VerificationStatusPage = () => {
     };
 
     const handleUpdate = () => {
-        // Chỉ cho phép update nếu đang xem bản ghi mới nhất trong danh sách
         if (kycDetail.id !== kycList[0].id) return;
 
         navigate("/kyc-intro", {
@@ -73,15 +96,27 @@ const VerificationStatusPage = () => {
                             {theme.label}
                         </div>
                         <h2 className="text-3xl font-black text-slate-800 uppercase italic leading-none mb-2">
-                            {isLatest ? "Phiên bản hiện tại" : `Chi tiết hồ sơ #${kycDetail?.id}`}
+                            {isLatest ? "Phiên bản hiện tại" : `Chi tiết hồ sơ - Version ${kycDetail?.version}`}
                         </h2>
                         <p className="text-slate-600 font-medium max-w-2xl">{theme.desc}</p>
 
                         {/* HIỂN THỊ LÝ DO TỪ CHỐI (Nếu có) */}
-                        {kycDetail?.status?.toUpperCase() === "REJECTED" && kycDetail?.rejectionReason && (
-                            <div className="mt-4 p-4 bg-red-100 border-l-4 border-red-500 rounded-r-xl animate-in slide-in-from-left">
-                                <p className="text-[10px] font-black text-red-600 uppercase tracking-wider">Lý do từ chối từ hệ thống:</p>
-                                <p className="text-sm font-bold text-red-800 mt-1 italic">"{kycDetail.rejectionReason}"</p>
+                        {["REJECTED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase()) && kycDetail?.rejectionReason && (
+                            <div className={`mt-4 p-4 border-l-4 rounded-r-xl animate-in slide-in-from-left shadow-sm ${
+                                kycDetail.status.toUpperCase() === "REJECTED"
+                                    ? "bg-red-50 border-red-500"
+                                    : "bg-blue-50 border-blue-500"
+                            }`}>
+                                <p className={`text-[10px] font-black uppercase tracking-wider ${
+                                    kycDetail.status.toUpperCase() === "REJECTED" ? "text-red-600" : "text-blue-600"
+                                }`}>
+                                    {kycDetail.status.toUpperCase() === "REJECTED" ? "Lý do từ hệ thống:" : "Ghi chú bổ sung từ kiểm duyệt viên:"}
+                                </p>
+                                <p className={`text-sm font-bold mt-1 italic ${
+                                    kycDetail.status.toUpperCase() === "REJECTED" ? "text-red-900" : "text-blue-900"
+                                }`}>
+                                    "{kycDetail.rejectionReason}"
+                                </p>
                             </div>
                         )}
                     </div>
@@ -170,7 +205,7 @@ const VerificationStatusPage = () => {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-xs font-black text-slate-800">Phiên bản #{item.id}</p>
+                                                    <p className="text-xs font-black text-slate-800">Phiên bản </p>
                                                     {index === 0 && <span className="text-[8px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase">Mới nhất</span>}
                                                 </div>
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
