@@ -9,7 +9,7 @@ const VerificationStatusPage = () => {
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const [isUpdating, setIsUpdating] = useState(false);
     useEffect(() => { fetchStatus(); }, []);
 
     const fetchStatus = async () => {
@@ -17,15 +17,39 @@ const VerificationStatusPage = () => {
         try {
             const res = await kycService.getVerificationsByUserId();
             const list = res?.result || [];
-            // Sắp xếp theo ID giảm dần để bản mới nhất luôn ở đầu
-            const sortedList = list.sort((a, b) => b.id - a.id);
+            const sortedList = [...list].sort((a, b) => b.id - a.id);
             setKycList(sortedList);
 
             if (sortedList.length > 0) {
-                handleViewDetail(sortedList[0].id);
+                const latestKyc = sortedList[0];
+                handleViewDetail(latestKyc.id);
+
+                const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+                // 1. Tìm trong danh sách xem ĐÃ TỪNG có bản ghi nào VERIFIED chưa
+                const verifiedRecord = sortedList.find(item => item.status === "VERIFIED");
+
+                if (verifiedRecord) {
+                    // NẾU ĐÃ TỪNG ĐƯỢC DUYỆT: Giữ nguyên ID (Lấy ID từ bản verified đó)
+                    const updatedUser = {
+                        ...storedUser,
+                        agencyId: verifiedRecord.agencyId,
+                        hotelId: verifiedRecord.hotelId,
+                        kycStatus: latestKyc.status // Vẫn hiển thị status mới nhất (VD: PENDING)
+                    };
+                    localStorage.setItem("user", JSON.stringify(updatedUser));
+                } else {
+                    // NẾU CHƯA TỪNG ĐƯỢC DUYỆT (Tất cả đều PENDING hoặc REJECTED)
+                    localStorage.setItem("user", JSON.stringify({
+                        ...storedUser,
+                        agencyId: null,
+                        hotelId: null,
+                        kycStatus: latestKyc.status
+                    }));
+                }
             }
         } catch (error) {
-            console.error("KYC Status Error:", error);
+            console.error("Lỗi KYC:", error);
         } finally {
             setLoading(false);
         }
@@ -41,7 +65,6 @@ const VerificationStatusPage = () => {
     };
 
     const handleUpdate = () => {
-        // Chỉ cho phép update nếu đang xem bản ghi mới nhất trong danh sách
         if (kycDetail.id !== kycList[0].id) return;
 
         navigate("/kyc-intro", {
@@ -73,7 +96,7 @@ const VerificationStatusPage = () => {
                             {theme.label}
                         </div>
                         <h2 className="text-3xl font-black text-slate-800 uppercase italic leading-none mb-2">
-                            {isLatest ? "Phiên bản hiện tại" : `Chi tiết hồ sơ #${kycDetail?.id}`}
+                            {isLatest ? "Phiên bản hiện tại" : `Chi tiết hồ sơ - Version ${kycDetail?.version}`}
                         </h2>
                         <p className="text-slate-600 font-medium max-w-2xl">{theme.desc}</p>
 

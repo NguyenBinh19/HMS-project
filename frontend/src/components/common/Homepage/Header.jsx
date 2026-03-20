@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom"; // Đã thêm useLocation
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     Building2,
     LogIn,
@@ -11,16 +11,36 @@ import {
     ChevronDown,
     ShieldCheck
 } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
-    const location = useLocation(); // Hook để lấy thông tin đường dẫn hiện tại
+    const location = useLocation();
+    const token = localStorage.getItem("accessToken");
 
-    const needsKyc = user && (user.status === "PENDING" || !user.isKyc);
+    // Lấy Roles từ Token
+    let userRoles = [];
+    try {
+        if (token) {
+            const decoded = jwtDecode(token);
+            const scope = decoded.scope || decoded.roles || decoded.authorities || "";
+            userRoles = Array.isArray(scope) ? scope : scope.split(" ");
+        }
+    } catch (e) {
+        userRoles = [];
+    }
 
-    // 1. Logic cập nhật tiêu đề trình duyệt (Browser Title)
+    const isAdmin = userRoles.some(role => role.includes("ADMIN"));
+
+    // Kiểm tra xem User có cần xác minh (KYC) không
+    const needsKyc = user &&
+        !isAdmin &&
+        !user.hotelId &&
+        !user.agencyId;
+
+    // 1. Cập nhật tiêu đề trình duyệt (Browser Title)
     useEffect(() => {
         const titleMap = {
             "/homepage": "Trang chủ | HMS-B2B",
@@ -30,15 +50,13 @@ const Header = () => {
             "/profile": "Hồ sơ cá nhân | HMS-B2B",
             "/login": "Đăng nhập | HMS-B2B",
             "/register": "Đăng ký đối tác | HMS-B2B",
-            "/kyc-intro": "Xác minh tài khoản | HMS-B2B"
+            "/kyc-intro": "Xác minh tài khoản | HMS-B2B",
+            "/kyc/status": "Trạng thái xác minh | HMS-B2B"
         };
-
-        // Cập nhật document.title dựa trên location.pathname
-        // Nếu không tìm thấy trong map, để mặc định là HMS-B2B
         document.title = titleMap[location.pathname] || "HMS-B2B";
-    }, [location.pathname]); // Chạy lại mỗi khi URL thay đổi
+    }, [location.pathname]);
 
-    // 2. Logic lấy thông tin user từ LocalStorage
+    // 2. Lấy thông tin user từ LocalStorage
     useEffect(() => {
         try {
             const storedUser = localStorage.getItem('user');
@@ -48,7 +66,7 @@ const Header = () => {
         } catch (error) {
             console.error("Failed to parse user data:", error);
         }
-    }, []);
+    }, [location.pathname]); // Cập nhật lại khi chuyển trang để đồng bộ ID mới nếu có
 
     const handleLogout = () => {
         localStorage.clear();
@@ -62,6 +80,14 @@ const Header = () => {
         { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
     ];
+
+    // Hàm helper để hiển thị chức danh Tiếng Việt
+    const getRoleLabel = () => {
+        if (isAdmin) return "QUẢN TRỊ VIÊN HỆ THỐNG";
+        if (userRoles.some(r => r.includes("HOTEL"))) return "KHÁCH SẠN";
+        if (userRoles.some(r => r.includes("AGENCY"))) return "ĐẠI LÝ";
+        return "THÀNH VIÊN";
+    };
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
@@ -120,7 +146,7 @@ const Header = () => {
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm shadow-md shadow-amber-100 hover:bg-amber-600 animate-pulse transition-all"
                                     >
                                         <ShieldCheck size={18} />
-                                        Xác minh tài khoản
+                                        Xác minh ngay
                                     </button>
                                 )}
                                 <Link
@@ -128,14 +154,14 @@ const Header = () => {
                                     className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-200 transition-all group"
                                 >
                                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                        <UserCircle size={20} />
+                                        <UserCircle size={20}/>
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-black text-slate-800 leading-none">
                                             {user?.lastName} {user?.firstName}
                                         </span>
                                         <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">
-                                            {user?.permission?.split('_')[0]} STAFF
+                                            {getRoleLabel()}
                                         </span>
                                     </div>
                                 </Link>
@@ -144,7 +170,7 @@ const Header = () => {
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-rose-600 font-bold text-sm transition-colors"
                                 >
-                                    <LogOut size={18} />
+                                    <LogOut size={18}/>
                                     Đăng xuất
                                 </button>
                             </div>
@@ -197,9 +223,20 @@ const Header = () => {
                                     </div>
                                     <div>
                                         <p className="font-black text-slate-800 text-lg leading-tight">{user?.lastName} {user?.firstName}</p>
-                                        <p className="text-sm text-blue-600 font-bold uppercase tracking-widest">{user?.permission}</p>
+                                        <p className="text-sm text-blue-600 font-bold uppercase tracking-widest">
+                                            {getRoleLabel().toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                                        </p>
                                     </div>
                                 </div>
+
+                                {needsKyc && (
+                                    <button
+                                        onClick={() => { navigate("/kyc-intro"); setIsMenuOpen(false); }}
+                                        className="w-full py-4 rounded-2xl bg-amber-500 text-white font-black flex justify-center items-center gap-2 shadow-lg shadow-amber-100"
+                                    >
+                                        <ShieldCheck size={22} /> Xác minh tài khoản ngay
+                                    </button>
+                                )}
 
                                 <button
                                     onClick={() => { navigate("/profile"); setIsMenuOpen(false); }}

@@ -32,26 +32,31 @@ const HomePage = () => {
     const getRoleFromToken = () => {
         try {
             const token = localStorage.getItem("accessToken");
-            if (!token) return "HOTEL"; // fallback
+            if (!token) return "HOTEL"; // Fallback nếu chưa đăng nhập
 
             const decoded = jwtDecode(token);
-            let roles = decoded?.scope;
 
-            if (!Array.isArray(roles)) {
-                roles = roles ? [roles] : [];
-            }
+            // 1. Quét tất cả các trường có thể chứa Role (Đồng bộ với ProtectedRoute)
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
 
-            if (roles.some(r => r.startsWith("ROLE_AGENCY"))) {
+            // 2. Chuyển thành mảng String chuẩn
+            const rolesArray = Array.isArray(rawRoles)
+                ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
+                : String(rawRoles).split(" ");
+
+            // 3. Ưu tiên kiểm tra AGENCY trước để điều hướng Agency Search
+            if (rolesArray.some(role => role.includes("AGENCY"))) {
                 return "AGENCY";
             }
 
-            if (roles.some(r => r.startsWith("ROLE_HOTEL"))) {
+            // 4. Nếu có Role HOTEL
+            if (rolesArray.some(role => role.includes("HOTEL"))) {
                 return "HOTEL";
             }
 
-            return "HOTEL"; // fallback
+            return "HOTEL"; // Mặc định nếu không khớp
         } catch (err) {
-            console.error("Decode token lỗi:", err);
+            console.error("Lỗi giải mã Token tại HomePage:", err);
             return "HOTEL";
         }
     };
