@@ -6,6 +6,7 @@ import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
+import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
 import com.HTPj.htpj.service.CommissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -59,4 +60,26 @@ public class CommissionController {
                 .result(commissionService.update(request))
                 .build();
     }
+
+    @PatchMapping("/active/{id}")
+    public ApiResponse<String> activeCommission(@PathVariable("id") Long commissionId) {
+        return ApiResponse.<String>builder()
+                .result(commissionService.activeCommission(commissionId))
+                .build();
+    }
+
+    @GetMapping("/hotels/{id}")
+    public ApiResponse<HotelUsingDealResponse> getHotelsUsingDeal(@PathVariable("id") Long commissionId) {
+        return ApiResponse.<HotelUsingDealResponse>builder()
+                .result(commissionService.getHotelsUsingDeal(commissionId))
+                .build();
+    }
+
+    @PatchMapping("/set-default/{hotelId}")
+    public ApiResponse<String> setDefaultCommission(@PathVariable Integer hotelId) {
+        return ApiResponse.<String>builder()
+                .result(commissionService.setDefaultCommission(hotelId))
+                .build();
+    }
+
 }

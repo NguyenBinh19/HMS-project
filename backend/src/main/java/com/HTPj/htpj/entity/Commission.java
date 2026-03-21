@@ -50,9 +50,9 @@ public class Commission {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "reason")
+    @Column(name = "reason", columnDefinition = "nvarchar(255)")
     private String reason;
 
-    @Column(name = "note")
+    @Column(name = "note", columnDefinition = "nvarchar(255)")
     private String note;
 }

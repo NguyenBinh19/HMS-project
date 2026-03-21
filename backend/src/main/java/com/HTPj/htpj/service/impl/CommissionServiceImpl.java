@@ -5,6 +5,8 @@ import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
+import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
+import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
 import com.HTPj.htpj.entity.Commission;
 import com.HTPj.htpj.entity.CommissionHotel;
 import com.HTPj.htpj.entity.Hotel;
@@ -21,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -85,7 +88,7 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setCommissionValue(request.getCommissionValue());
             commission.setStartDate(null);
             commission.setEndDate(null);
-            commission.setIsActive(request.getIsActive());
+            commission.setIsActive(true);
             commission.setNote(request.getNote());
         }
 
@@ -300,5 +303,100 @@ public class CommissionServiceImpl implements CommissionService {
         commissionRepository.save(commission);
 
         return "Update successfully";
+    }
+
+    @Override
+    public String activeCommission(Long commissionId) {
+
+        Commission commission = commissionRepository.findById(commissionId)
+                .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
+
+        // chỉ cho active DEAL
+        if (!"DEAL".equalsIgnoreCase(commission.getCommissionType())) {
+            throw new AppException(ErrorCode.INVALID_COMMISSION_TYPE);
+        }
+
+        // chỉ active khi đang false
+        if (Boolean.TRUE.equals(commission.getIsActive())) {
+            throw new AppException(ErrorCode.COMMISSION_ALREADY_ACTIVE);
+        }
+
+        commission.setIsActive(true);
+        commission.setUpdatedAt(LocalDateTime.now());
+        commission.setUpdatedBy(getUserId());
+
+        commissionRepository.save(commission);
+
+        return "Active commission thành công";
+    }
+
+
+    @Override
+    public HotelUsingDealResponse getHotelsUsingDeal(Long commissionId) {
+
+        Commission commission = commissionRepository.findById(commissionId)
+                .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
+
+        // chỉ áp dụng cho DEAL
+        if (!"DEAL".equalsIgnoreCase(commission.getCommissionType())) {
+            throw new AppException(ErrorCode.INVALID_COMMISSION_TYPE);
+        }
+
+        List<Hotel> hotels = hotelRepository.findHotelUsingDeal(commissionId);
+
+        List<HotelListResponse> responseList = hotels.stream()
+                .map(h -> {
+                    HotelListResponse res = new HotelListResponse();
+                    res.setHotelId(h.getHotelId());
+                    res.setHotelName(h.getHotelName());
+                    res.setPhone(h.getPhone());
+                    res.setAddress(h.getAddress());
+                    res.setStatus(h.getStatus());
+                    return res;
+                })
+                .toList();
+
+        return HotelUsingDealResponse.builder()
+                .commissionId(commissionId)
+                .totalHotel(responseList.size())
+                .hotels(responseList)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public String setDefaultCommission(Integer hotelId) {
+
+        // chekc hotel exist
+        Hotel hotel = hotelRepository.findByHotelIdAndStatus(hotelId, "ACTIVE")
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+        // get default commission
+        Commission commission = commissionRepository.findDefault()
+                .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
+
+        if ("DEFAULT".equalsIgnoreCase(hotel.getCommissionType())) {
+            return "Hotel đã đang sử dụng DEFAULT commission";
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String userId = getUserId();
+
+        if ("HOTEL".equalsIgnoreCase(hotel.getCommissionType())) {
+            commissionHotelRepository.deleteByHotelId(hotelId);
+        }
+
+        //update hotel to default
+        hotel.setCommissionValue(commission.getCommissionValue());
+        hotel.setRateType(commission.getRateType());
+        hotel.setCommissionId(commission.getCommissionId());
+        hotel.setCommissionType("DEFAULT");
+
+        hotel.setCommissionUpdatedAt(now);
+        hotel.setCommissionUpdatedBy(userId);
+
+        hotelRepository.save(hotel);
+
+        return "Set hotel về DEFAULT commission thành công";
     }
 }

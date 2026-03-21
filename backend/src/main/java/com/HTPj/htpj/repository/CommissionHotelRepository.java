@@ -10,4 +10,5 @@ import java.util.List;
 public interface CommissionHotelRepository extends JpaRepository<CommissionHotel, Long> {
 
     List<CommissionHotel> findByCommissionId(Long commissionId);
+    void deleteByHotelId(Integer hotelId);
 }

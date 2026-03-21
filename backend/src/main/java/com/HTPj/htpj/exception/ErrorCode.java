@@ -92,6 +92,8 @@ public enum ErrorCode {
     CANNOT_DELETE_DEFAULT(4202, "Cannot delete default commission", HttpStatus.BAD_REQUEST),
     REASON_REQUIRED(4203, "Reason is required", HttpStatus.BAD_REQUEST),
     COMMISSION_NOT_FOUND(4204, "Commission not found", HttpStatus.NOT_FOUND),
+    INVALID_COMMISSION_TYPE(4205, "Only for commission type deal", HttpStatus.NOT_FOUND),
+    COMMISSION_ALREADY_ACTIVE(4206, "Commission is active", HttpStatus.NOT_FOUND),
 
 
     ;

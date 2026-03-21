@@ -12,8 +12,8 @@ public class ApproveVerificationRequest {
     @JsonProperty("verificationId")
     private Integer verificationId;
 
-    @JsonProperty("reviewedBy")
-    private String reviewedBy;
+//    @JsonProperty("reviewedBy")
+//    private String reviewedBy;
 
     @JsonProperty("status")
     private String status;

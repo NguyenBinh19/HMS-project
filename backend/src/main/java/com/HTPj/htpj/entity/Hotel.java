@@ -74,5 +74,4 @@ public class Hotel {
     @Column(name = "commission_type")
     private String commissionType;
 
-
 }

@@ -47,5 +47,13 @@ public interface HotelRepository extends JpaRepository<Hotel, Integer> {
 
     List<Hotel> findByCommissionId(Long commissionId);
 
+    @Query("""
+    SELECT h FROM Hotel h
+    WHERE h.commissionId = :commissionId
+    AND h.commissionType = 'DEAL'
+    AND h.status = 'ACTIVE'
+""")
+    List<Hotel> findHotelUsingDeal(@Param("commissionId") Long commissionId);
+
 
 }

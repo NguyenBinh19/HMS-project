@@ -90,7 +90,13 @@ public class KycController {
     public ApiResponse<String> approveVerification(
             @RequestBody ApproveVerificationRequest request
     ) {
-        kycService.approveVerification(request);
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String reviewedBy = jwt.getClaim("userId");
+        kycService.approveVerification(request, reviewedBy);
 
         return ApiResponse.<String>builder()
                 .result("Verification processed successfully")
