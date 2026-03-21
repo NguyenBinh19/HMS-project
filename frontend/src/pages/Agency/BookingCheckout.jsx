@@ -194,7 +194,7 @@ export default function BookingCheckoutPage() {
                     }
                 }
                 // Gửi đầy đủ thông tin sang trang Success
-                navigate("/booking-success", {
+                navigate("/agency/booking-success", {
                     state: {
                         booking: response.result,
                         checkoutData: {
