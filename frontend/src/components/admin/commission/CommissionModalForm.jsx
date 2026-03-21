@@ -15,18 +15,16 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
     const loadDetail = async () => {
         setLoading(true);
         try {
-            // 1. Lấy thông tin chung của Commission
             const res = await commissionService.getCommissionDetail(id);
             const commissionData = res.result.commission;
             setDetail(commissionData);
 
-            // 2. Lấy danh sách khách sạn (Chỉ thực hiện nếu không phải DEFAULT)
             if (commissionData.commissionType !== 'DEFAULT') {
                 let hotelList = [];
                 if (commissionData.commissionType === 'DEAL') {
                     try {
                         const hotelRes = await commissionService.getHotelsUsingDeal(id);
-                        hotelList = hotelRes.result || [];
+                        hotelList = hotelRes.result?.hotels || [];
                     } catch (err) {
                         hotelList = res.result.hotels || [];
                     }
@@ -35,9 +33,8 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
                 }
                 setHotels(Array.isArray(hotelList) ? hotelList : []);
             } else {
-                setHotels([]); // Loại DEFAULT không cần danh sách này
+                setHotels([]);
             }
-
         } catch (error) {
             console.error("Lỗi detail:", error);
             alert("Không thể tải thông tin chi tiết");
@@ -60,8 +57,12 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
         setResettingId(hotelId);
         try {
             await commissionService.setDefaultCommission(hotelId);
+            // Xóa hotel vừa reset ra khỏi danh sách đang hiển thị
+            setHotels(prevHotels => prevHotels.filter(h => h.hotelId !== hotelId));
             alert(`Đã đưa khách sạn ${hotelName} về mức mặc định thành công!`);
+            // Gọi lại để đồng bộ với server
             loadDetail();
+
             if (onSuccess) onSuccess();
         } catch (error) {
             alert(error.response?.data?.message || "Lỗi khi đặt lại mức hoa hồng");
@@ -256,7 +257,7 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {!isReadOnly && (
+                                            {!isReadOnly && type !== 'DEAL' && (
                                                 <button
                                                     onClick={() => handleResetToDefault(h.hotelId, h.hotelName)}
                                                     disabled={resettingId === h.hotelId}

@@ -23,7 +23,7 @@ const SidebarAdmin = () => {
         { icon: <LayoutDashboard size={20} />, label: "DASHBOARD", path: "/admin/dashboard" },
         { icon: <Settings size={20} />, label: "CẤU HÌNH HỆ THỐNG", path: "/admin/system-config" },
         { icon: <Database size={20} />, label: "DỮ LIỆU CHUẨN", path: "/admin/master-data" },
-        { icon: <BarChart3 size={20} />, label: "QUY TẮC XẾP HẠNG", path: "/admin/ranking-rules" },
+        { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules" },
         { icon: <Percent size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
         { icon: <ShieldCheck size={20} />, label: "HÀNG ĐỢI KYC", path: "/admin/kyc-queue" },
         { icon: <History size={20} />, label: "LỊCH SỬ GIAO DỊCH", path: "/admin/payment-transaction" },

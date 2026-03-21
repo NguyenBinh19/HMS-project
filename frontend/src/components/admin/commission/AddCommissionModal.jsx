@@ -95,7 +95,7 @@ const AddCommissionModal = ({ isOpen, onClose, onSuccess, hasDefault }) => {
             return alert("Vui lòng chọn ít nhất một khách sạn để áp dụng chính sách");
         }
 
-        // --- POPUP CONFIRM THEO YÊU CẦU BE ---
+        // --- POPUP CONFIRM  ---
         let confirmMsg = "Bạn có chắc chắn muốn tạo chính sách hoa hồng này?";
         if (formData.commissionType === 'HOTEL') {
             confirmMsg = `XÁC NHẬN: Bạn đang chọn áp dụng cho ${formData.hotelIds.length} khách sạn.\nSau khi tạo, tất cả các khách sạn trong danh sách này đều sẽ được cập nhật hoa hồng theo thông tin mới nhất. Bạn vẫn muốn tiếp tục?`;
@@ -105,19 +105,18 @@ const AddCommissionModal = ({ isOpen, onClose, onSuccess, hasDefault }) => {
 
         setLoading(true);
         try {
-            // Chuẩn hóa Payload theo yêu cầu Backend
             const payload = {
                 commissionType: formData.commissionType,
                 rateType: formData.rateType,
                 commissionValue: val,
                 note: formData.note,
                 // DEFAULT và HOTEL không gửi time
-                startDate: formData.commissionType === 'DEAL' ? new Date(formData.startDate).toISOString() : null,
-                endDate: formData.commissionType === 'DEAL' ? new Date(formData.endDate).toISOString() : null,
+                startDate: formData.commissionType === 'DEAL' ? formData.startDate : null,
+                endDate: formData.commissionType === 'DEAL' ? formData.endDate : null,
                 // DEFAULT và HOTEL mặc định true
                 isActive: formData.commissionType === 'DEAL' ? formData.isActive : true,
                 // DEAL và DEFAULT không gửi hotelIds
-                hotelIds: formData.commissionType === 'HOTEL' ? formData.hotelIds : null
+                hotelIds: formData.commissionType === 'HOTEL' ? formData.hotelIds : [],
             };
 
             await commissionService.createCommission(payload);
