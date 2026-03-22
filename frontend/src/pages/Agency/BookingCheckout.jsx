@@ -23,8 +23,7 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
                 ? (expiredAt.endsWith('Z') ? parseISO(expiredAt) : parseISO(expiredAt + 'Z'))
                 : expiredAt;
             
-            console.log("Current Time:", now.toISOString(), " | Expired At:", end.toISOString());
-
+            // console.log("Current Time:", now.toISOString(), " | Expired At:", end.toISOString());
             const diff = differenceInSeconds(end, now);
             if (diff <= 0) {
                 clearInterval(interval);
@@ -186,7 +185,7 @@ export default function BookingCheckoutPage() {
             };
             const response = await bookingService.createBooking(payload);
             if (response?.result) {
-                // UC-026: Lưu dịch vụ thêm nếu có
+                // Lưu dịch vụ thêm nếu có
                 if (selectedAddons.length > 0) {
                     try {
                         const addonPayload = selectedAddons.map(({ netPrice, ...rest }) => rest);

@@ -80,14 +80,12 @@ export default function HotelDetailPage() {
     const [bookingSession, setBookingSession] = useState(null);
     const [isExtending, setIsExtending] = useState(false);
     const token = localStorage.getItem("accessToken");
-console.log(token)
     let roles = [];
 
     if (token) {
         try {
             const decoded = jwtDecode(token);
             roles = decoded.scope || []; // tuỳ backend trả về
-            console.log(roles)
         } catch (err) {
             console.error("Invalid token");
         }
