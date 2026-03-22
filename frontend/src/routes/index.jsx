@@ -56,7 +56,10 @@ import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
 import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
+import PrepaidWallet from "@/pages/Agency/PrepaidWallet.jsx";
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
+import CreditWallet from "../pages/Agency/CreditWallet.jsx";
+import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -107,6 +110,9 @@ const AppRoutes = () => {
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
+                    <Route path="prepaid" element={<PrepaidWallet />} />
+                    <Route path="credit-wallet" element={<CreditWallet />} />
+                    <Route path="transaction-history" element={<TransactionHistoryPage />} />
                 </Route>
 
                 {/*Luồng Hotel Admin*/}

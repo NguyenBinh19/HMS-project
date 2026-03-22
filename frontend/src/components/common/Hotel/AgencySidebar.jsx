@@ -42,16 +42,16 @@ const Sidebar = () => {
         {
             icon: <Wallet size={20} />,
             label: "TRUNG TÂM TÀI CHÍNH",
-            path: "/homepage",
+            path: "/agency/prepaid",
             subItems: [
-                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/homepage" },
-                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/homepage" },
+                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/agency/prepaid" },
+                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/agency/credit-wallet" },
             ]
         },
         {
             icon: <History size={20} />,
             label: "LỊCH SỬ GIAO DỊCH",
-            path: "/homepage"
+            path: "/agency/transaction-history"
         },
         {
             icon: <CalendarDays size={20} />,

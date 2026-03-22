@@ -41,6 +41,9 @@ public class Agency {
     @Column(name = "current_credit")
     private BigDecimal currentCredit;
 
+    @Column(name = "wallet_balance", precision = 18, scale = 2)
+    private BigDecimal walletBalance;
+
     @Column(name = "status", length = 50)
     private String status;
 

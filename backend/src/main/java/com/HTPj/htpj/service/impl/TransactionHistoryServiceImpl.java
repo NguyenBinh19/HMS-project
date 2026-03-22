@@ -1,0 +1,92 @@
+package com.HTPj.htpj.service.impl;
+
+import com.HTPj.htpj.dto.DataSourceResponse.TransactionHistoryDto;
+import com.HTPj.htpj.entity.TransactionHistory;
+import com.HTPj.htpj.repository.TransactionHistoryRepository;
+import com.HTPj.htpj.service.TransactionHistoryService;
+import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TransactionHistoryServiceImpl implements TransactionHistoryService {
+
+    private final TransactionHistoryRepository transactionHistoryRepo;
+
+    public List<TransactionHistoryDto> getRecentByAgency(Long agencyId, int limit) {
+        return transactionHistoryRepo.findRecentByAgencyId(agencyId, PageRequest.of(0, limit));
+    }
+
+    public Page<TransactionHistoryDto> getTransactionsByAgency(
+            Long agencyId, int page, int size,
+            String dateFrom, String dateTo,
+            String type, String source) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
+
+        LocalDateTime from = dateFrom != null && !dateFrom.isEmpty()
+                ? LocalDate.parse(dateFrom).atStartOfDay()
+                : null;
+        LocalDateTime to = dateTo != null && !dateTo.isEmpty()
+                ? LocalDate.parse(dateTo).atTime(23, 59, 59)
+                : null;
+
+        return transactionHistoryRepo.findByFilters(agencyId, from, to, type, source, pageable);
+    }
+
+    public ByteArrayInputStream exportToExcel(Long agencyId) {
+        List<TransactionHistoryDto> transactions = transactionHistoryRepo.findByAgencyId(agencyId);
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Transactions");
+
+            String[] headers = {"Mã GD", "Thời gian", "Loại GD", "Nội dung", "Nguồn", "Số tiền", "Số dư sau", "Trạng thái"};
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (TransactionHistoryDto tx : transactions) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(tx.transactionCode());
+                row.createCell(1).setCellValue(tx.transactionDate().toString());
+                row.createCell(2).setCellValue(tx.transactionType());
+                row.createCell(3).setCellValue(tx.description());
+                row.createCell(4).setCellValue(tx.sourceType());
+                row.createCell(5).setCellValue(tx.amount().doubleValue());
+                row.createCell(6).setCellValue(tx.balanceAfter().doubleValue());
+                row.createCell(7).setCellValue(tx.status());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi khi tạo file Excel", e);
+        }
+    }
+}

@@ -101,6 +101,16 @@ public class AgencyServiceImpl implements AgencyService {
         return getAgencyDetail(agencyId);
     }
 
+    @Override
+    public AgencyDetailResponse findAgencyFinanceInfo(Long id) {
+        Agency agency = agencyRepository.findAgenciesFinanceInfo(id);
+
+        return AgencyDetailResponse.builder()
+                .agencyId(agency.getAgencyId())
+                .walletBalance(agency.getWalletBalance())
+                .build();
+    }
+
     private Long getCurrentAgencyId() {
 
         Authentication authentication = SecurityContextHolder

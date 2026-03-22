@@ -18,6 +18,7 @@ public class AgencyDetailResponse {
     private String address;
     private BigDecimal creditLimit;
     private BigDecimal currentCredit;
+    private BigDecimal walletBalance;
     private String status;
     private VerificationInfoResponse verification;
 }

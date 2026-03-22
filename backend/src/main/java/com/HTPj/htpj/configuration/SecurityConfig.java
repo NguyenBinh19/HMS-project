@@ -41,12 +41,14 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/users/register",
             "/email/welcome",
-            "/storage/**"
+            "/storage/**",
+            "/sepay/**"
     };
 
     private final String[] PUBLIC_GET_ENPOINTS = {
             "/auth/vault",
-            "/storage/**"
+            "/storage/**",
+            "/transaction-history/**"
     };
 
     @Value("${app.frontend-url:http://localhost:5173}")
