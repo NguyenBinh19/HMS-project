@@ -29,5 +29,14 @@ public interface BookingService {
 
     List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);
 
+    // UC-051: View Daily Departure List
+    List<DepartureListResponse> getTodayDepartures();
 
+    List<DepartureListResponse> getDeparturesByDate(LocalDate date);
+
+    // UC-051: Perform checkout
+    BookingDetailResponse performCheckout(String bookingCode);
+
+    // UC-051: Express checkout (no bill)
+    BookingDetailResponse expressCheckout(String bookingCode);
 }

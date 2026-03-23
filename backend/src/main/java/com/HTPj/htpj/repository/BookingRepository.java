@@ -1,5 +1,6 @@
 package com.HTPj.htpj.repository;
 
+import com.HTPj.htpj.dto.response.booking.DepartureListResponse;
 import com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse;
 import com.HTPj.htpj.entity.Booking;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,8 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByBookingCode(String bookingCode);
+
+    Optional<Booking> findByBookingCode(String bookingCode);
 
     // UC-029: Lịch sử đặt phòng — chỉ lấy bảng bookings, không JOIN thêm
     // (dữ liệu tổng hợp đã lưu sẵn trong bảng bookings)
@@ -112,4 +115,71 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     AND b.checkInDate = CURRENT_DATE
     """)
     List<ListAllBookingsResponse> getTodayCheckinBookings();
+
+    // UC-051: View Daily Departure List - bookings checking out today for a specific hotel
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.DepartureListResponse(
+        b.bookingCode,
+        bd.roomTitle,
+        bd.roomCode,
+        b.guestName,
+        a.agencyName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus,
+        b.createdAt
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN BookingDetail bd ON bd.booking = b
+    WHERE b.hotelId = :hotelId
+    AND b.checkOutDate = CURRENT_DATE
+    AND b.bookingStatus IN ('CONFIRMED', 'COMPLETED')
+    ORDER BY b.bookingStatus ASC, b.guestName ASC
+    """)
+    List<DepartureListResponse> getTodayDeparturesByHotelId(@Param("hotelId") Integer hotelId);
+
+    // UC-051: View departures by specific date for a specific hotel
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.DepartureListResponse(
+        b.bookingCode,
+        bd.roomTitle,
+        bd.roomCode,
+        b.guestName,
+        a.agencyName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus,
+        b.createdAt
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN BookingDetail bd ON bd.booking = b
+    WHERE b.hotelId = :hotelId
+    AND b.checkOutDate = :date
+    AND b.bookingStatus IN ('CONFIRMED', 'COMPLETED')
+    ORDER BY b.bookingStatus ASC, b.guestName ASC
+    """)
+    List<DepartureListResponse> getDeparturesByHotelIdAndDate(
+            @Param("hotelId") Integer hotelId,
+            @Param("date") LocalDate date
+    );
+
+    // UC-051: Find booking by code and hotel for checkout operation
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.bookingCode = :bookingCode
+    AND b.hotelId = :hotelId
+    """)
+    Optional<Booking> findByBookingCodeAndHotelId(
+            @Param("bookingCode") String bookingCode,
+            @Param("hotelId") Integer hotelId
+    );
 }

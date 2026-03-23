@@ -6,7 +6,7 @@ import com.HTPj.htpj.entity.PartnerVerification;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = KycDocumentMapper.class)
 public interface KycMapper {
     @Mapping(source = "legalInformation.legalName", target = "legalName")
     @Mapping(source = "legalInformation.taxCode", target = "taxCode")

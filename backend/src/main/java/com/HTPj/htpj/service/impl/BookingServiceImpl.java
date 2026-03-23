@@ -542,4 +542,141 @@ public class BookingServiceImpl implements BookingService {
     public List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date) {
         return bookingRepository.getBookingsByCheckinDate(date);
     }
+
+    // =========================================================================
+    // UC-051: View Daily Departure List
+    // =========================================================================
+    @Override
+    public List<DepartureListResponse> getTodayDepartures() {
+        Integer hotelId = extractHotelId();
+        System.out.println("hotelIdDDDDDDDDDDDDDDDDDDDD");
+        System.out.println(hotelId);
+        return bookingRepository.getTodayDeparturesByHotelId(hotelId);
+    }
+
+    @Override
+    public List<DepartureListResponse> getDeparturesByDate(LocalDate date) {
+        Integer hotelId = extractHotelId();
+        return bookingRepository.getDeparturesByHotelIdAndDate(hotelId, date);
+    }
+
+    // UC-051: Perform checkout — update booking to COMPLETED
+    @Transactional
+    @Override
+    public BookingDetailResponse performCheckout(String bookingCode) {
+        Integer hotelId = extractHotelId();
+
+        Booking booking = bookingRepository.findByBookingCodeAndHotelId(bookingCode, hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        if ("COMPLETED".equalsIgnoreCase(booking.getBookingStatus())) {
+            throw new AppException(ErrorCode.BOOKING_ALREADY_COMPLETED);
+        }
+        if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
+            throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
+        }
+
+        booking.setBookingStatus("COMPLETED");
+        booking.setUpdatedAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        Booking fullBooking = bookingRepository
+                .findDetailByBookingCodeAndUserId(
+                        bookingCode,
+                        booking.getUserId()
+                )
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        Hotel hotel = hotelRepository
+                .findById(fullBooking.getHotelId())
+                .orElse(null);
+
+        List<BookingAddonService> addonServices =
+                bookingAddonServiceRepository
+                        .findByBookingIdWithService(fullBooking.getBookingId());
+
+        List<BookingDetailItemResponse> roomDetails =
+                fullBooking.getBookingDetails()
+                        .stream()
+                        .map(bd -> BookingDetailItemResponse.builder()
+                                .bookingDetailId(bd.getBookingDetailId())
+                                .roomTitle(bd.getRoomTitle())
+                                .quantity(bd.getQuantity())
+                                .roomCode(bd.getRoomCode())
+                                .bedType(bd.getBedType())
+                                .roomArea(bd.getRoomArea())
+                                .maxAdults(bd.getMaxAdults())
+                                .maxChildren(bd.getMaxChildren())
+                                .maxGuests(bd.getMaxGuests())
+                                .amenities(bd.getAmenities())
+                                .pricePerNight(bd.getPricePerNight())
+                                .subtotalAmount(bd.getSubtotalAmount())
+                                .totalAmount(bd.getTotalAmount())
+                                .nights(bd.getNights())
+                                .build())
+                        .toList();
+
+        List<BookingAddonServiceResponse> addonResponses =
+                addonServices.stream()
+                        .map(bas -> BookingAddonServiceResponse.builder()
+                                .id(bas.getId())
+                                .serviceName(bas.getAddonService().getServiceName())
+                                .serviceType(bas.getAddonService().getCategory())
+                                .quantity(bas.getQuantity())
+                                .unitPrice(bas.getUnitPrice())
+                                .totalPrice(bas.getTotalPrice())
+                                .serviceDate(bas.getServiceDate())
+                                .flightNumber(bas.getFlightNumber())
+                                .flightTime(bas.getFlightTime())
+                                .specialNote(bas.getSpecialNote())
+                                .build())
+                        .toList();
+
+        return BookingDetailResponse.builder()
+                .bookingId(fullBooking.getBookingId())
+                .bookingCode(fullBooking.getBookingCode())
+                .hotelId(fullBooking.getHotelId())
+                .hotelName(hotel != null ? hotel.getHotelName() : null)
+                .hotelAddress(hotel != null ? hotel.getAddress() : null)
+                .hotelStarRating(hotel != null ? hotel.getStarRating() : null)
+                .checkInDate(fullBooking.getCheckInDate())
+                .checkOutDate(fullBooking.getCheckOutDate())
+                .nights(fullBooking.getNights())
+                .totalRooms(fullBooking.getTotalRooms())
+                .totalGuests(fullBooking.getTotalGuests())
+                .guestName(fullBooking.getGuestName())
+                .guestPhone(fullBooking.getGuestPhone())
+                .guestEmail(fullBooking.getGuestEmail())
+                .notes(fullBooking.getNotes())
+                .totalAmount(fullBooking.getTotalAmount())
+                .discountAmount(fullBooking.getDiscountTotal())
+                .finalAmount(fullBooking.getFinalAmount())
+                .paymentMethod(fullBooking.getPaymentMethod())
+                .paymentStatus(fullBooking.getPaymentStatus())
+                .bookingStatus(fullBooking.getBookingStatus())
+                .createdAt(fullBooking.getCreatedAt())
+                .hasFeedback(Boolean.TRUE.equals(fullBooking.getHasFeedback()))
+                .roomDetails(roomDetails)
+                .addonServices(addonResponses)
+                .build();
+    }
+
+    // UC-051: Express checkout — instant process, no bill check
+    @Transactional
+    @Override
+    public BookingDetailResponse expressCheckout(String bookingCode) {
+        return performCheckout(bookingCode);
+    }
+
+    private Integer extractHotelId() {
+        String userId = extractUserId();
+        Users user = userRepository.findByUsername(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        Hotel hotel = user.getHotel();
+        if (hotel == null) {
+            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        }
+        return hotel.getHotelId();
+    }
 }
