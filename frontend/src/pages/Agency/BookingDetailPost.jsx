@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft, Copy, Download, UserCircle, FileText,
-    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar
+    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar, Loader2
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { bookingService } from '@/services/booking.service.js';
@@ -49,6 +49,7 @@ const BookingDetailPost = () => {
     const [error, setError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -64,6 +65,50 @@ const BookingDetailPost = () => {
         };
         if (bookingCode) fetchDetail();
     }, [bookingCode]);
+
+    //Download voucher
+    const handleDownloadVoucher = async () => {
+        if (!booking?.bookingCode) return;
+
+        try {
+            setIsDownloading(true);
+            const response = await bookingService.downloadVoucher(booking.bookingCode);
+
+            // Kiểm tra nếu response rỗng
+            if (!response) {
+                throw new Error("Dữ liệu file trống");
+            }
+
+            const blob = new Blob([response], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+
+            const sanitizedName = (booking.guestName || "Guest").trim().replace(/\s+/g, '_');
+            link.setAttribute("download", `Voucher_${booking.bookingCode}_${sanitizedName}.pdf`);
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Giải phóng bộ nhớ
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
+            alert("Tải Voucher thành công!");
+
+        } catch (error) {
+            console.error("Download Error:", error);
+            const status = error.response?.status;
+            if (status === 403) {
+                alert("Lỗi: Voucher chỉ khả dụng cho đơn hàng đã xác nhận (Confirmed).");
+            } else if (status === 404) {
+                alert("Lỗi: Không tìm thấy file Voucher trên hệ thống.");
+            } else {
+                alert("Hệ thống không thể tạo file lúc này. Vui lòng thử lại sau.");
+            }
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
 // Hàm xử lý sau khi Modal lưu thành công
     const handleUpdateSuccess = (updatedBooking) => {
@@ -157,8 +202,27 @@ const BookingDetailPost = () => {
                         </div>
                         {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                            <button className="flex items-center justify-center gap-2 bg-[#006ce4] text-white py-2.5 rounded-md text-xs font-bold hover:bg-blue-700 transition-colors">
-                                <Download size={14}/> Tải Voucher
+                            {/* Nút Tải Voucher */}
+                            <button
+                                onClick={handleDownloadVoucher}
+                                disabled={isDownloading}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
+                                    isDownloading
+                                        ? "bg-slate-300 cursor-wait text-slate-500" // Đổi màu khi đang tải
+                                        : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95"
+                                }`}
+                            >
+                                {isDownloading ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin"/>
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={14}/>
+                                        <span>Tải Voucher</span>
+                                    </>
+                                )}
                             </button>
 
                             {/* Sửa khách */}
@@ -168,7 +232,8 @@ const BookingDetailPost = () => {
                                     canEdit() ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50" : "bg-slate-50 text-slate-300 border-transparent cursor-not-allowed"
                                 }`}
                             >
-                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa thông tin khách
+                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa
+                                thông tin khách
                             </button>
 
                             {/* Đánh giá: Hiện sau CHECKOUT */}
@@ -187,11 +252,13 @@ const BookingDetailPost = () => {
                                 </button>
                             )}
 
-                            <button className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
+                            <button
+                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
                                 <FileText size={14}/> Hóa đơn
                             </button>
 
-                            <button className="flex items-center justify-center gap-2 bg-[#fef2f2] text-rose-600 py-2.5 rounded-md text-xs font-bold hover:bg-rose-100">
+                            <button
+                                className="flex items-center justify-center gap-2 bg-[#fef2f2] text-rose-600 py-2.5 rounded-md text-xs font-bold hover:bg-rose-100">
                                 <XCircle size={14}/> Hủy phòng
                             </button>
                         </div>

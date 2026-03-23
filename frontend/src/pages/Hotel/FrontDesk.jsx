@@ -4,6 +4,7 @@ import FilterHeader from '@/components/hotel/frontDesk/FilterHeader.jsx';
 import BookingTable from '@/components/hotel/frontDesk/BookingTable.jsx';
 import { bookingService } from '@/services/booking.service';
 import { Search } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const FrontDeskDashboard = () => {
     const [activeTab, setActiveTab] = useState('arrival');
@@ -18,19 +19,53 @@ const FrontDeskDashboard = () => {
         setLoading(true);
         try {
             let response;
+            const isToday = currentDate === today;
+
             if (activeTab === 'arrival') {
-                if (currentDate === today) {
-                    response = await bookingService.getCheckInToday();
-                } else {
-                    response = await bookingService.getCheckInByDate(currentDate);
-                }
-                setBookings(response.result || []);
-            } else {
+                response = isToday
+                    ? await bookingService.getCheckInToday()
+                    : await bookingService.getCheckInByDate(currentDate);
+            }
+            else if (activeTab === 'departure') {
+                response = isToday
+                    ? await bookingService.getTodayDepartures()
+                    : await bookingService.getDeparturesByDate(currentDate);
+            }
+            else {
                 setBookings([]);
+                return;
+            }
+
+            if (response && response.result) {
+                // Lọc bỏ các dòng trùng bookingCode, chỉ giữ lại dòng đầu tiên
+                const uniqueBookings = Array.from(
+                    new Map(response.result.map(item => [item['bookingCode'], item])).values()
+                );
+                setBookings(uniqueBookings);
             }
         } catch (error) {
             console.error("Lỗi tải danh sách:", error);
+            toast.error("Không thể tải danh sách đơn hàng");
             setBookings([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Hàm xử lý Checkout
+    const handleCheckout = async (bookingCode) => {
+        if (!window.confirm(`Xác nhận thực hiện checkout cho đơn ${bookingCode}?`)) return;
+
+        try {
+            setLoading(true);
+            const res = await bookingService.performCheckout(bookingCode);
+            if (res.code === 1000) {
+                toast.success("Checkout thành công!");
+                fetchBookings(); // Tải lại danh sách sau khi checkout
+            }
+        } catch (error) {
+            console.error("Checkout error:", error);
+            toast.error(error.response?.data?.message || "Lỗi thực hiện checkout");
         } finally {
             setLoading(false);
         }
@@ -62,7 +97,14 @@ const FrontDeskDashboard = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard title="Khách đến" count={activeTab === 'arrival' ? bookings.length : 0} sub="Lịch check-in" type="arrival" active={activeTab === 'arrival'} onClick={() => setActiveTab('arrival')} />
-                <StatCard title="Khách đi" count={0} sub="Lịch check-out" type="departure" active={activeTab === 'departure'} onClick={() => setActiveTab('departure')} />
+                <StatCard
+                    title="Khách đi"
+                    count={activeTab === 'departure' ? bookings.length : 0}
+                    sub="Lịch check-out"
+                    type="departure"
+                    active={activeTab === 'departure'}
+                    onClick={() => setActiveTab('departure')}
+                />
                 <StatCard title="Đang lưu trú" count={0} sub="Phòng bận" type="stay" active={activeTab === 'stay'} onClick={() => setActiveTab('stay')} />
             </div>
 
@@ -81,7 +123,11 @@ const FrontDeskDashboard = () => {
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Đang tải...</p>
                     </div>
                 ) : (
-                    <BookingTable bookings={filteredBookings} activeTab={activeTab} />
+                    <BookingTable
+                        bookings={filteredBookings}
+                        activeTab={activeTab}
+                        onCheckout={handleCheckout}
+                    />
                 )}
             </div>
         </div>

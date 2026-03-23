@@ -125,10 +125,6 @@ export const getCheckInByDate = async (date) => {
     }
 }
 
-// ============================
-// UC-032, UC-033, UC-055: Feedback
-// ============================
-
 // UC-032: Submit feedback for a completed booking
 const submitFeedback = async (data) => {
     const response = await api.post(`/feedbacks`, data);
@@ -159,6 +155,71 @@ const replyToFeedback = async (reviewId, reply) => {
     return response.data;
 };
 
+// Download voucher
+const downloadVoucher = async (bookingCode) => {
+    try {
+        const response = await api.get(`/booking/voucher/${bookingCode}`, {
+            responseType: "blob", // để xử lý file PDF
+        });
+        // Tạo link download giả lập để trình duyệt tải file về
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `Voucher_${bookingCode}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return response.data;
+    } catch (error) {
+        console.error("Download Voucher Error:", error);
+        throw error;
+    }
+};
+
+// Lấy danh sách check-out hôm nay
+const getTodayDepartures = async () => {
+    try {
+        const response = await api.get(`/booking/checkout/today`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Today Departures Error:", error);
+        throw error;
+    }
+};
+
+// Lấy danh sách check-out theo ngày cụ thể
+const getDeparturesByDate = async (date) => {
+    try {
+        const response = await api.get(`/booking/checkout/${date}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Departures By Date Error:", error);
+        throw error;
+    }
+};
+
+// Thực hiện Checkout (Quy trình chuẩn)
+const performCheckout = async (bookingCode) => {
+    try {
+        const response = await api.post(`/booking/checkout/${bookingCode}/process`);
+        return response.data;
+    } catch (error) {
+        console.error("Perform Checkout Error:", error);
+        throw error;
+    }
+};
+
+// Checkout nhanh (không hóa đơn)
+const expressCheckout = async (bookingCode) => {
+    try {
+        const response = await api.post(`/booking/checkout/${bookingCode}/express`);
+        return response.data;
+    } catch (error) {
+        console.error("Express Checkout Error:", error);
+        throw error;
+    }
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -176,4 +237,9 @@ export const bookingService = {
     getHotelFeedback,
     getHotelFeedbackStats,
     replyToFeedback,
+    downloadVoucher,
+    getTodayDepartures,
+    getDeparturesByDate,
+    performCheckout,
+    expressCheckout,
 };

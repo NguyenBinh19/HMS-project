@@ -57,6 +57,7 @@ import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
 import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
+import HotelBookingDetail from "@/pages/Hotel/HotelBookingDetail.jsx"
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
     return (
@@ -135,6 +136,7 @@ const AppRoutes = () => {
                     <Route path="rate-allotment" element={<RateAndAllotment/>} />
                     <Route path="revenue-report" element={<RevenueReport/>} />
                     <Route path="payout-state" element={<PayoutStatement/>} />
+                    <Route path="view-booking/:bookingCode" element={<HotelBookingDetail />} />
                 </Route>
 
                 {/*Luồng Admin System*/}
