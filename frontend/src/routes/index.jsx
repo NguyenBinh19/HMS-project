@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -55,6 +55,8 @@ import RevenueReport from "@/pages/Hotel/RevenueReport.jsx";
 import PayoutStatement from "@/pages/Hotel/PayoutStatement.jsx";
 import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
+import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
+import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 const AppRoutes = () => {
     return (
@@ -88,10 +90,10 @@ const AppRoutes = () => {
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="/agency" element={
-                        <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
-                            <AgencyMain />
-                        </ProtectedRoute>
-                    }>
+                    <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
+                        <AgencyMain />
+                    </ProtectedRoute>
+                }>
                     <Route path="search-hotel">
                         <Route index element={<SearchHotelEngine />} />
                         <Route path="list" element={<ListSearchResult />} />
@@ -116,6 +118,8 @@ const AppRoutes = () => {
                             <HotelMain />
                         </ProtectedRoute>
                     }>
+                    <Route path="list-hotel" element={<HotelSearchResult />} />
+                    <Route path="list-hotel/hotels/:id" element={<RoomTypeDetailList />} />
                     <Route path="dashboard" element={<HotelDashboardPage />} />
                     <Route path="room-types" element={<RoomTypes />} />
                     <Route index element={<Navigate to="room-types" replace />} />

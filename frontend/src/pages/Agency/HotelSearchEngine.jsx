@@ -37,57 +37,57 @@ export default function HotelSearchEngine() {
             </section>
 
             {/* Phần Gợi ý thông minh */}
-            <div className="max-w-6xl mx-auto py-12 px-6">
-                <div className="flex items-center gap-2 mb-6">
-                    <h2 className="text-xl font-black text-slate-800">Gợi ý thông minh</h2>
-                </div>
+            {/*<div className="max-w-6xl mx-auto py-12 px-6">*/}
+            {/*    <div className="flex items-center gap-2 mb-6">*/}
+            {/*        <h2 className="text-xl font-black text-slate-800">Gợi ý thông minh</h2>*/}
+            {/*    </div>*/}
 
-                {/* Lịch sử tìm kiếm gần đây */}
-                <div className="flex flex-wrap items-center gap-2 mb-10">
-                    <span className="text-slate-500 text-sm font-bold flex items-center gap-1 mr-2 italic">
-                        <History size={16} /> Lịch sử tìm kiếm gần đây
-                    </span>
-                    {["Đà Nẵng (20-22/05)", "Hà Nội (01-05/06)", "Phú Quốc (15-18/07)"].map((loc) => (
-                        <div key={loc} className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[12px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer">
-                            {loc}
-                        </div>
-                    ))}
-                </div>
+            {/*    /!* Lịch sử tìm kiếm gần đây *!/*/}
+            {/*    <div className="flex flex-wrap items-center gap-2 mb-10">*/}
+            {/*        <span className="text-slate-500 text-sm font-bold flex items-center gap-1 mr-2 italic">*/}
+            {/*            <History size={16} /> Lịch sử tìm kiếm gần đây*/}
+            {/*        </span>*/}
+            {/*        {["Đà Nẵng (20-22/05)", "Hà Nội (01-05/06)", "Phú Quốc (15-18/07)"].map((loc) => (*/}
+            {/*            <div key={loc} className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[12px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer">*/}
+            {/*                {loc}*/}
+            {/*            </div>*/}
+            {/*        ))}*/}
+            {/*    </div>*/}
 
-                {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <PromoCard
-                        icon={<Star size={22} />} bgColor="bg-[#EBF8FF]" textColor="text-[#2B6CB0]"
-                        title="Flash Sale Mường Thanh" desc="Chiết khấu thêm 5% cho Đại lý hạng A"
-                        badgeText="GIẢM 5%" badgeSub="Áp dụng đến 30/06/2026"
-                    />
-                    <PromoCard
-                        icon={<Gift size={22} />} bgColor="bg-[#FAF5FF]" textColor="text-[#6B46C1]"
-                        title="Combo Vịnh Hạ Long" desc="Tặng 1 đêm miễn phí cho mỗi 3 đêm đặt"
-                        badgeText="TẶNG 1 ĐÊM" badgeSub="Áp dụng đến 31/12/2026"
-                    />
-                    <PromoCard
-                        icon={<Crown size={22} />} bgColor="bg-[#FFFFF0]" textColor="text-[#B7791F]"
-                        title="Đại lý VIP" desc="Ưu tiên xử lý booking và hỗ trợ 24/7"
-                        badgeText="VIP SUPPORT" badgeSub="Luôn sẵn sàng hỗ trợ"
-                    />
-                </div>
+            {/*    /!* Cards Grid *!/*/}
+            {/*    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">*/}
+            {/*        <PromoCard*/}
+            {/*            icon={<Star size={22} />} bgColor="bg-[#EBF8FF]" textColor="text-[#2B6CB0]"*/}
+            {/*            title="Flash Sale Mường Thanh" desc="Chiết khấu thêm 5% cho Đại lý hạng A"*/}
+            {/*            badgeText="GIẢM 5%" badgeSub="Áp dụng đến 30/06/2026"*/}
+            {/*        />*/}
+            {/*        <PromoCard*/}
+            {/*            icon={<Gift size={22} />} bgColor="bg-[#FAF5FF]" textColor="text-[#6B46C1]"*/}
+            {/*            title="Combo Vịnh Hạ Long" desc="Tặng 1 đêm miễn phí cho mỗi 3 đêm đặt"*/}
+            {/*            badgeText="TẶNG 1 ĐÊM" badgeSub="Áp dụng đến 31/12/2026"*/}
+            {/*        />*/}
+            {/*        <PromoCard*/}
+            {/*            icon={<Crown size={22} />} bgColor="bg-[#FFFFF0]" textColor="text-[#B7791F]"*/}
+            {/*            title="Đại lý VIP" desc="Ưu tiên xử lý booking và hỗ trợ 24/7"*/}
+            {/*            badgeText="VIP SUPPORT" badgeSub="Luôn sẵn sàng hỗ trợ"*/}
+            {/*        />*/}
+            {/*    </div>*/}
 
-                {/* Khách sạn InterContinental Highlight */}
-                <div className="mt-8 bg-white border border-slate-100 rounded-[24px] p-6 flex items-center gap-5 hover:shadow-xl transition-all shadow-sm">
-                    <div className="bg-[#E6FFFA] p-4 rounded-2xl">
-                        <Building2 className="text-[#319795]" size={32} />
-                    </div>
-                    <div className="flex-1">
-                        <h3 className="font-black text-slate-800 text-lg uppercase">Khách sạn InterContinental</h3>
-                        <p className="text-sm text-slate-500 font-medium italic">Giá tốt nhất thị trường với chính sách hủy linh hoạt</p>
-                    </div>
-                    <div className="bg-[#F0FFF4] px-10 py-4 rounded-2xl border border-emerald-100 text-center">
-                        <div className="text-[#2F855A] font-black text-lg">GIÁ TỐT NHẤT</div>
-                        <div className="text-[#38A169] text-[10px] font-bold italic opacity-80 uppercase tracking-tighter">Cam kết giá thấp hơn 5%</div>
-                    </div>
-                </div>
-            </div>
+            {/*    /!* Khách sạn InterContinental Highlight *!/*/}
+            {/*    <div className="mt-8 bg-white border border-slate-100 rounded-[24px] p-6 flex items-center gap-5 hover:shadow-xl transition-all shadow-sm">*/}
+            {/*        <div className="bg-[#E6FFFA] p-4 rounded-2xl">*/}
+            {/*            <Building2 className="text-[#319795]" size={32} />*/}
+            {/*        </div>*/}
+            {/*        <div className="flex-1">*/}
+            {/*            <h3 className="font-black text-slate-800 text-lg uppercase">Khách sạn InterContinental</h3>*/}
+            {/*            <p className="text-sm text-slate-500 font-medium italic">Giá tốt nhất thị trường với chính sách hủy linh hoạt</p>*/}
+            {/*        </div>*/}
+            {/*        <div className="bg-[#F0FFF4] px-10 py-4 rounded-2xl border border-emerald-100 text-center">*/}
+            {/*            <div className="text-[#2F855A] font-black text-lg">GIÁ TỐT NHẤT</div>*/}
+            {/*            <div className="text-[#38A169] text-[10px] font-bold italic opacity-80 uppercase tracking-tighter">Cam kết giá thấp hơn 5%</div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*</div>*/}
         </div>
     );
 }

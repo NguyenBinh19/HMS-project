@@ -20,7 +20,6 @@ export const useBookingPromotion = (bookingData, navigate) => {
                 billAmount: bookingData.totalPrice
             };
 
-
             const response = await promotionService.getAvailablePromotions(payload);
 
 
@@ -42,7 +41,7 @@ export const useBookingPromotion = (bookingData, navigate) => {
         const end = typeof bookingData.expiredAt === "string" ? parseISO(bookingData.expiredAt) : bookingData.expiredAt;
         if (differenceInSeconds(end, now) <= 0) {
             alert("Phiên giữ chỗ đã hết hạn. Vui lòng tìm kiếm lại phòng.");
-            navigate("/search-hotel");
+            navigate("/agency/search-hotel");
             return;
         }
 

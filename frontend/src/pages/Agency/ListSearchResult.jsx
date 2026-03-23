@@ -167,9 +167,6 @@ export default function HotelSearchContainer() {
                             <button className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[12px] font-black flex items-center gap-2 shadow-lg shadow-blue-100">
                                 <List size={16} /> DANH SÁCH
                             </button>
-                            <button className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[12px] font-black flex items-center gap-2 hover:bg-slate-200 transition-all">
-                                <Map size={16} /> BẢN ĐỒ
-                            </button>
                         </div>
                     </div>
 
@@ -179,9 +176,9 @@ export default function HotelSearchContainer() {
                             Hiển thị: <span className="text-slate-800">{filteredHotels.length} khách sạn phù hợp</span>
                         </span>
                         <div className="h-4 w-[1px] bg-slate-200 mx-2"></div>
-                        <span className="text-[11px] font-black text-slate-400 uppercase italic mr-2">Sắp xếp theo:</span>
-                        <button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold shadow-md">Giá thấp → cao</button>
-                        <button className="px-4 py-1.5 bg-white text-slate-500 rounded-lg text-[11px] font-bold border border-slate-200 hover:border-blue-400 transition-all">Đánh giá cao nhất</button>
+                        {/*<span className="text-[11px] font-black text-slate-400 uppercase italic mr-2">Sắp xếp theo:</span>*/}
+                        {/*<button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold shadow-md">Giá thấp → cao</button>*/}
+                        {/*<button className="px-4 py-1.5 bg-white text-slate-500 rounded-lg text-[11px] font-bold border border-slate-200 hover:border-blue-400 transition-all">Đánh giá cao nhất</button>*/}
                     </div>
                 </div>
 

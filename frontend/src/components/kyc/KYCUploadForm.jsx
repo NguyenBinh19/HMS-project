@@ -10,32 +10,35 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
-   const getPartnerTypeFromToken = () => {
-    try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) return "HOTEL"; // fallback
+    const getPartnerTypeFromToken = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) return "HOTEL";
 
-        const decoded = jwtDecode(token);
-        let roles = decoded?.scope;
-        
-        if (!Array.isArray(roles)) {
-            roles = roles ? [roles] : [];
-        }
+            const decoded = jwtDecode(token);
 
-        if (roles.some(r => r.startsWith("ROLE_AGENCY"))) {
-            return "AGENCY";
-        }
+            // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
 
-        if (roles.some(r => r.startsWith("ROLE_HOTEL"))) {
+            // 2. Chuẩn hóa về mảng String để dễ xử lý
+            const rolesArray = Array.isArray(rawRoles)
+                ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
+                : String(rawRoles).split(" ");
+
+            if (rolesArray.some(role => role.includes("AGENCY"))) {
+                return "AGENCY";
+            }
+
+            if (rolesArray.some(role => role.includes("HOTEL"))) {
+                return "HOTEL";
+            }
+
+            return "HOTEL";
+        } catch (err) {
+            console.error("Lỗi Decode Token trong KYC Form:", err);
             return "HOTEL";
         }
-
-        return "HOTEL"; // fallback
-    } catch (err) {
-        console.error("Decode token lỗi:", err);
-        return "HOTEL";
-    }
-};
+    };
     const [formData, setFormData] = useState({
         partnerType: getPartnerTypeFromToken(),
         legalName: "",
@@ -192,6 +195,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
             setLoading(false);
         }
     };
+
 
     if (isFetchingOldData) {
         return (

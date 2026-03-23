@@ -44,16 +44,17 @@ const HotelProfileManager = () => {
 
         if (!formData.hotelName.trim()) newErrors.hotelName = "Tên khách sạn không được để trống";
 
-        if (!/^\d{10,11}$/.test(formData.phone.replace(/\s/g, ""))) {
-            newErrors.phone = "Số điện thoại không hợp lệ (10-11 số)";
+        if (formData.phone && formData.phone.trim() !== "") {
+            if (!/^\d{10,11}$/.test(formData.phone.replace(/\s/g, ""))) {
+                newErrors.phone = "Số điện thoại không hợp lệ (10-11 số)";
+            }
         }
 
-       if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "Định dạng email không hợp lệ";
+        if (formData.email && formData.email.trim() !== "") {
+            if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                newErrors.email = "Định dạng email không hợp lệ";
+            }
         }
-
-        if (!formData.city.trim()) newErrors.city = "Vui lòng nhập thành phố";
-        if (!formData.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ chi tiết";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
