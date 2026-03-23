@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 public class RankResponse {
 
     private Integer id;
+    private String rankCode;
     private String rankName;
     private String description;
     private String icon;
