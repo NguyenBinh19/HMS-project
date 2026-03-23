@@ -66,6 +66,14 @@ public enum ErrorCode {
     BOOKING_NOT_FOUND(2204, "Booking not found", HttpStatus.NOT_FOUND),
     ADDON_SERVICE_NOT_FOUND(2205, "Addon service not found", HttpStatus.NOT_FOUND),
 
+    //voucher (UC-027)
+    VOUCHER_NOT_AVAILABLE(2210, "Voucher is only available for Confirmed bookings", HttpStatus.BAD_REQUEST),
+    VOUCHER_GENERATION_FAILED(2211, "Unable to generate document. Please try again later", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    //checkout (UC-051)
+    BOOKING_ALREADY_COMPLETED(2220, "Booking has already been checked out", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_CHECKED_IN(2221, "Booking must be in CONFIRMED status to check out", HttpStatus.BAD_REQUEST),
+
     FEEDBACK_ALREADY_SUBMITTED(3001, "Bạn đã đánh giá đơn hàng này rồi.", HttpStatus.BAD_REQUEST),
     FEEDBACK_WINDOW_EXPIRED(3002, "Thời hạn đánh giá đã hết (180 ngày sau checkout).", HttpStatus.BAD_REQUEST),
     BOOKING_NOT_COMPLETED(3003, "Chỉ có thể đánh giá đơn hàng đã hoàn thành.", HttpStatus.BAD_REQUEST),
@@ -74,6 +82,28 @@ public enum ErrorCode {
     REVIEW_ALREADY_REPLIED(3006, "Đánh giá này đã được phản hồi.", HttpStatus.BAD_REQUEST),
     INVALID_PARTNER_TYPE(4005, "Invalid partner type", HttpStatus.NOT_FOUND),
     VERIFICATION_NOT_FOUND(4006, "Invalid verfication", HttpStatus.NOT_FOUND),
+
+    //inventory & allotment
+    ALLOTMENT_EXCEEDS_PHYSICAL(2301, "Allotment cannot exceed total physical rooms", HttpStatus.BAD_REQUEST),
+    ALLOTMENT_BELOW_SOLD(2302, "Cannot reduce allotment below sold count", HttpStatus.BAD_REQUEST),
+    ALLOTMENT_INVALID_DATE_RANGE(2303, "Invalid date range for allotment update", HttpStatus.BAD_REQUEST),
+    STOP_SELL_CONFLICT(2304, "Stop-sell conflict with guaranteed contract", HttpStatus.CONFLICT),
+
+    //financial - revenue report (UC-069)
+    REPORT_INVALID_DATE_RANGE(2401, "Invalid date range for report", HttpStatus.BAD_REQUEST),
+    REPORT_DATE_RANGE_TOO_LARGE(2402, "Date range too large. Please select a period under 365 days or switch to Monthly granularity.", HttpStatus.BAD_REQUEST),
+
+    //financial - payout statement (UC-070, UC-088)
+    STATEMENT_NOT_FOUND(2411, "Payout statement not found", HttpStatus.NOT_FOUND),
+    STATEMENT_INVALID_STATUS(2412, "Statement status does not allow this action", HttpStatus.BAD_REQUEST),
+    STATEMENT_ALREADY_PAID(2413, "This statement has already been settled", HttpStatus.CONFLICT),
+    PAYOUT_MISSING_BANK_INFO(2414, "Hotel bank account information is missing", HttpStatus.BAD_REQUEST),
+    PAYOUT_BELOW_THRESHOLD(2415, "Net payout is below the minimum threshold", HttpStatus.BAD_REQUEST),
+
+    //financial - export (UC-084)
+    EXPORT_INVALID_TYPE(2421, "Invalid report type for export", HttpStatus.BAD_REQUEST),
+    EXPORT_NO_DATA(2422, "No records found for the selected criteria", HttpStatus.NOT_FOUND),
+    EXPORT_GENERATION_FAILED(2423, "Failed to generate export file", HttpStatus.INTERNAL_SERVER_ERROR),
 
     //kyc
     AGENCY_NOT_FOUND(4001, "Agency not found", HttpStatus.NOT_FOUND),

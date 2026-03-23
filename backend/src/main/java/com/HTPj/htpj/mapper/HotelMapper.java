@@ -9,22 +9,31 @@ import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.PartnerVerification;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface HotelMapper {
 
+    @Mapping(target = "avgRating", ignore = true)
+    @Mapping(target = "coverImage", ignore = true)
+    @Mapping(target = "totalReviews", ignore = true)
     HotelResponse toHotelResponse(Hotel hotel);
 
     @Mapping(target = "amenities", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "avgRating", ignore = true)
     @Mapping(target = "totalReviews", ignore = true)
+    @Mapping(target = "minPrice", ignore = true)
+    @Mapping(target = "totalAvailableRooms", ignore = true)
     HotelDetailResponse toHotelDetailResponse(Hotel hotel);
 
 
     HotelListResponse toHotelListResponse(Hotel hotel);
 
+    @Mapping(target = "amenitiesList", ignore = true)
+    @Mapping(target = "avgRating", ignore = true)
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "totalReviews", ignore = true)
+    @Mapping(target = "verification", ignore = true)
     HotelDetailListResponse toHotelDetailListResponse(Hotel hotel);
 
     @Mapping(source = "id", target = "verificationId")

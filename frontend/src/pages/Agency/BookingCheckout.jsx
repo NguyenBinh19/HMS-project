@@ -19,7 +19,12 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
         if (!expiredAt) return;
         const interval = setInterval(() => {
             const now = new Date();
-            const end = typeof expiredAt === "string" ? parseISO(expiredAt) : expiredAt;
+            const end = typeof expiredAt === "string"
+                ? (expiredAt.endsWith('Z') ? parseISO(expiredAt) : parseISO(expiredAt + 'Z'))
+                : expiredAt;
+            
+            console.log("Current Time:", now.toISOString(), " | Expired At:", end.toISOString());
+
             const diff = differenceInSeconds(end, now);
             if (diff <= 0) {
                 clearInterval(interval);
@@ -224,7 +229,7 @@ export default function BookingCheckoutPage() {
         <div className="min-h-screen bg-[#f5f7fb] pb-20 font-sans">
             <BookingTimerBar
                 expiredAt={data.expiredAt}
-                onExpire={() => navigate("/search-hotel")}
+                onExpire={() => navigate("/agency/search-hotel")}
                 onExtend={handleExtendHold}
                 isExtending={isExtending}
                 extendCount={extendCount}

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -35,6 +35,7 @@ import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
 import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
 import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
 import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
+import RateAndAllotment from "@/pages/Hotel/RateAndAllotment.jsx";
 import UserProfile from "@/pages/common/UserProfile.jsx";
 import AdminUserList from "@/pages/Admin/AdminUserList.jsx";
 import AdminUserDetail from "@/pages/Admin/AdminUserDetail.jsx";
@@ -89,10 +90,10 @@ const AppRoutes = () => {
                 {/*Luồng Agency Booking*/}
                 <Route path="booking-success" element={<BookingSuccessPage />} />
                 <Route path="/agency" element={
-                        <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
-                            <AgencyMain />
-                        </ProtectedRoute>
-                    }>
+                    <ProtectedRoute roles={ROLE_GROUP.AGENCY}>
+                        <AgencyMain />
+                    </ProtectedRoute>
+                }>
                     <Route path="search-hotel">
                         <Route index element={<SearchHotelEngine />} />
                         <Route path="list" element={<ListSearchResult />} />
@@ -131,6 +132,7 @@ const AppRoutes = () => {
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
                     <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="rate-allotment" element={<RateAndAllotment/>} />
                     <Route path="revenue-report" element={<RevenueReport/>} />
                     <Route path="payout-state" element={<PayoutStatement/>} />
                 </Route>

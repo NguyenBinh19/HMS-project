@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 public class RoomTypeServiceImpl implements RoomTypeService {
 
     private final RoomTypeRepository roomTypeRepository;
-    private final HotelRepository hotelRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RoomTypeImageRepository roomTypeImageRepository;
     private final S3Service s3Service;
