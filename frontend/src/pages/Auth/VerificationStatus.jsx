@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Eye, Clock, AlertCircle, FileText, ShieldCheck, ArrowRight, RefreshCw, Info, Image as ImageIcon } from "lucide-react";
+import {
+    CheckCircle2,
+    Eye,
+    Clock,
+    AlertCircle,
+    FileText,
+    ShieldCheck,
+    ArrowRight,
+    RefreshCw,
+    Info,
+    Image as ImageIcon,
+    LogIn
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { kycService } from "@/services/kyc.service.js";
 
@@ -220,6 +232,15 @@ const VerificationStatusPage = () => {
                                 );
                             })}
                         </div>
+                    </div>
+                    {/* Buttons */}
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8">
+                        <button
+                            onClick={() => navigate("/")}
+                            className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl font-bold text-[14px] border border-slate-200 hover:bg-slate-50 transition-all flex-1"
+                        >
+                            <LogIn size={18} className="rotate-180"/> Trang chủ
+                        </button>
                     </div>
                 </div>
             </div>

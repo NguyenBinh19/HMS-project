@@ -21,7 +21,7 @@ public class PartnerVerification {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 200)
     private String status;
 
     @Column(name = "submitted_at")

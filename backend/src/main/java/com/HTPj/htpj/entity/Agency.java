@@ -7,12 +7,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "agencies")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "agencies")
 public class Agency {
 
     @Id
@@ -52,5 +52,9 @@ public class Agency {
 
     @OneToMany(mappedBy = "agency")
     private List<PartnerVerification> verifications;
+
+    @ManyToOne
+    @JoinColumn(name = "rank_id")
+    private Rank rank;
 
 }

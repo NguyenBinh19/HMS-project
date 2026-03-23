@@ -111,6 +111,20 @@ public enum ErrorCode {
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
 
+    //rank
+    RANK_NOT_FOUND(4101, "Rank not found", HttpStatus.NOT_FOUND),
+    RANK_NAME_EXISTED(4102, "Rank name already exists", HttpStatus.BAD_REQUEST),
+    RANK_PRIORITY_EXISTED(4103, "Priority already exists", HttpStatus.BAD_REQUEST),
+    RANK_IN_USE(4104, "Rank is being used by agencies", HttpStatus.BAD_REQUEST),
+
+    //commission
+    DEFAULT_ALREADY_EXIST(4201, "Default commission already exists", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_DEFAULT(4202, "Cannot delete default commission", HttpStatus.BAD_REQUEST),
+    REASON_REQUIRED(4203, "Reason is required", HttpStatus.BAD_REQUEST),
+    COMMISSION_NOT_FOUND(4204, "Commission not found", HttpStatus.NOT_FOUND),
+    INVALID_COMMISSION_TYPE(4205, "Only for commission type deal", HttpStatus.NOT_FOUND),
+    COMMISSION_ALREADY_ACTIVE(4206, "Commission is active", HttpStatus.NOT_FOUND),
+
 
     ;
 

@@ -18,6 +18,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -37,6 +39,7 @@ public class KycServiceImpl implements KycService {
     private final KycMapper kycMapper;
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
+    private final CommissionRepository commissionRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -182,13 +185,13 @@ public class KycServiceImpl implements KycService {
     }
 
     @Override
-    public void approveVerification(ApproveVerificationRequest request) {
+    public void approveVerification(ApproveVerificationRequest request, String reviewedBy) {
 
         PartnerVerification verification = verificationRepository
                 .findById(request.getVerificationId())
                 .orElseThrow(() -> new AppException(ErrorCode.KYC_VERIFICATION_NOT_FOUND));
 
-        verification.setReviewedBy(request.getReviewedBy());
+        verification.setReviewedBy(reviewedBy);
         verification.setReviewedAt(LocalDateTime.now());
         verification.setStatus(request.getStatus());
         verification.setRejectionReason(request.getRejectionReason());
@@ -214,10 +217,39 @@ public class KycServiceImpl implements KycService {
             String partnerType = verification.getPartnerType();
 
             if ("hotel".equalsIgnoreCase(partnerType)) {
+                LocalDateTime now = LocalDateTime.now();
+
+                List<Commission> validDeals = commissionRepository.findValidDeal(now);
+
+                Commission selectedCommission = null;
+
+                //deal
+                if (!validDeals.isEmpty()) {
+                    if (validDeals.size() == 1) {
+                        selectedCommission = validDeals.get(0);
+                    } else {
+                        selectedCommission = validDeals.stream()
+                                .max(Comparator.comparing(Commission::getCreatedAt))
+                                .orElse(null);
+                    }
+                    //default
+                } else {
+                    selectedCommission = commissionRepository.findDefault()
+                            .orElseThrow(() -> new RuntimeException("Default commission not found"));
+                }
+
+                //create hotel
                 Hotel hotel = new Hotel();
                 hotel.setHotelName(legalName);
                 hotel.setAddress(address);
                 hotel.setStatus("ACTIVE");
+                hotel.setCommissionValue(selectedCommission.getCommissionValue());
+                hotel.setRateType(selectedCommission.getRateType());
+                hotel.setCommissionId(selectedCommission.getCommissionId());
+                hotel.setCommissionType(selectedCommission.getCommissionType());
+                hotel.setCommissionUpdatedAt(now);
+                hotel.setCommissionUpdatedBy(reviewedBy);
+
                 Hotel savedHotel = hotelRepository.save(hotel);
                 verification.setHotel(savedHotel);
                 user.setHotel(savedHotel);
