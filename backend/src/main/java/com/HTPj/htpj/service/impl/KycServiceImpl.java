@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.io.IOException;
@@ -40,6 +41,7 @@ public class KycServiceImpl implements KycService {
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final CommissionRepository commissionRepository;
+    private final RankRepository rankRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -257,10 +259,18 @@ public class KycServiceImpl implements KycService {
             }
 
             else if ("agency".equalsIgnoreCase(partnerType)) {
+                Rank basicRank = rankRepository.findByRankCode("BASIC")
+                        .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
+
                 Agency agency = new Agency();
                 agency.setAgencyName(legalName);
                 agency.setAddress(address);
                 agency.setStatus("ACTIVE");
+
+                agency.setRank(basicRank);
+                agency.setCreditLimit(BigDecimal.ZERO);
+                agency.setCurrentCredit(BigDecimal.ZERO);
+
                 Agency savedAgency = agencyRepository.save(agency);
                 verification.setAgency(savedAgency);
                 user.setAgency(savedAgency);

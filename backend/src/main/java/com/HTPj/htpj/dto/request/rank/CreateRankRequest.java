@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class CreateRankRequest {
-
+    private String rankCode;
     private String rankName;
     private String description;
     private String icon;

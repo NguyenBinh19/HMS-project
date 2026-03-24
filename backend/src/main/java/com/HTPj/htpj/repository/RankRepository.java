@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RankRepository extends JpaRepository<Rank, Integer> {
@@ -26,4 +27,8 @@ public interface RankRepository extends JpaRepository<Rank, Integer> {
         ORDER BY r.priority ASC
     """)
     List<Rank> findAllOrderByPriority();
+
+    boolean existsByRankCode(String rankCode);
+
+    Optional<Rank> findByRankCode(String rankCode);
 }

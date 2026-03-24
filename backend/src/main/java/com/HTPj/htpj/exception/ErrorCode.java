@@ -116,6 +116,7 @@ public enum ErrorCode {
     RANK_NAME_EXISTED(4102, "Rank name already exists", HttpStatus.BAD_REQUEST),
     RANK_PRIORITY_EXISTED(4103, "Priority already exists", HttpStatus.BAD_REQUEST),
     RANK_IN_USE(4104, "Rank is being used by agencies", HttpStatus.BAD_REQUEST),
+    RANK_CODE_EXISTED(4105, "Rank code exist", HttpStatus.BAD_REQUEST),
 
     //commission
     DEFAULT_ALREADY_EXIST(4201, "Default commission already exists", HttpStatus.BAD_REQUEST),

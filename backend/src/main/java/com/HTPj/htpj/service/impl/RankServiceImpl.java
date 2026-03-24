@@ -46,6 +46,10 @@ public class RankServiceImpl implements RankService {
     @Override
     public String createRank(CreateRankRequest request) {
 
+        if (rankRepository.existsByRankCode(request.getRankCode())) {
+            throw new AppException(ErrorCode.RANK_CODE_EXISTED);
+        }
+
         if (rankRepository.existsByRankName(request.getRankName())) {
             throw new AppException(ErrorCode.RANK_NAME_EXISTED);
         }
