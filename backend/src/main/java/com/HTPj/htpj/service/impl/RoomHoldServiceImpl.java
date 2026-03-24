@@ -10,7 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomHoldMapper;
 import com.HTPj.htpj.repository.RoomHoldRepository;
 import com.HTPj.htpj.service.RoomHoldService;
-//import com.HTPj.htpj.temporal.client.RoomHoldWorkflowClient;
+import com.HTPj.htpj.temporal.client.RoomHoldWorkflowClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,7 @@ public class RoomHoldServiceImpl implements RoomHoldService {
 
     private final RoomHoldRepository roomHoldRepository;
     private final RoomHoldMapper roomHoldMapper;
-//    private final RoomHoldWorkflowClient workflowClient;
+    private final RoomHoldWorkflowClient workflowClient;
 
 
     @Override
@@ -54,12 +54,12 @@ public class RoomHoldServiceImpl implements RoomHoldService {
 
         roomHoldRepository.save(hold);
 
-//        workflowClient.startWorkflow(
-//                hold.getHoldCode(),
-//                expiredAt.atZone(java.time.ZoneId.systemDefault())
-//                        .toInstant()
-//                        .toEpochMilli()
-//        );
+        workflowClient.startWorkflow(
+                hold.getHoldCode(),
+                expiredAt.atZone(java.time.ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+        );
 
 
         return roomHoldMapper.toResponse(hold);
@@ -87,10 +87,10 @@ public class RoomHoldServiceImpl implements RoomHoldService {
                 .toInstant()
                 .toEpochMilli();
 
-//        workflowClient.extendWorkflow(
-//                hold.getHoldCode(),
-//                newExpireEpochMillis
-//        );
+        workflowClient.extendWorkflow(
+                hold.getHoldCode(),
+                newExpireEpochMillis
+        );
 
         return roomHoldMapper.toResponse(hold);
     }
