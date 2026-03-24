@@ -1,6 +1,7 @@
 package com.HTPj.htpj.controller;
 
-import com.HTPj.htpj.dto.DataSourceResponse.TransactionHistoryDto;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionHistoryDto;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionSummaryDto;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.service.TransactionHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -49,14 +50,27 @@ public class TransactionHistoryController {
     }
 
     @GetMapping("/{agencyId}/transactions/export")
-    public ResponseEntity<InputStreamResource> exportTransactions(@PathVariable Long agencyId) {
-        ByteArrayInputStream in = transactionHistoryService.exportToExcel(agencyId);
+    public ResponseEntity<InputStreamResource> exportTransactions(
+            @PathVariable Long agencyId,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(defaultValue = "ALL") String type,
+            @RequestParam(defaultValue = "ALL") String source) {
+
+        ByteArrayInputStream in = transactionHistoryService.exportToExcel(agencyId, dateFrom, dateTo, type, source);
         InputStreamResource file = new InputStreamResource(in);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=lich_su_giao_dich.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
+    }
+
+    @GetMapping("/{agencyId}/transactions/summary")
+    public ApiResponse<TransactionSummaryDto> getSummary(@PathVariable Long agencyId) {
+        return ApiResponse.<TransactionSummaryDto>builder()
+                .result(transactionHistoryService.getSummary(agencyId))
+                .build();
     }
 
 }
