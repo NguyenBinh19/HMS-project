@@ -21,4 +21,5 @@ public class AgencyDetailResponse {
     private BigDecimal walletBalance;
     private String status;
     private VerificationInfoResponse verification;
+    private Integer creditUsedPercent;
 }
