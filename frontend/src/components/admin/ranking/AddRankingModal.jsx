@@ -18,6 +18,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
 
     const [formData, setFormData] = useState({
         rankName: '',
+        rankCode: '',
         description: '',
         icon: 'star',
         color: '#3b82f6',
@@ -35,6 +36,13 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
     const handleChange = (e) => {
         const { name, value, type } = e.target;
         let finalValue = value;
+        if (name === 'rankCode') {
+            const cleanValue = value.toUpperCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Khử dấu
+                .replace(/[^A-Z0-9_]/g, ""); // Chỉ giữ chữ, số, gạch dưới
+            setFormData(prev => ({ ...prev, [name]: cleanValue }));
+            return;
+        }
 
         if (type === 'number') {
             // 1. Nếu người dùng xóa hết (chuỗi rỗng), cho phép để trống để họ nhập số mới
@@ -75,6 +83,10 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.rankName || !formData.rankCode) {
+            alert("Vui lòng nhập đầy đủ Tên và Mã hạng!");
+            return;
+        }
         if (!validateForm()) return;
         setLoading(true);
         try {
@@ -113,13 +125,26 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                         </h4>
                         <div className="grid grid-cols-12 gap-6">
                             <div className="col-span-8 space-y-4">
-                                <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Tên hạng & Mô tả</label>
-                                <input required name="rankName" type="text" className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold" placeholder="VD: Thành viên Kim Cương..." onChange={handleChange} />
-                                <textarea name="description" className="w-full p-3 bg-slate-50 border rounded-xl h-20 outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="Mô tả quyền lợi ngắn gọn..." onChange={handleChange} />
+                                <div className="col-span-1">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Mã hạng
+                                        (Tiếng Anh - Bắt buộc)</label>
+                                    <input required name="rankCode" value={formData.rankCode} onChange={handleChange}
+                                           className="w-full p-3 bg-slate-50 border rounded-xl font-mono font-bold text-blue-600"
+                                           placeholder="VD: GOLD_MEMBER"/>
+                                </div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Tên hạng & Mô
+                                    tả</label>
+                                <input required name="rankName" type="text"
+                                       className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold"
+                                       placeholder="VD: Thành viên Kim Cương..." onChange={handleChange}/>
+                                <textarea name="description"
+                                          className="w-full p-3 bg-slate-50 border rounded-xl h-20 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                          placeholder="Mô tả quyền lợi ngắn gọn..." onChange={handleChange}/>
 
                                 {/* KHU VỰC CHỌN ICON MỚI */}
                                 <div className="space-y-2">
-                                    <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Chọn biểu tượng đại diện</label>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Chọn biểu
+                                        tượng đại diện</label>
                                     <div className="flex gap-3 p-3 bg-slate-50 border rounded-2xl">
                                         {iconOptions.map((item) => {
                                             const IconComp = item.component;
@@ -135,7 +160,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                                                             : 'bg-white text-slate-400 hover:text-blue-500 border border-slate-100'
                                                     }`}
                                                 >
-                                                    <IconComp size={20} />
+                                                    <IconComp size={20}/>
                                                 </button>
                                             );
                                         })}
@@ -145,10 +170,11 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
 
                             {/* Màu sắc & Ưu tiên */}
                             <div className="col-span-4 space-y-4">
-                                <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Màu sắc & Ưu tiên</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Màu sắc & Ưu
+                                    tiên</label>
                                 <div className="p-3 bg-slate-50 border rounded-xl space-y-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="relative w-12 h-12 shrink-0">
+                                    <div className="relative w-12 h-12 shrink-0">
                                             <input
                                                 name="color"
                                                 type="color"

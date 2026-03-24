@@ -1,29 +1,40 @@
 import React from 'react';
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
 const KPICard = ({ title, value, unit, trend, isUp }) => {
-    // Định dạng số phân cách hàng nghìn kiểu VN (1.000.000)
+    // 1. Định dạng số: 1000000 -> 1.000.000
     const displayValue = typeof value === 'number'
         ? new Intl.NumberFormat('vi-VN').format(value)
         : value;
 
+    // Nếu BE trả về null (do chưa có dữ liệu kỳ trước), hiển thị 0.0%
+    const hasTrend = trend !== null && trend !== undefined;
+    const trendValue = hasTrend ? Math.abs(trend).toFixed(1) : "0.0";
+
     return (
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
             <div className="flex justify-between items-start mb-4">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
-                {/* Chỉ báo màu sắc theo khuyến nghị UX của UC */}
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">
+                    {title}
+                </p>
+
+                {/* Phần hiển thị % tăng trưởng */}
                 <div className={`flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold ${
-                    isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                    !hasTrend ? 'bg-slate-50 text-slate-400' :
+                        isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
                 }`}>
-                    {isUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                    {trend}%
+                    {!hasTrend ? <Minus size={12} /> : isUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                    {trendValue}%
                 </div>
             </div>
+
             <div className="flex items-baseline gap-1">
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">
                     {displayValue}
                 </h2>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">{unit}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                    {unit}
+                </span>
             </div>
         </div>
     );

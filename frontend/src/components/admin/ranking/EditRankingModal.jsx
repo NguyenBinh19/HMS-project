@@ -79,12 +79,28 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
         if (!validateForm()) return;
         setLoading(true);
         try {
-            await rankService.updateRank(rankId, formData);
+            const updatePayload = {
+                rankName: formData.rankName,
+                description: formData.description,
+                icon: formData.icon,
+                color: formData.color,
+                priority: formData.priority,
+                isActive: formData.isActive,
+                minTotalBooking: formData.minTotalBooking,
+                minTotalRevenue: formData.minTotalRevenue,
+                logic: formData.logic,
+                maintainMinBooking: formData.maintainMinBooking,
+                maintainMinRevenue: formData.maintainMinRevenue,
+                maintainLogic: formData.maintainLogic,
+                creditLimit: formData.creditLimit
+            };
+
+            await rankService.updateRank(rankId, updatePayload);
             alert("Cập nhật thay đổi thành công!");
             onSuccess();
             onClose();
         } catch (error) {
-            alert("Lỗi cập nhật: " + (error.response?.data?.message || "Hệ thống bận"));
+            alert("Lỗi: " + (error.response?.data?.message || "Không thể cập nhật"));
         } finally { setLoading(false); }
     };
 
@@ -125,21 +141,39 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                                 </h4>
                                 <div className="grid grid-cols-12 gap-6">
                                     <div className="col-span-8 space-y-4">
-                                        <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Tên hạng & Mô tả</label>
-                                        <input required name="rankName" type="text" className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" value={formData.rankName} onChange={handleChange} />
-                                        <textarea name="description" className="w-full p-3 bg-slate-50 border rounded-xl h-20 outline-none" value={formData.description} onChange={handleChange} />
+                                        <div className="space-y-1">
+                                            <label
+                                                className="block text-[10px] font-bold text-slate-400 uppercase ml-1">Mã
+                                                hạng (Cố định)</label>
+                                            <input
+                                                readOnly
+                                                disabled
+                                                className="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-slate-500 cursor-not-allowed shadow-inner"
+                                                value={formData.rankCode || ''}
+                                            />
+                                        </div>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Tên
+                                            hạng & Mô tả</label>
+                                        <input required name="rankName" type="text"
+                                               className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 font-bold"
+                                               value={formData.rankName} onChange={handleChange}/>
+                                        <textarea name="description"
+                                                  className="w-full p-3 bg-slate-50 border rounded-xl h-20 outline-none"
+                                                  value={formData.description} onChange={handleChange}/>
 
                                         {/* Chọn Icon */}
                                         <div className="space-y-2">
-                                            <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Thay đổi biểu tượng</label>
+                                            <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Thay
+                                                đổi biểu tượng</label>
                                             <div className="flex gap-3 p-3 bg-slate-50 border rounded-2xl">
                                                 {iconOptions.map((item) => {
                                                     const IconComp = item.component;
                                                     const isSelected = formData.icon === item.id;
                                                     return (
-                                                        <button key={item.id} type="button" onClick={() => selectIcon(item.id)}
+                                                        <button key={item.id} type="button"
+                                                                onClick={() => selectIcon(item.id)}
                                                                 className={`p-3 rounded-xl transition-all ${isSelected ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-100'}`}>
-                                                            <IconComp size={20} />
+                                                            <IconComp size={20}/>
                                                         </button>
                                                     );
                                                 })}
@@ -149,10 +183,11 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
 
                                     {/* Màu sắc & Ưu tiên */}
                                     <div className="col-span-4 space-y-4">
-                                        <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Màu sắc & Ưu tiên</label>
+                                        <label className="block text-xs font-bold text-slate-400 uppercase ml-1">Màu sắc
+                                            & Ưu tiên</label>
                                         <div className="p-3 bg-slate-50 border rounded-xl space-y-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="relative w-12 h-12 shrink-0">
+                                            <div className="relative w-12 h-12 shrink-0">
                                                     <input name="color" type="color" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" value={formData.color} onChange={handleChange} />
                                                     <div className="w-full h-full rounded-lg border-2 border-white shadow-sm" style={{ backgroundColor: formData.color }} />
                                                 </div>
