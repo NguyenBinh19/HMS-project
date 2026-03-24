@@ -92,7 +92,6 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                 maintainMinBooking: formData.maintainMinBooking,
                 maintainMinRevenue: formData.maintainMinRevenue,
                 maintainLogic: formData.maintainLogic,
-                creditLimit: formData.creditLimit
             };
 
             await rankService.updateRank(rankId, updatePayload);
@@ -242,7 +241,8 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                                     <h4 className="font-bold">Hạn mức thấu chi (Tín dụng)</h4>
                                 </div>
                                 <div className="relative">
-                                    <input name="creditLimit" type="number" className="w-56 p-4 bg-white/10 border border-white/20 rounded-2xl text-xl font-bold outline-none pl-12 focus:bg-white/20" value={formData.creditLimit} onChange={handleChange} />
+                                    <input readOnly
+                                           disabled name="creditLimit" type="number" className="w-56 p-4 bg-white/10 border border-white/20 rounded-2xl text-xl font-bold outline-none pl-12 focus:bg-white/20" value={formData.creditLimit}  />
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 font-bold text-xl">₫</span>
                                 </div>
                             </div>

@@ -101,8 +101,6 @@ public class RankServiceImpl implements RankService {
         rank.setMaintainMinRevenue(request.getMaintainMinRevenue());
         rank.setMaintainLogic(request.getMaintainLogic());
 
-        rank.setCreditLimit(request.getCreditLimit());
-
         rank.setUpdatedAt(LocalDateTime.now());
         rank.setUpdatedBy(getCurrentUserId());
 

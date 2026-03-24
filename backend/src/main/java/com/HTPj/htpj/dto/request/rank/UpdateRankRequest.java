@@ -25,5 +25,4 @@ public class UpdateRankRequest {
     private BigDecimal maintainMinRevenue;
     private String maintainLogic;
 
-    private BigDecimal creditLimit;
 }
