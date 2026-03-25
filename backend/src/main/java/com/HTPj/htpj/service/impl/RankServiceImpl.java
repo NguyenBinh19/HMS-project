@@ -77,10 +77,10 @@ public class RankServiceImpl implements RankService {
         Rank rank = rankRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
 
-        if (!rank.getRankName().equals(request.getRankName())
-                && rankRepository.existsByRankName(request.getRankName())) {
-            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
-        }
+//        if (!rank.getRankName().equals(request.getRankName())
+//                && rankRepository.existsByRankName(request.getRankName())) {
+//            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
+//        }
 
         if (!rank.getPriority().equals(request.getPriority())
                 && rankRepository.existsByPriority(request.getPriority())) {
