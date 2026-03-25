@@ -27,11 +27,15 @@ const Header = () => {
     }, []);
 
     let userRoles = [];
+    let hotelIdFromToken = null;
+    let agencyIdFromToken = null;
     try {
         if (token) {
             const decoded = jwtDecode(token);
             const scope = decoded.scope || decoded.roles || decoded.authorities || "";
             userRoles = Array.isArray(scope) ? scope : scope.split(" ");
+            hotelIdFromToken = decoded.hotelId || decoded.hotel_id;
+            agencyIdFromToken = decoded.agencyId || decoded.agency_id;
         }
     } catch (e) { userRoles = []; }
 
@@ -42,6 +46,13 @@ const Header = () => {
             const storedUser = localStorage.getItem('user');
             if (storedUser) setUser(JSON.parse(storedUser));
         } catch (error) { console.error(error); }
+    }, [location.pathname]);
+
+    // Cập nhật Title
+    useEffect(() => {
+        if (location.pathname === "/homepage" || location.pathname === "/") {
+            document.title = "Trang chủ | HMS-B2B";
+        }
     }, [location.pathname]);
 
     const handleLogout = () => {
@@ -58,7 +69,12 @@ const Header = () => {
         { name: "Liên hệ", href: "/contact" },
     ];
 
-    const needsKyc = user && !isAdmin && !user.hotelId && !user.agencyId;
+    // const needsKyc = user && !isAdmin && !user.hotelId && !user.agencyId;
+    const currentHotelId = user?.hotelId || hotelIdFromToken;
+    const currentAgencyId = user?.agencyId || agencyIdFromToken;
+
+    // needsKyc sẽ false ngay khi một trong hai nguồn (Token/State) có ID
+    const needsKyc = user && !isAdmin && !currentHotelId && !currentAgencyId;
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
@@ -147,21 +163,54 @@ const Header = () => {
                         ) : (
                             /* GIAO DIỆN HOTEL/AGENCY */
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                                {/* Nút Xác minh - Chỉ hiện nếu cần KYC */}
                                 {needsKyc && (
-                                    <button onClick={() => navigate("/kyc-intro")} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse">
-                                        <ShieldCheck size={18} /> Xác minh ngay
+                                    <button
+                                        onClick={() => navigate("/kyc-intro")}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse hover:bg-amber-600 transition-colors"
+                                    >
+                                        <ShieldCheck size={18} />
+                                        <span className="hidden xl:inline">Xác minh ngay</span>
                                     </button>
                                 )}
-                                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-200 group transition-all">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+
+                                {/* NÚT PROFILE RIÊNG BIỆT - Luôn hiển thị */}
+                                <button
+                                    onClick={() => navigate("/profile")}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                                        location.pathname === "/profile"
+                                            ? "bg-blue-600 text-white shadow-md"
+                                            : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"
+                                    }`}
+                                >
+                                    <User size={18} />
+                                    <span>Hồ sơ</span>
+                                </button>
+
+                                {/* Hiển thị tên User (Chỉ để xem, không bấm) */}
+                                <div className="flex items-center gap-3 px-3 py-1.5">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
                                         <UserCircle size={20}/>
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
-                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác</span>
+            <span className="text-sm font-black text-slate-800 leading-none">
+                {user?.lastName} {user?.firstName}
+            </span>
+                                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
+                {userRoles.some(r => r.includes("HOTEL")) ? "Khách sạn" : "Đại lý"}
+            </span>
                                     </div>
-                                </Link>
-                                <button onClick={handleLogout} className="px-3 text-slate-400 hover:text-rose-600 transition-colors"><LogOut size={18}/></button>
+                                </div>
+
+                                {/* Nút Đăng xuất */}
+                                <div className="w-px h-8 bg-slate-200 mx-1"></div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="px-3 text-slate-400 hover:text-rose-600 transition-colors"
+                                    title="Đăng xuất"
+                                >
+                                    <LogOut size={18}/>
+                                </button>
                             </div>
                         )}
                     </div>

@@ -18,28 +18,37 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { updateUser } = useAuth();
-    const getRolesFromToken = () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return [];
+    const getRolesFromToken = (accessToken) => {
+        if (!accessToken) return [];
+        try {
+            const decoded = jwtDecode(accessToken);
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
+            return Array.isArray(rawRoles) ? rawRoles : rawRoles.split(" ");
+        } catch (e) {
+            return [];
+        }
+    };
 
-    try {
-        const decoded = jwtDecode(token);
+    const getRedirectByRole = (roles = [], accessToken) => {
+        try {
+            const decoded = jwtDecode(accessToken);
 
-        if (decoded.roles) return decoded.roles;
-        if (decoded.authorities) return decoded.authorities;
-        if (decoded.scope) return decoded.scope.split(" ");
+            const hotelId = decoded.hotelId;
+            const agencyId = decoded.agencyId;
+            console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
+            if (roles.some(r => r.includes("ADMIN"))) return "/admin";
+            if (roles.some(r => r.includes("HOTEL"))) {
+                return hotelId ? "/hotel/dashboard" : "/kyc/status";
+            }
+            if (roles.some(r => r.includes("AGENCY"))) {
+                return agencyId ? "/agency/agency-dashboard" : "/kyc/status";
+            }
+        } catch (error) {
+            console.error("Lỗi điều hướng:", error);
+        }
+        return "/homepage";
+    };
 
-        return [];
-    } catch (e) {
-        return [];
-    }
-};
-
-const getRedirectByRole = (roles = []) => {
-    if (roles.includes("ROLE_ADMIN")) return "/admin";
-    
-    return "/homepage";
-};
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -81,20 +90,39 @@ const getRedirectByRole = (roles = []) => {
         try {
             const res = await authService.login(formData.email, formData.password);
 
-            console.log("Login Response:", res);
-            if (res) {
-                if (updateUser) {
-                    await updateUser(res.user);
-                }
-                setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
-                const roles = getRolesFromToken();
+            if (res?.result?.token) {
+                const accessToken = res.result.token;
+                localStorage.setItem("accessToken", accessToken);
 
-                const redirectPath =
-                    from !== "/" ? from : getRedirectByRole(roles);
+                // 1. Giải mã token để lấy thông tin User mới nhất
+                const decoded = jwtDecode(accessToken);
+
+                // 2. Tạo object user từ claims của token
+                const userProfile = {
+                    userId: decoded.userId,
+                    email: decoded.email,
+                    agencyId: decoded.agencyId,
+                    hotelId: decoded.hotelId,
+                    roles: decoded.scope
+                };
+
+                // 3. Lưu vào localStorage và cập nhật Context
+                localStorage.setItem("user", JSON.stringify(userProfile));
+                if (updateUser) {
+                    await updateUser(userProfile);
+                }
+
+                // 4. Lấy roles và điều hướng dựa trên Token mới
+                const roles = getRolesFromToken(accessToken);
+                const redirectPath = from !== "/" ? from : getRedirectByRole(roles, accessToken);
+
+                setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
 
                 setTimeout(() => {
                     navigate(redirectPath, { replace: true });
-                }, 800);
+                }, 600);
+            } else {
+                setError("Đăng nhập thành công nhưng không nhận được thông tin xác thực.");
             }
         } catch (err) {
             console.error("Login Error:", err);

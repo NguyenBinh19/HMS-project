@@ -7,6 +7,10 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
     const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [isFetchingOldData, setIsFetchingOldData] = useState(false);
+    const [addressError, setAddressError] = useState("");
+    const [placeError, setPlaceError] = useState("");
+    const [dateError, setDateError] = useState("");
+    const today = new Date().toLocaleDateString('en-CA');
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
@@ -270,7 +274,28 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                             onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
                         />
                     </div>
-                    <OCRInput label="Địa chỉ trụ sở" name="businessAddress" value={formData.businessAddress} isTextArea onChange={(e) => setFormData(p => ({ ...p, businessAddress: e.target.value }))} />
+                    <OCRInput
+                        label="Địa chỉ trụ sở"
+                        name="businessAddress"
+                        value={formData.businessAddress}
+                        isTextArea
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData(p => ({ ...p, businessAddress: val }));
+                            // Kiểm tra ngay khi nhập
+                            if (val.length > 0 && !/[a-zA-ZÀ-ỹ]/.test(val)) {
+                                setAddressError("Địa chỉ không hợp lệ (phải chứa cả chữ cái)");
+                            } else {
+                                setAddressError("");
+                            }
+                        }}
+                    />
+                    {/* Hiển thị thông báo lỗi ngay */}
+                    {addressError && (
+                        <p className="text-[10px] text-rose-500 font-bold uppercase animate-pulse">
+                            * {addressError}
+                        </p>
+                    )}
                 </div>
 
                 <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest pt-4"><User size={16} className="text-blue-600" /> Người đại diện</h3>
@@ -282,8 +307,48 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                         onChange={(e) => setFormData(p => ({ ...p, representativeCICNumber: formatCIC(e.target.value) }))}
                     />
                     <div className="grid grid-cols-2 gap-3">
-                        <OCRInput label="Ngày cấp" name="representativeCICDate" type="date" value={formData.representativeCICDate} onChange={(e) => setFormData(p => ({ ...p, representativeCICDate: e.target.value }))} />
-                        <OCRInput label="Nơi cấp" name="representativeCICPlace" value={formData.representativeCICPlace} onChange={(e) => setFormData(p => ({ ...p, representativeCICPlace: e.target.value }))} />
+                        <OCRInput
+                            label="Ngày cấp"
+                            name="representativeCICDate"
+                            type="date"
+                            value={formData.representativeCICDate}
+                            max={today} // Chặn chọn ngày tương lai trên lịch của trình duyệt
+                            hasError={!!dateError}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, representativeCICDate: val }));
+                                // Kiểm tra: Nếu có nhập và ngày nhập lớn hơn ngày hiện tại
+                                if (val && val > today) {
+                                    setDateError("Ngày cấp không được là ngày trong tương lai");
+                                } else {
+                                    setDateError("");
+                                }
+                            }}
+                        />
+                        {dateError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
+                                * {dateError}
+                            </p>
+                        )}
+                        <OCRInput
+                            label="Nơi cấp"
+                            name="representativeCICPlace"
+                            isTextArea
+                            value={formData.representativeCICPlace}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, representativeCICPlace: val }));
+                                if (val.length > 0 && !/[a-zA-ZÀ-ỹ]/.test(val)) {
+                                    setPlaceError("Nơi cấp không hợp lệ (phải chứa tên cơ quan/tỉnh thành)");
+                                } else {
+                                    setPlaceError("");
+                                }
+                            }} />
+                        {placeError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
+                                * {placeError}
+                            </p>
+                        )}
                     </div>
                 </div>
 
