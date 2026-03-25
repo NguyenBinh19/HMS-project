@@ -24,7 +24,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
             // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
             const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
 
-            // 2. Chuẩn hóa về mảng String để dễ xử lý
+            // 2. Chuẩn hóa về mảng String
             const rolesArray = Array.isArray(rawRoles)
                 ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
                 : String(rawRoles).split(" ");
