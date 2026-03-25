@@ -1,7 +1,7 @@
 package com.HTPj.htpj.service.impl;
 
-import com.HTPj.htpj.dto.DataSourceResponse.TransactionHistoryDto;
-import com.HTPj.htpj.entity.TransactionHistory;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionHistoryDto;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionSummaryDto;
 import com.HTPj.htpj.repository.TransactionHistoryRepository;
 import com.HTPj.htpj.service.TransactionHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,8 +48,20 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         return transactionHistoryRepo.findByFilters(agencyId, from, to, type, source, pageable);
     }
 
-    public ByteArrayInputStream exportToExcel(Long agencyId) {
-        List<TransactionHistoryDto> transactions = transactionHistoryRepo.findByAgencyId(agencyId);
+    public ByteArrayInputStream exportToExcel(Long agencyId,
+                                              String dateFrom,
+                                              String dateTo,
+                                              String type,
+                                              String source) {
+        LocalDateTime from = dateFrom != null && !dateFrom.isEmpty()
+                ? LocalDate.parse(dateFrom).atStartOfDay()
+                : null;
+        LocalDateTime to = dateTo != null && !dateTo.isEmpty()
+                ? LocalDate.parse(dateTo).atTime(23, 59, 59)
+                : null;
+
+        List<TransactionHistoryDto> transactions =
+                transactionHistoryRepo.findByFiltersWOPageable(agencyId, from, to, type, source);
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Transactions");
@@ -88,5 +101,13 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         } catch (IOException e) {
             throw new RuntimeException("Lỗi khi tạo file Excel", e);
         }
+    }
+
+    public TransactionSummaryDto getSummary(Long agencyId) {
+        BigDecimal spending = transactionHistoryRepo.getTotalSpending(agencyId);
+        BigDecimal topup = transactionHistoryRepo.getTotalTopup(agencyId);
+        BigDecimal penalty = transactionHistoryRepo.getTotalPenalty(agencyId);
+
+        return new TransactionSummaryDto(spending, topup, penalty);
     }
 }

@@ -6,6 +6,11 @@ const TransactionHistoryPage = () => {
     const [page, setPage] = useState(0);
     const [size, setSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
+    const [summary, setSummary] = useState({
+        totalSpending: 0,
+        totalTopup: 0,
+        totalPenalty: 0,
+    });
 
     const [filters, setFilters] = useState({
         dateFrom: "",
@@ -21,6 +26,12 @@ const TransactionHistoryPage = () => {
         try {
             const res = await api.get(`/transaction-history/${agencyId}/transactions/export`, {
                 responseType: "blob",
+                params: {
+                    dateFrom: filters.dateFrom,
+                    dateTo: filters.dateTo,
+                    type: filters.type,
+                    source: filters.source,
+                },
             });
 
             const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -35,25 +46,36 @@ const TransactionHistoryPage = () => {
         }
     };
 
+
     useEffect(() => {
         if (agencyId) {
-            api
-                .get(`/transaction-history/${agencyId}/transactions?page=${page}&size=${size}`, {
-                    params: {
-                        dateFrom: filters.dateFrom,
-                        dateTo: filters.dateTo,
-                        type: filters.type,
-                        source: filters.source,
-                    },
-                })
+            api.get(`/transaction-history/${agencyId}/transactions?page=${page}&size=${size}`, {
+                params: {
+                    dateFrom: filters.dateFrom,
+                    dateTo: filters.dateTo,
+                    type: filters.type,
+                    source: filters.source,
+                },
+            })
                 .then(res => {
                     const data = res.data.result;
                     setTransactions(data.content || []);
                     setTotalPages(data.totalPages || 0);
                 })
                 .catch(err => console.error("Error fetching transactions:", err));
+
+            // Lấy summary
+            api.get(`/transaction-history/${agencyId}/transactions/summary`)
+                .then(res => {
+                    setSummary(res.data.result);
+                })
+                .catch(err => console.error("Error fetching summary:", err));
         }
     }, [agencyId, page, size, filters]);
+
+    const formatCurrency = (value) => {
+        return value?.toLocaleString("vi-VN") + " ₫";
+    };
 
     const formatAmount = (amount, direction) => {
         const formatted = amount.toLocaleString("vi-VN") + " ₫";
@@ -73,6 +95,28 @@ const TransactionHistoryPage = () => {
                     </svg>
                     Xuất Excel
                 </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+                    <span className="text-sm text-slate-500">Tổng chi tiêu</span>
+                    <span className="text-xl font-bold text-red-600">{formatCurrency(summary.totalSpending)}</span>
+                    <span className="text-xs text-slate-400">+12% so với tháng trước</span>
+                </div>
+
+                <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+                    <span className="text-sm text-slate-500">Tổng nạp</span>
+                    <span className="text-xl font-bold text-green-600">{formatCurrency(summary.totalTopup)}</span>
+                    <span className="text-xs text-slate-400">+8% so với tháng trước</span>
+                </div>
+
+                <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+                    <span className="text-sm text-slate-500">Tổng phí phạt</span>
+                    <span className="text-xl font-bold text-slate-800">{formatCurrency(summary.totalPenalty)}</span>
+                    <span className="text-xs text-slate-400">
+                        {summary.totalPenalty > 0 ? "Có khoản phạt" : "Không có khoản phạt nào"}
+                    </span>
+                </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-md p-6 mb-8">
@@ -154,6 +198,7 @@ const TransactionHistoryPage = () => {
                     </button>
                 </div>
             </div>
+
             <div className="bg-white rounded-xl shadow-md p-6">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-slate-100 text-slate-600 uppercase text-xs">

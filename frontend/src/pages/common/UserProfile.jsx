@@ -193,40 +193,54 @@ const UserProfile = () => {
         <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10 font-sans">
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900">Hồ sơ của tôi</h1>
-                        <p className="text-slate-500 text-sm mt-1">Xem và quản lý thông tin cá nhân</p>
-                    </div>
-                    {!editMode ? (
-                        <button
-                            onClick={() => setEditMode(true)}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all"
-                        >
-                            <Pencil size={16} /> Chỉnh sửa
-                        </button>
-                    ) : (
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setEditMode(false);
-                                    setEditData({ phone: profile.phone || "", address: profile.address || "" });
-                                    setSaveError(null);
-                                }}
-                                className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all disabled:opacity-70"
-                            >
-                                {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                                Lưu
-                            </button>
+                {/* Header */}
+                <div className="mb-8">
+                    {/* Nút Back đơn giản */}
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="group flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors mb-4"
+                    >
+                        <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm group-hover:bg-slate-50">
+                            <ArrowLeft size={18} />
                         </div>
-                    )}
+                        <span className="text-sm font-bold">Quay lại</span>
+                    </button>
+
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-slate-900">Hồ sơ của tôi</h1>
+                            <p className="text-slate-500 text-sm mt-1">Xem và quản lý thông tin cá nhân</p>
+                        </div>
+                        {!editMode ? (
+                            <button
+                                onClick={() => setEditMode(true)}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all"
+                            >
+                                <Pencil size={16} /> Chỉnh sửa
+                            </button>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setEditMode(false);
+                                        setEditData({ phone: profile.phone || "", address: profile.address || "" });
+                                        setSaveError(null);
+                                    }}
+                                    className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all disabled:opacity-70"
+                                >
+                                    {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                    Lưu
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Success / Error Messages */}

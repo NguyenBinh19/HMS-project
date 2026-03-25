@@ -19,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -132,4 +134,26 @@ public class AgencyServiceImpl implements AgencyService {
 
         return agency.getAgencyId();
     }
+
+    @Override
+    public AgencyDetailResponse findAgencyFinanceInfoHeader(Long id) {
+        Agency agency = agencyRepository.findAgenciesFinanceInfo(id);
+
+        Integer usedPercent = 0;
+        if (agency.getCreditLimit() != null && agency.getCreditLimit().compareTo(BigDecimal.ZERO) > 0) {
+            usedPercent = agency.getCurrentCredit()
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(agency.getCreditLimit(), 0, RoundingMode.HALF_UP)
+                    .intValue();
+        }
+
+        return AgencyDetailResponse.builder()
+                .agencyId(agency.getAgencyId())
+                .walletBalance(agency.getWalletBalance())
+                .creditLimit(agency.getCreditLimit())
+                .currentCredit(agency.getCurrentCredit())
+                .creditUsedPercent(usedPercent)
+                .build();
+    }
+
 }

@@ -1,7 +1,7 @@
 package com.HTPj.htpj.service;
 
-import com.HTPj.htpj.dto.DataSourceResponse.TransactionHistoryDto;
-import com.HTPj.htpj.entity.TransactionHistory;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionHistoryDto;
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.TransactionSummaryDto;
 import org.springframework.data.domain.Page;
 
 import java.io.ByteArrayInputStream;
@@ -13,5 +13,6 @@ public interface TransactionHistoryService {
             Long agencyId, int page, int size,
             String dateFrom, String dateTo,
             String type, String source);
-    public ByteArrayInputStream exportToExcel(Long agencyId);
+    public ByteArrayInputStream exportToExcel(Long agencyId, String dateFrom, String dateTo, String type, String source);
+    public TransactionSummaryDto getSummary(Long agencyId);
 }
