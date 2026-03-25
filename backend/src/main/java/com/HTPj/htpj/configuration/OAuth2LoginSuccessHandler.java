@@ -133,6 +133,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .claim("scope", buildScope(user))
                 .claim("userId", user.getId())
                 .claim("email", user.getEmail())
+                .claim("hotelId", user.getHotel() != null ? user.getHotel().getHotelId() : null)
+                .claim("agencyId", user.getAgency() != null ? user.getAgency().getAgencyId() : null)
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());

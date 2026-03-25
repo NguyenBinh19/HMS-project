@@ -267,7 +267,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private String generateToken(Users user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("justin.nguyen")
@@ -278,6 +277,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .claim("scope", buildScope(user))
                 .claim("userId", user.getId())
                 .claim("email", user.getEmail())
+                .claim("agencyId", user.getAgency() != null ? user.getAgency().getAgencyId() : null)
+                .claim("hotelId", user.getHotel() != null ? user.getHotel().getHotelId() : null)
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
