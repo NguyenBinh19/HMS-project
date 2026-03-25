@@ -118,6 +118,7 @@ public enum ErrorCode {
     RANK_IN_USE(4104, "Rank is being used by agencies", HttpStatus.BAD_REQUEST),
     RANK_CODE_EXISTED(4105, "Rank code exist", HttpStatus.BAD_REQUEST),
 
+
     //commission
     DEFAULT_ALREADY_EXIST(4201, "Default commission already exists", HttpStatus.BAD_REQUEST),
     CANNOT_DELETE_DEFAULT(4202, "Cannot delete default commission", HttpStatus.BAD_REQUEST),
@@ -126,6 +127,7 @@ public enum ErrorCode {
     INVALID_COMMISSION_TYPE(4205, "Only for commission type deal", HttpStatus.NOT_FOUND),
     COMMISSION_ALREADY_ACTIVE(4206, "Commission is active", HttpStatus.NOT_FOUND),
 
+    CONFIG_NOT_FOUND(5005, "config not found", HttpStatus.BAD_REQUEST),
 
     ;
 

@@ -22,8 +22,6 @@ public class RankResponse {
 
     private BigDecimal upgradeMinTotalRevenue;
     private BigDecimal maintainMinRevenue;
-    private Integer upgradeCycleMonths;
-    private Integer maintainCycleMonths;
 
     private BigDecimal creditLimit;
 

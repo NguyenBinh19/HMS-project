@@ -20,8 +20,6 @@ public class CreateRankRequest {
 
     private BigDecimal upgradeMinTotalRevenue;
     private BigDecimal maintainMinRevenue;
-    private Integer upgradeCycleMonths;
-    private Integer maintainCycleMonths;
 
     private BigDecimal creditLimit;
 }

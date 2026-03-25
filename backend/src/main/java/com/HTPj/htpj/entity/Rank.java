@@ -22,7 +22,7 @@ public class Rank {
     @Column(name = "rank_name", columnDefinition = "NVARCHAR(255)")
     private String rankName;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "description", columnDefinition = "NVARCHAR(255)")
     private String description;
 
     @Column(name = "priority", nullable = false)
@@ -36,12 +36,6 @@ public class Rank {
 
     @Column(name = "maintain_min_revenue")
     private BigDecimal maintainMinRevenue;
-
-    @Column(name = "upgrade_cycle_months")
-    private Integer upgradeCycleMonths;
-
-    @Column(name = "maintain_cycle_months")
-    private Integer maintainCycleMonths;
 
     @Column(name = "credit_limit")
     private BigDecimal creditLimit;
