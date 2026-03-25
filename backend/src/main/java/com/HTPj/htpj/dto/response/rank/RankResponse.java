@@ -20,13 +20,10 @@ public class RankResponse {
     private Integer priority;
     private Boolean isActive;
 
-    private Integer minTotalBooking;
-    private BigDecimal minTotalRevenue;
-    private String logic;
-
-    private Integer maintainMinBooking;
+    private BigDecimal upgradeMinTotalRevenue;
     private BigDecimal maintainMinRevenue;
-    private String maintainLogic;
+    private Integer upgradeCycleMonths;
+    private Integer maintainCycleMonths;
 
     private BigDecimal creditLimit;
 

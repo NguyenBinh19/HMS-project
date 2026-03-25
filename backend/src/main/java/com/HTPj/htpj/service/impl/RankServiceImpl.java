@@ -50,9 +50,9 @@ public class RankServiceImpl implements RankService {
             throw new AppException(ErrorCode.RANK_CODE_EXISTED);
         }
 
-        if (rankRepository.existsByRankName(request.getRankName())) {
-            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
-        }
+//        if (rankRepository.existsByRankName(request.getRankName())) {
+//            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
+//        }
 
         if (rankRepository.existsByPriority(request.getPriority())) {
             throw new AppException(ErrorCode.RANK_PRIORITY_EXISTED);
@@ -93,13 +93,10 @@ public class RankServiceImpl implements RankService {
         rank.setColor(request.getColor());
         rank.setPriority(request.getPriority());
 
-        rank.setMinTotalBooking(request.getMinTotalBooking());
-        rank.setMinTotalRevenue(request.getMinTotalRevenue());
-        rank.setLogic(request.getLogic());
-
-        rank.setMaintainMinBooking(request.getMaintainMinBooking());
+        rank.setUpgradeMinTotalRevenue(request.getUpgradeMinTotalRevenue());
         rank.setMaintainMinRevenue(request.getMaintainMinRevenue());
-        rank.setMaintainLogic(request.getMaintainLogic());
+        rank.setUpgradeCycleMonths(request.getUpgradeCycleMonths());
+        rank.setMaintainCycleMonths(request.getMaintainCycleMonths());
 
         rank.setUpdatedAt(LocalDateTime.now());
         rank.setUpdatedBy(getCurrentUserId());

@@ -17,12 +17,9 @@ public class UpdateRankRequest {
     private String color;
     private Integer priority;
 
-    private Integer minTotalBooking;
-    private BigDecimal minTotalRevenue;
-    private String logic;
-
-    private Integer maintainMinBooking;
+    private BigDecimal upgradeMinTotalRevenue;
     private BigDecimal maintainMinRevenue;
-    private String maintainLogic;
+    private Integer upgradeCycleMonths;
+    private Integer maintainCycleMonths;
 
 }
