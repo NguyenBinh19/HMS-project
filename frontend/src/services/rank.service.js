@@ -55,12 +55,10 @@ const deleteRank = async (id) => {
     }
 };
 
-// 6. Cập nhật chu kỳ xét hạng (Tháng)
-const updateRankCycle = async (months) => {
+// 6. Cập nhật chu kỳ xét hạng
+const updateRankCycle = async (payload) => {
     try {
-        const response = await api.put(`/ranks/config-cycle`, null, {
-            params: { months }
-        });
+        const response = await api.put(`/ranks/config-cycle`, payload);
         return response.data;
     } catch (error) {
         console.error("Update Rank Cycle Error:", error);
@@ -69,12 +67,78 @@ const updateRankCycle = async (months) => {
 };
 
 // 7. Lấy thông tin chu kỳ xét hạng hiện tại
-const getRankCycle = async () => {
+const getRankCycle = async (type) => {
     try {
-        const response = await api.get(`/ranks/config-cycle`);
+        const response = await api.get(`/ranks/config-cycle`, { params: { type } });
         return response.data;
     } catch (error) {
         console.error("Get Rank Cycle Error:", error);
+        throw error;
+    }
+};
+
+// 8. Lấy tất cả danh sách chu kỳ
+const getAllRankCycles = async () => {
+    try {
+        const response = await api.get(`/ranks/config-cycles`);
+        return response.data;
+    } catch (error) {
+        console.error("Get All Rank Cycle Error:", error);
+        throw error;
+    }
+};
+
+// 9. Lấy chu kỳ/kỳ xét hạng mới nhất
+const getLatestPeriod = async () => {
+    try {
+        const response = await api.get(`/ranks/period/latest`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Latest Period Error:", error);
+        throw error;
+    }
+};
+
+// 10. Lấy danh sách ứng viên có thể nâng hạng
+const getUpgradeCandidates = async (payload) => {
+    try {
+        const response = await api.post(`/ranks/upgrade`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Get Upgrade Error:", error);
+        throw error;
+    }
+};
+
+// 11. Lấy danh sách ứng viên có thể bị hạ hạng
+const getDowngradeCandidates = async (payload) => {
+    try {
+        const response = await api.post(`/ranks/downgrade`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Get Downgrade Error:", error);
+        throw error;
+    }
+};
+
+// 12. Lấy chi tiết hạng của một đại lý cụ thể
+const getAgencyRankDetail = async (payload) => {
+    try {
+        const response = await api.post(`/ranks/agency/detail`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Get Agency Rank Detail Error:", error);
+        throw error;
+    }
+};
+
+/// 13. Thực hiện thay đổi hạng (Chốt hạng)
+const changeRank = async (payload) => {
+    try {
+        const response = await api.post(`/ranks/agency/change`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Change Rank Error:", error);
         throw error;
     }
 };
@@ -87,4 +151,10 @@ export const rankService = {
     deleteRank,
     updateRankCycle,
     getRankCycle,
+    getAllRankCycles,
+    getLatestPeriod,
+    getUpgradeCandidates,
+    getDowngradeCandidates,
+    getAgencyRankDetail,
+    changeRank,
 };

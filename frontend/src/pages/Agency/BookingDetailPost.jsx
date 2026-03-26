@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { bookingService } from '@/services/booking.service.js';
 import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.jsx';
 import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
+import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -50,6 +51,7 @@ const BookingDetailPost = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -110,9 +112,22 @@ const BookingDetailPost = () => {
         }
     };
 
-// Hàm xử lý sau khi Modal lưu thành công
+    // Hàm xử lý sau khi Modal lưu thành công
     const handleUpdateSuccess = (updatedBooking) => {
         setBooking(updatedBooking);
+    };
+
+    // Xử lý hủy phòng
+    const canCancel = () => {
+        if (!booking) return false;
+        const s = booking.bookingStatus?.toUpperCase();
+        const validStatus = ['CONFIRMED', 'BOOKED'].includes(s);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkIn = new Date(booking.checkInDate);
+        checkIn.setHours(0, 0, 0, 0);
+
+        return validStatus && checkIn >= today;
     };
 
     // Điều kiện cho phép sửa thông tin
@@ -128,9 +143,25 @@ const BookingDetailPost = () => {
         return (s === 'CONFIRMED') && checkIn > today;
     };
 
-    const canCancel = () => {
-        const s = booking?.bookingStatus?.toUpperCase();
-        return s === 'CONFIRMED';
+    // Hàm xử lý hủy đơn
+    const handleCancelBooking = async (reason) => {
+        try {
+            const payload = {
+                bookingCode: booking.bookingCode,
+                reason: reason || "Khách yêu cầu hủy"
+            };
+
+            const res = await bookingService.cancelBooking(payload);
+
+            setBooking(prev => ({ ...prev, bookingStatus: 'CANCELLED' }));
+
+            // Hiển thị thông báo thành công kèm số tiền phạt từ BE
+            alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
+
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
+            alert("Lỗi: " + errorMsg);
+        }
     };
 
     const handleCopy = (text) => {
@@ -257,8 +288,13 @@ const BookingDetailPost = () => {
                                 <FileText size={14}/> Hóa đơn
                             </button>
 
+                            {/* Nút Hủy phòng */}
                             <button
-                                className="flex items-center justify-center gap-2 bg-[#fef2f2] text-rose-600 py-2.5 rounded-md text-xs font-bold hover:bg-rose-100">
+                                onClick={() => canCancel() ? setIsCancelModalOpen(true) : alert("Không thể hủy đơn lúc này.")}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
+                                    canCancel() ? "bg-[#fef2f2] text-rose-600 hover:bg-rose-100" : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                                }`}
+                            >
                                 <XCircle size={14}/> Hủy phòng
                             </button>
                         </div>
@@ -439,6 +475,13 @@ const BookingDetailPost = () => {
                 onClose={() => setIsReviewModalOpen(false)}
                 booking={booking}
                 onSuccess={() => setBooking(prev => ({ ...prev, hasFeedback: true }))}
+            />
+
+            <CancelBookingModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                booking={booking}
+                onConfirm={handleCancelBooking}
             />
         </div>
     );

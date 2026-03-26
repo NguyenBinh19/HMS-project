@@ -9,10 +9,8 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
     const handleAction = (item) => {
         if (activeTab === 'arrival') {
             if (item.checkInDate > today) {
-                const confirmEarly = window.confirm(
-                    `Khách đến sớm! Ngày hẹn là ${item.checkInDate}. \nBạn có muốn thực hiện Check-in sớm không?`
-                );
-                if (!confirmEarly) return;
+                alert(`Khách đến sớm! Ngày hẹn là ${item.checkInDate}. Không thể thực hiện check-in trước ngày này.`);
+                return;
             }
             onCheckin?.(item.bookingCode);
         } else if (activeTab === 'departure') {
@@ -30,19 +28,36 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
             <table className="w-full text-left">
                 <thead>
                 <tr className="bg-slate-50/50">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách hàng / Mã đơn</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách sạn</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lịch trình</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tổng số phòng</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng tiền</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thanh toán</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách hàng
+                        / Mã đơn
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách
+                        sạn
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lịch
+                        trình
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tổng
+                        số phòng
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng
+                        tiền
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thanh
+                        toán
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao
+                        tác
+                    </th>
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                 {bookings.length === 0 ? (
                     <tr>
-                        <td colSpan="7" className="px-8 py-20 text-center text-slate-300 font-bold uppercase text-xs">Không có dữ liệu</td>
+                        <td colSpan="7"
+                            className="px-8 py-20 text-center text-slate-300 font-bold uppercase text-xs">Không có dữ
+                            liệu
+                        </td>
                     </tr>
                 ) : (
                     bookings.map((item) => (
@@ -77,41 +92,77 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
                                         {item.paymentStatus}
                                     </span>
                             </td>
-                            <td className="px-8 py-6 text-right">
-                                <div className="flex justify-end gap-2">
-                                    {/* Nút Xem chi tiết luôn hiện */}
+                            <td className="px-8 py-6">
+                                <div className="flex justify-center items-center gap-2 w-full">
+                                    {/* 1. Nút Xem chi tiết: Luôn hiện */}
                                     <button
                                         onClick={() => navigate(`/hotel/view-booking/${item.bookingCode}`)}
                                         title="Chi tiết đơn"
-                                        className="p-2.5 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                                        className="p-2.5 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm flex-shrink-0"
                                     >
                                         <Info size={16}/>
                                     </button>
 
-                                    {/* Nút Check-in / Check-out dựa theo Tab và Trạng thái */}
-                                    {activeTab === 'arrival' && item.bookingStatus !== 'COMPLETED' && (
-                                        <button
-                                            onClick={() => onNoShow?.(item)}
-                                            title="Báo khách không đến"
-                                            className="p-2.5 bg-white border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all shadow-sm"
-                                        >
-                                            <UserX size={16}/>
-                                        </button>
-                                    )}
-
-                                    {item.bookingStatus !== 'COMPLETED' && item.bookingStatus !== 'CANCELLED' && (
-                                        <button
-                                            onClick={() => handleAction(item)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg transition-all active:scale-95 ${
-                                                activeTab === 'arrival'
-                                                    ? 'bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700'
-                                                    : 'bg-emerald-600 text-white shadow-emerald-100 hover:bg-emerald-700'
-                                            }`}
-                                        >
-                                            {activeTab === 'arrival' ? <UserCheck size={14}/> : <LogOut size={14}/>}
-                                            {activeTab === 'arrival' ? 'Check-in' : 'Check-out'}
-                                        </button>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {/* 2. Kiểm tra các trạng thái ĐÃ KẾT THÚC */}
+                                        {['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(item.bookingStatus) ? (
+                                            <div className="min-w-[120px] flex justify-center">
+                                                {item.bookingStatus === 'NO_SHOW' && (
+                                                    <span
+                                                        className="inline-flex items-center justify-center px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest h-[42px] w-full shadow-sm">
+                            Đã báo No-show
+                        </span>
+                                                )}
+                                                {item.bookingStatus === 'COMPLETED' && (
+                                                    <span
+                                                        className="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest h-[42px] w-full shadow-sm">
+                            Đã hoàn thành
+                        </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            /* 3. Các trạng thái CÒN HOẠT ĐỘNG (ARRIVAL hoặc DEPARTURE) */
+                                            <>
+                                                {activeTab === 'arrival' ? (
+                                                    item.bookingStatus === 'CHECKED-IN' ? (
+                                                        <div className="min-w-[120px]">
+                                <span
+                                    className="inline-flex items-center justify-center px-4 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-widest h-[42px] w-full shadow-sm">
+                                    Đang lưu trú
+                                </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => onNoShow?.(item)}
+                                                                title={today < item.checkInDate ? `Chỉ báo No-show từ ngày ${item.checkInDate}` : "Báo khách không đến"}
+                                                                disabled={today < item.checkInDate}
+                                                                className={`p-2.5 rounded-xl border transition-all ${
+                                                                    today < item.checkInDate ? "bg-slate-50 text-slate-300 border-slate-100" : "bg-white border-rose-200 text-rose-500 hover:bg-rose-50"
+                                                                }`}
+                                                            >
+                                                                <UserX size={16}/>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAction(item)}
+                                                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
+                                                            >
+                                                                <UserCheck size={14}/> Check-in
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    /* Nếu là tab DEPARTURE: Luôn hiện nút Check-out cho khách đang ở (CHECKED-IN) */
+                                                    <button
+                                                        onClick={() => handleAction(item)}
+                                                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap"
+                                                    >
+                                                        <LogOut size={14}/> Check-out
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </td>
                         </tr>

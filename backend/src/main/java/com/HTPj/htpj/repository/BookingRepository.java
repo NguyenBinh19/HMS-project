@@ -111,7 +111,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM Booking b
     JOIN Agency a ON b.agencyId = a.agencyId
     JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus = 'BOOKED'
+    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
     AND b.checkInDate = CURRENT_DATE
     """)
     List<ListAllBookingsResponse> getTodayCheckinBookings();
@@ -137,7 +137,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     JOIN BookingDetail bd ON bd.booking = b
     WHERE b.hotelId = :hotelId
     AND b.checkOutDate = CURRENT_DATE
-    AND b.bookingStatus IN ('BOOKED', 'COMPLETED')
+    AND b.bookingStatus IN ('CHECKED-IN', 'COMPLETED')
     ORDER BY b.bookingStatus ASC, b.guestName ASC
     """)
     List<DepartureListResponse> getTodayDeparturesByHotelId(@Param("hotelId") Integer hotelId);
@@ -163,7 +163,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     JOIN BookingDetail bd ON bd.booking = b
     WHERE b.hotelId = :hotelId
     AND b.checkOutDate = :date
-    AND b.bookingStatus IN ('BOOKED', 'COMPLETED')
+    AND b.bookingStatus IN ('CHECKED-IN', 'COMPLETED')
     ORDER BY b.bookingStatus ASC, b.guestName ASC
     """)
     List<DepartureListResponse> getDeparturesByHotelIdAndDate(

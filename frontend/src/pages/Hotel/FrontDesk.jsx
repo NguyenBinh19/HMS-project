@@ -20,6 +20,10 @@ const FrontDeskDashboard = () => {
 
     // Hàm mở Modal
     const openNoShowModal = (booking) => {
+        if (today < booking.checkInDate) {
+            toast.error(`Không thể báo Không đến trước ngày nhận phòng (${booking.checkInDate})!`);
+            return;
+        }
         setNoShowModal({
             show: true,
             booking,

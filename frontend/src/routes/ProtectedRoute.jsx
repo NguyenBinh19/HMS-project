@@ -37,9 +37,7 @@ const ProtectedRoute = ({ children, roles: requiredRoles }) => {
         // KẾT HỢP: Chỉ cần 1 trong 2 nguồn có ID là hợp lệ
         currentHotelId = hotelIdFromToken || hotelIdFromLocal;
         currentAgencyId = agencyIdFromToken || agencyIdFromLocal;
-
-        console.log("Check KYC Thực tế - HotelID:", currentHotelId, "AgencyID:", currentAgencyId);
-
+        // console.log("Check KYC Thực tế - HotelID:", currentHotelId, "AgencyID:", currentAgencyId);
     } catch (error) {
         console.error("Token decoding failed:", error);
         return <Navigate to="/login" replace />;

@@ -69,10 +69,10 @@ public class RankServiceImpl implements RankService {
 //        if (rankRepository.existsByRankName(request.getRankName())) {
 //            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
 //        }
-
-        if (rankRepository.existsByPriority(request.getPriority())) {
-            throw new AppException(ErrorCode.RANK_PRIORITY_EXISTED);
-        }
+//
+//        if (rankRepository.existsByPriority(request.getPriority())) {
+//            throw new AppException(ErrorCode.RANK_PRIORITY_EXISTED);
+//        }
 
         Rank rank = rankMapper.toRank(request);
 
@@ -348,6 +348,7 @@ public class RankServiceImpl implements RankService {
                         .email(agency.getEmail())
                         .currentRank(currentRank.getRankName())
                         .targetRank(targetRank.getRankName())
+                        .targetRankId(targetRank.getId())
                         .build());
             }
         }
@@ -399,6 +400,7 @@ public class RankServiceImpl implements RankService {
                         .email(agency.getEmail())
                         .currentRank(currentRank.getRankName())
                         .targetRank(lowerRank.getRankName())
+                        .targetRankId(lowerRank.getId())
                         .build());
             }
         }

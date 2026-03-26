@@ -13,4 +13,5 @@ public class AgencyRankChangeResponse {
     private String email;
     private String currentRank;
     private String targetRank;
+    private Integer targetRankId;
 }

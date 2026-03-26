@@ -63,6 +63,8 @@ import HotelBookingDetail from "@/pages/Hotel/HotelBookingDetail.jsx"
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
 import CreditWallet from "../pages/Agency/CreditWallet.jsx";
 import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
+import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
+import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -163,6 +165,8 @@ const AppRoutes = () => {
                     <Route path="users" element={<AdminUserList />} />
                     <Route path="users/:userId" element={<AdminUserDetail />} />
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
+                    <Route path="set-ranking" element={<SetAgencyRanking />} />
+                    <Route path="system-config" element={<SystemConfigPage/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
