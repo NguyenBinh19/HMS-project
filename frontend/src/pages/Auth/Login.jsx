@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { authService } from "../../services/auth.service.js";
 import { jwtDecode } from "jwt-decode";
 import {
-    Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, LogIn, Plane, X, ShieldAlert,Hotel
+    Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, LogIn, Plane, X, ShieldAlert, Hotel
 } from "lucide-react";
 import Toast from "../../components/common/notification/Toast.jsx";
 import ToastPortal from "../../components/common/notification/ToastPortal.jsx";
@@ -49,7 +49,8 @@ const Login = () => {
     const [errorModal, setErrorModal] = useState({
         show: false,
         title: "",
-        message: ""
+        message: "",
+        unverifiedEmail: ""
     });
 
     const [focusedField, setFocusedField] = useState(null);
@@ -117,7 +118,7 @@ const Login = () => {
                 }
                 else if (status === 403 || lowerMsg.includes("disabled") || lowerMsg.includes("chưa được xác thực")) {
                     modalTitle = "Tài khoản chưa kích hoạt";
-                    modalMsg = "Vui lòng kiểm tra email của bạn để xác thực tài khoản trước khi đăng nhập.";
+                    modalMsg = "Tài khoản của bạn chưa được xác thực. Vui lòng nhập mã OTP đã gửi đến email hoặc yêu cầu gửi lại mã mới.";
                     shouldShowModal = true;
                 }
                 else if (status === 401 || lowerMsg.includes("bad credentials")) {
@@ -136,7 +137,9 @@ const Login = () => {
                 setErrorModal({
                     show: true,
                     title: modalTitle,
-                    message: modalMsg
+                    message: modalMsg,
+                    unverifiedEmail: modalTitle === "Tài khoản chưa kích hoạt" ? formData.email : ""
+
                 });
             }
 
@@ -290,11 +293,11 @@ const Login = () => {
                         </div>
 
                         <div className="absolute top-0 right-0 p-8 hidden md:flex gap-4">
-                        <span className="text-sm font-semibold text-slate-400">Bạn chưa có tài khoản?</span>
-                        <Link to="/register" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                            Đăng ký ngay
-                        </Link>
-                    </div>
+                            <span className="text-sm font-semibold text-slate-400">Bạn chưa có tài khoản?</span>
+                            <Link to="/register" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                                Đăng ký ngay
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -320,7 +323,18 @@ const Login = () => {
                             </p>
                         </div>
 
-                        <div className="p-4 bg-slate-50 flex justify-center">
+                        <div className="p-4 bg-slate-50 flex flex-col gap-3">
+                            {errorModal.unverifiedEmail && (
+                                <button
+                                    onClick={() => {
+                                        closeErrorModal();
+                                        navigate(`/verify-otp?email=${encodeURIComponent(errorModal.unverifiedEmail)}`);
+                                    }}
+                                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all active:scale-95"
+                                >
+                                    Xác thực OTP ngay
+                                </button>
+                            )}
                             <button
                                 onClick={closeErrorModal}
                                 className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all active:scale-95"

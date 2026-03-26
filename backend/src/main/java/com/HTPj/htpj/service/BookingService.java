@@ -1,6 +1,9 @@
 package com.HTPj.htpj.service;
 
+import com.HTPj.htpj.dto.request.booking.CancelBookingRequest;
+import com.HTPj.htpj.dto.request.booking.CheckinRequest;
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
+import com.HTPj.htpj.dto.request.booking.NoShowRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
 import com.HTPj.htpj.dto.response.booking.*;
@@ -39,4 +42,16 @@ public interface BookingService {
 
     // UC-051: Express checkout (no bill)
     BookingDetailResponse expressCheckout(String bookingCode);
+
+    // UC-031: Cancel Booking Order
+    CancelBookingResponse cancelBooking(CancelBookingRequest request);
+
+    // UC-052: Check-in Guest
+    BookingDetailResponse checkinGuest(CheckinRequest request);
+
+    // UC-052: Check-out Guest (update from IN_HOUSE to COMPLETED)
+    BookingDetailResponse checkoutGuest(String bookingCode);
+
+    // UC-053: Report No-show
+    NoShowResponse reportNoShow(NoShowRequest request);
 }

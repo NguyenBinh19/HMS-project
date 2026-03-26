@@ -10,9 +10,9 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "firstName", ignore = true)
-    @Mapping(target = "lastName", ignore = true)
+//    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "firstName", ignore = true)
+//    @Mapping(target = "lastName", ignore = true)
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "avatarUrl", ignore = true)
     @Mapping(target = "googleId", ignore = true)
