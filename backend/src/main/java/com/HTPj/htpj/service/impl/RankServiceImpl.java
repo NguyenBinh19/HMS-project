@@ -1,17 +1,13 @@
 package com.HTPj.htpj.service.impl;
 
-import com.HTPj.htpj.dto.request.rank.CreateRankRequest;
-import com.HTPj.htpj.dto.request.rank.UpdateRankRequest;
-import com.HTPj.htpj.dto.response.rank.RankResponse;
-import com.HTPj.htpj.entity.Rank;
-import com.HTPj.htpj.entity.SystemConfig;
+import com.HTPj.htpj.dto.request.rank.*;
+import com.HTPj.htpj.dto.response.rank.*;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RankMapper;
-import com.HTPj.htpj.repository.AgencyRepository;
-import com.HTPj.htpj.repository.RankRepository;
-import com.HTPj.htpj.repository.SystemConfigRepository;
-import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.mapper.RankPeriodMapper;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.RankService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +16,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.MonthDay;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +36,17 @@ public class RankServiceImpl implements RankService {
     RankMapper rankMapper;
     UserRepository userRepository;
     SystemConfigRepository systemConfigRepository;
-    private static final String RANK_REVIEW_CYCLE = "RANK_REVIEW_CYCLE_MONTHS";
+    RankPeriodMapper rankPeriodMapper;
+    AgencyBookingRevenueRepository revenueRepository;
+    PartnerVerificationRepository partnerVerificationRepository;
+    RankHistoryRepository rankHistoryRepository;
+
+    public enum RankPeriodType {
+        RANK_PERIOD_1_START,
+        RANK_PERIOD_1_END,
+        RANK_PERIOD_2_START,
+        RANK_PERIOD_2_END
+    }
 
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder
@@ -157,30 +169,341 @@ public class RankServiceImpl implements RankService {
         return "Delete rank successfully";
     }
 
-    @Override
-    public String updateRankReviewCycleMonths(Integer months) {
+    private boolean isValidMonthDay(String value) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
+            MonthDay.parse(value, formatter);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
+    @Override
+    public String updateRankPeriod(UpdateRankPeriodRequest request) {
+
+        RankPeriodType periodType;
+        try {
+            periodType = RankPeriodType.valueOf(request.getType());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_CONFIG_TYPE);
+        }
+
+        // Validate format MM-dd
+        if (!isValidMonthDay(request.getValue())) {
+            throw new AppException(ErrorCode.INVALID_DATE_FORMAT);
+        }
+
+        // Lấy config theo config_code = type
         SystemConfig config = systemConfigRepository
-                .findByConfigCode(RANK_REVIEW_CYCLE)
+                .findByConfigCode(periodType.name())
                 .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
 
-        config.setConfigValue(String.valueOf(months));
+        // Update value + audit field
+        config.setConfigValue(request.getValue());
         config.setUpdatedAt(LocalDateTime.now());
         config.setUpdatedBy(getCurrentUserId());
 
         systemConfigRepository.save(config);
 
-        return "Update rank review cycle months successfully";
+        return "Update " + periodType.name() + " successfully";
+    }
+
+
+    @Override
+    public String getRankPeriod(String type) {
+
+        RankPeriodType periodType;
+        try {
+            periodType = RankPeriodType.valueOf(type);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_CONFIG_TYPE);
+        }
+
+        SystemConfig config = systemConfigRepository
+                .findByConfigCode(periodType.name())
+                .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
+
+        return config.getConfigValue();
     }
 
     @Override
-    public Integer getRankReviewCycleMonths() {
+    public RankPeriodResponse getAllRankPeriods() {
 
-        SystemConfig config = systemConfigRepository
-                .findByConfigCode(RANK_REVIEW_CYCLE)
-                .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
+        List<String> types = List.of(
+                RankPeriodType.RANK_PERIOD_1_START.name(),
+                RankPeriodType.RANK_PERIOD_1_END.name(),
+                RankPeriodType.RANK_PERIOD_2_START.name(),
+                RankPeriodType.RANK_PERIOD_2_END.name()
+        );
 
-        return Integer.parseInt(config.getConfigValue());
+        List<SystemConfig> configs = systemConfigRepository.findByConfigCodeIn(types);
+
+        List<RankPeriodItemResponse> items = rankPeriodMapper.toResponseList(configs);
+
+        RankPeriodResponse response = new RankPeriodResponse();
+        response.setPeriods(items);
+
+        return response;
     }
 
+    @Override
+    public RankDateResponse getLatestPeriod() {
+
+        Map<String, String> configMap = systemConfigRepository
+                .findByConfigCodeIn(List.of(
+                        RankPeriodType.RANK_PERIOD_1_START.name(),
+                        RankPeriodType.RANK_PERIOD_1_END.name(),
+                        RankPeriodType.RANK_PERIOD_2_START.name(),
+                        RankPeriodType.RANK_PERIOD_2_END.name()
+                ))
+                .stream()
+                .collect(Collectors.toMap(SystemConfig::getConfigCode, SystemConfig::getConfigValue));
+
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+
+        LocalDate period1Start = LocalDate.parse(year + "-" + configMap.get("RANK_PERIOD_1_START"));
+        LocalDate period1End = LocalDate.parse(year + "-" + configMap.get("RANK_PERIOD_1_END"));
+
+        LocalDate period2Start = LocalDate.parse(year + "-" + configMap.get("RANK_PERIOD_2_START"));
+        LocalDate period2End = LocalDate.parse(year + "-" + configMap.get("RANK_PERIOD_2_END"));
+
+        // nếu đang ở kỳ 2 → lấy kỳ 1
+        if (!now.isBefore(period2Start)) {
+            return RankDateResponse.builder()
+                    .startDate(period1Start)
+                    .endDate(period1End)
+                    .build();
+        }
+
+        // nếu đang ở kỳ 1 → lấy kỳ 2 của năm trước
+        return RankDateResponse.builder()
+                .startDate(period2Start.minusYears(1))
+                .endDate(period2End.minusYears(1))
+                .build();
+    }
+
+    private Rank findTargetRank(BigDecimal revenue, List<Rank> ranks) {
+        return ranks.stream()
+                .filter(r -> revenue.compareTo(r.getUpgradeMinTotalRevenue()) >= 0)
+                .findFirst()
+                .orElse(ranks.get(ranks.size() - 1)); // rank thấp nhất
+    }
+
+    private Rank resolveCurrentRank(Agency agency, List<Rank> ranks, BigDecimal revenue) {
+        Rank current = agency.getRank();
+
+        if (current.getIsActive()) return current;
+
+        // rank bị disable → tìm lại theo revenue
+        return findTargetRank(revenue, ranks);
+    }
+
+    private Map<Long, BigDecimal> mapRevenue(List<Object[]> raw) {
+        Map<Long, BigDecimal> map = new HashMap<>();
+        for (Object[] row : raw) {
+            map.put(
+                    ((Number) row[0]).longValue(),
+                    (BigDecimal) row[1]
+            );
+        }
+        return map;
+    }
+
+
+    @Override
+    public List<AgencyRankChangeResponse> getUpgradeCandidates(RankEvaluateRequest request) {
+
+        List<Agency> agencies = agencyRepository.findAllActive();
+        List<Rank> ranks = rankRepository.findAllActiveOrderByPriorityDesc();
+
+        LocalDateTime endDateTime = request.getEndDate().atTime(23, 59, 59);
+
+        Set<Long> excludedAgencyIds = new HashSet<>(
+                rankHistoryRepository.findAgencyIdsChangedAfter(endDateTime)
+        );
+
+        Map<Long, BigDecimal> revenueMap = mapRevenue(
+                revenueRepository.getTotalRevenueByAgency(
+                        request.getStartDate(),
+                        request.getEndDate()
+                )
+        );
+
+        List<AgencyRankChangeResponse> result = new ArrayList<>();
+
+        for (Agency agency : agencies) {
+            if (excludedAgencyIds.contains(agency.getAgencyId())) continue;
+
+            BigDecimal revenue = revenueMap.getOrDefault(agency.getAgencyId(), BigDecimal.ZERO);
+
+            Rank currentRank = resolveCurrentRank(agency, ranks, revenue);
+            Rank targetRank = findTargetRank(revenue, ranks);
+
+            if (targetRank.getPriority() > currentRank.getPriority()) {
+                result.add(AgencyRankChangeResponse.builder()
+                        .agencyId(agency.getAgencyId())
+                        .agencyName(agency.getAgencyName())
+                        .email(agency.getEmail())
+                        .currentRank(currentRank.getRankName())
+                        .targetRank(targetRank.getRankName())
+                        .build());
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<AgencyRankChangeResponse> getDowngradeCandidates(RankEvaluateRequest request) {
+
+        List<Agency> agencies = agencyRepository.findAllActive();
+        List<Rank> ranks = rankRepository.findAllActiveOrderByPriorityDesc();
+
+        LocalDateTime endDateTime = request.getEndDate().atTime(23, 59, 59);
+
+        Set<Long> excludedAgencyIds = new HashSet<>(
+                rankHistoryRepository.findAgencyIdsChangedAfter(endDateTime)
+        );
+
+        Map<Long, BigDecimal> revenueMap = mapRevenue(
+                revenueRepository.getTotalRevenueByAgency(
+                        request.getStartDate(),
+                        request.getEndDate()
+                )
+        );
+
+        List<AgencyRankChangeResponse> result = new ArrayList<>();
+
+        for (Agency agency : agencies) {
+            if (excludedAgencyIds.contains(agency.getAgencyId())) continue;
+
+            BigDecimal revenue = revenueMap.getOrDefault(agency.getAgencyId(), BigDecimal.ZERO);
+
+            Rank currentRank = resolveCurrentRank(agency, ranks, revenue);
+
+            // check giữ hạng
+            if (revenue.compareTo(currentRank.getMaintainMinRevenue()) >= 0) continue;
+
+            // hạ xuống 1 bậc
+            Rank lowerRank = ranks.stream()
+                    .filter(r -> r.getPriority() < currentRank.getPriority())
+                    .findFirst()
+                    .orElse(null);
+
+            if (lowerRank != null) {
+                result.add(AgencyRankChangeResponse.builder()
+                        .agencyId(agency.getAgencyId())
+                        .agencyName(agency.getAgencyName())
+                        .email(agency.getEmail())
+                        .currentRank(currentRank.getRankName())
+                        .targetRank(lowerRank.getRankName())
+                        .build());
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public AgencyRankDetailResponse getAgencyRankDetail(AgencyRankDetailRequest request) {
+
+        Agency agency = agencyRepository.findById(request.getAgencyId())
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        Rank targetRank = rankRepository.findById(request.getTargetRankId())
+                .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
+
+        // partner verification latest
+        PartnerVerification pv = partnerVerificationRepository
+                .findLatestByAgencyId(agency.getAgencyId())
+                .stream().findFirst().orElse(null);
+
+        // booking ids
+        List<Long> bookingIds = revenueRepository.findBookingIds(
+                agency.getAgencyId(),
+                request.getStartDate(),
+                request.getEndDate()
+        );
+
+        // total revenue
+        BigDecimal totalRevenue = revenueRepository
+                .getTotalRevenueByAgency(request.getStartDate(), request.getEndDate())
+                .stream()
+                .filter(r -> ((Number) r[0]).longValue() == agency.getAgencyId())
+                .map(r -> (BigDecimal) r[1])
+                .findFirst()
+                .orElse(BigDecimal.ZERO);
+
+        // history
+        List<RankHistoryItem> histories = rankHistoryRepository
+                .findByAgencyId(agency.getAgencyId())
+                .stream()
+                .map(h -> RankHistoryItem.builder()
+                        .id(h.getId())
+                        .oldRank(h.getOldRank() != null ? h.getOldRank().getRankName() : null)
+                        .newRank(h.getNewRank().getRankName())
+                        .totalRevenue(h.getTotalRevenueSnapshot())
+                        .changeType(h.getChangeType())
+                        .reason(h.getReason())
+                        .changedAt(h.getChangedAt())
+                        .build()
+                ).toList();
+
+        return AgencyRankDetailResponse.builder()
+                .agencyId(agency.getAgencyId())
+                .agencyName(agency.getAgencyName())
+                .address(agency.getAddress())
+                .createdAt(agency.getCreatedAt())
+                .partnerVerificationId(pv != null ? pv.getId() : null)
+                .bookingIds(bookingIds)
+                .totalRevenue(totalRevenue)
+                .currentRank(rankMapper.toResponse(agency.getRank()))
+                .targetRank(rankMapper.toResponse(targetRank))
+                .histories(histories)
+                .changeType(request.getChangeType())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public String changeRank(ChangeRankRequest request) {
+
+        Agency agency = agencyRepository.findById(request.getAgencyId())
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        Rank currentRank = rankRepository.findById(request.getCurrentRankId())
+                .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
+
+        Rank targetRank = rankRepository.findById(request.getTargetRankId())
+                .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
+
+        RankHistory history = new RankHistory();
+        history.setAgency(agency);
+        history.setOldRank(currentRank);
+        history.setNewRank(targetRank);
+        history.setTotalRevenueSnapshot(request.getTotalRevenue());
+        history.setReason(request.getReason());
+        history.setChangedAt(LocalDateTime.now());
+        history.setChangedBy(getCurrentUserId());
+
+        if ("APPROVE".equalsIgnoreCase(request.getStatus())) {
+
+            history.setChangeType(request.getChangeType());
+
+            agency.setRank(targetRank);
+            agency.setCreditLimit(targetRank.getCreditLimit());
+
+            agencyRepository.save(agency);
+
+        } else {
+            history.setChangeType("HOLD");
+        }
+
+        rankHistoryRepository.save(history);
+
+        return "Change rank successfully";
+    }
 }

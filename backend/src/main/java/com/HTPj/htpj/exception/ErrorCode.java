@@ -117,6 +117,8 @@ public enum ErrorCode {
     RANK_PRIORITY_EXISTED(4103, "Priority already exists", HttpStatus.BAD_REQUEST),
     RANK_IN_USE(4104, "Rank is being used by agencies", HttpStatus.BAD_REQUEST),
     RANK_CODE_EXISTED(4105, "Rank code exist", HttpStatus.BAD_REQUEST),
+    INVALID_CONFIG_TYPE(4106, "only input type in list", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_FORMAT(4107, "date format: mm -dd", HttpStatus.BAD_REQUEST),
 
 
     //commission
@@ -127,6 +129,7 @@ public enum ErrorCode {
     INVALID_COMMISSION_TYPE(4205, "Only for commission type deal", HttpStatus.NOT_FOUND),
     COMMISSION_ALREADY_ACTIVE(4206, "Commission is active", HttpStatus.NOT_FOUND),
 
+    //config
     CONFIG_NOT_FOUND(5005, "config not found", HttpStatus.BAD_REQUEST),
 
     ;
