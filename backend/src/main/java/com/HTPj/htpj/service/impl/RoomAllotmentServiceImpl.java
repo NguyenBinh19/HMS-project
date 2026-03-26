@@ -47,7 +47,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
                 .collect(Collectors.groupingBy(RoomAllotment::getRoomTypeId));
 
         // Compute sold counts from bookings
-        List<String> activeStatuses = List.of("CONFIRMED", "PENDING", "CHECKED_IN");
+        List<String> activeStatuses = List.of("BOOKED", "PENDING", "CHECKED_IN");
         Map<Integer, Map<LocalDate, Integer>> soldCountMap = computeSoldCounts(
                 hotelId, roomTypeIds, startDate, endDate, activeStatuses);
 
@@ -117,7 +117,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
                 : null;
 
         // Compute sold counts
-        List<String> activeStatuses = List.of("CONFIRMED", "PENDING", "CHECKED_IN");
+        List<String> activeStatuses = List.of("BOOKED", "PENDING", "CHECKED_IN");
         Map<LocalDate, Integer> soldMap = computeSoldCountsForRoomType(
                 roomType.getHotel().getHotelId(),
                 request.getRoomTypeId(),
@@ -196,7 +196,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
         }
 
         // Compute sold for this date
-        List<String> activeStatuses = List.of("CONFIRMED", "PENDING", "CHECKED_IN");
+        List<String> activeStatuses = List.of("BOOKED", "PENDING", "CHECKED_IN");
         Map<LocalDate, Integer> soldMap = computeSoldCountsForRoomType(
                 roomType.getHotel().getHotelId(),
                 request.getRoomTypeId(),

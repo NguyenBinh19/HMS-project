@@ -57,9 +57,9 @@ public class VoucherServiceImpl implements VoucherService {
         Booking booking = bookingRepository.findDetailByBookingCodeAndUserId(bookingCode, user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        // BR-DOC-02: Only CONFIRMED or CANCELLED bookings can have vouchers
+        // BR-DOC-02: Only BOOKED or CANCELLED bookings can have vouchers
         boolean isCancelled = "CANCELLED".equalsIgnoreCase(booking.getBookingStatus());
-        if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus()) && !isCancelled) {
+        if (!"BOOKED".equalsIgnoreCase(booking.getBookingStatus()) && !isCancelled) {
             throw new AppException(ErrorCode.VOUCHER_NOT_AVAILABLE);
         }
 
