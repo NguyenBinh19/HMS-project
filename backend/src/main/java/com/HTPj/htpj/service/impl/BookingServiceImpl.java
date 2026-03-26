@@ -54,6 +54,7 @@ public class BookingServiceImpl implements BookingService {
     private final PromotionRepository promotionRepository;
     private final UserRepository userRepository;
     private final RoomAllotmentRepository roomAllotmentRepository;
+    private final AgencyBookingRevenueRepository agencyBookingRevenueRepository;
 
 
     @Override
@@ -582,6 +583,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingStatus("COMPLETED");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        AgencyBookingRevenue revenue = new AgencyBookingRevenue();
+        revenue.setAgencyId(booking.getAgencyId());
+        revenue.setBookingId(booking.getBookingId());
+        revenue.setRevenueAmount(booking.getFinalAmount());
+        revenue.setCheckoutDate(booking.getCheckOutDate());
+        revenue.setCreatedAt(LocalDateTime.now());
+
+        agencyBookingRevenueRepository.save(revenue);
 
         return bookingMapper.toBookingDetailResponse(booking);
     }
