@@ -1,9 +1,8 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
-import com.HTPj.htpj.dto.request.rank.CreateRankRequest;
-import com.HTPj.htpj.dto.request.rank.UpdateRankRequest;
-import com.HTPj.htpj.dto.response.rank.RankResponse;
+import com.HTPj.htpj.dto.request.rank.*;
+import com.HTPj.htpj.dto.response.rank.*;
 import com.HTPj.htpj.service.RankService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -61,16 +60,68 @@ public class RankController {
     }
 
     @PutMapping("/config-cycle")
-    public ApiResponse<String> updateCycle(@RequestParam Integer months) {
+    public ApiResponse<String> updateCycle(
+            @RequestBody UpdateRankPeriodRequest request
+    ) {
         return ApiResponse.<String>builder()
-                .result(rankService.updateRankReviewCycleMonths(months))
+                .result(rankService.updateRankPeriod(request))
                 .build();
     }
 
     @GetMapping("/config-cycle")
-    public ApiResponse<Integer> getCycle() {
-        return ApiResponse.<Integer>builder()
-                .result(rankService.getRankReviewCycleMonths())
+    public ApiResponse<String> getCycle(@RequestParam String type) {
+        return ApiResponse.<String>builder()
+                .result(rankService.getRankPeriod(type))
+                .build();
+    }
+
+    @GetMapping("/config-cycles")
+    public ApiResponse<RankPeriodResponse> getAllCycles() {
+        return ApiResponse.<RankPeriodResponse>builder()
+                .result(rankService.getAllRankPeriods())
+                .build();
+    }
+
+    @GetMapping("/period/latest")
+    public ApiResponse<RankDateResponse> getLatestPeriod() {
+        return ApiResponse.<RankDateResponse>builder()
+                .result(rankService.getLatestPeriod())
+                .build();
+    }
+
+    @PostMapping("/upgrade")
+    public ApiResponse<List<AgencyRankChangeResponse>> getUpgradeCandidates(
+            @RequestBody RankEvaluateRequest request
+    ) {
+        return ApiResponse.<List<AgencyRankChangeResponse>>builder()
+                .result(rankService.getUpgradeCandidates(request))
+                .build();
+    }
+
+    @PostMapping("/downgrade")
+    public ApiResponse<List<AgencyRankChangeResponse>> getDowngradeCandidates(
+            @RequestBody RankEvaluateRequest request
+    ) {
+        return ApiResponse.<List<AgencyRankChangeResponse>>builder()
+                .result(rankService.getDowngradeCandidates(request))
+                .build();
+    }
+
+    @PostMapping("/agency/detail")
+    public ApiResponse<AgencyRankDetailResponse> getAgencyRankDetail(
+            @RequestBody AgencyRankDetailRequest request
+    ) {
+        return ApiResponse.<AgencyRankDetailResponse>builder()
+                .result(rankService.getAgencyRankDetail(request))
+                .build();
+    }
+
+    @PostMapping("/agency/change")
+    public ApiResponse<String> changeRank(
+            @RequestBody ChangeRankRequest request
+    ) {
+        return ApiResponse.<String>builder()
+                .result(rankService.changeRank(request))
                 .build();
     }
 }

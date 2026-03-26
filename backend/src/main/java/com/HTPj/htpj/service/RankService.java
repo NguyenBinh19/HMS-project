@@ -1,8 +1,7 @@
 package com.HTPj.htpj.service;
 
-import com.HTPj.htpj.dto.request.rank.CreateRankRequest;
-import com.HTPj.htpj.dto.request.rank.UpdateRankRequest;
-import com.HTPj.htpj.dto.response.rank.RankResponse;
+import com.HTPj.htpj.dto.request.rank.*;
+import com.HTPj.htpj.dto.response.rank.*;
 
 import java.util.List;
 
@@ -17,7 +16,19 @@ public interface RankService {
 
     String deleteRank(Integer id);
 
-    String updateRankReviewCycleMonths(Integer months);
+    String updateRankPeriod(UpdateRankPeriodRequest request);
 
-    Integer getRankReviewCycleMonths();
+    String getRankPeriod(String type);
+
+    RankPeriodResponse getAllRankPeriods();
+
+    RankDateResponse getLatestPeriod();
+
+    List<AgencyRankChangeResponse> getUpgradeCandidates(RankEvaluateRequest request);
+
+    List<AgencyRankChangeResponse> getDowngradeCandidates(RankEvaluateRequest request);
+
+    AgencyRankDetailResponse getAgencyRankDetail(AgencyRankDetailRequest request);
+
+    String changeRank(ChangeRankRequest request);
 }

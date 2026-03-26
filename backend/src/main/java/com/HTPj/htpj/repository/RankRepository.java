@@ -31,4 +31,12 @@ public interface RankRepository extends JpaRepository<Rank, Integer> {
     boolean existsByRankCode(String rankCode);
 
     Optional<Rank> findByRankCode(String rankCode);
+
+    @Query("""
+    SELECT r FROM Rank r
+    WHERE r.isActive = true
+    ORDER BY r.priority DESC
+""")
+    List<Rank> findAllActiveOrderByPriorityDesc();
+
 }
