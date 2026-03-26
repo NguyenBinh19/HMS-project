@@ -19,10 +19,10 @@ public class Rank {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "rank_name")
+    @Column(name = "rank_name", columnDefinition = "NVARCHAR(255)")
     private String rankName;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "NVARCHAR(255)")
     private String description;
 
     @Column(name = "priority", nullable = false)
@@ -31,23 +31,11 @@ public class Rank {
     @Column(name = "is_active")
     private Boolean isActive;
 
-    @Column(name = "min_total_booking")
-    private Integer minTotalBooking;
-
-    @Column(name = "min_total_revenue")
-    private BigDecimal minTotalRevenue;
-
-    @Column(name = "logic")
-    private String logic;
-
-    @Column(name = "maintain_min_booking")
-    private Integer maintainMinBooking;
+    @Column(name = "upgrade_min_total_revenue")
+    private BigDecimal upgradeMinTotalRevenue;
 
     @Column(name = "maintain_min_revenue")
     private BigDecimal maintainMinRevenue;
-
-    @Column(name = "maintain_logic")
-    private String maintainLogic;
 
     @Column(name = "credit_limit")
     private BigDecimal creditLimit;

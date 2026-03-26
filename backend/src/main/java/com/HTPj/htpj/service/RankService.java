@@ -16,4 +16,8 @@ public interface RankService {
     List<RankResponse> getAllRanks();
 
     String deleteRank(Integer id);
+
+    String updateRankReviewCycleMonths(Integer months);
+
+    Integer getRankReviewCycleMonths();
 }

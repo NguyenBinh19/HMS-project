@@ -65,4 +65,12 @@ public class AgencyController {
                 .result(agencyService.findAgencyFinanceInfo(agencyId))
                 .build();
     }
+
+    @GetMapping("/{agencyId}/finance")
+    public ApiResponse<AgencyDetailResponse> getAgencyFinanceInfo(@PathVariable Long agencyId) {
+        return ApiResponse.<AgencyDetailResponse>builder()
+                .result(agencyService.findAgencyFinanceInfoHeader(agencyId))
+                .build();
+    }
+
 }

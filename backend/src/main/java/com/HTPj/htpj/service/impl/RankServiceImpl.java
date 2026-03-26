@@ -4,11 +4,13 @@ import com.HTPj.htpj.dto.request.rank.CreateRankRequest;
 import com.HTPj.htpj.dto.request.rank.UpdateRankRequest;
 import com.HTPj.htpj.dto.response.rank.RankResponse;
 import com.HTPj.htpj.entity.Rank;
+import com.HTPj.htpj.entity.SystemConfig;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RankMapper;
 import com.HTPj.htpj.repository.AgencyRepository;
 import com.HTPj.htpj.repository.RankRepository;
+import com.HTPj.htpj.repository.SystemConfigRepository;
 import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.RankService;
 import lombok.AccessLevel;
@@ -31,6 +33,8 @@ public class RankServiceImpl implements RankService {
     AgencyRepository agencyRepository;
     RankMapper rankMapper;
     UserRepository userRepository;
+    SystemConfigRepository systemConfigRepository;
+    private static final String RANK_REVIEW_CYCLE = "RANK_REVIEW_CYCLE_MONTHS";
 
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder
@@ -50,9 +54,9 @@ public class RankServiceImpl implements RankService {
             throw new AppException(ErrorCode.RANK_CODE_EXISTED);
         }
 
-        if (rankRepository.existsByRankName(request.getRankName())) {
-            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
-        }
+//        if (rankRepository.existsByRankName(request.getRankName())) {
+//            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
+//        }
 
         if (rankRepository.existsByPriority(request.getPriority())) {
             throw new AppException(ErrorCode.RANK_PRIORITY_EXISTED);
@@ -77,10 +81,10 @@ public class RankServiceImpl implements RankService {
         Rank rank = rankRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
 
-        if (!rank.getRankName().equals(request.getRankName())
-                && rankRepository.existsByRankName(request.getRankName())) {
-            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
-        }
+//        if (!rank.getRankName().equals(request.getRankName())
+//                && rankRepository.existsByRankName(request.getRankName())) {
+//            throw new AppException(ErrorCode.RANK_NAME_EXISTED);
+//        }
 
         if (!rank.getPriority().equals(request.getPriority())
                 && rankRepository.existsByPriority(request.getPriority())) {
@@ -93,13 +97,8 @@ public class RankServiceImpl implements RankService {
         rank.setColor(request.getColor());
         rank.setPriority(request.getPriority());
 
-        rank.setMinTotalBooking(request.getMinTotalBooking());
-        rank.setMinTotalRevenue(request.getMinTotalRevenue());
-        rank.setLogic(request.getLogic());
-
-        rank.setMaintainMinBooking(request.getMaintainMinBooking());
+        rank.setUpgradeMinTotalRevenue(request.getUpgradeMinTotalRevenue());
         rank.setMaintainMinRevenue(request.getMaintainMinRevenue());
-        rank.setMaintainLogic(request.getMaintainLogic());
 
         rank.setUpdatedAt(LocalDateTime.now());
         rank.setUpdatedBy(getCurrentUserId());
@@ -157,4 +156,31 @@ public class RankServiceImpl implements RankService {
 
         return "Delete rank successfully";
     }
+
+    @Override
+    public String updateRankReviewCycleMonths(Integer months) {
+
+        SystemConfig config = systemConfigRepository
+                .findByConfigCode(RANK_REVIEW_CYCLE)
+                .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
+
+        config.setConfigValue(String.valueOf(months));
+        config.setUpdatedAt(LocalDateTime.now());
+        config.setUpdatedBy(getCurrentUserId());
+
+        systemConfigRepository.save(config);
+
+        return "Update rank review cycle months successfully";
+    }
+
+    @Override
+    public Integer getRankReviewCycleMonths() {
+
+        SystemConfig config = systemConfigRepository
+                .findByConfigCode(RANK_REVIEW_CYCLE)
+                .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
+
+        return Integer.parseInt(config.getConfigValue());
+    }
+
 }

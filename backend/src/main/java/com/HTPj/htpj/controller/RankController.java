@@ -59,4 +59,18 @@ public class RankController {
                 .result(rankService.deleteRank(id))
                 .build();
     }
+
+    @PutMapping("/config-cycle")
+    public ApiResponse<String> updateCycle(@RequestParam Integer months) {
+        return ApiResponse.<String>builder()
+                .result(rankService.updateRankReviewCycleMonths(months))
+                .build();
+    }
+
+    @GetMapping("/config-cycle")
+    public ApiResponse<Integer> getCycle() {
+        return ApiResponse.<Integer>builder()
+                .result(rankService.getRankReviewCycleMonths())
+                .build();
+    }
 }

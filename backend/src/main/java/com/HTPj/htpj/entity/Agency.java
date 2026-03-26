@@ -20,7 +20,7 @@ public class Agency {
     @Column(name = "agency_id")
     private Long agencyId;
 
-    @Column(name = "agency_name", nullable = false, length = 255)
+    @Column(name = "agency_name", nullable = false, length = 255, columnDefinition = "nvarchar(255)")
     private String agencyName;
 
     @Column(name = "email", length = 255)
@@ -32,7 +32,7 @@ public class Agency {
     @Column(name = "hotline", length = 50)
     private String hotline;
 
-    @Column(name = "address")
+    @Column(name = "address",columnDefinition = "nvarchar(255)")
     private String address;
 
     @Column(name = "credit_limit")

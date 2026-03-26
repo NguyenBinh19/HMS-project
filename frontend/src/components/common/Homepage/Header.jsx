@@ -5,6 +5,7 @@ import {
     ChevronDown, Bell, HeartPulse, User, LayoutDashboard
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import api from "../../../services/axios.config";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +15,12 @@ const Header = () => {
     const location = useLocation();
     const dropdownRef = useRef(null);
     const token = localStorage.getItem("accessToken");
+    const [financeInfo, setFinanceInfo] = useState({
+        walletBalance: 0,
+        creditLimit: 0,
+        currentCredit: 0,
+        creditUsedPercent: 0,
+    });
 
     // Click outside handler cho Admin Dropdown
     useEffect(() => {
@@ -39,7 +46,13 @@ const Header = () => {
         }
     } catch (e) { userRoles = []; }
 
+    const formatCurrency = (value) => {
+        if (!value) return "0 ₫";
+        return Number(value).toLocaleString("vi-VN") + " ₫";
+    };
+
     const isAdmin = userRoles.some(role => role.includes("ADMIN"));
+    const isAgencyManager = userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER"));
 
     useEffect(() => {
         try {
@@ -54,6 +67,16 @@ const Header = () => {
             document.title = "Trang chủ | HMS-B2B";
         }
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (user?.agencyId) {
+            api.get(`/agencies/${user.agencyId}/finance`)
+                .then(res => {
+                    setFinanceInfo(res.data.result);
+                })
+                .catch(err => console.error("Error fetching finance info:", err));
+        }
+    }, [user]);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -98,11 +121,10 @@ const Header = () => {
                                 <Link
                                     key={link.name}
                                     to={link.href}
-                                    className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${
-                                        location.pathname === link.href
-                                            ? "text-blue-600 bg-blue-50"
-                                            : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                                    }`}
+                                    className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${location.pathname === link.href
+                                        ? "text-blue-600 bg-blue-50"
+                                        : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                        }`}
                                 >
                                     {link.name}
                                 </Link>
@@ -159,6 +181,48 @@ const Header = () => {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        ) : isAgencyManager ? (
+                            <div className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100 flex-wrap">
+                                <div
+                                    onClick={() => navigate("/agency/prepaid")}
+                                    className="flex flex-col cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition min-w-[120px]"
+                                >
+                                    <span className="text-xs font-medium text-slate-500">Số dư khả dụng</span>
+                                    <span className="text-lg font-bold text-slate-800">
+                                        {formatCurrency(financeInfo.walletBalance)}
+                                    </span>
+                                </div>
+
+                                <button
+                                    onClick={() => navigate("/agency/prepaid")}
+                                    className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-sm shadow hover:bg-blue-700 transition"
+                                >
+                                    Nạp tiền
+                                </button>
+
+                                <div
+                                    onClick={() => navigate("/agency/credit-wallet")}
+                                    className="flex flex-col cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition min-w-[150px]"
+                                >
+                                    <span className="text-xs font-medium text-slate-500">Hạn mức tín dụng</span>
+                                    <span className="text-lg font-bold text-slate-800">
+                                        {formatCurrency(financeInfo.creditLimit)}
+                                    </span>
+                                    <span className="text-xs text-slate-400">
+                                        {financeInfo.creditUsedPercent}% đã sử dụng
+                                    </span>
+                                </div>
+                                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-200 group transition-all">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                        <UserCircle size={20} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
+                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác</span>
+                                    </div>
+                                </Link>
+                                <button onClick={handleLogout} className="px-3 text-slate-400 hover:text-rose-600 transition-colors"><LogOut size={18} /></button>
                             </div>
                         ) : (
                             /* GIAO DIỆN HOTEL/AGENCY */
