@@ -55,6 +55,8 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final RoomAllotmentRepository roomAllotmentRepository;
     private final AgencyBookingRevenueRepository agencyBookingRevenueRepository;
+    private final AgencyRepository agencyRepository;
+    private final AgencyCreditHistoryRepository agencyCreditHistoryRepository;
 
 
     @Override
@@ -203,6 +205,7 @@ public class BookingServiceImpl implements BookingService {
 
         return totalPrice;
     }
+
     @Transactional
     @Override
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
@@ -250,8 +253,8 @@ public class BookingServiceImpl implements BookingService {
                 .guestEmail(request.getGuestEmail())
                 .notes(request.getNotes())
                 .paymentMethod(request.getPaymentMethod())
-                .paymentStatus("unpaid")
-                .bookingStatus("BOOKED")
+                .paymentStatus("PENDING")
+                .bookingStatus("PENDING")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -357,6 +360,33 @@ public class BookingServiceImpl implements BookingService {
         booking.setDiscountTotal(discountTotal);
         booking.setFinalAmount(bookingTotal.subtract(discountTotal));
 
+        BigDecimal finalAmount = booking.getFinalAmount();
+        String paymentMethod = request.getPaymentMethod();
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
+        //check xem phuong thuc thanh toan hop le khong
+        if ("CREDIT".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal currentCredit = agency.getCurrentCredit();
+
+            if (currentCredit == null || currentCredit.compareTo(finalAmount) < 0) {
+                throw new AppException(ErrorCode.INSUFFICIENT_BALANCE);
+            }
+
+        } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal walletBalance = agency.getWalletBalance();
+
+            if (walletBalance == null || walletBalance.compareTo(finalAmount) < 0) {
+                throw new AppException(ErrorCode.INSUFFICIENT_BALANCE);
+            }
+
+        } else {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
         Booking saved = bookingRepository.save(booking);
 
         //count +1
@@ -364,6 +394,46 @@ public class BookingServiceImpl implements BookingService {
             promotionRepository.increaseUsedCount(saved.getPromotion().getId());
         }
 
+        //tru tien, cap nhat vi
+        BigDecimal finalAmountPaid = saved.getFinalAmount();
+
+        if ("CREDIT".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal creditBefore = agency.getCurrentCredit();
+            BigDecimal creditAfter = creditBefore.subtract(finalAmountPaid);
+
+            // save history
+            AgencyCreditHistory history = AgencyCreditHistory.builder()
+                    .agency(agency)
+                    .booking(saved)
+                    .creditBefore(creditBefore)
+                    .amount(finalAmountPaid)
+                    .creditAfter(creditAfter)
+                    .type("PAID")
+                    .description("Thanh toán hóa đơn " + saved.getBookingCode())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            agencyCreditHistoryRepository.save(history);
+
+            // update agency
+            agency.setCurrentCredit(creditAfter);
+            agencyRepository.save(agency);
+
+        } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal walletBefore = agency.getWalletBalance();
+            BigDecimal walletAfter = walletBefore.subtract(finalAmountPaid);
+
+            agency.setWalletBalance(walletAfter);
+            agencyRepository.save(agency);
+
+            //viet phan luu transaction vao day
+        }
+        saved.setPaymentStatus("PAID");
+        saved.setBookingStatus("BOOKED");
+        saved.setUpdatedAt(LocalDateTime.now());
+        bookingRepository.save(saved);
         hold.setStatus("BOOKED");
         roomHoldRepository.save(hold);
 
