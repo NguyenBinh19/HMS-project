@@ -258,7 +258,7 @@ const Register = () => {
 
         const { username, email, phone, password, confirmPassword } = formData;
 
-        if (!username || !email || !password || !confirmPassword) {
+        if (!username || !email ||!phone|| !password || !confirmPassword) {
             setError("Vui lòng điền đầy đủ thông tin.");
             return;
         }
@@ -353,7 +353,7 @@ const Register = () => {
     };
 
     const isFormValid =
-        passwordScore >= 2 && formData.username && formData.email && agreed && selectedRole;
+        passwordScore >= 2 && formData.username && formData.phone &&formData.email && agreed && selectedRole;
 
     return (
         <div className="relative h-screen w-screen overflow-hidden flex items-center justify-center font-sans bg-slate-900">
@@ -570,7 +570,7 @@ const Register = () => {
                                                 ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                 : "border-slate-100 hover:border-slate-300"
                                             }`}
-                                        placeholder="Số điện thoại (tuỳ chọn)"
+                                        placeholder="Số điện thoại"
                                     />
                                     {errors.phone && (
                                         <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
@@ -771,28 +771,7 @@ const Register = () => {
                             </form>
 
                             {/* Social Login */}
-                            <div className="my-8 flex items-center gap-4">
-                                <div className="h-[1px] bg-slate-200 flex-1"></div>
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    Hoặc đăng ký với
-                                </span>
-                                <div className="h-[1px] bg-slate-200 flex-1"></div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 pb-4">
-                                <button
-                                    type="button"
-                                    onClick={() => handleSocialLogin("google")}
-                                    className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 font-bold text-slate-600 text-sm group"
-                                >
-                                    <img
-                                        src="https://www.svgrepo.com/show/475656/google-color.svg"
-                                        alt="G"
-                                        className="w-5 h-5 group-hover:scale-110 transition-transform"
-                                    />{" "}
-                                    Google
-                                </button>
-                            </div>
+                           
 
                             <p className="text-center text-slate-500 font-medium md:hidden pb-8">
                                 Đã có tài khoản?{" "}
