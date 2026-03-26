@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     Building2, Menu, X, LogOut, UserCircle, ShieldCheck,
-    ChevronDown, Bell, HeartPulse, User, LayoutDashboard
+    ChevronDown, User, LayoutDashboard
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import api from "../../../services/axios.config";
@@ -11,10 +11,14 @@ const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
     const [user, setUser] = useState(null);
+    const [userRoles, setUserRoles] = useState([]);
+    const [hotelIdFromToken, setHotelIdFromToken] = useState(null);
+    const [agencyIdFromToken, setAgencyIdFromToken] = useState(null);
+
     const navigate = useNavigate();
     const location = useLocation();
     const dropdownRef = useRef(null);
-    const token = localStorage.getItem("accessToken");
+
     const [financeInfo, setFinanceInfo] = useState({
         walletBalance: 0,
         creditLimit: 0,
@@ -22,7 +26,7 @@ const Header = () => {
         creditUsedPercent: 0,
     });
 
-    // Click outside handler cho Admin Dropdown
+    // 1. Xử lý đóng Dropdown khi click ra ngoài
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -33,71 +37,88 @@ const Header = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    let userRoles = [];
-    let hotelIdFromToken = null;
-    let agencyIdFromToken = null;
-    try {
-        if (token) {
-            const decoded = jwtDecode(token);
-            const scope = decoded.scope || decoded.roles || decoded.authorities || "";
-            userRoles = Array.isArray(scope) ? scope : scope.split(" ");
-            hotelIdFromToken = decoded.hotelId || decoded.hotel_id;
-            agencyIdFromToken = decoded.agencyId || decoded.agency_id;
-        }
-    } catch (e) { userRoles = []; }
+    // 2. Đồng bộ hóa dữ liệu từ LocalStorage và Token
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        const storedUser = localStorage.getItem('user');
 
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Lỗi parse user:", e);
+            }
+        } else {
+            setUser(null);
+        }
+
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                const scope = decoded.scope || decoded.roles || decoded.authorities || "";
+                setUserRoles(Array.isArray(scope) ? scope : scope.split(" "));
+                setHotelIdFromToken(decoded.hotelId || decoded.hotel_id);
+                setAgencyIdFromToken(decoded.agencyId || decoded.agency_id);
+            } catch (e) {
+                setUserRoles([]);
+                setHotelIdFromToken(null);
+                setAgencyIdFromToken(null);
+            }
+        } else {
+            setUserRoles([]);
+            setHotelIdFromToken(null);
+            setAgencyIdFromToken(null);
+        }
+    }, [location.pathname]); // Cập nhật lại khi chuyển trang
+
+    // 3. Logic tính toán quyền hạn (Sử dụng useMemo để tối ưu)
+    const isAdmin = useMemo(() => userRoles.some(role => role.includes("ADMIN")), [userRoles]);
+    const isAgencyManager = useMemo(() => userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER")), [userRoles]);
+
+    const currentHotelId = user?.hotelId || hotelIdFromToken;
+    const currentAgencyId = user?.agencyId || agencyIdFromToken;
+    const needsKyc = user && !isAdmin && !currentHotelId && !currentAgencyId;
+
+    // 4. Định dạng tiền tệ
     const formatCurrency = (value) => {
         if (!value) return "0 ₫";
         return Number(value).toLocaleString("vi-VN") + " ₫";
     };
 
-    const isAdmin = userRoles.some(role => role.includes("ADMIN"));
-    const isAgencyManager = userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER"));
-
+    // 5. Cập nhật Tiêu đề trang động
     useEffect(() => {
-        try {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) setUser(JSON.parse(storedUser));
-        } catch (error) { console.error(error); }
+        const titles = {
+            "/homepage": "Trang chủ | HMS-B2B",
+            "/": "Trang chủ | HMS-B2B",
+            "/contact": "Liên hệ | HMS-B2B",
+            "/about-us": "Về chúng tôi | HMS-B2B",
+            "/profile": "Hồ sơ cá nhân | HMS-B2B"
+        };
+        document.title = titles[location.pathname] || "HMS-B2B Project";
     }, [location.pathname]);
 
-    // Cập nhật Title
+    // 6. Lấy thông tin tài chính (Chỉ dành cho Agency Manager)
     useEffect(() => {
-        if (location.pathname === "/homepage" || location.pathname === "/") {
-            document.title = "Trang chủ | HMS-B2B";
-        }
-    }, [location.pathname]);
-
-    useEffect(() => {
-        if (user?.agencyId) {
+        if (user?.agencyId && isAgencyManager) {
             api.get(`/agencies/${user.agencyId}/finance`)
-                .then(res => {
-                    setFinanceInfo(res.data.result);
-                })
-                .catch(err => console.error("Error fetching finance info:", err));
+                .then(res => setFinanceInfo(res.data.result))
+                .catch(err => console.error("Lỗi lấy thông tin tài chính:", err));
         }
-    }, [user]);
+    }, [user?.agencyId, isAgencyManager]);
 
     const handleLogout = () => {
         localStorage.clear();
         setUser(null);
+        setUserRoles([]);
         navigate("/login");
     };
 
-    // Menu dành cho Guest
     const navLinks = [
         { name: "Trang chủ", href: "/homepage" },
         { name: "Về chúng tôi", href: "/about-us" },
         { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
     ];
-
-    // const needsKyc = user && !isAdmin && !user.hotelId && !user.agencyId;
-    const currentHotelId = user?.hotelId || hotelIdFromToken;
-    const currentAgencyId = user?.agencyId || agencyIdFromToken;
-
-    // needsKyc sẽ false ngay khi một trong hai nguồn (Token/State) có ID
-    const needsKyc = user && !isAdmin && !currentHotelId && !currentAgencyId;
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
@@ -114,7 +135,7 @@ const Header = () => {
                         </span>
                     </Link>
 
-                    {/* DESKTOP NAV - (Guest) */}
+                    {/* DESKTOP NAV - Dành cho khách chưa đăng nhập */}
                     {!user && (
                         <nav className="hidden lg:flex items-center space-x-1">
                             {navLinks.map((link) => (
@@ -124,7 +145,7 @@ const Header = () => {
                                     className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${location.pathname === link.href
                                         ? "text-blue-600 bg-blue-50"
                                         : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                                        }`}
+                                    }`}
                                 >
                                     {link.name}
                                 </Link>
@@ -135,7 +156,6 @@ const Header = () => {
                     {/* ACTIONS */}
                     <div className="hidden lg:flex items-center gap-3">
                         {!user ? (
-                            /* GIAO DIỆN GUEST */
                             <div className="flex items-center gap-3">
                                 <button onClick={() => navigate("/login")} className="px-6 py-2.5 text-[15px] font-bold text-slate-700 hover:text-blue-600 transition-colors">
                                     Đăng nhập
@@ -145,143 +165,79 @@ const Header = () => {
                                 </button>
                             </div>
                         ) : isAdmin ? (
-                            /* GIAO DIỆN ADMIN */
                             <div className="flex items-center gap-5">
-
                                 <div className="relative" ref={dropdownRef}>
                                     <div
                                         onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
                                         className="flex items-center gap-3 cursor-pointer group p-1.5 rounded-2xl border border-transparent hover:border-slate-100 hover:bg-slate-50 transition-all"
                                     >
-                                        <div className="w-10 h-10 rounded-full bg-[#006AFF] flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                                            AD
-                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-[#006AFF] flex items-center justify-center text-white font-bold text-sm shadow-lg">AD</div>
                                         <div className="flex flex-col">
                                             <span className="text-[15px] font-bold text-slate-800 leading-none">Admin</span>
-                                            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md mt-1 self-start uppercase tracking-wider">
-                                                Super Admin
-                                            </span>
+                                            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md mt-1 self-start uppercase tracking-wider">Super Admin</span>
                                         </div>
                                         <ChevronDown size={16} className={`text-slate-400 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
                                     </div>
-
-                                    {/* Dropdown Menu */}
                                     {isAdminDropdownOpen && (
                                         <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-150">
-                                            <button onClick={() => { navigate("/profile"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600">
-                                                <User size={18} /> Hồ sơ cá nhân
-                                            </button>
-                                            <button onClick={() => { navigate("/admin/dashboard"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600">
-                                                <LayoutDashboard size={18} /> Dashboard quản trị
-                                            </button>
+                                            <button onClick={() => { navigate("/profile"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600"><User size={18} /> Hồ sơ cá nhân</button>
+                                            <button onClick={() => { navigate("/admin/dashboard"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600"><LayoutDashboard size={18} /> Dashboard quản trị</button>
                                             <div className="h-px bg-slate-100 my-1"></div>
-                                            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors">
-                                                <LogOut size={18} /> Đăng xuất
-                                            </button>
+                                            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"><LogOut size={18} /> Đăng xuất</button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         ) : isAgencyManager ? (
-                            <div className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100 flex-wrap">
-                                <div
-                                    onClick={() => navigate("/agency/prepaid")}
-                                    className="flex flex-col cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition min-w-[120px]"
-                                >
-                                    <span className="text-xs font-medium text-slate-500">Số dư khả dụng</span>
-                                    <span className="text-lg font-bold text-slate-800">
-                                        {formatCurrency(financeInfo.walletBalance)}
-                                    </span>
+                            <div className="flex items-center gap-6 bg-slate-50 px-4 py-1.5 rounded-2xl border border-slate-100">
+                                <div onClick={() => navigate("/agency/prepaid")} className="flex flex-col cursor-pointer p-1.5 min-w-[120px]">
+                                    <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Số dư khả dụng</span>
+                                    <span className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.walletBalance)}</span>
                                 </div>
-
-                                <button
-                                    onClick={() => navigate("/agency/prepaid")}
-                                    className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-sm shadow hover:bg-blue-700 transition"
-                                >
-                                    Nạp tiền
-                                </button>
-
-                                <div
-                                    onClick={() => navigate("/agency/credit-wallet")}
-                                    className="flex flex-col cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition min-w-[150px]"
-                                >
-                                    <span className="text-xs font-medium text-slate-500">Hạn mức tín dụng</span>
-                                    <span className="text-lg font-bold text-slate-800">
-                                        {formatCurrency(financeInfo.creditLimit)}
-                                    </span>
-                                    <span className="text-xs text-slate-400">
-                                        {financeInfo.creditUsedPercent}% đã sử dụng
-                                    </span>
+                                <button onClick={() => navigate("/agency/prepaid")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition active:scale-95">Nạp tiền</button>
+                                <div onClick={() => navigate("/agency/credit-wallet")} className="flex flex-col cursor-pointer p-1.5 min-w-[150px]">
+                                    <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Hạn mức tín dụng</span>
+                                    <span className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.creditLimit)}</span>
+                                    <span className="text-[11px] text-slate-400 font-bold italic">{financeInfo.creditUsedPercent || 0}% đã sử dụng</span>
                                 </div>
-                                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-200 group transition-all">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                        <UserCircle size={20} />
-                                    </div>
+                                <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><UserCircle size={20} /></div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
-                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác</span>
+                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>
                                     </div>
                                 </Link>
-                                <button onClick={handleLogout} className="px-3 text-slate-400 hover:text-rose-600 transition-colors"><LogOut size={18} /></button>
+                                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><LogOut size={20} /></button>
                             </div>
                         ) : (
-                            /* GIAO DIỆN HOTEL/AGENCY */
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                                {/* Nút Xác minh - Chỉ hiện nếu cần KYC */}
                                 {needsKyc && (
-                                    <button
-                                        onClick={() => navigate("/kyc-intro")}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse hover:bg-amber-600 transition-colors"
-                                    >
+                                    <button onClick={() => navigate("/kyc-intro")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse shadow-lg shadow-amber-200 hover:bg-amber-600">
                                         <ShieldCheck size={18} />
                                         <span className="hidden xl:inline">Xác minh ngay</span>
                                     </button>
                                 )}
-
-                                {/* NÚT PROFILE RIÊNG BIỆT - Luôn hiển thị */}
-                                <button
-                                    onClick={() => navigate("/profile")}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${
-                                        location.pathname === "/profile"
-                                            ? "bg-blue-600 text-white shadow-md"
-                                            : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"
-                                    }`}
-                                >
-                                    <User size={18} />
-                                    <span>Hồ sơ</span>
+                                <button onClick={() => navigate("/profile")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>
+                                    <User size={18} /><span>Hồ sơ</span>
                                 </button>
-
-                                {/* Hiển thị tên User (Chỉ để xem, không bấm) */}
-                                <div className="flex items-center gap-3 px-3 py-1.5">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
-                                        <UserCircle size={20}/>
-                                    </div>
+                                <div className="flex items-center gap-3 px-4 py-1.5">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20}/></div>
                                     <div className="flex flex-col">
-            <span className="text-sm font-black text-slate-800 leading-none">
-                {user?.lastName} {user?.firstName}
-            </span>
+                                        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
                                         <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
-                {userRoles.some(r => r.includes("HOTEL")) ? "Khách sạn" : "Đại lý"}
-            </span>
+                                            {userRoles.some(r => r.includes("HOTEL")) ? "Đối tác Khách sạn" : "Đại lý"}
+                                        </span>
                                     </div>
                                 </div>
-
-                                {/* Nút Đăng xuất */}
-                                <div className="w-px h-8 bg-slate-200 mx-1"></div>
-                                <button
-                                    onClick={handleLogout}
-                                    className="px-3 text-slate-400 hover:text-rose-600 transition-colors"
-                                    title="Đăng xuất"
-                                >
-                                    <LogOut size={18}/>
-                                </button>
+                                <div className="w-px h-8 bg-slate-200 mx-2"></div>
+                                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors" title="Đăng xuất"><LogOut size={20}/></button>
                             </div>
                         )}
                     </div>
 
                     {/* MOBILE BUTTON */}
                     <div className="lg:hidden">
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-blue-50 transition-all">
                             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
                     </div>
@@ -293,9 +249,7 @@ const Header = () => {
                 <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
                     <nav className="flex flex-col space-y-2">
                         {!user && navLinks.map((link) => (
-                            <Link key={link.name} to={link.href} onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl hover:bg-slate-50 text-slate-700">
-                                {link.name}
-                            </Link>
+                            <Link key={link.name} to={link.href} onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl hover:bg-slate-50 text-slate-700">{link.name}</Link>
                         ))}
                         {isAdmin && (
                             <>
