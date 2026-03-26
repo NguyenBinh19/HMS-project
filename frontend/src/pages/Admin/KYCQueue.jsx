@@ -54,7 +54,7 @@ const KYCQueuePage = () => {
 
     return (
         <div className="p-8 bg-slate-50 min-h-screen font-sans">
-            <h1 className="text-2xl font-bold text-[#1e293b] mb-1">Hàng đợi KYC</h1>
+            <h1 className="text-2xl font-bold text-[#1e293b] mb-1">XỬ LÝ XÁC MINH KYC</h1>
             <p className="text-slate-500 text-[14px] mb-8">Xử lý yêu cầu đăng ký tài khoản mới cho Đại lý và Khách
                 sạn</p>
 

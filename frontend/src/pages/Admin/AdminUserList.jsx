@@ -125,7 +125,7 @@ const AdminUserList = () => {
             {/* Header */}
             <div className="flex justify-between items-end mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Quản lý người dùng</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">QUẢN LÝ NGƯỜI DÙNG</h1>
                     <p className="text-slate-500 text-sm mt-1">Tìm kiếm, lọc và quản lý tài khoản người dùng</p>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-xl px-5 py-3 shadow-sm">

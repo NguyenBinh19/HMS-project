@@ -80,7 +80,7 @@ const PartnerList = () => {
                 {/* HEADER & STATISTICS */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 uppercase">Quản lý đối tác</h1>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 uppercase">QUẢN LÝ ĐỐI TÁC</h1>
                         <p className="text-slate-500 font-medium text-sm italic">
                             Danh sách {activeTab === "Agency" ? "Đại lý lữ hành" : "Cơ sở lưu trú"} chính thức trên hệ thống
                         </p>

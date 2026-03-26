@@ -2,18 +2,18 @@ import { useLocation, Link } from "react-router-dom";
 import {
     LayoutDashboard,
     Settings,
-    Database,
+    PenLine,
     BarChart3,
     FileText,
     CreditCard,
-    Wallet,
-    Gavel,
+    Contact2,
+    Clock,
     Users,
-    ClipboardList,
+    HandCoins,
     ShieldCheck,
-    History,
+    ClipboardCheck,
     Building2,
-    Percent
+    BookOpen
 } from "lucide-react";
 
 const SidebarAdmin = () => {
@@ -22,18 +22,17 @@ const SidebarAdmin = () => {
     const menuItems = [
         { icon: <LayoutDashboard size={20} />, label: "DASHBOARD", path: "/admin/dashboard" },
         { icon: <Settings size={20} />, label: "CẤU HÌNH HỆ THỐNG", path: "/admin/system-config" },
-        { icon: <Database size={20} />, label: "DỮ LIỆU CHUẨN", path: "/admin/master-data" },
         { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules" },
-        { icon: <Percent size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
-        { icon: <ShieldCheck size={20} />, label: "HÀNG ĐỢI KYC", path: "/admin/kyc-queue" },
-        { icon: <History size={20} />, label: "LỊCH SỬ GIAO DỊCH", path: "/admin/payment-transaction" },
-        { icon: <CreditCard size={20} />, label: "HÀNG ĐỢI TÍN DỤNG", path: "/admin/credit-queue" },
-        { icon: <Wallet size={20} />, label: "HÀNG ĐỢI THANH TOÁN", path: "/admin/payout-list" },
-        { icon: <ClipboardList size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
-        { icon: <Gavel size={20} />, label: "TRUNG TÂM GIẢI QUYẾT TRANH CHẤP", path: "/admin/dispute-center" },
+        { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
+        { icon: <Contact2 size={20} />, label: "XỬ LÝ XÁC MINH KYC", path: "/admin/kyc-queue" },
+        { icon: <Clock size={20} />, label: "LỊCH SỬ THANH TOÁN", path: "/admin/payment-transaction" },
+        { icon: <CreditCard size={20} />, label: "XỬ LÝ PHÊ DUYỆT TÍN DỤNG", path: "/admin/credit-queue" },
+        { icon: <HandCoins size={20} />, label: "XỬ LÝ GIAO DỊCH THANH TOÁN", path: "/admin/payout-list" },
+        { icon: <ClipboardCheck size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
+        { icon: <FileText size={20} />, label: "QUẢN LÝ KHIẾU NẠI", path: "/admin/dispute-center" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users" },
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
-        { icon: <History size={20} />, label: "NHẬT KÝ KIỂM TRA", path: "/admin/audit-logs" },
+        { icon: <BookOpen size={20} />, label: "NHẬT KÝ HỆ THỐNG", path: "/admin/audit-logs" },
     ];
 
     return (

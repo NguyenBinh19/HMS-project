@@ -16,7 +16,7 @@ const PayoutList = () => {
         <div className="p-8 bg-[#f8fafc] min-h-screen font-sans">
             <div className="max-w-7xl mx-auto">
                 <header className="mb-8">
-                    <h1 className="text-2xl font-black text-slate-800">Hàng đợi thanh toán</h1>
+                    <h1 className="text-2xl font-black text-slate-800">XỬ LÝ GIAO DỊCH THANH TOÁN</h1>
                     <p className="text-slate-500 text-sm font-medium">Payout Request Management (Quản lý Yêu cầu Rút tiền)</p>
                 </header>
 

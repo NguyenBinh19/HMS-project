@@ -68,7 +68,7 @@ const TransactionDashboard = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">Lịch sử giao dịch thanh toán</h1>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">LỊCH SỬ THANH TOÁN</h1>
                     <p className="text-gray-500 text-sm">Theo dõi dòng tiền và đối soát thanh toán đối tác.</p>
                 </div>
                 <div className="relative group">

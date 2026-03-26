@@ -92,7 +92,7 @@ const CommissionList = () => {
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-white">
                     <div className="flex flex-col">
-                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight">Quản lý chính sách hoa hồng</h2>
+                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight">QUẢN LÝ HOA HỒNG</h2>
                         <p className="text-[11px] text-red-500 font-bold italic mt-1 uppercase tracking-wider">
                             Lưu ý: Mỗi thời điểm chỉ tồn tại duy nhất một chính sách mặc định!
                         </p>

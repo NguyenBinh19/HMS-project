@@ -64,7 +64,7 @@ const RankingRules = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight uppercase">
-                            Quy tắc xếp hạng
+                            QUẢN LÝ XẾP HẠNG
                         </h1>
                         <p className="text-slate-500 text-xs md:text-sm">
                             Quản lý cấp bậc và điều kiện đại lý (Chỉ hiển thị hạng đang hoạt động)
