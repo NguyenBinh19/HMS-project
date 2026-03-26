@@ -67,7 +67,7 @@ public class BookingServiceImpl implements BookingService {
                         request.getHotelId(),
                         request.getCheckIn(),
                         request.getCheckOut(),
-                        List.of("CONFIRMED")
+                        List.of("BOOKED")
                 );
 
         Map<Integer, Integer> bookedQuantityMap =
@@ -519,7 +519,7 @@ public class BookingServiceImpl implements BookingService {
 
         LocalDate currentDate = LocalDate.now();
 
-        if (!"CONFIRMED".equals(booking.getBookingStatus())
+        if (!"BOOKED".equals(booking.getBookingStatus())
                 || !currentDate.isBefore(booking.getCheckInDate())) {
             throw new AppException(ErrorCode.BOOKING_UPDATE_NOT_ALLOWED);
         }
@@ -574,8 +574,8 @@ public class BookingServiceImpl implements BookingService {
         if ("COMPLETED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_ALREADY_COMPLETED);
         }
-        if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())
-                && !"IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+        if (!"BOOKED".equalsIgnoreCase(booking.getBookingStatus())
+                && !"CHECKED-IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 
@@ -616,7 +616,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findByBookingCodeAndHotelId(request.getBookingCode(), hotelId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        // Only CONFIRMED or BOOKED bookings can be cancelled
+        // Only BOOKED bookings can be cancelled
         String status = booking.getBookingStatus();
         if (!"CONFIRMED".equalsIgnoreCase(status) && !"BOOKED".equalsIgnoreCase(status)) {
             throw new AppException(ErrorCode.CANCEL_NOT_ALLOWED);
@@ -676,11 +676,11 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findByBookingCodeAndHotelId(request.getBookingCode(), hotelId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        if ("IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+        if ("CHECKED-IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.ALREADY_CHECKED_IN);
         }
 
-        if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
+        if (!"BOOKED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.CHECKIN_NOT_ALLOWED);
         }
 
@@ -690,7 +690,7 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.CHECKIN_DATE_MISMATCH);
         }
 
-        booking.setBookingStatus("IN_HOUSE");
+        booking.setBookingStatus("CHECKED-IN");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
@@ -709,7 +709,7 @@ public class BookingServiceImpl implements BookingService {
         if ("COMPLETED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_ALREADY_COMPLETED);
         }
-        if (!"IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+        if (!"CHECKED_IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 
