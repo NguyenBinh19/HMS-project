@@ -1,16 +1,28 @@
 import React from 'react';
-import { CreditCard, UserCheck, LogOut, Info } from 'lucide-react';
+import { CreditCard, UserCheck, LogOut, Info, UserX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin }) => {
+const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) => {
     const navigate = useNavigate();
+    const today = new Date().toLocaleDateString('en-CA');
     const formatVND = (val) => new Intl.NumberFormat('vi-VN').format(val) + " ₫";
     const handleAction = (item) => {
         if (activeTab === 'arrival') {
-            if (onCheckin) onCheckin(item.bookingCode);
+            if (item.checkInDate > today) {
+                const confirmEarly = window.confirm(
+                    `Khách đến sớm! Ngày hẹn là ${item.checkInDate}. \nBạn có muốn thực hiện Check-in sớm không?`
+                );
+                if (!confirmEarly) return;
+            }
+            onCheckin?.(item.bookingCode);
         } else if (activeTab === 'departure') {
-            // Gọi hàm checkout
-            if (onCheckout) onCheckout(item.bookingCode);
+            if (item.checkOutDate > today) {
+                const confirmEarlyOut = window.confirm(
+                    `Khách trả phòng sớm! Ngày hẹn trả là ${item.checkOutDate}. \nBạn có muốn thực hiện Check-out sớm không?`
+                );
+                if (!confirmEarlyOut) return;
+            }
+            onCheckout?.(item.bookingCode);
         }
     };
     return (
@@ -77,6 +89,16 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin }) => {
                                     </button>
 
                                     {/* Nút Check-in / Check-out dựa theo Tab và Trạng thái */}
+                                    {activeTab === 'arrival' && item.bookingStatus !== 'COMPLETED' && (
+                                        <button
+                                            onClick={() => onNoShow?.(item)}
+                                            title="Báo khách không đến"
+                                            className="p-2.5 bg-white border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all shadow-sm"
+                                        >
+                                            <UserX size={16}/>
+                                        </button>
+                                    )}
+
                                     {item.bookingStatus !== 'COMPLETED' && item.bookingStatus !== 'CANCELLED' && (
                                         <button
                                             onClick={() => handleAction(item)}

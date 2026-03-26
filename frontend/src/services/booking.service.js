@@ -220,6 +220,38 @@ const expressCheckout = async (bookingCode) => {
     }
 };
 
+// Thực hiện Check-in
+const checkinGuest = async (payload) => {
+    try {
+        const response = await api.post(`/booking/checkin`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Check-in Error:", error);
+        throw error;
+    }
+};
+
+// Báo cáo No-show (Khách không đến)
+const reportNoShow = async (payload) => {
+    try {
+        const response = await api.post(`/booking/no-show`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("No-show Report Error:", error);
+        throw error;
+    }
+};
+
+// Hủy đặt phòng
+const cancelBooking = async (payload) => {
+    try {
+        const response = await api.post(`/booking/cancel`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Cancel Booking Error:", error);
+        throw error;
+    }
+};
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -242,4 +274,7 @@ export const bookingService = {
     getDeparturesByDate,
     performCheckout,
     expressCheckout,
+    checkinGuest,
+    reportNoShow,
+    cancelBooking,
 };

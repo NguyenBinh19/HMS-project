@@ -575,7 +575,7 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.BOOKING_ALREADY_COMPLETED);
         }
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())
-                && !"IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+                && !"CHECKED-IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 
@@ -676,7 +676,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findByBookingCodeAndHotelId(request.getBookingCode(), hotelId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        if ("IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+        if ("CHECKED-IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.ALREADY_CHECKED_IN);
         }
 
@@ -690,7 +690,7 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.CHECKIN_DATE_MISMATCH);
         }
 
-        booking.setBookingStatus("IN_HOUSE");
+        booking.setBookingStatus("CHECKED-IN");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
@@ -709,7 +709,7 @@ public class BookingServiceImpl implements BookingService {
         if ("COMPLETED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_ALREADY_COMPLETED);
         }
-        if (!"IN_HOUSE".equalsIgnoreCase(booking.getBookingStatus())) {
+        if (!"CHECKED_IN".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 

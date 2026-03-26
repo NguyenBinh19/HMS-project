@@ -24,18 +24,19 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
         color: '#3b82f6',
         priority: 1,
         isActive: true,
-        minTotalBooking: 0,
-        minTotalRevenue: 0,
-        logic: 'AND',
-        maintainMinBooking: 0,
+        upgradeMinTotalRevenue: 0,
         maintainMinRevenue: 0,
-        maintainLogic: 'AND',
-        creditLimit: 0
+        creditLimit: 0,
     });
 
     const handleChange = (e) => {
         const { name, value, type } = e.target;
         let finalValue = value;
+        if (name === 'upgradeMinTotalRevenue' || name === 'maintainMinRevenue' || name === 'creditLimit') {
+            const numValue = value === '' ? 0 : parseFloat(value);
+            setFormData(prev => ({ ...prev, [name]: Math.max(0, numValue) }));
+            return;
+        }
         if (name === 'rankCode') {
             const cleanValue = value.toUpperCase()
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Khử dấu
@@ -211,42 +212,35 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                     {/* Điều kiện thăng hạng & duy trì */}
                     <div className="grid grid-cols-2 gap-8">
                         {/* Thăng hạng */}
-                        <div className="p-6 bg-emerald-50/40 rounded-3xl border border-emerald-100 space-y-4">
-                            <div className="flex justify-between items-center border-b pb-2">
-                                <h4 className="font-bold text-emerald-800 flex items-center gap-2"><TrendingUp size={18}/> Thăng hạng</h4>
-                                <select name="logic" className="text-xs font-bold p-1 rounded-lg border-emerald-200 outline-none" onChange={handleChange}>
-                                    <option value="AND">VÀ (AND)</option>
-                                    <option value="OR">HOẶC (OR)</option>
-                                </select>
-                            </div>
-                            <input name="minTotalRevenue" type="number" min="0" className="w-full p-3 rounded-xl border-emerald-100 outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Doanh thu thăng hạng (đ)" onChange={handleChange} />
-                            <input name="minTotalBooking" type="number" min="0" className="w-full p-3 rounded-xl border-emerald-100 outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Số đơn thăng hạng" onChange={handleChange} />
-                        </div>
+                        {/* Doanh thu thăng hạng */}
+                        <input
+                            name="upgradeMinTotalRevenue" // Đổi tên name
+                            type="number"
+                            value={formData.upgradeMinTotalRevenue}
+                            className="..."
+                            placeholder="Doanh thu thăng hạng (đ)"
+                            onChange={handleChange}
+                        />
 
-                        {/* Duy trì */}
-                        <div className="p-6 bg-amber-50/40 rounded-3xl border border-amber-100 space-y-4">
-                            <div className="flex justify-between items-center border-b pb-2">
-                                <h4 className="font-bold text-amber-800 flex items-center gap-2"><ShieldCheck size={18}/> Duy trì</h4>
-                                <select name="maintainLogic" className="text-xs font-bold p-1 rounded-lg border-amber-200 outline-none" onChange={handleChange}>
-                                    <option value="AND">VÀ (AND)</option>
-                                    <option value="OR">HOẶC (OR)</option>
-                                </select>
-                            </div>
-                            <input name="maintainMinRevenue" type="number" min="0" className="w-full p-3 rounded-xl border-amber-100 outline-none focus:ring-2 focus:ring-amber-500/20" placeholder="Doanh thu duy trì (đ)" onChange={handleChange} />
-                            <input name="maintainMinBooking" type="number" min="0" className="w-full p-3 rounded-xl border-amber-100 outline-none focus:ring-2 focus:ring-amber-500/20" placeholder="Số đơn duy trì" onChange={handleChange} />
-                        </div>
+                        {/* Doanh thu duy trì */}
+                        <input
+                            name="maintainMinRevenue" // Đã khớp
+                            type="number"
+                            value={formData.maintainMinRevenue}
+                            className="..."
+                            placeholder="Doanh thu duy trì (đ)"
+                            onChange={handleChange}
+                        />
                     </div>
 
-                    {/* Thấu chi */}
-                    <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden group">
-                        <div className="flex justify-between items-center relative z-10">
-                            <h4 className="font-bold flex items-center gap-2"><Wallet size={20} /> Hạn mức thấu chi (Tín dụng)</h4>
-                        </div>
-                        <div className="mt-4 relative z-10">
-                            <input name="creditLimit" type="number" min="0" className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-xl font-bold outline-none pl-12 focus:bg-white/20 transition-all" placeholder="0" onChange={handleChange} />
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 font-bold text-xl">₫</span>
-                        </div>
-                    </div>
+                    {/* Hạn mức thấu chi */}
+                    <input
+                        name="creditLimit" // Đã khớp
+                        type="number"
+                        value={formData.creditLimit}
+                        className="..."
+                        onChange={handleChange}
+                    />
                 </div>
 
                 <div className="p-6 border-t flex justify-end gap-3 bg-slate-50">

@@ -55,10 +55,36 @@ const deleteRank = async (id) => {
     }
 };
 
+// 6. Cập nhật chu kỳ xét hạng (Tháng)
+const updateRankCycle = async (months) => {
+    try {
+        const response = await api.put(`/ranks/config-cycle`, null, {
+            params: { months }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Update Rank Cycle Error:", error);
+        throw error;
+    }
+};
+
+// 7. Lấy thông tin chu kỳ xét hạng hiện tại
+const getRankCycle = async () => {
+    try {
+        const response = await api.get(`/ranks/config-cycle`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Rank Cycle Error:", error);
+        throw error;
+    }
+};
+
 export const rankService = {
     createRank,
     updateRank,
     getRankDetail,
     getAllRanks,
     deleteRank,
+    updateRankCycle,
+    getRankCycle,
 };

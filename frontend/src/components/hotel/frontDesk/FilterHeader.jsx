@@ -11,7 +11,7 @@ const FilterHeader = ({ activeTab, setActiveTab, currentDate, setCurrentDate, to
     const tabs = [
         { id: 'arrival', label: 'Khách đến' },
         { id: 'departure', label: 'Khách đi' },
-        { id: 'stay', label: 'Đang lưu trú' }
+        // { id: 'stay', label: 'Đang lưu trú' }
     ];
 
     return (
