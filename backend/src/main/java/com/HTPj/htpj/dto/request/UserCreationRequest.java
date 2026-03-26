@@ -27,6 +27,7 @@ public class UserCreationRequest {
     @Email(message = "Invalid email format")
     String email;
 
+    @NotBlank(message = "Phone number is required")
     String phone;
 
     @NotBlank(message = "Role selection is required")

@@ -32,7 +32,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     private final RoomTypeRepository roomTypeRepository;
 
     private static final List<String> REVENUE_STATUSES = List.of(
-            "CONFIRMED", "CHECKED_IN", "COMPLETED"
+            "BOOKED", "CHECKED_IN", "COMPLETED"
     );
     private static final int MAX_DAILY_RANGE_DAYS = 365;
 

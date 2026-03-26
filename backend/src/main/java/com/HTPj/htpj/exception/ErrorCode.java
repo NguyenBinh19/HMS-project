@@ -67,12 +67,25 @@ public enum ErrorCode {
     ADDON_SERVICE_NOT_FOUND(2205, "Addon service not found", HttpStatus.NOT_FOUND),
 
     //voucher (UC-027)
-    VOUCHER_NOT_AVAILABLE(2210, "Voucher is only available for Confirmed bookings", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_AVAILABLE(2210, "Voucher is only available for BOOKED bookings", HttpStatus.BAD_REQUEST),
     VOUCHER_GENERATION_FAILED(2211, "Unable to generate document. Please try again later", HttpStatus.INTERNAL_SERVER_ERROR),
 
     //checkout (UC-051)
     BOOKING_ALREADY_COMPLETED(2220, "Booking has already been checked out", HttpStatus.BAD_REQUEST),
-    BOOKING_NOT_CHECKED_IN(2221, "Booking must be in CONFIRMED status to check out", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_CHECKED_IN(2221, "Booking must be in BOOKED or IN_HOUSE status to check out", HttpStatus.BAD_REQUEST),
+
+    //cancel (UC-031)
+    CANCEL_NOT_ALLOWED(2230, "Booking cannot be cancelled in its current status", HttpStatus.BAD_REQUEST),
+    CANCEL_PAST_CHECKIN(2231, "Cannot cancel a booking after check-in date has passed", HttpStatus.BAD_REQUEST),
+
+    //check-in (UC-052)
+    CHECKIN_NOT_ALLOWED(2240, "Booking must be BOOKED to check in", HttpStatus.BAD_REQUEST),
+    CHECKIN_DATE_MISMATCH(2241, "Check-in is only allowed on the scheduled check-in date", HttpStatus.BAD_REQUEST),
+    ALREADY_CHECKED_IN(2242, "Guest has already been checked in", HttpStatus.BAD_REQUEST),
+
+    //no-show (UC-053)
+    NOSHOW_NOT_ALLOWED(2250, "Only BOOKED bookings can be marked as no-show", HttpStatus.BAD_REQUEST),
+    NOSHOW_BEFORE_CHECKIN(2251, "Cannot report no-show before check-in date", HttpStatus.BAD_REQUEST),
 
     FEEDBACK_ALREADY_SUBMITTED(3001, "Bạn đã đánh giá đơn hàng này rồi.", HttpStatus.BAD_REQUEST),
     FEEDBACK_WINDOW_EXPIRED(3002, "Thời hạn đánh giá đã hết (180 ngày sau checkout).", HttpStatus.BAD_REQUEST),
