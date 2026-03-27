@@ -65,6 +65,8 @@ public enum ErrorCode {
     BOOKING_UPDATE_NOT_ALLOWED(2203, "Booking cannot update guest information", HttpStatus.BAD_REQUEST),
     BOOKING_NOT_FOUND(2204, "Booking not found", HttpStatus.NOT_FOUND),
     ADDON_SERVICE_NOT_FOUND(2205, "Addon service not found", HttpStatus.NOT_FOUND),
+    INSUFFICIENT_BALANCE(2206,"The account balance is insufficient to make the payment.", HttpStatus.BAD_REQUEST),
+    INVALID_PAYMENT_METHOD(2207,"Invalid payment method", HttpStatus.BAD_REQUEST),
 
     //voucher (UC-027)
     VOUCHER_NOT_AVAILABLE(2210, "Voucher is only available for BOOKED bookings", HttpStatus.BAD_REQUEST),
