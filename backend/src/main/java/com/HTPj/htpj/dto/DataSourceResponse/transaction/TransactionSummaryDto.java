@@ -5,5 +5,8 @@ import java.math.BigDecimal;
 public record TransactionSummaryDto(
         BigDecimal totalSpending,
         BigDecimal totalTopup,
-        BigDecimal totalPenalty
+        BigDecimal totalPenalty,
+        Double spendingGrowth,
+        Double topupGrowth,
+        Double penaltyGrowth
 ) {}

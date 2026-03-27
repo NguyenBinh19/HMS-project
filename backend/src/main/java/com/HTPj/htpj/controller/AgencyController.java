@@ -1,5 +1,6 @@
 package com.HTPj.htpj.controller;
 
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
@@ -73,4 +74,10 @@ public class AgencyController {
                 .build();
     }
 
+    @GetMapping("/{agencyId}/credit-summary")
+    public ApiResponse<CreditSummaryDto> getCreditSummary(@PathVariable Long agencyId) {
+        return ApiResponse.<CreditSummaryDto>builder()
+                .result(agencyService.getCreditSummary(agencyId))
+                .build();
+    }
 }

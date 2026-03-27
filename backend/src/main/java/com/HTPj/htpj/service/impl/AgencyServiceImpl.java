@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -156,4 +158,24 @@ public class AgencyServiceImpl implements AgencyService {
                 .build();
     }
 
+    public CreditSummaryDto getCreditSummary(Long agencyId) {
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        BigDecimal creditLimit = agency.getCreditLimit() != null ? agency.getCreditLimit() : BigDecimal.ZERO;
+        BigDecimal currentCredit = agency.getCurrentCredit() != null ? agency.getCurrentCredit() : BigDecimal.ZERO;
+
+        BigDecimal remainingCredit = currentCredit;
+
+        BigDecimal debt = creditLimit.subtract(currentCredit);
+
+        int usedPercent = creditLimit.compareTo(BigDecimal.ZERO) == 0 ? 0 :
+                debt.multiply(BigDecimal.valueOf(100))
+                        .divide(creditLimit, 0, RoundingMode.HALF_UP)
+                        .intValue();
+
+        LocalDate dueDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+
+        return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
+    }
 }

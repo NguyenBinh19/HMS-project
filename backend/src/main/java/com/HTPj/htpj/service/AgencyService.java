@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service;
 
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
@@ -20,4 +21,6 @@ public interface AgencyService {
     AgencyDetailResponse findAgencyFinanceInfo(Long id);
 
     AgencyDetailResponse findAgencyFinanceInfoHeader(Long id);
+
+    CreditSummaryDto getCreditSummary(Long agencyId);
 }

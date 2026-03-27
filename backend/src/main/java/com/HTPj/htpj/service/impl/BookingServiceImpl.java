@@ -57,7 +57,7 @@ public class BookingServiceImpl implements BookingService {
     private final AgencyBookingRevenueRepository agencyBookingRevenueRepository;
     private final AgencyRepository agencyRepository;
     private final AgencyCreditHistoryRepository agencyCreditHistoryRepository;
-
+    private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
     public List<RoomAvailabilityResponse> checkAvailability(RoomAvailabilityRequest request) {
@@ -416,6 +416,23 @@ public class BookingServiceImpl implements BookingService {
 
             agencyCreditHistoryRepository.save(history);
 
+            // add credit transaction history
+            TransactionHistory historyCreditMD = TransactionHistory.builder()
+                    .transactionDate(LocalDateTime.now())
+                    .transactionType("Payment")
+                    .description("Thanh toán booking " + "(" + saved.getBookingCode() + ")")
+                    .sourceType("Credit")
+                    .amount(finalAmountPaid)
+                    .balanceAfter(creditAfter)
+                    .status("Success")
+                    .direction("OUT")
+                    .agency(agency)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
+            historyCreditMD.setTransactionCode(String.format("TRK-%06d", history.getId()));
+            transactionHistoryRepository.save(historyCreditMD);
+
             // update agency
             agency.setCurrentCredit(creditAfter);
             agencyRepository.save(agency);
@@ -429,6 +446,21 @@ public class BookingServiceImpl implements BookingService {
             agencyRepository.save(agency);
 
             //viet phan luu transaction vao day
+            TransactionHistory history = TransactionHistory.builder()
+                    .transactionDate(LocalDateTime.now())
+                    .transactionType("Payment")
+                    .description("Thanh toán booking " + "(" + saved.getBookingCode() + ")")
+                    .sourceType("Wallet")
+                    .amount(finalAmountPaid)
+                    .balanceAfter(walletAfter)
+                    .status("Success")
+                    .direction("OUT")
+                    .agency(agency)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            history = transactionHistoryRepository.save(history);
+            history.setTransactionCode(String.format("TRK-%06d", history.getId()));
+            transactionHistoryRepository.save(history);
         }
         saved.setPaymentStatus("PAID");
         saved.setBookingStatus("BOOKED");

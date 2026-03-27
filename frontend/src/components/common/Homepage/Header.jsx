@@ -97,15 +97,6 @@ const Header = () => {
         document.title = titles[location.pathname] || "HMS-B2B Project";
     }, [location.pathname]);
 
-    // 6. Lấy thông tin tài chính (Chỉ dành cho Agency Manager)
-    useEffect(() => {
-        if (user?.agencyId && isAgencyManager) {
-            api.get(`/agencies/${user.agencyId}/finance`)
-                .then(res => setFinanceInfo(res.data.result))
-                .catch(err => console.error("Lỗi lấy thông tin tài chính:", err));
-        }
-    }, [user?.agencyId, isAgencyManager]);
-
     const handleLogout = () => {
         localStorage.clear();
         setUser(null);
@@ -119,6 +110,34 @@ const Header = () => {
         { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
     ];
+
+    useEffect(() => {
+        if (user?.agencyId && isAgencyManager) {
+            api.get(`/agencies/${user.agencyId}/finance`)
+                .then(res => setFinanceInfo(prev => ({
+                    ...prev,
+                    ...res.data.result
+                })))
+                .catch(err => console.error("Lỗi lấy thông tin tài chính:", err));
+        }
+    }, [user?.agencyId, isAgencyManager]);
+
+    useEffect(() => {
+        if (agencyIdFromToken) {
+            api.get(`/agencies/${agencyIdFromToken}/credit-summary`)
+                .then((res) => {
+                    const data = res.data.result;
+                    setFinanceInfo(prev => ({
+                        ...prev,
+                        walletBalance: prev.walletBalance,
+                        creditLimit: data.creditLimit || 0,
+                        currentCredit: data.remainingCredit || 0,
+                        creditUsedPercent: data.usedPercent || 0,
+                    }));
+                })
+                .catch((err) => console.error("Error fetching finance info:", err));
+        }
+    }, [agencyIdFromToken]);
 
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
@@ -145,7 +164,7 @@ const Header = () => {
                                     className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${location.pathname === link.href
                                         ? "text-blue-600 bg-blue-50"
                                         : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                                    }`}
+                                        }`}
                                 >
                                     {link.name}
                                 </Link>
@@ -189,17 +208,24 @@ const Header = () => {
                                 </div>
                             </div>
                         ) : isAgencyManager ? (
-                            <div className="flex items-center gap-6 bg-slate-50 px-4 py-1.5 rounded-2xl border border-slate-100">
+                            <div className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100">
                                 <div onClick={() => navigate("/agency/prepaid")} className="flex flex-col cursor-pointer p-1.5 min-w-[120px]">
                                     <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Số dư khả dụng</span>
                                     <span className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.walletBalance)}</span>
                                 </div>
                                 <button onClick={() => navigate("/agency/prepaid")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition active:scale-95">Nạp tiền</button>
-                                <div onClick={() => navigate("/agency/credit-wallet")} className="flex flex-col cursor-pointer p-1.5 min-w-[150px]">
-                                    <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Hạn mức tín dụng</span>
-                                    <span className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.creditLimit)}</span>
-                                    <span className="text-[11px] text-slate-400 font-bold italic">{financeInfo.creditUsedPercent || 0}% đã sử dụng</span>
+                                <div className="flex flex-col p-1.5 min-w-[150px]">
+                                    <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+                                        Hạn mức tín dụng
+                                    </span>
+                                    <span className="text-lg font-black text-slate-800">
+                                        {formatCurrency(financeInfo.creditLimit)}
+                                    </span>
+                                    <span className="text-[11px] text-slate-400 font-bold italic">
+                                        {financeInfo.creditUsedPercent || 0}% đã sử dụng
+                                    </span>
                                 </div>
+
                                 <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">
                                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><UserCircle size={20} /></div>
                                     <div className="flex flex-col">
@@ -221,7 +247,7 @@ const Header = () => {
                                     <User size={18} /><span>Hồ sơ</span>
                                 </button>
                                 <div className="flex items-center gap-3 px-4 py-1.5">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20}/></div>
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20} /></div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
                                         <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
@@ -230,7 +256,7 @@ const Header = () => {
                                     </div>
                                 </div>
                                 <div className="w-px h-8 bg-slate-200 mx-2"></div>
-                                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors" title="Đăng xuất"><LogOut size={20}/></button>
+                                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors" title="Đăng xuất"><LogOut size={20} /></button>
                             </div>
                         )}
                     </div>

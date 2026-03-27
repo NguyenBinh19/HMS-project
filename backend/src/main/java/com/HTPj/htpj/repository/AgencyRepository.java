@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -23,4 +24,26 @@ public interface AgencyRepository extends JpaRepository<Agency,Long> {
     WHERE a.status = 'ACTIVE'
     """)
     List<Agency> findAllActive();
+
+    @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Payment' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalSpending(@Param("agencyId") Long agencyId,
+                                @Param("year") int year,
+                                @Param("month") int month);
+
+    @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Top-up' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalTopup(@Param("agencyId") Long agencyId,
+                             @Param("year") int year,
+                             @Param("month") int month);
+
+    @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Penalty' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalPenalty(@Param("agencyId") Long agencyId,
+                               @Param("year") int year,
+                               @Param("month") int month);
+
 }
