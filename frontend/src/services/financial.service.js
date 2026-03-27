@@ -16,6 +16,16 @@ const exportFinancialReport = async (exportRequest) => {
     }
 };
 
+const getSummary = async (agencyId) => {
+    try {
+        const response = await api.get(`/transaction-history/${agencyId}/transactions/summary`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const financialService = {
     exportFinancialReport,
+    getSummary
 };

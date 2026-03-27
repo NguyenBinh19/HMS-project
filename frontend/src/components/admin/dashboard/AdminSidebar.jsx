@@ -13,7 +13,7 @@ import {
     ShieldCheck,
     ClipboardCheck,
     Building2,
-    BookOpen
+    BookOpen, Award
 } from "lucide-react";
 
 const SidebarAdmin = () => {
@@ -26,7 +26,8 @@ const SidebarAdmin = () => {
         { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
         { icon: <Contact2 size={20} />, label: "XỬ LÝ XÁC MINH KYC", path: "/admin/kyc-queue" },
         { icon: <Clock size={20} />, label: "LỊCH SỬ THANH TOÁN", path: "/admin/payment-transaction" },
-        { icon: <CreditCard size={20} />, label: "XỬ LÝ PHÊ DUYỆT TÍN DỤNG", path: "/admin/set-ranking" },
+        { icon: <Award size={20} />, label: "XÉT DUYỆT HẠNG ĐẠI LÝ", path: "/admin/set-ranking" },
+        { icon: <CreditCard size={20} />, label: "XỬ LÝ PHÊ DUYỆT TÍN DỤNG", path: "/admin/credit" },
         { icon: <HandCoins size={20} />, label: "XỬ LÝ GIAO DỊCH THANH TOÁN", path: "/admin/payout-list" },
         { icon: <ClipboardCheck size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
         { icon: <FileText size={20} />, label: "QUẢN LÝ KHIẾU NẠI", path: "/admin/dispute-center" },

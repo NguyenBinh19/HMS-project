@@ -141,7 +141,7 @@ const AgencyRankingManager = () => {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-2xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-3">
-                            Xét duyệt hạng đại lý
+                            XÉT DUYỆT HẠNG ĐẠI LÝ
                         </h1>
                         <p className="text-slate-500 text-sm mt-1">Phân tích và phê duyệt nâng/hạ cấp bậc dựa trên hiệu suất kinh doanh</p>
                     </div>

@@ -4,12 +4,13 @@ import { parseISO, differenceInSeconds, format, differenceInDays } from "date-fn
 import {
     Clock, CheckCircle2, User, CigaretteOff, RefreshCw, Loader2,
     MapPin, Users, ShieldCheck, Wallet, CreditCard,
-    Tag, XCircle, ChevronRight, AlertCircle, PhoneCall
+    Tag, XCircle, ChevronRight, AlertCircle, PhoneCall, TrendingUp
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
 import { useBookingPromotion } from "@/components/agency/booking/useBookingPromotion.js";
 import { addonServiceApi } from "@/services/addonService.service.js";
 import ExtraServiceSection from "@/components/agency/booking/ExtraServiceSection.jsx";
+import api from "@/services/axios.config.js";
 
 /* ================= TIMER BAR ================= */
 const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCount, maxExtensions }) => {
@@ -89,6 +90,33 @@ export default function BookingCheckoutPage() {
     const [customerInfo, setCustomerInfo] = useState({
         name: "", email: "", phone: "", notes: ""
     });
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const agencyId = user?.agencyId;
+    // state để lưu số dư
+    const [balances, setBalances] = useState({ walletBalance: 0, creditBalance: 0 });
+    useEffect(() => {
+        const fetchAccountData = async () => {
+            if (agencyId) {
+                try {
+                    const res = await api.get(`/agencies/${agencyId}/finance`);
+                    if (res.data?.result) {
+                        setBalances({
+                            // Map đúng tên trường
+                            walletBalance: Number(res.data.result.walletBalance) || 0,
+                            creditBalance: Number(res.data.result.currentCredit) || 0
+                        });
+                    }
+                } catch (error) {
+                    console.error("Lỗi lấy thông tin tài chính:", error);
+                }
+            } else {
+                console.warn("Không tìm thấy AgencyId để gọi API Finance");
+            }
+        };
+
+        fetchAccountData();
+    }, [user?.agencyId, data.agencyId]);
 
     // SỬ DỤNG CUSTOM HOOK LOGIC VOUCHER
     const {
@@ -173,7 +201,6 @@ export default function BookingCheckoutPage() {
         try {
             const payload = {
                 holdCode: data.holdCode,
-                // agencyId: 1,
                 guestName: name.trim(),
                 guestPhone: phone.trim(),
                 guestEmail: email.trim(),
@@ -218,11 +245,33 @@ export default function BookingCheckoutPage() {
                 });
             }
         } catch (error) {
-            alert(`Lỗi: ${error.response?.data?.message || "Lỗi hệ thống"}`);
+            const errorData = error.response?.data;
+            const errorCode = errorData?.code;
+            const errorMessage = errorData?.message;
+
+            // Xử lý riêng cho lỗi thiếu tiền (Code 2206)
+            if (errorCode === 2206) {
+                alert("Số dư tài khoản của bạn không đủ để thực hiện thanh toán này. Vui lòng kiểm tra lại Ví hoặc Hạn mức tín dụng!");
+            }
+            // Xử lý lỗi phiên giữ chỗ hết hạn (Nếu có)
+            else if (errorCode === 1402) { // Ví dụ code 1402 là hết hạn hold
+                alert("Phiên giữ chỗ đã hết hạn. Vui lòng thực hiện tìm kiếm lại.");
+                navigate("/agency/search-hotel");
+            }
+            // Các lỗi hệ thống hoặc lỗi khác
+            else {
+                alert(`Lỗi: ${errorMessage || "Hệ thống đang bận, vui lòng thử lại sau!"}`);
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
+    const currentGrandTotal = Number(grandTotal || 0);
+    const walletBal = Number(balances.walletBalance || 0);
+    const creditBal = Number(balances.creditBalance || 0);
+
+    const isWalletInsufficient = currentGrandTotal > walletBal;
+    const isCreditInsufficient = currentGrandTotal > creditBal;
 
     return (
         <div className="min-h-screen bg-[#f5f7fb] pb-20 font-sans">
@@ -241,7 +290,7 @@ export default function BookingCheckoutPage() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <Users size={20} className="text-blue-700" /> Thông tin khách
+                            <Users size={20} className="text-blue-700"/> Thông tin khách
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
@@ -273,18 +322,20 @@ export default function BookingCheckoutPage() {
 
                     <div className="space-y-4">
                         {data.selectedRooms?.map((room, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm space-y-4">
+                            <div key={idx}
+                                 className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm space-y-4">
                                 <h3 className="text-lg font-black text-slate-800">{room.name} x {room.count}</h3>
                                 <div className="flex flex-wrap gap-y-3 gap-x-6 text-[13px]">
                                     <div className="flex items-center gap-2 text-slate-600">
-                                        <Users size={16} className="text-blue-600" />
-                                        <span className="font-medium">Tối đa: {room.maxAdults} người lớn {room.maxChildren > 0 && `& ${room.maxChildren} trẻ em`}</span>
+                                        <Users size={16} className="text-blue-600"/>
+                                        <span
+                                            className="font-medium">Tối đa: {room.maxAdults} người lớn {room.maxChildren > 0 && `& ${room.maxChildren} trẻ em`}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-emerald-600 font-medium">
-                                        <CheckCircle2 size={16} /><span>Bao gồm Internet & Phí dịch vụ</span>
+                                        <CheckCircle2 size={16}/><span>Bao gồm Internet & Phí dịch vụ</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-500">
-                                        <CigaretteOff size={16} /><span>Không hút thuốc</span>
+                                        <CigaretteOff size={16}/><span>Không hút thuốc</span>
                                     </div>
                                 </div>
                             </div>
@@ -297,182 +348,299 @@ export default function BookingCheckoutPage() {
                         onChange={setSelectedAddons}
                     />
 
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700" /> Chọn nguồn tiền thanh toán
+                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
                         </h2>
-                        <div className="space-y-3">
-                            <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "WALLET" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "WALLET"} onChange={() => setPaymentMethod("WALLET")} />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-pink-50 rounded-full flex items-center justify-center text-pink-500"><Wallet size={20} /></div>
-                                    <div>
-                                        <span className="font-bold text-slate-800 text-[15px]">Ví trả trước (Prepaid Wallet)</span>
-                                        <p className="text-xs text-slate-500 mt-0.5">Thanh toán ngay lập tức bằng số dư ví</p>
+
+                        <div className="space-y-4">
+                            {/* --- LỰA CHỌN VÍ TRẢ TRƯỚC --- */}
+                            <div className="space-y-2">
+                                <label
+                                    className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
+                                        paymentMethod === "WALLET"
+                                            ? "border-blue-500 bg-blue-50/40 shadow-sm"
+                                            : "border-slate-100 hover:bg-slate-50"
+                                    } ${isWalletInsufficient ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="radio"
+                                            name="payment"
+                                            className="w-5 h-5 accent-blue-600 cursor-pointer"
+                                            checked={paymentMethod === "WALLET"}
+                                            disabled={isWalletInsufficient}
+                                            onChange={() => setPaymentMethod("WALLET")}
+                                        />
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${paymentMethod === "WALLET" ? "bg-blue-600 shadow-lg" : "bg-slate-100"}`}>
+                                                {paymentMethod === "WALLET" ? "💰" : "👛"}
+                                            </div>
+                                            <div>
+                            <span
+                                className={`font-bold text-[15px] ${paymentMethod === "WALLET" ? "text-blue-700" : "text-slate-800"}`}>
+                                Ví trả trước (Prepaid Wallet)
+                            </span>
+                                                <p className="text-[11px] text-slate-500 font-medium">Sử dụng số dư
+                                                    trong ví của bạn để thanh toán ngay lập tức</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </label>
-                            <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === "CREDIT" ? "border-blue-500 bg-blue-50/30" : "border-slate-100"}`}>
-                                <input type="radio" className="w-5 h-5 accent-blue-600" checked={paymentMethod === "CREDIT"} onChange={() => setPaymentMethod("CREDIT")} />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-600"><CreditCard size={20} /></div>
-                                    <div>
-                                        <span className="font-bold text-slate-800 text-[15px]">Hạn mức Tín dụng (Credit Line)</span>
-                                        <p className="text-xs text-slate-500 mt-0.5">Sử dụng hạn mức tín dụng được cấp</p>
+                                    <div
+                                        className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors ${
+                                            isWalletInsufficient
+                                                ? "bg-red-50 text-red-600 border-red-100"
+                                                : "bg-blue-100 text-blue-700 border-blue-200"
+                                        }`}>
+                                        Còn: {walletBal.toLocaleString()} đ
                                     </div>
-                                </div>
-                            </label>
+                                </label>
+                                {/* Cảnh báo số dư không đủ */}
+                                {isWalletInsufficient && (
+                                    <div className="px-4 py-2 bg-red-50/50 rounded-lg flex items-center gap-2 text-red-500 text-[10px] font-bold italic animate-in fade-in slide-in-from-top-1">
+                                        <AlertCircle size={14} />
+                                        Số dư không đủ (Thiếu: {formatCurrency(currentGrandTotal - walletBal)})
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* --- LỰA CHỌN HẠN MỨC TÍN DỤNG --- */}
+                            <div className="space-y-2">
+                                <label
+                                    className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
+                                        paymentMethod === "CREDIT"
+                                            ? "border-purple-500 bg-purple-50/40 shadow-sm"
+                                            : "border-slate-100 hover:bg-slate-50"
+                                    } ${isCreditInsufficient ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="radio"
+                                            name="payment"
+                                            className="w-5 h-5 accent-purple-600 cursor-pointer"
+                                            checked={paymentMethod === "CREDIT"}
+                                            disabled={isCreditInsufficient}
+                                            onChange={() => setPaymentMethod("CREDIT")}
+                                        />
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${paymentMethod === "CREDIT" ? "bg-purple-600 shadow-lg" : "bg-slate-100"}`}>
+                                                {paymentMethod === "CREDIT" ? "💎" : "💳"}
+                                            </div>
+                                            <div>
+                            <span
+                                className={`font-bold text-[15px] ${paymentMethod === "CREDIT" ? "text-purple-700" : "text-slate-800"}`}>
+                                Hạn mức Tín dụng (Credit Line)
+                            </span>
+                                                <p className="text-[11px] text-slate-500 font-medium">Sử dụng hạn mức
+                                                    tín dụng đã được cấp bởi hệ thống</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors ${
+                                            isCreditInsufficient
+                                                ? "bg-red-50 text-red-600 border-red-100"
+                                                : "bg-purple-100 text-purple-700 border-purple-200"
+                                        }`}>
+                                        Còn: {creditBal.toLocaleString()} đ
+                                    </div>
+                                </label>
+
+                                {/* Cảnh báo hạn mức không đủ ngay dưới Option */}
+                                {grandTotal > balances.creditBalance && (
+                                    <div
+                                        className="px-4 py-2 bg-red-50/50 rounded-lg flex items-center gap-2 text-red-500 text-[10px] font-bold italic animate-in fade-in slide-in-from-top-1">
+                                        <AlertCircle size={14}/>
+                                        Hạn mức không đủ (Thiếu: {formatCurrency(grandTotal - balances.creditBalance)})
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* CỘT PHẢI: CHI TIẾT THANH TOÁN  */}
-                <div className="lg:col-span-1 space-y-4">
-                    <div className="sticky top-24 space-y-4">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
-                            {/* Banner khách sạn */}
-                            <div className="relative h-24 flex items-end p-4">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20 z-10" />
-                                <img src={data.hotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=500"} className="absolute inset-0 w-full h-full object-cover" alt="hotel" />
-                                <div className="relative z-20 text-white">
-                                    <h3 className="font-bold text-[15px] leading-tight">{data.hotelName}</h3>
-                                    <p className="text-[11px] opacity-80 mt-1">{format(checkInDate, "dd/MM/yyyy")} - {format(checkOutDate, "dd/MM/yyyy")}</p>
+                    {/* CỘT PHẢI: CHI TIẾT THANH TOÁN  */}
+                    <div className="lg:col-span-1 space-y-4">
+                        <div className="sticky top-24 space-y-4">
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                                {/* Banner khách sạn */}
+                                <div className="relative h-24 flex items-end p-4">
+                                    <div
+                                        className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20 z-10"/>
+                                    <img
+                                        src={data.hotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=500"}
+                                        className="absolute inset-0 w-full h-full object-cover" alt="hotel"/>
+                                    <div className="relative z-20 text-white">
+                                        <h3 className="font-bold text-[15px] leading-tight">{data.hotelName}</h3>
+                                        <p className="text-[11px] opacity-80 mt-1">{format(checkInDate, "dd/MM/yyyy")} - {format(checkOutDate, "dd/MM/yyyy")}</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="p-5 space-y-5">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-sm text-slate-600">
-                                        <span>Tiền phòng ({nights} đêm)</span>
-                                        <span className="font-bold text-slate-900">
+                                <div className="p-5 space-y-5">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-sm text-slate-600">
+                                            <span>Tiền phòng ({nights} đêm)</span>
+                                            <span className="font-bold text-slate-900">
                                             {formatCurrency(roomPrice)}
                                         </span>
-                                    </div>
-                                    <div className="flex justify-between text-sm text-slate-600">
-
-                                    </div>
-                                    <div className="flex justify-between text-sm text-slate-600">
-                                        <span>Thuế & Phí</span>
-                                        <span className="text-emerald-600 font-medium italic text-xs">Đã bao gồm</span>
-                                    </div>
-                                </div>
-
-                                {/* BOX VOUCHER TÍCH HỢP LOGIC */}
-                                <div className="pt-4 border-t border-slate-100">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <label className="text-[11px] font-black text-slate-800 uppercase">Mã giảm giá</label>
-                                        <button onClick={() => setShowWallet(!showWallet)} className="text-[10px] font-bold text-blue-600 hover:underline">
-                                            {showWallet ? "Đóng ví" : "Chọn từ ví"}
-                                        </button>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <div className="flex-1 relative">
-                                            <input
-                                                className={`w-full border ${promoError ? 'border-red-300' : 'border-slate-200'} px-4 py-2.5 rounded-xl text-sm outline-none uppercase font-bold`}
-                                                placeholder="Nhập mã"
-                                                value={promoCode}
-                                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                                disabled={!!promoData}
-                                            />
-                                            {isCheckingPromo && <Loader2 size={14} className="absolute right-3 top-3 animate-spin text-slate-400" />}
                                         </div>
-                                        <button
-                                            onClick={() => promoData ? handleRemoveCoupon() : handleApplyCoupon()}
-                                            className={`px-4 rounded-xl text-xs font-bold transition-all ${promoData ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                                        >
-                                            {promoData ? "Bỏ" : "Áp dụng"}
-                                        </button>
+                                        <div className="flex justify-between text-sm text-slate-600">
+
+                                        </div>
+                                        <div className="flex justify-between text-sm text-slate-600">
+                                            <span>Thuế & Phí</span>
+                                            <span
+                                                className="text-emerald-600 font-medium italic text-xs">Đã bao gồm</span>
+                                        </div>
                                     </div>
 
-                                    {/* Dropdown ví voucher */}
-                                    {showWallet && (
-                                        <div className="mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y z-50 relative">
-                                            {availableCoupons.length > 0 ? availableCoupons.map((cp) => (
-                                                <div key={cp.id} onClick={() => handleApplyCoupon(cp.code)} className="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center">
-                                                    <div>
-                                                        <div className="text-xs font-bold text-slate-700">{cp.code}</div>
-                                                        <div className="text-[10px] text-slate-500">Giảm {cp.typeDiscount === "PERCENT" ? `${cp.discountVal}%` : formatCurrency(cp.discountVal)}</div>
+                                    {/* BOX VOUCHER TÍCH HỢP LOGIC */}
+                                    <div className="pt-4 border-t border-slate-100">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <label className="text-[11px] font-black text-slate-800 uppercase">Mã
+                                                giảm giá</label>
+                                            <button onClick={() => setShowWallet(!showWallet)}
+                                                    className="text-[10px] font-bold text-blue-600 hover:underline">
+                                                {showWallet ? "Đóng ví" : "Chọn từ ví"}
+                                            </button>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <div className="flex-1 relative">
+                                                <input
+                                                    className={`w-full border ${promoError ? 'border-red-300' : 'border-slate-200'} px-4 py-2.5 rounded-xl text-sm outline-none uppercase font-bold`}
+                                                    placeholder="Nhập mã"
+                                                    value={promoCode}
+                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                    disabled={!!promoData}
+                                                />
+                                                {isCheckingPromo && <Loader2 size={14}
+                                                                             className="absolute right-3 top-3 animate-spin text-slate-400"/>}
+                                            </div>
+                                            <button
+                                                onClick={() => promoData ? handleRemoveCoupon() : handleApplyCoupon()}
+                                                className={`px-4 rounded-xl text-xs font-bold transition-all ${promoData ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                            >
+                                                {promoData ? "Bỏ" : "Áp dụng"}
+                                            </button>
+                                        </div>
+
+                                        {/* Dropdown ví voucher */}
+                                        {showWallet && (
+                                            <div
+                                                className="mt-2 bg-white border border-slate-100 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y z-50 relative">
+                                                {availableCoupons.length > 0 ? availableCoupons.map((cp) => (
+                                                    <div key={cp.id} onClick={() => handleApplyCoupon(cp.code)}
+                                                         className="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center">
+                                                        <div>
+                                                            <div
+                                                                className="text-xs font-bold text-slate-700">{cp.code}</div>
+                                                            <div
+                                                                className="text-[10px] text-slate-500">Giảm {cp.typeDiscount === "PERCENT" ? `${cp.discountVal}%` : formatCurrency(cp.discountVal)}</div>
+                                                        </div>
+                                                        <ChevronRight size={14} className="text-slate-300"/>
                                                     </div>
-                                                    <ChevronRight size={14} className="text-slate-300" />
-                                                </div>
-                                            )) : <div className="p-4 text-[11px] text-slate-400 text-center italic">Không có mã khả dụng</div>}
-                                        </div>
-                                    )}
+                                                )) : <div
+                                                    className="p-4 text-[11px] text-slate-400 text-center italic">Không
+                                                    có mã khả dụng</div>}
+                                            </div>
+                                        )}
 
-                                    {promoError && <div className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic"><AlertCircle size={12} /> {promoError}</div>}
-                                    {promoData && <div className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic"><CheckCircle2 size={12} /> Giảm thành công: -{formatCurrency(discountAmount)}</div>}
-                                </div>
-
-                                <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-sm font-black text-slate-900">Giá phòng cuối cùng:</span>
-                                    <span className="text-xl font-black text-purple-600 leading-none">{formatCurrency(finalPrice)}</span>
-                                </div>
-
-                                {/* CHECKBOX ĐIỀU KHOẢN */}
-
-                                <div className="border-t border-slate-100 pt-4 space-y-2">
-                                    {/*<div className="flex justify-between text-sm">*/}
-                                    {/*    <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>*/}
-                                    {/*    <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>*/}
-                                    {/*</div>*/}
-                                    {addonsTotal > 0 && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
-                                            <span className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-start gap-3 pt-2">
-                                        <div className="flex items-center h-5">
-                                            <input
-                                                id="terms"
-                                                type="checkbox"
-                                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
-                                                checked={isAgreed}
-                                                onChange={(e) => setIsAgreed(e.target.checked)}
-                                            />
-                                        </div>
-                                        <label htmlFor="terms" className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
-                                            Tôi đồng ý với <span className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của hệ thống.
-                                        </label>
-                                    </div>
-                                    <div className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
-                                        <span className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
-                                        <span className="text-xl font-black">{formatCurrency(grandTotal)}</span>
+                                        {promoError && <div
+                                            className="mt-2 flex items-center gap-1 text-red-500 text-[10px] font-bold italic">
+                                            <AlertCircle size={12}/> {promoError}</div>}
+                                        {promoData && <div
+                                            className="mt-2 flex items-center gap-1 text-emerald-600 text-[10px] font-bold italic">
+                                            <CheckCircle2 size={12}/> Giảm thành công:
+                                            -{formatCurrency(discountAmount)}</div>}
                                     </div>
 
-                                </div>
+                                    <div
+                                        className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                                            <span
+                                                className="text-sm font-black text-slate-900">Giá phòng cuối cùng:</span>
+                                        <span
+                                            className="text-xl font-black text-purple-600 leading-none">{formatCurrency(finalPrice)}</span>
+                                    </div>
 
-                                <button
-                                    onClick={handleConfirmBooking}
-                                    disabled={isSubmitting}
-                                    className="w-full py-4 bg-[#1a73e8] hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all flex justify-center items-center gap-2"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><CreditCard size={18} /> ĐẶT NGAY</>}
-                                </button>
+                                    {/* CHECKBOX ĐIỀU KHOẢN */}
+
+                                    <div className="border-t border-slate-100 pt-4 space-y-2">
+                                        {/*<div className="flex justify-between text-sm">*/}
+                                        {/*    <span className="text-emerald-600 font-bold">Ưu đãi Agency</span>*/}
+                                        {/*    <span className="text-emerald-600 font-bold">-{formatCurrency(agencyDiscount)}</span>*/}
+                                        {/*</div>*/}
+                                        {addonsTotal > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-600 font-bold">Dịch vụ thêm</span>
+                                                <span
+                                                    className="text-slate-800 font-bold">+{formatCurrency(addonsTotal)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-start gap-3 pt-2">
+                                            <div className="flex items-center h-5">
+                                                <input
+                                                    id="terms"
+                                                    type="checkbox"
+                                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                                                    checked={isAgreed}
+                                                    onChange={(e) => setIsAgreed(e.target.checked)}
+                                                />
+                                            </div>
+                                            <label htmlFor="terms"
+                                                   className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
+                                                Tôi đồng ý với <span
+                                                className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span
+                                                className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của
+                                                hệ thống.
+                                            </label>
+                                        </div>
+                                        <div
+                                            className="bg-blue-600 mt-4 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
+                                                <span
+                                                    className="text-[10px] font-black uppercase opacity-80">Tổng cộng</span>
+                                            <span className="text-xl font-black">{formatCurrency(grandTotal)}</span>
+                                        </div>
+
+                                    </div>
+
+                                    <button
+                                        onClick={handleConfirmBooking}
+                                        disabled={isSubmitting}
+                                        className="w-full py-4 bg-[#1a73e8] hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all flex justify-center items-center gap-2"
+                                    >
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <>
+                                            <CreditCard size={18}/> ĐẶT NGAY</>}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* BOX GIỮ CHỖ AN TOÀN  */}
-                        <div className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldCheck size={80} /></div>
-                            <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck size={18} /> Giữ chỗ an toàn</h4>
-                            <p className="text-[11px] leading-relaxed opacity-90 font-medium">
-                                Hệ thống đang giữ giá tốt nhất cho bạn. Vui lòng thanh toán trước khi thời gian giữ phòng kết thúc.
-                            </p>
-                        </div>
-                        {/* HỖ TRỢ 24/7 */}
-                        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-2">
-                            <h4 className="font-bold text-slate-800 text-[15px]">Hỗ trợ 24/7</h4>
-                            <p>Đội ngũ hỗ trợ chuyên nghiệp sẵn sàng giúp bạn mọi lúc</p>
-                            <div className="flex items-center gap-2 text-blue-700 font-black">
-                                <PhoneCall size={18} />
-                                <span className="text-base">1900 1234</span>
+                            {/* BOX GIỮ CHỖ AN TOÀN  */}
+                            <div
+                                className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldCheck size={80}/>
+                                </div>
+                                <h4 className="font-bold text-[15px] mb-1 flex items-center gap-2"><ShieldCheck
+                                    size={18}/> Giữ chỗ an toàn</h4>
+                                <p className="text-[11px] leading-relaxed opacity-90 font-medium">
+                                    Hệ thống đang giữ giá tốt nhất cho bạn. Vui lòng thanh toán trước khi thời gian
+                                    giữ phòng kết thúc.
+                                </p>
+                            </div>
+                            {/* HỖ TRỢ 24/7 */}
+                            <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-2">
+                                <h4 className="font-bold text-slate-800 text-[15px]">Hỗ trợ 24/7</h4>
+                                <p>Đội ngũ hỗ trợ chuyên nghiệp sẵn sàng giúp bạn mọi lúc</p>
+                                <div className="flex items-center gap-2 text-blue-700 font-black">
+                                    <PhoneCall size={18}/>
+                                    <span className="text-base">1900 1234</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
-}
+            );
+            }

@@ -6,6 +6,7 @@ import {
     Info, FileText, CreditCard, AlertCircle
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
+import api from "@/services/axios.config.js";
 
 const BookingSuccessPage = () => {
     const location = useLocation();
@@ -14,13 +15,7 @@ const BookingSuccessPage = () => {
 
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState(null);
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-        if (!booking && !checkoutData) {
-            console.error("Không tìm thấy dữ liệu đơn hàng.");
-        }
-    }, [booking, checkoutData]);
+    const [currentBalance, setCurrentBalance] = useState(null);
 
     const display = useMemo(() => ({
         code: booking?.bookingCode || checkoutData?.bookingCode || "N/A",
@@ -35,6 +30,35 @@ const BookingSuccessPage = () => {
         rooms: checkoutData?.rooms?.length || 1,
         nights: checkoutData?.totalNights || 1
     }), [booking, checkoutData]);
+
+    useEffect(() => {
+        const fetchLatestBalance = async () => {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            if (user?.agencyId) {
+                try {
+                    // Gọi API finance để lấy số dư ĐÃ TRỪ sau khi đặt phòng thành công
+                    const res = await api.get(`/agencies/${user.agencyId}/finance`);
+                    if (res.data?.result) {
+                        // Tùy vào phương thức thanh toán mà lấy Wallet hoặc Credit
+                        const balance = display.paymentMethod === "CREDIT"
+                            ? res.data.result.currentCredit
+                            : res.data.result.walletBalance;
+                        setCurrentBalance(balance);
+                    }
+                } catch (err) {
+                    console.error("Không thể cập nhật số dư mới:", err);
+                }
+            }
+        };
+        fetchLatestBalance();
+    }, [display.paymentMethod]);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+        if (!booking && !checkoutData) {
+            console.error("Không tìm thấy dữ liệu đơn hàng.");
+        }
+    }, [booking, checkoutData]);
 
     // Helper định dạng
     const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v || 0);
@@ -178,17 +202,26 @@ const BookingSuccessPage = () => {
                     <h3 className="font-black text-xs uppercase tracking-[0.2em] mb-6 opacity-80">Chi tiết giao dịch</h3>
                     <div className="space-y-4 relative z-10">
                         <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                            <span className="text-sm font-bold opacity-90 flex items-center gap-2">
-                                {display.paymentMethod === "CREDIT" ? <CreditCard size={18}/> : <Wallet size={18}/>}
-                                Nguồn tiền: {display.paymentMethod === "CREDIT" ? "Hạn mức Tín dụng" : "Ví trả trước"}
-                            </span>
+            <span className="text-sm font-bold opacity-90 flex items-center gap-2">
+                {display.paymentMethod === "CREDIT" ? <CreditCard size={18}/> : <Wallet size={18}/>}
+                Nguồn tiền: {display.paymentMethod === "CREDIT" ? "Hạn mức Tín dụng" : "Ví trả trước"}
+            </span>
+                            {/* Hiển thị số tiền đã trừ */}
                             <span className="font-black text-2xl">-{formatCurrency(display.totalPrice)}</span>
                         </div>
+
                         <div className="flex justify-between items-center pt-2">
-                            <span className="text-sm font-medium opacity-80 italic underline underline-offset-4">Hệ thống đã cập nhật số dư của bạn.</span>
+            <span className="text-sm font-medium opacity-80 italic underline underline-offset-4">
+                Hệ thống đã cập nhật số dư của bạn.
+            </span>
                             <div className="text-right">
-                                <p className="text-[10px] font-black uppercase opacity-60">Số dư khả dụng hiện tại</p>
-                                <p className="font-black text-lg tracking-tighter">46.200.000 đ</p>
+                                <p className="text-[10px] font-black uppercase opacity-60">
+                                    Số dư {display.paymentMethod === "CREDIT" ? "tín dụng" : "ví"} khả dụng
+                                </p>
+                                <p className="font-black text-lg tracking-tighter">
+                                    {/* Hiển thị số dư thực tế từ API, nếu đang load thì hiện "..." */}
+                                    {currentBalance !== null ? formatCurrency(currentBalance) : "---"}
+                                </p>
                             </div>
                         </div>
                     </div>
