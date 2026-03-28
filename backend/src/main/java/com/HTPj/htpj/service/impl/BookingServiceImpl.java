@@ -57,6 +57,8 @@ public class BookingServiceImpl implements BookingService {
     private final AgencyBookingRevenueRepository agencyBookingRevenueRepository;
     private final AgencyRepository agencyRepository;
     private final AgencyCreditHistoryRepository agencyCreditHistoryRepository;
+    private final SystemConfigRepository systemConfigRepository;
+
     private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
@@ -598,6 +600,83 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
+    @Override
+    public BookingDetailResponse getBookingDetailWithNoUserId(String bookingCode) {
+
+        // Một query: load booking + tất cả bookingDetails (JOIN FETCH)
+        Booking booking = bookingRepository.findDetailByBookingCode(bookingCode)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        Hotel hotel = hotelRepository.findById(booking.getHotelId()).orElse(null);
+
+        // Một query: load addon services + tên dịch vụ (JOIN FETCH addonService)
+        List<BookingAddonService> addonServices =
+                bookingAddonServiceRepository.findByBookingIdWithService(booking.getBookingId());
+
+        List<BookingDetailItemResponse> roomDetails = booking.getBookingDetails()
+                .stream()
+                .map(bd -> BookingDetailItemResponse.builder()
+                        .bookingDetailId(bd.getBookingDetailId())
+                        .roomTitle(bd.getRoomTitle())
+                        .quantity(bd.getQuantity())
+                        .roomCode(bd.getRoomCode())
+                        .bedType(bd.getBedType())
+                        .roomArea(bd.getRoomArea())
+                        .maxAdults(bd.getMaxAdults())
+                        .maxChildren(bd.getMaxChildren())
+                        .maxGuests(bd.getMaxGuests())
+                        .amenities(bd.getAmenities())
+                        .pricePerNight(bd.getPricePerNight())
+                        .subtotalAmount(bd.getSubtotalAmount())
+                        .totalAmount(bd.getTotalAmount())
+                        .nights(bd.getNights())
+                        .build())
+                .toList();
+
+        List<BookingAddonServiceResponse> addonResponses = addonServices.stream()
+                .map(bas -> BookingAddonServiceResponse.builder()
+                        .id(bas.getId())
+                        .serviceName(bas.getAddonService().getServiceName())
+                        .serviceType(bas.getAddonService().getCategory())
+                        .quantity(bas.getQuantity())
+                        .unitPrice(bas.getUnitPrice())
+                        .totalPrice(bas.getTotalPrice())
+                        .serviceDate(bas.getServiceDate())
+                        .flightNumber(bas.getFlightNumber())
+                        .flightTime(bas.getFlightTime())
+                        .specialNote(bas.getSpecialNote())
+                        .build())
+                .toList();
+
+        return BookingDetailResponse.builder()
+                .bookingId(booking.getBookingId())
+                .bookingCode(booking.getBookingCode())
+                .hotelId(booking.getHotelId())
+                .hotelName(hotel != null ? hotel.getHotelName() : null)
+                .hotelAddress(hotel != null ? hotel.getAddress() : null)
+                .hotelStarRating(hotel != null ? hotel.getStarRating() : null)
+                .checkInDate(booking.getCheckInDate())
+                .checkOutDate(booking.getCheckOutDate())
+                .nights(booking.getNights())
+                .totalRooms(booking.getTotalRooms())
+                .totalGuests(booking.getTotalGuests())
+                .guestName(booking.getGuestName())
+                .guestPhone(booking.getGuestPhone())
+                .guestEmail(booking.getGuestEmail())
+                .notes(booking.getNotes())
+                .totalAmount(booking.getTotalAmount())
+                .discountAmount(booking.getDiscountTotal())
+                .finalAmount(booking.getFinalAmount())
+                .paymentMethod(booking.getPaymentMethod())
+                .paymentStatus(booking.getPaymentStatus())
+                .bookingStatus(booking.getBookingStatus())
+                .createdAt(booking.getCreatedAt())
+                .hasFeedback(Boolean.TRUE.equals(booking.getHasFeedback()))
+                .roomDetails(roomDetails)
+                .addonServices(addonResponses)
+                .build();
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
@@ -723,9 +802,8 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @Override
     public CancelBookingResponse cancelBooking(CancelBookingRequest request) {
-        Integer hotelId = extractHotelId();
 
-        Booking booking = bookingRepository.findByBookingCodeAndHotelId(request.getBookingCode(), hotelId)
+        Booking booking = bookingRepository.findByBookingCode(request.getBookingCode())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         // Only BOOKED bookings can be cancelled
@@ -741,18 +819,24 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.CANCEL_PAST_CHECKIN);
         }
 
-        // Calculate cancellation penalty:
-        // - Free cancellation if cancelled 3+ days before check-in
-        // - 1st night charge as penalty if cancelled within 3 days of check-in
+        // Read dynamic penalty config from system_config
+        int daysThreshold = systemConfigRepository.findByConfigCode("CANCEL_DAYS_BEFORE_CHECKIN")
+                .map(c -> Integer.parseInt(c.getConfigValue()))
+                .orElse(3);
+
+        BigDecimal penaltyPercent = systemConfigRepository.findByConfigCode("CANCEL_PENALTY_PERCENT")
+                .map(c -> new BigDecimal(c.getConfigValue()))
+                .orElse(BigDecimal.ZERO);
+
+        // Calculate cancellation penalty
         long daysBeforeCheckin = ChronoUnit.DAYS.between(today, booking.getCheckInDate());
         BigDecimal penalty = BigDecimal.ZERO;
 
-        if (daysBeforeCheckin < 3) {
-            // Penalty = first night's price (finalAmount / nights)
-            if (booking.getNights() != null && booking.getNights() > 0) {
-                penalty = booking.getFinalAmount()
-                        .divide(BigDecimal.valueOf(booking.getNights()), 2, RoundingMode.HALF_UP);
-            }
+        if (daysBeforeCheckin < daysThreshold) {
+            // Penalty = finalAmount * penaltyPercent / 100
+            penalty = booking.getFinalAmount()
+                    .multiply(penaltyPercent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
 
         BigDecimal refund = booking.getFinalAmount().subtract(penalty);
@@ -762,6 +846,42 @@ public class BookingServiceImpl implements BookingService {
 
         // Release inventory (decrement soldCount in allotments)
         releaseInventory(booking);
+
+        // Refund to agency based on payment method
+        if (refund.compareTo(BigDecimal.ZERO) > 0) {
+            Agency agency = agencyRepository.findById(booking.getAgencyId())
+                    .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+
+            String paymentMethod = booking.getPaymentMethod();
+
+            if ("CREDIT".equalsIgnoreCase(paymentMethod)) {
+                BigDecimal creditBefore = agency.getCurrentCredit();
+                BigDecimal creditAfter = creditBefore.add(refund);
+
+                AgencyCreditHistory history = AgencyCreditHistory.builder()
+                        .agency(agency)
+                        .booking(booking)
+                        .creditBefore(creditBefore)
+                        .amount(refund)
+                        .creditAfter(creditAfter)
+                        .type("REFUND")
+                        .description("Hoàn tiền hủy đơn " + booking.getBookingCode())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                agencyCreditHistoryRepository.save(history);
+
+                agency.setCurrentCredit(creditAfter);
+                agencyRepository.save(agency);
+
+            } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
+                BigDecimal walletBefore = agency.getWalletBalance() != null
+                        ? agency.getWalletBalance() : BigDecimal.ZERO;
+                BigDecimal walletAfter = walletBefore.add(refund);
+
+                agency.setWalletBalance(walletAfter);
+                agencyRepository.save(agency);
+            }
+        }
 
         booking.setBookingStatus("CANCELLED");
         booking.setUpdatedAt(LocalDateTime.now());
@@ -853,16 +973,7 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.NOSHOW_BEFORE_CHECKIN);
         }
 
-        // No-show penalty = first night charge
-        BigDecimal penalty = BigDecimal.ZERO;
-        if (booking.getNights() != null && booking.getNights() > 0) {
-            penalty = booking.getFinalAmount()
-                    .divide(BigDecimal.valueOf(booking.getNights()), 2, RoundingMode.HALF_UP);
-        }
-
-        // Release inventory for remaining nights (all nights since guest never arrived)
-        releaseInventory(booking);
-
+        // No-show: only change status, do NOT release inventory and do NOT refund
         booking.setBookingStatus("NO_SHOW");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
@@ -870,7 +981,6 @@ public class BookingServiceImpl implements BookingService {
         return NoShowResponse.builder()
                 .bookingCode(booking.getBookingCode())
                 .bookingStatus("NO_SHOW")
-                .penaltyAmount(penalty)
                 .reason(request.getReason())
                 .reportedAt(LocalDateTime.now())
                 .build();

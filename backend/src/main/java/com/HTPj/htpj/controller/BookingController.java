@@ -112,6 +112,14 @@ public class BookingController {
                 .build();
     }
 
+    @GetMapping("/detail-with-nouid/{bookingCode}")
+    ApiResponse<BookingDetailResponse> getBookingDetailWithNoUserId(
+            @PathVariable String bookingCode
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.getBookingDetailWithNoUserId(bookingCode))
+                .build();
+    }
     //UC28
     @PostMapping("/update-guest")
     ApiResponse<BookingDetailResponse> updateGuestInformation(

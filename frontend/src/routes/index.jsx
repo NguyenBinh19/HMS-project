@@ -6,6 +6,7 @@ import ResetPassword from "../pages/Auth/ResetPassword";
 import VerifyEmail from "../pages/Auth/VerifyEmail";
 import VerifyOtp from "../pages/Auth/VerifyOtp";
 import OAuthCallback from "../pages/Auth/OAuthCallback";
+import SelectRole from "../pages/Auth/SelectRole";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
@@ -80,6 +81,7 @@ const AppRoutes = () => {
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/verify-otp" element={<VerifyOtp />} />
                 <Route path="/oauth-callback" element={<OAuthCallback />} />
+                <Route path="/select-role" element={<SelectRole />} />
                 <Route path="/about-us" element={<ViewAboutUs />} />
                 <Route path="/contact" element={<ViewContact />} />
                 <Route path="/private-policy" element={<PrivatePolicy />} />

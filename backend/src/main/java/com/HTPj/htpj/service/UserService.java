@@ -36,4 +36,6 @@ public interface UserService {
     UserResponse banUser(String userId, BanUserRequest request);
 
     long countActiveUsers();
+
+    UserResponse selectRoleForCurrentUser(String role);
 }
