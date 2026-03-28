@@ -97,7 +97,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM Booking b
     JOIN Agency a ON b.agencyId = a.agencyId
     JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus = 'BOOKED'
+    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
     AND b.checkInDate = :date
     """)
     List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);

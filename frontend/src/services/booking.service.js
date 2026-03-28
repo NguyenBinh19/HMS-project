@@ -252,6 +252,18 @@ const cancelBooking = async (payload) => {
         throw error;
     }
 };
+
+// Chi tiết booking theo booking code cho Admin
+const getBookingDetailOfAdmin = async (bookingCode) => {
+    try {
+        const response = await api.get(`/booking/detail-with-nouid/${bookingCode}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking Detail Of Admin Error:", error);
+        throw error;
+    }
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -277,4 +289,5 @@ export const bookingService = {
     checkinGuest,
     reportNoShow,
     cancelBooking,
+    getBookingDetailOfAdmin,
 };

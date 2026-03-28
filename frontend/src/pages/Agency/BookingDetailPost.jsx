@@ -27,13 +27,13 @@ const getStatusConfig = (status) => {
             return { label: "CHỜ THANH TOÁN", color: "bg-amber-500", desc: "Đơn hàng sẽ bị hủy nếu không thanh toán đúng hạn." };
         case "CONFIRMED":
             return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
-        case "CHECKIN":
+        case "CHECKED-IN":
             return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách hàng đã làm thủ tục nhận phòng." };
-        case "CHECKOUT":
+        case "COMPLETED":
             return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch đã kết thúc." };
         case "CANCELLED":
             return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy hoặc quá hạn thanh toán." };
-        case "NOSHOW":
+        case "NO_SHOW":
             return { label: "KHÔNG ĐẾN", color: "bg-purple-600", desc: "Khách hàng không đến nhận phòng theo lịch." };
         default:
             return { label: s, color: "bg-slate-400", desc: "" };
@@ -145,6 +145,13 @@ const BookingDetailPost = () => {
 
     // Hàm xử lý hủy đơn
     const handleCancelBooking = async (reason) => {
+        const isConfirmed = window.confirm(
+            "QUAN TRỌNG: Bạn có chắc chắn muốn hủy đơn hàng này không?\n" +
+            "- Hành động này KHÔNG THỂ hoàn tác.\n" +
+            "- Vui lòng kiểm tra kỹ điều khoản hủy đơn hàng của hệ thống trước khi xác nhận."
+        );
+
+        if (!isConfirmed) return;
         try {
             const payload = {
                 bookingCode: booking.bookingCode,
@@ -156,7 +163,8 @@ const BookingDetailPost = () => {
             setBooking(prev => ({ ...prev, bookingStatus: 'CANCELLED' }));
 
             // Hiển thị thông báo thành công kèm số tiền phạt từ BE
-            alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
+            // alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
+            alert(`Hủy thành công!`);
 
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
