@@ -31,10 +31,17 @@ public class SystemConfigController {
      * Get cancellation penalty configs
      * Returns: CANCEL_DAYS_BEFORE_CHECKIN and CANCEL_PENALTY_PERCENT
      */
-    @GetMapping("/cancel-penalty")
-    public ApiResponse<Map<String, String>> getCancelPenaltyConfig() {
+    @GetMapping("/cancel-policy")
+    public ApiResponse<Map<String, String>> getCancelPolicyConfig() {
+
         List<SystemConfig> configs = systemConfigRepository.findByConfigCodeIn(
-                List.of("CANCEL_DAYS_BEFORE_CHECKIN", "CANCEL_PENALTY_PERCENT")
+                List.of(
+                        "CANCEL_FULL_REFUND_DAYS",
+                        "CANCEL_PENALTY_DAYS",
+                        "CANCEL_LEVEL1_PERCENT",
+                        "CANCEL_LEVEL2_PERCENT",
+                        "CANCEL_LEVEL3_PERCENT"
+                )
         );
 
         Map<String, String> result = configs.stream()
@@ -44,28 +51,33 @@ public class SystemConfigController {
                 .result(result)
                 .build();
     }
-
     /**
      * Update cancellation penalty configs
      * Body: { "daysBeforeCheckin": "3", "penaltyPercent": "30" }
      */
     @PutMapping("/cancel-penalty")
     public ApiResponse<String> updateCancelPenaltyConfig(@RequestBody Map<String, String> request) {
+
         String currentUserId = getCurrentUserId();
 
-        String daysValue = request.get("daysBeforeCheckin");
-        String penaltyValue = request.get("penaltyPercent");
+        String fullRefundDaysVal = request.get("fullRefundDays");
+        String penaltyDaysVal = request.get("penaltyDays");
 
-        if (daysValue != null) {
-            int days = Integer.parseInt(daysValue);
+        String level1PercentVal = request.get("level1Percent");
+        String level2PercentVal = request.get("level2Percent");
+        String level3PercentVal = request.get("level3Percent");
+
+        // ===== FULL REFUND DAYS (>= X ngày) =====
+        if (fullRefundDaysVal != null) {
+            int days = Integer.parseInt(fullRefundDaysVal);
             if (days < 0) throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
 
-            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_DAYS_BEFORE_CHECKIN")
+            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_FULL_REFUND_DAYS")
                     .orElseGet(() -> SystemConfig.builder()
-                            .configCode("CANCEL_DAYS_BEFORE_CHECKIN")
-                            .configName("Cancel Days Before Checkin")
+                            .configCode("CANCEL_FULL_REFUND_DAYS")
+                            .configName("Full Refund Days Before Checkin")
                             .dataType("INTEGER")
-                            .description("Number of days before check-in that triggers cancellation penalty")
+                            .description("Days before check-in for lowest penalty level")
                             .isActive(true)
                             .build());
 
@@ -75,27 +87,91 @@ public class SystemConfigController {
             systemConfigRepository.save(config);
         }
 
-        if (penaltyValue != null) {
-            double percent = Double.parseDouble(penaltyValue);
-            if (percent < 0 || percent > 100) throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
+        // ===== PENALTY DAYS (mốc giữa) =====
+        if (penaltyDaysVal != null) {
+            int days = Integer.parseInt(penaltyDaysVal);
+            if (days < 0) throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
 
-            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_PENALTY_PERCENT")
+            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_PENALTY_DAYS")
                     .orElseGet(() -> SystemConfig.builder()
-                            .configCode("CANCEL_PENALTY_PERCENT")
-                            .configName("Cancel Penalty Percent")
-                            .dataType("DECIMAL")
-                            .description("Percentage of booking amount charged as penalty for late cancellation")
+                            .configCode("CANCEL_PENALTY_DAYS")
+                            .configName("Penalty Days Before Checkin")
+                            .dataType("INTEGER")
+                            .description("Days threshold for mid-level penalty")
                             .isActive(true)
                             .build());
 
-            config.setConfigValue(penaltyValue);
+            config.setConfigValue(String.valueOf(days));
+            config.setUpdatedAt(LocalDateTime.now());
+            config.setUpdatedBy(currentUserId);
+            systemConfigRepository.save(config);
+        }
+
+        // ===== LEVEL 1 (>= fullRefundDays) =====
+        if (level1PercentVal != null) {
+            double percent = Double.parseDouble(level1PercentVal);
+            if (percent < 0 || percent > 100)
+                throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
+
+            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_LEVEL1_PERCENT")
+                    .orElseGet(() -> SystemConfig.builder()
+                            .configCode("CANCEL_LEVEL1_PERCENT")
+                            .configName("Cancel Level 1 Percent")
+                            .dataType("DECIMAL")
+                            .description("Penalty percent when cancelling early")
+                            .isActive(true)
+                            .build());
+
+            config.setConfigValue(level1PercentVal);
+            config.setUpdatedAt(LocalDateTime.now());
+            config.setUpdatedBy(currentUserId);
+            systemConfigRepository.save(config);
+        }
+
+        // ===== LEVEL 2 (giữa) =====
+        if (level2PercentVal != null) {
+            double percent = Double.parseDouble(level2PercentVal);
+            if (percent < 0 || percent > 100)
+                throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
+
+            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_LEVEL2_PERCENT")
+                    .orElseGet(() -> SystemConfig.builder()
+                            .configCode("CANCEL_LEVEL2_PERCENT")
+                            .configName("Cancel Level 2 Percent")
+                            .dataType("DECIMAL")
+                            .description("Penalty percent for mid-range cancellation")
+                            .isActive(true)
+                            .build());
+
+            config.setConfigValue(level2PercentVal);
+            config.setUpdatedAt(LocalDateTime.now());
+            config.setUpdatedBy(currentUserId);
+            systemConfigRepository.save(config);
+        }
+
+        // ===== LEVEL 3 (< penaltyDays) =====
+        if (level3PercentVal != null) {
+            double percent = Double.parseDouble(level3PercentVal);
+            if (percent < 0 || percent > 100)
+                throw new AppException(ErrorCode.INVALID_CONFIG_VALUE);
+
+            SystemConfig config = systemConfigRepository.findByConfigCode("CANCEL_LEVEL3_PERCENT")
+                    .orElseGet(() -> SystemConfig.builder()
+                            .configCode("CANCEL_LEVEL3_PERCENT")
+                            .configName("Cancel Level 3 Percent")
+                            .dataType("DECIMAL")
+                            .description("Penalty percent for last-minute cancellation")
+                            .isActive(true)
+                            .build());
+
+            config.setConfigValue(level3PercentVal);
             config.setUpdatedAt(LocalDateTime.now());
             config.setUpdatedBy(currentUserId);
             systemConfigRepository.save(config);
         }
 
         return ApiResponse.<String>builder()
-                .result("Cancel penalty config updated successfully")
+                .result("Cancel policy config updated successfully")
                 .build();
     }
 

@@ -427,6 +427,7 @@ public class BookingServiceImpl implements BookingService {
                     .amount(finalAmountPaid)
                     .balanceAfter(creditAfter)
                     .status("Success")
+                    .transactionCode("")
                     .direction("OUT")
                     .agency(agency)
                     .createdAt(LocalDateTime.now())
@@ -457,6 +458,7 @@ public class BookingServiceImpl implements BookingService {
                     .balanceAfter(walletAfter)
                     .status("Success")
                     .direction("OUT")
+                    .transactionCode("")
                     .agency(agency)
                     .createdAt(LocalDateTime.now())
                     .build();
@@ -819,25 +821,47 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.CANCEL_PAST_CHECKIN);
         }
 
-        // Read dynamic penalty config from system_config
-        int daysThreshold = systemConfigRepository.findByConfigCode("CANCEL_DAYS_BEFORE_CHECKIN")
+        // ===== CONFIG 3 MỐC =====
+        int fullRefundDays = systemConfigRepository.findByConfigCode("CANCEL_FULL_REFUND_DAYS")
+                .map(c -> Integer.parseInt(c.getConfigValue()))
+                .orElse(7);
+
+        int penaltyDays = systemConfigRepository.findByConfigCode("CANCEL_PENALTY_DAYS")
                 .map(c -> Integer.parseInt(c.getConfigValue()))
                 .orElse(3);
 
-        BigDecimal penaltyPercent = systemConfigRepository.findByConfigCode("CANCEL_PENALTY_PERCENT")
+// % từng mức
+        BigDecimal percentLevel1 = systemConfigRepository.findByConfigCode("CANCEL_LEVEL1_PERCENT")
                 .map(c -> new BigDecimal(c.getConfigValue()))
-                .orElse(BigDecimal.ZERO);
+                .orElse(BigDecimal.ZERO); // >= fullRefundDays
+
+        BigDecimal percentLevel2 = systemConfigRepository.findByConfigCode("CANCEL_LEVEL2_PERCENT")
+                .map(c -> new BigDecimal(c.getConfigValue()))
+                .orElse(BigDecimal.valueOf(50)); // giữa
+
+        BigDecimal percentLevel3 = systemConfigRepository.findByConfigCode("CANCEL_LEVEL3_PERCENT")
+                .map(c -> new BigDecimal(c.getConfigValue()))
+                .orElse(BigDecimal.valueOf(100)); // < penaltyDays
 
         // Calculate cancellation penalty
         long daysBeforeCheckin = ChronoUnit.DAYS.between(today, booking.getCheckInDate());
-        BigDecimal penalty = BigDecimal.ZERO;
 
-        if (daysBeforeCheckin < daysThreshold) {
-            // Penalty = finalAmount * penaltyPercent / 100
-            penalty = booking.getFinalAmount()
-                    .multiply(penaltyPercent)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal percent;
+
+        if (daysBeforeCheckin >= fullRefundDays) {
+            percent = percentLevel1;
+
+        } else if (daysBeforeCheckin >= penaltyDays) {
+            percent = percentLevel2;
+
+        } else {
+            percent = percentLevel3;
         }
+
+// penalty = amount * percent / 100
+        BigDecimal penalty = booking.getFinalAmount()
+                .multiply(percent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
         BigDecimal refund = booking.getFinalAmount().subtract(penalty);
         if (refund.compareTo(BigDecimal.ZERO) < 0) {
@@ -870,6 +894,24 @@ public class BookingServiceImpl implements BookingService {
                         .build();
                 agencyCreditHistoryRepository.save(history);
 
+                // Save credit refund transaction history
+                TransactionHistory txHistory = TransactionHistory.builder()
+                        .transactionDate(LocalDateTime.now())
+                        .transactionType("Refund")
+                        .description("Hoàn tiền hủy đơn " + "(" + booking.getBookingCode() + ")")
+                        .sourceType("Credit")
+                        .amount(refund)
+                        .balanceAfter(creditAfter)
+                        .status("Success")
+                        .transactionCode("")
+                        .direction("IN")
+                        .agency(agency)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                txHistory = transactionHistoryRepository.save(txHistory);
+                txHistory.setTransactionCode(String.format("TRK-%06d", txHistory.getId()));
+                transactionHistoryRepository.save(txHistory);
+
                 agency.setCurrentCredit(creditAfter);
                 agencyRepository.save(agency);
 
@@ -880,9 +922,29 @@ public class BookingServiceImpl implements BookingService {
 
                 agency.setWalletBalance(walletAfter);
                 agencyRepository.save(agency);
+
+                // Save wallet refund transaction history
+                TransactionHistory txHistory = TransactionHistory.builder()
+                        .transactionDate(LocalDateTime.now())
+                        .transactionType("Refund")
+                        .description("Hoàn tiền hủy đơn " + "(" + booking.getBookingCode() + ")")
+                        .sourceType("Wallet")
+                        .amount(refund)
+                        .balanceAfter(walletAfter)
+                        .status("Success")
+                        .transactionCode("")
+                        .direction("IN")
+                        .agency(agency)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                txHistory = transactionHistoryRepository.save(txHistory);
+                txHistory.setTransactionCode(String.format("TRK-%06d", txHistory.getId()));
+                transactionHistoryRepository.save(txHistory);
             }
         }
 
+        booking.setCancellationPenalty(penalty);
+        booking.setRefundAmount(refund);
         booking.setBookingStatus("CANCELLED");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);

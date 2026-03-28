@@ -32,7 +32,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     private final RoomTypeRepository roomTypeRepository;
 
     private static final List<String> REVENUE_STATUSES = List.of(
-            "BOOKED", "CHECKED_IN", "COMPLETED"
+            "BOOKED", "CHECKED_IN", "COMPLETED", "CANCELLED", "NO_SHOW"
     );
     private static final int MAX_DAILY_RANGE_DAYS = 365;
 
@@ -128,9 +128,22 @@ public class RevenueReportServiceImpl implements RevenueReportService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Get earned amount for a booking based on status:
+     * - CANCELLED: hotel earns only the penalty
+     * - NO_SHOW: hotel keeps the full amount (no refund)
+     * - Others: finalAmount
+     */
+    private BigDecimal getEarnedAmount(Booking b) {
+        if ("CANCELLED".equalsIgnoreCase(b.getBookingStatus())) {
+            return b.getCancellationPenalty() != null ? b.getCancellationPenalty() : BigDecimal.ZERO;
+        }
+        return b.getFinalAmount() != null ? b.getFinalAmount() : BigDecimal.ZERO;
+    }
+
     private RevenueSummary buildSummary(List<Booking> bookings, int totalRoomNightsAvailable) {
         BigDecimal totalRevenue = bookings.stream()
-                .map(b -> b.getFinalAmount() != null ? b.getFinalAmount() : BigDecimal.ZERO)
+                .map(this::getEarnedAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         int totalBookings = bookings.size();
@@ -206,7 +219,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
         for (Map.Entry<String, List<Booking>> entry : grouped.entrySet()) {
             List<Booking> periodBookings = entry.getValue();
             BigDecimal revenue = periodBookings.stream()
-                    .map(b -> b.getFinalAmount() != null ? b.getFinalAmount() : BigDecimal.ZERO)
+                    .map(this::getEarnedAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int roomNightsSold = periodBookings.stream()
@@ -236,7 +249,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     private List<RevenueByRoomType> buildByRoomType(List<Booking> bookings,
                                                      List<RoomType> roomTypes) {
         BigDecimal totalRevenue = bookings.stream()
-                .map(b -> b.getFinalAmount() != null ? b.getFinalAmount() : BigDecimal.ZERO)
+                .map(this::getEarnedAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Aggregate per room type from booking details
