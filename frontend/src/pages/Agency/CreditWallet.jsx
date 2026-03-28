@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Wallet, CreditCard, History, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Wallet, CreditCard, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../services/axios.config";
 
@@ -10,22 +10,27 @@ const CreditWallet = () => {
     const agencyId = user?.agencyId;
 
     const [transactions, setTransactions] = useState([]);
+    const [summary, setSummary] = useState({});
 
     useEffect(() => {
         if (agencyId) {
-            api
-                .get(`/transaction-history/${agencyId}/transactions/recent?limit=5`)
-                .then((res) => {
-                    console.log("Fetched transactions:", res);
-                    setTransactions(res.data.result || []);
-                })
+            api.get(`/transaction-history/${agencyId}/transactions/recent?limit=5`)
+                .then((res) => setTransactions(res.data.result || []))
                 .catch((err) => console.error("Error fetching transactions:", err));
+
+            api.get(`/agencies/${agencyId}/credit-summary`)
+                .then((res) => setSummary(res.data.result || {}))
+                .catch((err) => console.error("Error fetching credit summary:", err));
         }
     }, [agencyId]);
 
     const formatAmount = (amount, direction) => {
-        const formatted = amount.toLocaleString("vi-VN") + " ₫";
+        const formatted = amount?.toLocaleString("vi-VN") + " ₫";
         return direction === "IN" ? `+${formatted}` : `-${formatted}`;
+    };
+
+    const formatCurrency = (value) => {
+        return value?.toLocaleString("vi-VN") + " ₫";
     };
 
     const getIcon = (tx) => {
@@ -42,7 +47,7 @@ const CreditWallet = () => {
                 <button
                     onClick={() => navigate("/agency/prepaid")}
                     className={`px-5 py-2 rounded-md flex items-center gap-2 shadow transition
-          ${location.pathname === "/agency/prepaid"
+                        ${location.pathname === "/agency/prepaid"
                             ? "bg-blue-600 text-white"
                             : "bg-slate-200 text-slate-700 hover:bg-slate-300"}`}
                 >
@@ -52,7 +57,7 @@ const CreditWallet = () => {
                 <button
                     onClick={() => navigate("/agency/credit-wallet")}
                     className={`px-5 py-2 rounded-md flex items-center gap-2 shadow transition
-          ${location.pathname === "/agency/credit-wallet"
+                        ${location.pathname === "/agency/credit-wallet"
                             ? "bg-blue-600 text-white"
                             : "bg-slate-200 text-slate-700 hover:bg-slate-300"}`}
                 >
@@ -65,14 +70,14 @@ const CreditWallet = () => {
                 <div className="grid grid-cols-3 gap-6 text-center">
                     <div className="bg-green-50 rounded-md p-4 shadow-sm flex flex-col items-center">
                         <p className="text-sm text-slate-600">Sức mua tín dụng còn lại</p>
-                        <p className="text-2xl font-bold text-green-600">50.000.000 ₫</p>
-                        <p className="text-xs text-slate-500 mt-1">Đã sử dụng 50%</p>
+                        <p className="text-2xl font-bold text-green-600">{formatCurrency(summary.remainingCredit)}</p>
+                        <p className="text-xs text-slate-500 mt-1">Đã sử dụng {summary.usedPercent}%</p>
                     </div>
 
                     <div className="bg-yellow-100 rounded-md p-4 shadow-sm flex flex-col items-center">
                         <p className="text-sm text-slate-600">Nợ cần thanh toán</p>
-                        <p className="text-2xl font-bold text-orange-600">50.000.000 ₫</p>
-                        <p className="text-xs text-slate-500 mt-1">Hạn chót: 25/12/2026</p>
+                        <p className="text-2xl font-bold text-orange-600">{formatCurrency(summary.debt)}</p>
+                        <p className="text-xs text-slate-500 mt-1">Hạn chót: {summary.dueDate}</p>
                         <button className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">
                             Thanh toán nợ
                         </button>
@@ -80,13 +85,14 @@ const CreditWallet = () => {
 
                     <div className="bg-blue-50 rounded-md p-4 shadow-sm flex flex-col items-center">
                         <p className="text-sm text-slate-600">Tổng hạn mức được cấp</p>
-                        <p className="text-2xl font-bold text-blue-600">100.000.000 ₫</p>
+                        <p className="text-2xl font-bold text-blue-600">{formatCurrency(summary.creditLimit)}</p>
                         <button className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">
                             Xin nới hạn mức
                         </button>
                     </div>
                 </div>
             </div>
+
             <div className="bg-white shadow rounded-lg p-6">
                 <ul className="divide-y divide-slate-200">
                     {transactions.map((tx) => (
@@ -102,8 +108,7 @@ const CreditWallet = () => {
                             </div>
                             <div className="flex items-center">
                                 <span
-                                    className={`font-semibold text-right ${tx.direction === "IN" ? "text-green-600" : "text-red-500"
-                                        }`}
+                                    className={`font-semibold text-right ${tx.direction === "IN" ? "text-green-600" : "text-red-500"}`}
                                 >
                                     {formatAmount(tx.amount, tx.direction)}
                                 </span>

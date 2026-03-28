@@ -17,8 +17,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -104,10 +106,38 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
     }
 
     public TransactionSummaryDto getSummary(Long agencyId) {
-        BigDecimal spending = transactionHistoryRepo.getTotalSpending(agencyId);
-        BigDecimal topup = transactionHistoryRepo.getTotalTopup(agencyId);
-        BigDecimal penalty = transactionHistoryRepo.getTotalPenalty(agencyId);
+        YearMonth current = YearMonth.now();
+        YearMonth prev = current.minusMonths(1);
 
-        return new TransactionSummaryDto(spending, topup, penalty);
+        BigDecimal spending = transactionHistoryRepo.getTotalSpending(
+                agencyId, current.getYear(), current.getMonthValue());
+        BigDecimal topup = transactionHistoryRepo.getTotalTopup(
+                agencyId, current.getYear(), current.getMonthValue());
+        BigDecimal penalty = transactionHistoryRepo.getTotalPenalty(
+                agencyId, current.getYear(), current.getMonthValue());
+
+        BigDecimal spendingPrev = transactionHistoryRepo.getTotalSpending(
+                agencyId, prev.getYear(), prev.getMonthValue());
+        BigDecimal topupPrev = transactionHistoryRepo.getTotalTopup(
+                agencyId, prev.getYear(), prev.getMonthValue());
+        BigDecimal penaltyPrev = transactionHistoryRepo.getTotalPenalty(
+                agencyId, prev.getYear(), prev.getMonthValue());
+
+        double spendingGrowth = calcGrowth(spending, spendingPrev);
+        double topupGrowth = calcGrowth(topup, topupPrev);
+        double penaltyGrowth = calcGrowth(penalty, penaltyPrev);
+
+        return new TransactionSummaryDto(spending, topup, penalty,
+                spendingGrowth, topupGrowth, penaltyGrowth);
+    }
+
+    private double calcGrowth(BigDecimal current, BigDecimal prev) {
+        if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0) {
+            return 0.0;
+        }
+        return current.subtract(prev)
+                .divide(prev, 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue();
     }
 }

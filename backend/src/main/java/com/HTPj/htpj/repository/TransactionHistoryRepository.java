@@ -99,14 +99,23 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     List<TransactionHistoryDto> findByAgencyId(@Param("agencyId") Long agencyId);
 
     @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
-            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Payment'")
-    BigDecimal getTotalSpending(@Param("agencyId") Long agencyId);
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Payment' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalSpending(@Param("agencyId") Long agencyId,
+                                @Param("year") int year,
+                                @Param("month") int month);
 
     @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
-            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Top-up'")
-    BigDecimal getTotalTopup(@Param("agencyId") Long agencyId);
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Top-up' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalTopup(@Param("agencyId") Long agencyId,
+                             @Param("year") int year,
+                             @Param("month") int month);
 
     @Query("SELECT COALESCE(SUM(t.amount),0) FROM TransactionHistory t " +
-            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Penalty'")
-    BigDecimal getTotalPenalty(@Param("agencyId") Long agencyId);
+            "WHERE t.agency.id = :agencyId AND t.transactionType = 'Penalty' " +
+            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    BigDecimal getTotalPenalty(@Param("agencyId") Long agencyId,
+                               @Param("year") int year,
+                               @Param("month") int month);
 }

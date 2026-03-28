@@ -101,20 +101,28 @@ const TransactionHistoryPage = () => {
                 <div className="bg-white rounded-xl shadow p-4 flex flex-col">
                     <span className="text-sm text-slate-500">Tổng chi tiêu</span>
                     <span className="text-xl font-bold text-red-600">{formatCurrency(summary.totalSpending)}</span>
-                    <span className="text-xs text-slate-400">+12% so với tháng trước</span>
+                    <span className="text-xs text-slate-400">
+                        {summary.spendingGrowth >= 0
+                            ? `+${summary.spendingGrowth}% so với tháng trước`
+                            : `${summary.spendingGrowth}% so với tháng trước`}
+                    </span>
                 </div>
 
                 <div className="bg-white rounded-xl shadow p-4 flex flex-col">
                     <span className="text-sm text-slate-500">Tổng nạp</span>
                     <span className="text-xl font-bold text-green-600">{formatCurrency(summary.totalTopup)}</span>
-                    <span className="text-xs text-slate-400">+8% so với tháng trước</span>
+                    <span className="text-xs text-slate-400">
+                        {summary.topupGrowth >= 0
+                            ? `+${summary.topupGrowth}% so với tháng trước`
+                            : `${summary.topupGrowth}% so với tháng trước`}
+                    </span>
                 </div>
 
                 <div className="bg-white rounded-xl shadow p-4 flex flex-col">
                     <span className="text-sm text-slate-500">Tổng phí phạt</span>
                     <span className="text-xl font-bold text-slate-800">{formatCurrency(summary.totalPenalty)}</span>
                     <span className="text-xs text-slate-400">
-                        {summary.totalPenalty > 0 ? "Có khoản phạt" : "Không có khoản phạt nào"}
+                        {summary.penaltyGrowth > 0 ? `+${summary.penaltyGrowth}% so với tháng trước` : "Không có khoản phạt nào"}
                     </span>
                 </div>
             </div>
