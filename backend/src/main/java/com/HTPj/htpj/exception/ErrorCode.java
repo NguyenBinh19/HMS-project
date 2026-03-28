@@ -134,6 +134,7 @@ public enum ErrorCode {
     RANK_CODE_EXISTED(4105, "Rank code exist", HttpStatus.BAD_REQUEST),
     INVALID_CONFIG_TYPE(4106, "only input type in list", HttpStatus.BAD_REQUEST),
     INVALID_DATE_FORMAT(4107, "date format: mm -dd", HttpStatus.BAD_REQUEST),
+    INVALID_CONFIG_VALUE(4108, "Invalid configuration value", HttpStatus.BAD_REQUEST),
 
 
     //commission

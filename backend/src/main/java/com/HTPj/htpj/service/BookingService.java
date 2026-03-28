@@ -23,6 +23,7 @@ public interface BookingService {
     // UC-030: Xem chi tiết một booking
     BookingDetailResponse getBookingDetail(String bookingCode);
 
+    BookingDetailResponse getBookingDetailWithNoUserId(String bookingCode);
     //Uc79
     List<ListAllBookingsResponse> getAllBookings();
 

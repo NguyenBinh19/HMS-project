@@ -32,7 +32,14 @@ const OAuthCallback = () => {
         const success = await loginWithOAuth2(token);
         if (success) {
           setStatus("success");
-          setTimeout(() => navigate("/", { replace: true }), 1000);
+          // Check if user has roles - if not, redirect to role selection
+          const user = JSON.parse(localStorage.getItem("user") || "{}");
+          const hasRoles = user.roles && user.roles.length > 0;
+          if (!hasRoles) {
+            setTimeout(() => navigate("/select-role", { replace: true }), 1000);
+          } else {
+            setTimeout(() => navigate("/", { replace: true }), 1000);
+          }
         } else {
           setStatus("error");
           setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
