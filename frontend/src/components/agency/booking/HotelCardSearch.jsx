@@ -68,10 +68,10 @@ const HotelCard = ({ hotel }) => {
             {/* Ảnh khách sạn */}
             <div className="w-[260px] h-[180px] rounded-[20px] overflow-hidden shrink-0 relative">
                 <img src={coverImg} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={hotel.hotelName} />
-                <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase shadow-sm">Flash Sale -15%</span>
-                    <span className="bg-[#00A32E] text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase tracking-tighter shadow-sm">⚡ Instant Booking</span>
-                </div>
+                {/*<div className="absolute top-2 left-2 flex flex-col gap-1">*/}
+                {/*    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase shadow-sm">Flash Sale -15%</span>*/}
+                {/*    <span className="bg-[#00A32E] text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase tracking-tighter shadow-sm">⚡ Instant Booking</span>*/}
+                {/*</div>*/}
                 {/* Badge đã chọn */}
                 {isSelected && (
                     <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-[2px] flex items-center justify-center">

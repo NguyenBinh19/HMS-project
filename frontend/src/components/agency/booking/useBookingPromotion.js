@@ -36,15 +36,6 @@ export const useBookingPromotion = (bookingData, navigate) => {
         const targetCode = codeFromWallet || promoCode;
         if (!targetCode) return;
 
-
-        const now = new Date();
-        const end = typeof bookingData.expiredAt === "string" ? parseISO(bookingData.expiredAt) : bookingData.expiredAt;
-        if (differenceInSeconds(end, now) <= 0) {
-            alert("Phiên giữ chỗ đã hết hạn. Vui lòng tìm kiếm lại phòng.");
-            navigate("/agency/search-hotel");
-            return;
-        }
-
         setIsCheckingPromo(true);
         setPromoError("");
         try {

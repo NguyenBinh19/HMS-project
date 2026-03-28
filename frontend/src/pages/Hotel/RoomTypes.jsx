@@ -8,7 +8,6 @@ import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetai
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
-// const HOTEL_ID = 2;
 
 const ManageRoomTypes = () => {
     const [roomTypes, setRoomTypes] = useState([]);
@@ -124,7 +123,7 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
 
     return (
         <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans text-slate-900">
-            <ToastPortal ref={toastRef} />
+            <ToastPortal ref={toastRef} autoClose={true} autoCloseTime={3000} />
 
             <div className="max-w-7xl mx-auto">
 

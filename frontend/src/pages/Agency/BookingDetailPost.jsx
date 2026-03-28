@@ -145,6 +145,13 @@ const BookingDetailPost = () => {
 
     // Hàm xử lý hủy đơn
     const handleCancelBooking = async (reason) => {
+        const isConfirmed = window.confirm(
+            "QUAN TRỌNG: Bạn có chắc chắn muốn hủy đơn hàng này không?\n" +
+            "- Hành động này KHÔNG THỂ hoàn tác.\n" +
+            "- Vui lòng kiểm tra kỹ điều khoản hủy đơn hàng của hệ thống trước khi xác nhận."
+        );
+
+        if (!isConfirmed) return;
         try {
             const payload = {
                 bookingCode: booking.bookingCode,
@@ -156,7 +163,8 @@ const BookingDetailPost = () => {
             setBooking(prev => ({ ...prev, bookingStatus: 'CANCELLED' }));
 
             // Hiển thị thông báo thành công kèm số tiền phạt từ BE
-            alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
+            // alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
+            alert(`Hủy thành công!`);
 
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
