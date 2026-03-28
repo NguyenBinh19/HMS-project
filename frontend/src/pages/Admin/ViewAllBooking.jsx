@@ -7,15 +7,18 @@ import {
     User, Globe, ShieldCheck, Hotel, Briefcase, Clock
 } from 'lucide-react';
 import { bookingService } from '@/services/booking.service.js';
+import { financialService } from '@/services/financial.service';
+import { toast } from 'react-hot-toast';
 
 // Cấu hình trạng thái hệ thống
 const STATUS_CONFIG = {
     "BOOKED": { label: "CHỜ THANH TOÁN", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
     "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
-    "CHECKIN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
-    "CHECKOUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
+    "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
+    // "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
+    "COMPLETED": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
     "CANCELLED": { label: "ĐÃ HỦY", color: "bg-rose-600", border: "border-rose-200", text: "text-white" },
-    "NOSHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", border: "border-purple-200", text: "text-white" },
+    "NO_SHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", border: "border-purple-200", text: "text-white" },
 };
 
 const AdminBookingList = () => {
@@ -97,6 +100,73 @@ const AdminBookingList = () => {
             </span>
         );
     };
+    // --- LOGIC XỬ LÝ DOWNLOAD FILE EXCEL ---
+    const handleDownloadReport = async (format = 'EXCEL', reportType = 'BOOKING_LIST') => {
+        try {
+            toast.loading(`Đang khởi tạo file ${format}...`, { id: 'export-status' });
+
+            // Xử lý ngày mặc định nếu dateFilter trống để tránh lỗi 2401
+            const today = new Date().toISOString().split('T')[0];
+            const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+
+            const exportRequest = {
+                reportType,
+                format,
+                // Nếu có dateFilter thì lấy ngày đó cho cả start và end (hoặc tùy logic BE)
+                // Nếu không có, gửi một khoảng mặc định an toàn
+                startDate: dateFilter || firstDayOfMonth,
+                endDate: dateFilter || today,
+                status: statusFilter || null,
+                searchTerm: searchTerm || null
+            };
+
+            // Gọi service để lấy ArrayBuffer
+            const buffer = await financialService.exportFinancialReport(exportRequest);
+
+            // Kiểm tra lỗi từ backend trả về dưới dạng JSON trong ArrayBuffer
+            const decoder = new TextDecoder('utf-8');
+            const previewText = decoder.decode(new Uint8Array(buffer).slice(0, 500));
+
+            try {
+                const possibleJson = JSON.parse(previewText);
+                if (possibleJson.code !== 1000 && possibleJson.message) {
+                    toast.error(`Lỗi: ${possibleJson.message}`, { id: 'export-status' });
+                    return;
+                }
+                if (possibleJson.result && possibleJson.result.data) {
+                    const actualData = new Uint8Array(possibleJson.result.data);
+                    downloadFileBlob(actualData, format);
+                    toast.success(`Tải file thành công`, { id: 'export-status' });
+                    return;
+                }
+            } catch (e) {
+                // Nếu không phải JSON, nghĩa là đây là file binary xịn
+            }
+
+            downloadFileBlob(buffer, format);
+            toast.success(`Tải file thành công`, { id: 'export-status' });
+        } catch (error) {
+            console.error("Lỗi xuất file:", error);
+            toast.error("Không thể xuất file. Vui lòng kiểm tra lại khoảng ngày.", { id: 'export-status' });
+        }
+    };
+    // Hàm phụ trợ tạo link download từ Blob
+    const downloadFileBlob = (data, format) => {
+        const contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        const blob = new Blob([data], { type: contentType });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        // Đặt tên file theo ngày hiện tại
+        const timeStamp = new Date().toISOString().split('T')[0];
+        link.download = `Danh_sach_dat_phong_${timeStamp}.xlsx`;
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="bg-[#f1f5f9] min-h-screen font-sans text-slate-800 p-4 md:p-8">
@@ -110,19 +180,23 @@ const AdminBookingList = () => {
                 </div>
 
                 <div className="flex gap-3">
-                    <button onClick={fetchAllBookings} className="p-3 bg-white border border-slate-200 rounded-2xl hover:shadow-md active:scale-95 transition-all">
-                        <RefreshCcw size={20} className={loading ? "animate-spin text-blue-600" : "text-slate-600"} />
+                    <button onClick={fetchAllBookings}
+                            className="p-3 bg-white border border-slate-200 rounded-2xl hover:shadow-md active:scale-95 transition-all">
+                        <RefreshCcw size={20} className={loading ? "animate-spin text-blue-600" : "text-slate-600"}/>
                     </button>
-                    <button className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 shadow-lg active:scale-95 transition-all">
-                        <FileSpreadsheet size={18} /> <span>Xuất Excel</span>
-                    </button>
+                    {/*<button*/}
+                    {/*    onClick={() => handleDownloadReport('EXCEL')}*/}
+                    {/*    className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-slate-800 shadow-lg active:scale-95 transition-all"*/}
+                    {/*>*/}
+                    {/*    <FileSpreadsheet size={18}/> <span>Xuất Excel</span>*/}
+                    {/*</button>*/}
                 </div>
             </div>
 
             {/* Filter Bar */}
             <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="sm:col-span-2 relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/>
                     <input
                         type="text"
                         placeholder="Tìm theo Mã đơn, Tên khách hoặc Khách sạn..."

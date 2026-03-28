@@ -27,7 +27,7 @@ const HotelBookingDetail = () => {
         const fetchDetail = async () => {
             setLoading(true);
             try {
-                const data = await bookingService.getBookingDetail(bookingCode);
+                const data = await bookingService.getBookingDetailOfAdmin(bookingCode);
                 if (data && data.result) setBooking(data.result);
             } catch (err) {
                 console.error("Lỗi lấy chi tiết:", err);

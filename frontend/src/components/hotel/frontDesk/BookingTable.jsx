@@ -110,7 +110,7 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
                                                 {item.bookingStatus === 'NO_SHOW' && (
                                                     <span
                                                         className="inline-flex items-center justify-center px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest h-[42px] w-full shadow-sm">
-                            Đã báo No-show
+                            Đã báo Không đến
                         </span>
                                                 )}
                                                 {item.bookingStatus === 'COMPLETED' && (

@@ -81,13 +81,13 @@ const FrontDeskDashboard = () => {
             const res = await bookingService.reportNoShow(payload);
 
             if (res.code === 1000 || res.result) {
-                toast.success(`Đã đánh dấu No-show cho đơn ${booking.bookingCode}. Phí phạt dự kiến: ${new Intl.NumberFormat('vi-VN').format(res.result.penaltyAmount)} ₫`);
+                toast.success(`Đã đánh dấu Không đến cho đơn ${booking.bookingCode}!`);
                 setNoShowModal({ show: false, booking: null, reason: "" });
                 fetchBookings(); // Reload lại danh sách
             }
         } catch (error) {
             console.error("No-show error:", error);
-            toast.error(error.response?.data?.message || "Lỗi khi báo cáo No-show");
+            toast.error(error.response?.data?.message || "Lỗi khi báo cáo Không đến");
         } finally {
             setLoading(false);
         }

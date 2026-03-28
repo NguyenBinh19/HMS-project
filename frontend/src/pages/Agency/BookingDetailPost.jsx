@@ -27,13 +27,13 @@ const getStatusConfig = (status) => {
             return { label: "CHỜ THANH TOÁN", color: "bg-amber-500", desc: "Đơn hàng sẽ bị hủy nếu không thanh toán đúng hạn." };
         case "CONFIRMED":
             return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
-        case "CHECKIN":
+        case "CHECKED-IN":
             return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách hàng đã làm thủ tục nhận phòng." };
-        case "CHECKOUT":
+        case "COMPLETED":
             return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch đã kết thúc." };
         case "CANCELLED":
             return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy hoặc quá hạn thanh toán." };
-        case "NOSHOW":
+        case "NO_SHOW":
             return { label: "KHÔNG ĐẾN", color: "bg-purple-600", desc: "Khách hàng không đến nhận phòng theo lịch." };
         default:
             return { label: s, color: "bg-slate-400", desc: "" };
