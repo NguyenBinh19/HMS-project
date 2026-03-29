@@ -43,8 +43,8 @@ const ProtectedRoute = ({ children, roles: requiredRoles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // 3. Ưu tiên ADMIN - Cho phép vào mọi trang
-    if (userRolesStrings.some(role => role.includes("ADMIN"))) return children;
+    // // 3. Ưu tiên ADMIN - Cho phép vào mọi trang
+    // if (userRolesStrings.some(role => role.includes("ADMIN"))) return children;
 
     // 4. THOÁT LOOP: Luôn cho phép ở lại các trang KYC
     const kycPaths = ["/kyc/status", "/profile"];
@@ -54,8 +54,16 @@ const ProtectedRoute = ({ children, roles: requiredRoles }) => {
 
     // 5. Kiểm tra quyền truy cập Route (requiredRoles)
     if (requiredRoles && requiredRoles.length > 0) {
+        // Kiểm tra xem User có ít nhất 1 role nằm trong danh sách requiredRoles không
         const isAllowed = requiredRoles.some(role => userRolesStrings.includes(role));
-        if (!isAllowed) return <Navigate to="/homepage" replace />;
+        if (!isAllowed) {
+            // Nếu là Admin nhưng đi lạc vào trang Hotel/Agency -> về Admin Dashboard
+            if (userRolesStrings.some(role => role.includes("ADMIN"))) {
+                return <Navigate to="/admin/dashboard" replace />;
+            }
+            // Các trường hợp khác về trang chủ
+            return <Navigate to="/homepage" replace />;
+        }
     }
 
     // 6. KIỂM TRA TRẠNG THÁI XÁC THỰC (KYC)
