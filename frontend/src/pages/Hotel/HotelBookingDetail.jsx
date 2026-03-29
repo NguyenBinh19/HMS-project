@@ -314,8 +314,8 @@ const HotelBookingDetail = () => {
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</span>
-                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${booking.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 shadow-sm'}`}>
-                                            {booking.paymentStatus === 'paid' ? 'Đã thu tiền' : 'Chưa thanh toán'}
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${booking.paymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 shadow-sm'}`}>
+                                            {booking.paymentStatus === 'PAID' ? 'Đã thu tiền' : 'Chưa thanh toán'}
                                         </span>
                                     </div>
                                 </div>

@@ -14,27 +14,29 @@ import {
 import { bookingService } from '@/services/booking.service.js';
 
 const STATUS_TAB_MAP = {
-    "Sắp khởi hành": ["booked", "confirmed", "paid"],
-    "Đang lưu trú": ["checked_in", "checkin"],
-    "Hoàn thành": ["completed", "checkout"],
-    "Đã hủy": ["cancelled", "noshow"],
+    "Sắp khởi hành": ["BOOKED", "CONFIRMED", "PAID"],
+    "Đang lưu trú": ["CHECKED-IN", "CHECKIN"],
+    "Hoàn thành": ["COMPLETED", "CHECKOUT"],
+    "Đã hủy": ["CANCELLED", "NO_SHOW", "NO_SHOW"],
 };
 
 const getTabFromStatus = (bookingStatus) => {
-    const s = bookingStatus?.toLowerCase();
-    if (["booked", "confirmed", "paid"].includes(s)) return "Sắp khởi hành";
-    if (["checked_in", "checkin"].includes(s)) return "Đang lưu trú";
-    if (["completed", "checkout"].includes(s)) return "Hoàn thành";
-    if (["cancelled", "noshow"].includes(s)) return "Đã hủy";
+    const s = bookingStatus?.toUpperCase();
+    if (STATUS_TAB_MAP["Sắp khởi hành"].includes(s)) return "Sắp khởi hành";
+    if (STATUS_TAB_MAP["Đang lưu trú"].includes(s)) return "Đang lưu trú";
+    if (STATUS_TAB_MAP["Hoàn thành"].includes(s)) return "Hoàn thành";
+    if (STATUS_TAB_MAP["Đã hủy"].includes(s)) return "Đã hủy";
     return "Sắp khởi hành";
 };
 
 const getStatusLabel = (bookingStatus, paymentStatus) => {
-    const s = bookingStatus?.toLowerCase();
-    if (s === "cancelled") return "ĐÃ HỦY";
-    if (s === "checkout" || s === "completed") return "HOÀN THÀNH";
-    if (paymentStatus?.toLowerCase() === "paid") return "PAID & CONFIRMED";
-    return (bookingStatus || "").toUpperCase();
+    const s = bookingStatus?.toUpperCase();
+    const p = paymentStatus?.toUpperCase();
+
+    if (s === "CANCELLED" || s === "NO_SHOW" || s === "NOSHOW") return "ĐÃ HỦY";
+    if (s === "CHECKOUT" || s === "COMPLETED") return "HOÀN THÀNH";
+    if (p === "PAID") return "PAID & CONFIRMED";
+    return s || "";
 };
 
 const formatDate = (dateStr) => {
@@ -91,18 +93,23 @@ const OrderListScreen = () => {
     }, [page]);
 
     const filteredOrders = orders.filter((o) => {
-        const matchTab = STATUS_TAB_MAP[activeTab]?.includes(o.bookingStatus?.toLowerCase());
+        // Luôn ép status về UpperCase để so sánh với Map
+        const statusUpper = o.bookingStatus?.toUpperCase();
+        const matchTab = STATUS_TAB_MAP[activeTab]?.includes(statusUpper);
+
+        const searchLower = searchText.toLowerCase();
         const matchSearch = !searchText ||
-            o.bookingCode?.toLowerCase().includes(searchText.toLowerCase()) ||
-            o.guestName?.toLowerCase().includes(searchText.toLowerCase()) ||
-            o.hotelName?.toLowerCase().includes(searchText.toLowerCase());
+            o.bookingCode?.toLowerCase().includes(searchLower) ||
+            o.guestName?.toLowerCase().includes(searchLower) ||
+            o.hotelName?.toLowerCase().includes(searchLower);
+
         return matchTab && matchSearch;
     });
 
     const tabCounts = Object.fromEntries(
-        Object.entries(STATUS_TAB_MAP).map(([tab, statuses]) => [
-            tab,
-            orders.filter(o => statuses.includes(o.bookingStatus?.toLowerCase())).length,
+        Object.entries(STATUS_TAB_MAP).map(([tabName, statuses]) => [
+            tabName,
+            orders.filter(o => statuses.includes(o.bookingStatus?.toUpperCase())).length,
         ])
     );
 
@@ -175,11 +182,12 @@ const OrderListScreen = () => {
                                             {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
                                         </p>
                                     </div>
-                                    <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
-                                        statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
-                                            statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
-                                    }`}>
-                                        {statusLabel !== 'ĐÃ HỦY' && <CheckIcon />}
+                                    <div
+                                        className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
+                                            statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                                statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                                        }`}>
+                                        {statusLabel !== 'ĐÃ HỦY' && <CheckIcon/>}
                                         {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
                                         {statusLabel}
                                     </div>
