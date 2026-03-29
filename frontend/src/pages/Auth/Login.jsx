@@ -203,16 +203,16 @@ const Login = () => {
                     <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-16">
                         <div className="max-w-md mx-auto w-full">
 
-                            <div className="mb-10 relative">
+                            <div className="mb-10 relative text-center">
                                 <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-100 rounded-full blur-xl opacity-50"></div>
-                                <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
+                                <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2 flex items-center justify-center gap-3">
                                     <Hotel className="text-blue-500 animate-pulse" size={28} />
                                     HMS-B2B
                                 </h2>
                                 <p className="text-slate-500 text-lg font-medium">
                                     Hệ thống quản lý khách sạn<span className="text-blue-600 font-bold"> chuyên nghiệp</span>.
                                 </p>
-                                <div className="h-1.5 w-20 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mt-4"></div>
+                                <div className="h-1.5 w-20 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mt-4 mx-auto"></div>
                             </div>
 
                             {error && (
@@ -296,15 +296,26 @@ const Login = () => {
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : <>Đăng nhập ngay <LogIn size={20} className="group-hover:translate-x-1 transition-transform" /></>}
                                 </button>
+                                <div className="text-center mt-4">
+                                    <span className="text-sm text-slate-500 font-medium">
+                                        Bạn chưa có tài khoản?{" "}
+                                    </span>
+                                    <Link
+                                        to="/register"
+                                        className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                    >
+                                        Đăng ký ngay
+                                    </Link>
+                                </div>
                             </form>
 
-                            <div className="my-8 flex items-center gap-4">
+                            <div className="my-6 flex items-center gap-4">
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hoặc tiếp tục với</span>
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 mt-6">
                                 <button
                                     type="button"
                                     onClick={() => handleSocialLogin('google')}
@@ -320,12 +331,6 @@ const Login = () => {
                             </div>
                         </div>
 
-                        <div className="absolute top-0 right-0 p-8 hidden md:flex gap-4">
-                            <span className="text-sm font-semibold text-slate-400">Bạn chưa có tài khoản?</span>
-                            <Link to="/register" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                Đăng ký ngay
-                            </Link>
-                        </div>
                     </div>
                 </div>
             </div>

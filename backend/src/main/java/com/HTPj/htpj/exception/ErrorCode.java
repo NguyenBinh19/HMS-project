@@ -26,7 +26,7 @@ public enum ErrorCode {
     RESET_TOKEN_INVALID(1016, "Liên kết đặt lại mật khẩu không hợp lệ.", HttpStatus.BAD_REQUEST),
     RESET_TOKEN_EXPIRED(1017, "Liên kết đặt lại mật khẩu đã hết hạn.", HttpStatus.BAD_REQUEST),
     PASSWORD_SAME_AS_OLD(1018, "Mật khẩu mới không được trùng với mật khẩu cũ.", HttpStatus.BAD_REQUEST),
-    INVALID_PHONE(1019, "Số điện thoại không hợp lệ.", HttpStatus.BAD_REQUEST),
+    INVALID_PHONE(1019, "Số điện thoại không được để trống", HttpStatus.BAD_REQUEST),
     INVALID_IMAGE_FORMAT(1020, "Định dạng ảnh không hợp lệ. Chỉ chấp nhận jpg, jpeg, png, webp.", HttpStatus.BAD_REQUEST),
     FILE_TOO_LARGE(1021, "Kích thước file vượt quá giới hạn cho phép (5MB).", HttpStatus.BAD_REQUEST),
     AVATAR_UPLOAD_FAILED(1022, "Tải ảnh đại diện thất bại.", HttpStatus.INTERNAL_SERVER_ERROR),

@@ -356,40 +356,47 @@ const UserProfile = () => {
 
                         {/* Editable fields */}
                         {editMode ? (
-                                <>
+                            <>
                                 <div>
                                     <label
                                         className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                        <Phone size={14} className="text-slate-400"/> Số điện thoại
+                                        <Phone size={14} className="text-slate-400" /> Số điện thoại
                                     </label>
                                     <input
                                         type="text"
                                         value={editData.phone}
                                         onChange={(e) => {
-                                            setEditData((p) => ({...p, phone: e.target.value}));
-                                            if (errors.phone) setErrors(prev => ({...prev, phone: null})); // Clear lỗi khi đang gõ
+                                            const value = e.target.value;
+
+                                            // chỉ cho số (0-9)
+                                            if (/^\d*$/.test(value)) {
+                                                setEditData((p) => ({ ...p, phone: value }));
+
+                                                if (errors.phone) {
+                                                    setErrors(prev => ({ ...prev, phone: null }));
+                                                }
+                                            }
                                         }}
                                         placeholder="Nhập số điện thoại"
-                                        className={`w-full px-4 py-3 border rounded-xl font-medium outline-none transition-all ${
-                                            errors.phone
+                                        className={`w-full px-4 py-3 border rounded-xl font-medium outline-none transition-all ${errors.phone
                                                 ? "border-red-500 bg-red-50 focus:ring-red-100"
                                                 : "border-slate-200 focus:ring-blue-200 focus:border-blue-400"
-                                        }`}
+                                            }`}
                                     />
                                     {errors.phone &&
                                         <p className="text-red-500 text-[11px] font-bold mt-1 ml-1 animate-shake">{errors.phone}</p>}
                                 </div>
-                            <div className="md:col-span-2">
-                                <label
-                                    className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                    <MapPin size={14} className="text-slate-400"/> Địa chỉ
-                                </label>
-                                <input
-                                    type="text"
-                                    value={editData.address}
-                                    onChange={(e) => setEditData((p) => ({...p, address: e.target.value}))}
-                                    placeholder="Nhập địa chỉ"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
+                                <div className="md:col-span-2">
+                                    <label
+                                        className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                        <MapPin size={14} className="text-slate-400" /> Địa chỉ
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editData.address}
+                                        onChange={(e) => setEditData((p) => ({ ...p, address: e.target.value }))}
+                                        placeholder="Nhập địa chỉ"
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
                                     />
                                 </div>
                             </>
