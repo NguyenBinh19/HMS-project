@@ -1,24 +1,34 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.booking.CancelBookingRequest;
+import com.HTPj.htpj.dto.request.booking.CheckinRequest;
 import com.HTPj.htpj.dto.request.booking.CreateBookingRequest;
+import com.HTPj.htpj.dto.request.booking.NoShowRequest;
 import com.HTPj.htpj.dto.request.booking.RoomAvailabilityRequest;
 import com.HTPj.htpj.dto.request.booking.UpdateGuestRequest;
 import com.HTPj.htpj.dto.request.roomHold.CreateRoomHoldRequest;
 import com.HTPj.htpj.dto.request.roomHold.ExtendRoomHoldRequest;
 import com.HTPj.htpj.dto.response.booking.BookingDetailResponse;
 import com.HTPj.htpj.dto.response.booking.BookingHistoryResponse;
+import com.HTPj.htpj.dto.response.booking.CancelBookingResponse;
 import com.HTPj.htpj.dto.response.booking.CreateBookingResponse;
+import com.HTPj.htpj.dto.response.booking.DepartureListResponse;
 import com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse;
+import com.HTPj.htpj.dto.response.booking.NoShowResponse;
 import com.HTPj.htpj.dto.response.booking.RoomAvailabilityResponse;
 import com.HTPj.htpj.dto.response.roomHold.RoomHoldResponse;
 import com.HTPj.htpj.service.BookingService;
 import com.HTPj.htpj.service.RoomHoldService;
+import com.HTPj.htpj.service.VoucherService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -32,6 +42,7 @@ import java.util.List;
 public class BookingController {
     BookingService bookingService;
     RoomHoldService roomHoldService;
+    VoucherService voucherService;
 
     //Check room avai for booking
     @PostMapping("/room_avai")
@@ -101,6 +112,14 @@ public class BookingController {
                 .build();
     }
 
+    @GetMapping("/detail-with-nouid/{bookingCode}")
+    ApiResponse<BookingDetailResponse> getBookingDetailWithNoUserId(
+            @PathVariable String bookingCode
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.getBookingDetailWithNoUserId(bookingCode))
+                .build();
+    }
     //UC28
     @PostMapping("/update-guest")
     ApiResponse<BookingDetailResponse> updateGuestInformation(
@@ -127,5 +146,88 @@ public class BookingController {
                 .build();
     }
 
+    // =========================================================================
+    // UC-027: Download Booking Voucher (PDF)
+    // =========================================================================
+    @GetMapping("/voucher/{bookingCode}")
+    ResponseEntity<byte[]> downloadVoucher(@PathVariable String bookingCode) {
+        byte[] pdfData = voucherService.generateVoucherPdf(bookingCode);
+        String fileName = voucherService.getVoucherFileName(bookingCode);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfData);
+    }
+
+    // =========================================================================
+    // UC-051: View Daily Departure List
+    // =========================================================================
+    @GetMapping("/checkout/today")
+    ApiResponse<List<DepartureListResponse>> getTodayDepartures() {
+        return ApiResponse.<List<DepartureListResponse>>builder()
+                .result(bookingService.getTodayDepartures())
+                .build();
+    }
+
+    @GetMapping("/checkout/{date}")
+    ApiResponse<List<DepartureListResponse>> getDeparturesByDate(@PathVariable LocalDate date) {
+        return ApiResponse.<List<DepartureListResponse>>builder()
+                .result(bookingService.getDeparturesByDate(date))
+                .build();
+    }
+
+    // UC-051: Perform checkout
+    @PostMapping("/checkout/{bookingCode}/process")
+    ApiResponse<BookingDetailResponse> performCheckout(@PathVariable String bookingCode) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.performCheckout(bookingCode))
+                .build();
+    }
+
+    // UC-051: Express checkout (no bill)
+    @PostMapping("/checkout/{bookingCode}/express")
+    ApiResponse<BookingDetailResponse> expressCheckout(@PathVariable String bookingCode) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.expressCheckout(bookingCode))
+                .build();
+    }
+
+    // =========================================================================
+    // UC-031: Cancel Booking Order
+    // =========================================================================
+    @PostMapping("/cancel")
+    ApiResponse<CancelBookingResponse> cancelBooking(@RequestBody CancelBookingRequest request) {
+        return ApiResponse.<CancelBookingResponse>builder()
+                .result(bookingService.cancelBooking(request))
+                .build();
+    }
+
+    // =========================================================================
+    // UC-052: Check-in / Check-out Guest
+    // =========================================================================
+    @PostMapping("/checkin")
+    ApiResponse<BookingDetailResponse> checkinGuest(@RequestBody CheckinRequest request) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.checkinGuest(request))
+                .build();
+    }
+
+    @PostMapping("/checkout-guest/{bookingCode}")
+    ApiResponse<BookingDetailResponse> checkoutGuest(@PathVariable String bookingCode) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.checkoutGuest(bookingCode))
+                .build();
+    }
+
+    // =========================================================================
+    // UC-053: Report No-show
+    // =========================================================================
+    @PostMapping("/no-show")
+    ApiResponse<NoShowResponse> reportNoShow(@RequestBody NoShowRequest request) {
+        return ApiResponse.<NoShowResponse>builder()
+                .result(bookingService.reportNoShow(request))
+                .build();
+    }
 
 }

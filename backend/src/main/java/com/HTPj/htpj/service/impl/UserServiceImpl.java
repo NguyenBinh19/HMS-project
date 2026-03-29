@@ -97,12 +97,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public UserResponse getMyInfo() {
-        var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
-
-        Users user = userRepository.findByUsername(name).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
-        return userMapper.toUserResponse(user);
+        return userMapper.toUserResponse(getCurrentUserr());
     }
 
     @PostAuthorize("returnObject.username == authentication.name")
@@ -137,7 +132,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse updateMyProfile(ProfileUpdateRequest request) {
-        Users user = getCurrentUser();
+        Users user = getCurrentUserr();
 
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
@@ -164,7 +159,7 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorCode.FILE_TOO_LARGE);
         }
 
-        Users user = getCurrentUser();
+        Users user = getCurrentUserr();
 
         try {
             // Delete old avatar if exists
@@ -190,7 +185,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse removeMyAvatar() {
-        Users user = getCurrentUser();
+        Users user = getCurrentUserr();
 
         if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
             String oldKey = extractS3Key(user.getAvatarUrl());
@@ -248,6 +243,22 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
     }
 
+
+    private Users getCurrentUserr() {
+        var context = SecurityContextHolder.getContext();
+        var authentication = context.getAuthentication();
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            String userId = jwt.getClaim("userId");
+
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        }
+
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
     private String extractS3Key(String url) {
         if (url == null) return null;
         int idx = url.indexOf(".amazonaws.com/");
@@ -266,5 +277,30 @@ public class UserServiceImpl implements UserService {
     private String generateOtp() {
         int otp = 100000 + SECURE_RANDOM.nextInt(900000);
         return String.valueOf(otp);
+    }
+
+    @Override
+    public UserResponse selectRoleForCurrentUser(String role) {
+        Users user = getCurrentUserr();
+
+        // Only allow role selection if user has no roles (SSO users who haven't chosen yet)
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_ROLE_SELECTION);
+        }
+
+        if (!PredefinedRole.HOTEL_MANAGER_ROLE.equals(role)
+                && !PredefinedRole.AGENCY_MANAGER_ROLE.equals(role)) {
+            throw new AppException(ErrorCode.INVALID_ROLE_SELECTION);
+        }
+
+        Role selectedRole = roleRepository.findById(role)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_ROLE_SELECTION));
+
+        HashSet<Role> roles = new HashSet<>();
+        roles.add(selectedRole);
+        user.setRoles(roles);
+
+        user = userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 }

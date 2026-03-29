@@ -193,40 +193,54 @@ const UserProfile = () => {
         <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10 font-sans">
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900">Hồ sơ của tôi</h1>
-                        <p className="text-slate-500 text-sm mt-1">Xem và quản lý thông tin cá nhân</p>
-                    </div>
-                    {!editMode ? (
-                        <button
-                            onClick={() => setEditMode(true)}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all"
-                        >
-                            <Pencil size={16} /> Chỉnh sửa
-                        </button>
-                    ) : (
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setEditMode(false);
-                                    setEditData({ phone: profile.phone || "", address: profile.address || "" });
-                                    setSaveError(null);
-                                }}
-                                className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all disabled:opacity-70"
-                            >
-                                {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                                Lưu
-                            </button>
+                {/* Header */}
+                <div className="mb-8">
+                    {/* Nút Back đơn giản */}
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="group flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors mb-4"
+                    >
+                        <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm group-hover:bg-slate-50">
+                            <ArrowLeft size={18} />
                         </div>
-                    )}
+                        <span className="text-sm font-bold">Quay lại</span>
+                    </button>
+
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-slate-900">Hồ sơ của tôi</h1>
+                            <p className="text-slate-500 text-sm mt-1">Xem và quản lý thông tin cá nhân</p>
+                        </div>
+                        {!editMode ? (
+                            <button
+                                onClick={() => setEditMode(true)}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all"
+                            >
+                                <Pencil size={16} /> Chỉnh sửa
+                            </button>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setEditMode(false);
+                                        setEditData({ phone: profile.phone || "", address: profile.address || "" });
+                                        setSaveError(null);
+                                    }}
+                                    className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-[#006AFF] hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all disabled:opacity-70"
+                                >
+                                    {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                    Lưu
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Success / Error Messages */}
@@ -342,40 +356,47 @@ const UserProfile = () => {
 
                         {/* Editable fields */}
                         {editMode ? (
-                                <>
+                            <>
                                 <div>
                                     <label
                                         className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                        <Phone size={14} className="text-slate-400"/> Số điện thoại
+                                        <Phone size={14} className="text-slate-400" /> Số điện thoại
                                     </label>
                                     <input
                                         type="text"
                                         value={editData.phone}
                                         onChange={(e) => {
-                                            setEditData((p) => ({...p, phone: e.target.value}));
-                                            if (errors.phone) setErrors(prev => ({...prev, phone: null})); // Clear lỗi khi đang gõ
+                                            const value = e.target.value;
+
+                                            // chỉ cho số (0-9)
+                                            if (/^\d*$/.test(value)) {
+                                                setEditData((p) => ({ ...p, phone: value }));
+
+                                                if (errors.phone) {
+                                                    setErrors(prev => ({ ...prev, phone: null }));
+                                                }
+                                            }
                                         }}
                                         placeholder="Nhập số điện thoại"
-                                        className={`w-full px-4 py-3 border rounded-xl font-medium outline-none transition-all ${
-                                            errors.phone
+                                        className={`w-full px-4 py-3 border rounded-xl font-medium outline-none transition-all ${errors.phone
                                                 ? "border-red-500 bg-red-50 focus:ring-red-100"
                                                 : "border-slate-200 focus:ring-blue-200 focus:border-blue-400"
-                                        }`}
+                                            }`}
                                     />
                                     {errors.phone &&
                                         <p className="text-red-500 text-[11px] font-bold mt-1 ml-1 animate-shake">{errors.phone}</p>}
                                 </div>
-                            <div className="md:col-span-2">
-                                <label
-                                    className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                    <MapPin size={14} className="text-slate-400"/> Địa chỉ
-                                </label>
-                                <input
-                                    type="text"
-                                    value={editData.address}
-                                    onChange={(e) => setEditData((p) => ({...p, address: e.target.value}))}
-                                    placeholder="Nhập địa chỉ"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
+                                <div className="md:col-span-2">
+                                    <label
+                                        className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                        <MapPin size={14} className="text-slate-400" /> Địa chỉ
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editData.address}
+                                        onChange={(e) => setEditData((p) => ({ ...p, address: e.target.value }))}
+                                        placeholder="Nhập địa chỉ"
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
                                     />
                                 </div>
                             </>

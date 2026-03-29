@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft, Copy, Download, UserCircle, FileText,
-    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar
+    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar, Loader2
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { bookingService } from '@/services/booking.service.js';
 import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.jsx';
 import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
+import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -26,13 +27,13 @@ const getStatusConfig = (status) => {
             return { label: "CHỜ THANH TOÁN", color: "bg-amber-500", desc: "Đơn hàng sẽ bị hủy nếu không thanh toán đúng hạn." };
         case "CONFIRMED":
             return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
-        case "CHECKIN":
+        case "CHECKED-IN":
             return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách hàng đã làm thủ tục nhận phòng." };
-        case "CHECKOUT":
+        case "COMPLETED":
             return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch đã kết thúc." };
         case "CANCELLED":
             return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy hoặc quá hạn thanh toán." };
-        case "NOSHOW":
+        case "NO_SHOW":
             return { label: "KHÔNG ĐẾN", color: "bg-purple-600", desc: "Khách hàng không đến nhận phòng theo lịch." };
         default:
             return { label: s, color: "bg-slate-400", desc: "" };
@@ -49,6 +50,8 @@ const BookingDetailPost = () => {
     const [error, setError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -65,9 +68,68 @@ const BookingDetailPost = () => {
         if (bookingCode) fetchDetail();
     }, [bookingCode]);
 
-// Hàm xử lý sau khi Modal lưu thành công
+    //Download voucher
+    const handleDownloadVoucher = async () => {
+        if (!booking?.bookingCode) return;
+
+        try {
+            setIsDownloading(true);
+            const response = await bookingService.downloadVoucher(booking.bookingCode);
+
+            // Kiểm tra nếu response rỗng
+            if (!response) {
+                throw new Error("Dữ liệu file trống");
+            }
+
+            const blob = new Blob([response], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+
+            const sanitizedName = (booking.guestName || "Guest").trim().replace(/\s+/g, '_');
+            link.setAttribute("download", `Voucher_${booking.bookingCode}_${sanitizedName}.pdf`);
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // Giải phóng bộ nhớ
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
+            alert("Tải Voucher thành công!");
+
+        } catch (error) {
+            console.error("Download Error:", error);
+            const status = error.response?.status;
+            if (status === 403) {
+                alert("Lỗi: Voucher chỉ khả dụng cho đơn hàng đã xác nhận (Confirmed).");
+            } else if (status === 404) {
+                alert("Lỗi: Không tìm thấy file Voucher trên hệ thống.");
+            } else {
+                alert("Hệ thống không thể tạo file lúc này. Vui lòng thử lại sau.");
+            }
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    // Hàm xử lý sau khi Modal lưu thành công
     const handleUpdateSuccess = (updatedBooking) => {
         setBooking(updatedBooking);
+    };
+
+    // Xử lý hủy phòng
+    const canCancel = () => {
+        if (!booking) return false;
+        const s = booking.bookingStatus?.toUpperCase();
+        // Chỉ cho phép hủy khi chưa Check-in và trạng thái là CONFIRMED hoặc BOOKED
+        const validStatus = ['CONFIRMED', 'BOOKED'].includes(s);
+        if (!validStatus) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkIn = new Date(booking.checkInDate);
+        checkIn.setHours(0, 0, 0, 0);
+        // Không cho phép bấm nút hủy nếu ngày hiện tại đã sau ngày Check-in
+        return checkIn >= today;
     };
 
     // Điều kiện cho phép sửa thông tin
@@ -83,9 +145,38 @@ const BookingDetailPost = () => {
         return (s === 'CONFIRMED') && checkIn > today;
     };
 
-    const canCancel = () => {
-        const s = booking?.bookingStatus?.toUpperCase();
-        return s === 'CONFIRMED';
+    // Hàm xử lý hủy đơn
+    const handleCancelBooking = async (reason) => {
+        const isConfirmed = window.confirm(
+            "XÁC NHẬN HỦY: Hành động này không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?"
+        );
+        if (!isConfirmed) return;
+
+        try {
+            const payload = {
+                bookingCode: booking.bookingCode,
+                reason: reason || "Yêu cầu hủy"
+            };
+            const response = await bookingService.cancelBooking(payload);
+            const data = response.result;
+            // Cập nhật trạng thái tại chỗ
+            setBooking(prev => ({
+                ...prev,
+                bookingStatus: 'CANCELLED'
+            }));
+            // Hiển thị thông báo chi tiết
+            alert(
+                `Hủy thành công!\n` +
+                `---------------------------\n` +
+                `Mã đơn: ${data.bookingCode}\n` +
+                `Phí phạt hủy: ${formatCurrency(data.cancellationPenalty)}\n` +
+                `Tiền hoàn lại: ${formatCurrency(data.refundAmount)}\n` +
+                `Lý do: ${data.reason}`
+            );
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
+            alert("Lỗi: " + errorMsg);
+        }
     };
 
     const handleCopy = (text) => {
@@ -157,8 +248,27 @@ const BookingDetailPost = () => {
                         </div>
                         {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                            <button className="flex items-center justify-center gap-2 bg-[#006ce4] text-white py-2.5 rounded-md text-xs font-bold hover:bg-blue-700 transition-colors">
-                                <Download size={14}/> Tải Voucher
+                            {/* Nút Tải Voucher */}
+                            <button
+                                onClick={handleDownloadVoucher}
+                                disabled={isDownloading}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
+                                    isDownloading
+                                        ? "bg-slate-300 cursor-wait text-slate-500" // Đổi màu khi đang tải
+                                        : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95"
+                                }`}
+                            >
+                                {isDownloading ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin"/>
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={14}/>
+                                        <span>Tải Voucher</span>
+                                    </>
+                                )}
                             </button>
 
                             {/* Sửa khách */}
@@ -168,7 +278,8 @@ const BookingDetailPost = () => {
                                     canEdit() ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50" : "bg-slate-50 text-slate-300 border-transparent cursor-not-allowed"
                                 }`}
                             >
-                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa thông tin khách
+                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa
+                                thông tin khách
                             </button>
 
                             {/* Đánh giá: Hiện sau CHECKOUT */}
@@ -187,11 +298,18 @@ const BookingDetailPost = () => {
                                 </button>
                             )}
 
-                            <button className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
+                            <button
+                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
                                 <FileText size={14}/> Hóa đơn
                             </button>
 
-                            <button className="flex items-center justify-center gap-2 bg-[#fef2f2] text-rose-600 py-2.5 rounded-md text-xs font-bold hover:bg-rose-100">
+                            {/* Nút Hủy phòng */}
+                            <button
+                                onClick={() => canCancel() ? setIsCancelModalOpen(true) : alert("Không thể hủy đơn lúc này.")}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
+                                    canCancel() ? "bg-[#fef2f2] text-rose-600 hover:bg-rose-100" : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                                }`}
+                            >
                                 <XCircle size={14}/> Hủy phòng
                             </button>
                         </div>
@@ -326,7 +444,7 @@ const BookingDetailPost = () => {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Trạng thái TT:</span>
-                                    <span className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                                    <span className={`font-bold ${booking.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-500'}`}>
                                         {booking.paymentStatus?.toUpperCase() || "—"}
                                     </span>
                                 </div>
@@ -341,7 +459,11 @@ const BookingDetailPost = () => {
                                 </div>
                                 <div className="bg-[#fef2f2] p-3 rounded-lg border-l-4 border-rose-500">
                                     <p className="text-[11px] font-bold text-rose-700">Chính sách hủy</p>
-                                    <p className="text-xs text-rose-600 leading-relaxed">Vui lòng liên hệ khách sạn để biết chính sách hủy.</p>
+                                    <p className="text-xs text-rose-600 leading-relaxed">
+                                        Phí phạt được tính dựa trên thời điểm hủy so với ngày Check-in.
+                                        Hệ thống sẽ tự động trừ phí vào số tiền đã thanh toán và hoàn trả phần còn lại
+                                        vào ví của bạn.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -372,6 +494,13 @@ const BookingDetailPost = () => {
                 onClose={() => setIsReviewModalOpen(false)}
                 booking={booking}
                 onSuccess={() => setBooking(prev => ({ ...prev, hasFeedback: true }))}
+            />
+
+            <CancelBookingModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                booking={booking}
+                onConfirm={handleCancelBooking}
             />
         </div>
     );

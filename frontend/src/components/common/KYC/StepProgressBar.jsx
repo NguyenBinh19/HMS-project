@@ -26,9 +26,9 @@ const StepProgressBar = ({ currentStep }) => {
                         <React.Fragment key={step}>
                             {/* Tiêu đề Bước */}
                             <span className={`text-[13px] font-bold whitespace-nowrap transition-colors duration-300 ${
-                                isActive ? 'text-blue-600' : 'text-slate-700'
-                            } ${!isActive && !isCompleted ? 'text-slate-400 font-medium' : ''}`}>
-                                {step}
+                                (isActive || isCompleted) ? 'text-blue-600' : 'text-slate-400 font-medium'
+                            }`}>
+                                 {step}
                             </span>
 
                             {/* Thanh nối (Line) */}
@@ -36,7 +36,7 @@ const StepProgressBar = ({ currentStep }) => {
                                 <div className="w-24 h-[1px] bg-slate-200">
                                     <div
                                         className="h-full bg-blue-600 transition-all duration-500"
-                                        style={{ width: isCompleted ? '100%' : '0%' }}
+                                        style={{width: isCompleted ? '100%' : '0%'}}
                                     ></div>
                                 </div>
                             )}

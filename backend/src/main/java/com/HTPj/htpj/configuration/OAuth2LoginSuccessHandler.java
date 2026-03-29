@@ -61,20 +61,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         Users user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            // Create new user with HOTEL_MANAGER role by default (can be changed later)
-            Role defaultRole = roleRepository.findById(PredefinedRole.HOTEL_MANAGER_ROLE)
-                    .orElseGet(() -> roleRepository.findById(PredefinedRole.USER_ROLE).orElse(null));
-
+            // Create new user WITHOUT any default role — user must choose role on frontend
             user = Users.builder()
                     .username(generateUniqueUsername(name, email))
                     .email(email)
                     .googleId(googleId)
                     .status("ACTIVE") // Google accounts are pre-verified
-                    .roles(defaultRole != null ? new HashSet<>(Set.of(defaultRole)) : new HashSet<>())
+                    .roles(new HashSet<>())
                     .build();
 
             user = userRepository.save(user);
-            log.info("Created new user from Google OAuth2: {}", email);
+            log.info("Created new user from Google OAuth2 (no role assigned): {}", email);
         } else {
             // Link Google ID if not already linked
             if (user.getGoogleId() == null || user.getGoogleId().isBlank()) {
@@ -133,6 +130,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .claim("scope", buildScope(user))
                 .claim("userId", user.getId())
                 .claim("email", user.getEmail())
+                .claim("hotelId", user.getHotel() != null ? user.getHotel().getHotelId() : null)
+                .claim("agencyId", user.getAgency() != null ? user.getAgency().getAgencyId() : null)
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());

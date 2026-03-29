@@ -81,6 +81,11 @@ public interface PartnerVerificationRepository
 """)
     List<PartnerVerification> findVerifiedByAgencyOrderByVersionDesc(Long agencyId);
 
-
+    @Query("""
+        SELECT p FROM PartnerVerification p
+        WHERE p.agency.agencyId = :agencyId
+        ORDER BY p.version DESC
+    """)
+    List<PartnerVerification> findLatestByAgencyId(@Param("agencyId") Long agencyId);
 
 }

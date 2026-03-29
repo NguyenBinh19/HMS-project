@@ -5,7 +5,7 @@ const StatCard = ({ title, count, sub, type, active, onClick }) => {
     const icons = {
         arrival: <ChevronLeft className="rotate-90 text-blue-600" />,
         departure: <ChevronRight className="-rotate-90 text-amber-500" />,
-        stay: <Home className="text-emerald-500" />
+        // stay: <Home className="text-emerald-500" />
     };
 
     return (

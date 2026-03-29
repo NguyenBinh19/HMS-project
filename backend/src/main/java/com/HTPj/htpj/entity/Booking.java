@@ -104,6 +104,12 @@ public class Booking {
     @Column(name = "has_feedback")
     private Boolean hasFeedback;
 
+    @Column(name = "cancellation_penalty", precision = 12, scale = 2)
+    private BigDecimal cancellationPenalty;
+
+    @Column(name = "refund_amount", precision = 12, scale = 2)
+    private BigDecimal refundAmount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;

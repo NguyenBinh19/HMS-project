@@ -42,25 +42,25 @@ const Sidebar = () => {
         {
             icon: <Wallet size={20} />,
             label: "TRUNG TÂM TÀI CHÍNH",
-            path: "/homepage",
+            path: "/agency/prepaid",
             subItems: [
-                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/homepage" },
-                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/homepage" },
+                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/agency/prepaid" },
+                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/agency/credit-wallet" },
             ]
         },
         {
             icon: <History size={20} />,
             label: "LỊCH SỬ GIAO DỊCH",
-            path: "/homepage"
+            path: "/agency/transaction-history"
         },
         {
             icon: <CalendarDays size={20} />,
             label: "QUẢN LÝ BOOKING",
-            path: "/agency/booking-list", // ❗ đổi lại
+            path: "/agency/booking-list", //
             subItems: [
                 // { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/agency/booking-checkout" },
                 { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/agency/booking-list" },
-                { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
+                // { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
             ]
         }
     ];

@@ -7,6 +7,10 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
     const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [isFetchingOldData, setIsFetchingOldData] = useState(false);
+    const [addressError, setAddressError] = useState("");
+    const [placeError, setPlaceError] = useState("");
+    const [dateError, setDateError] = useState("");
+    const today = new Date().toLocaleDateString('en-CA');
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
@@ -20,7 +24,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
             // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
             const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
 
-            // 2. Chuẩn hóa về mảng String để dễ xử lý
+            // 2. Chuẩn hóa về mảng String
             const rolesArray = Array.isArray(rawRoles)
                 ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
                 : String(rawRoles).split(" ");
@@ -51,7 +55,9 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         representativeCICPlace: "",
     });
 
+    // State chỉ giữ các File mới được chọn từ máy tính
     const [files, setFiles] = useState({ gpkd: [], front: null, back: null });
+    // State chỉ dùng để hiển thị cho người dùng xem ảnh cũ đang có trên S3
     const [oldUrls, setOldUrls] = useState({ gpkd: [], front: null, back: null });
 
     const isUpdateMode = !!oldKycId;
@@ -60,20 +66,20 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         if (oldKycId) fetchOldKycData(oldKycId);
     }, [oldKycId]);
 
-    // Hàm bổ trợ: Chuyển đổi URL ảnh thành đối tượng File
-    const urlToFile = async (url, filename) => {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const blob = await response.blob();
-            // Lấy extension từ blob type hoặc giữ mặc định .jpg
-            const extension = blob.type.split('/')[1] || 'jpg';
-            return new File([blob], `${filename}.${extension}`, { type: blob.type });
-        } catch (error) {
-            console.error("Lỗi chuyển đổi URL thành File:", error);
-            return null;
-        }
-    };
+    // // Hàm bổ trợ: Chuyển đổi URL ảnh thành đối tượng File
+    // const urlToFile = async (url, filename) => {
+    //     try {
+    //         const response = await fetch(url);
+    //         if (!response.ok) throw new Error('Network response was not ok');
+    //         const blob = await response.blob();
+    //         // Lấy extension từ blob type hoặc giữ mặc định .jpg
+    //         const extension = blob.type.split('/')[1] || 'jpg';
+    //         return new File([blob], `${filename}.${extension}`, { type: blob.type });
+    //     } catch (error) {
+    //         console.error("Lỗi chuyển đổi URL thành File:", error);
+    //         return null;
+    //     }
+    // };
 
     const fetchOldKycData = async (id) => {
         setIsFetchingOldData(true);
@@ -100,7 +106,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                 });
             }
         } catch (error) {
-            console.error("Lỗi lấy dữ liệu:", error);
+            console.error("Lỗi lấy dữ liệu cũ:", error);
         } finally {
             setIsFetchingOldData(false);
         }
@@ -138,73 +144,57 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
             return;
         }
 
+        if (files.gpkd.length === 0 || !files.front || !files.back) {
+            alert("Vì lý do bảo mật, vui lòng chọn/tải lên lại các tệp tin ảnh (GPKD, CCCD mặt trước/sau) để hoàn tất cập nhật!");
+            return;
+        }
+
+        if (!formData.legalName || !formData.taxCode) {
+            alert("Vui lòng điền các thông tin bắt buộc!");
+            return;
+        }
+
         setLoading(true);
         const finalFiles = [];
         const finalDocTypes = [];
 
         try {
-            // --- 1. Xử lý GPKD ---
-            // Ảnh cũ (nếu còn trong list) -> Convert sang File
-            for (let i = 0; i < oldUrls.gpkd.length; i++) {
-                const file = await urlToFile(oldUrls.gpkd[i], `old_gpkd_${i}`);
-                if (file) {
-                    finalFiles.push(file);
-                    finalDocTypes.push("BUSINESS_LICENSE");
-                }
-            }
-            // Ảnh mới
+            // 1. GPKD
             files.gpkd.forEach(file => {
                 finalFiles.push(file);
                 finalDocTypes.push("BUSINESS_LICENSE");
             });
 
-            // --- 2. Xử lý CCCD Mặt trước ---
-            if (files.front) {
-                finalFiles.push(files.front);
-                finalDocTypes.push("REPRESENTATIVE_CIC_FRONT");
-            } else if (oldUrls.front) {
-                const file = await urlToFile(oldUrls.front, "old_front");
-                if (file) {
-                    finalFiles.push(file);
-                    finalDocTypes.push("REPRESENTATIVE_CIC_FRONT");
-                }
-            }
+            // 2. CCCD Front
+            finalFiles.push(files.front);
+            finalDocTypes.push("REPRESENTATIVE_CIC_FRONT");
 
-            // --- 3. Xử lý CCCD Mặt sau ---
-            if (files.back) {
-                finalFiles.push(files.back);
-                finalDocTypes.push("REPRESENTATIVE_CIC_BACK");
-            } else if (oldUrls.back) {
-                const file = await urlToFile(oldUrls.back, "old_back");
-                if (file) {
-                    finalFiles.push(file);
-                    finalDocTypes.push("REPRESENTATIVE_CIC_BACK");
-                }
-            }
+            // 3. CCCD Back
+            finalFiles.push(files.back);
+            finalDocTypes.push("REPRESENTATIVE_CIC_BACK");
 
             const submitData = {
                 ...formData,
                 documentTypes: finalDocTypes,
             };
 
+            // Gửi trực tiếp mảng file mới lên BE
             await onSubmit({ data: submitData, files: finalFiles });
         } catch (error) {
-            console.error("Lỗi trong quá trình xử lý gửi hồ sơ:", error);
-            alert("Có lỗi xảy ra khi xử lý tệp tin.");
+            alert("Có lỗi xảy ra khi gửi hồ sơ.");
         } finally {
             setLoading(false);
         }
     };
 
-
-    if (isFetchingOldData) {
-        return (
-            <div className="p-20 text-center flex flex-col items-center gap-4">
-                <RefreshCw className="animate-spin text-blue-600" size={40} />
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Đang đồng bộ dữ liệu hồ sơ...</p>
-            </div>
-        );
-    }
+    // if (isFetchingOldData) {
+    //     return (
+    //         <div className="p-20 text-center flex flex-col items-center gap-4">
+    //             <RefreshCw className="animate-spin text-blue-600" size={40} />
+    //             <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Đang đồng bộ dữ liệu hồ sơ...</p>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white max-h-[90vh] overflow-y-auto">
@@ -217,34 +207,54 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                     </div>
                 </div>
 
+                {/* 1. Giấy phép kinh doanh */}
                 <div className="space-y-3">
-                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">1. Giấy phép kinh doanh</label>
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">1. Giấy phép kinh doanh (Tải lên mới)</label>
                     <div className="grid grid-cols-2 gap-3">
-                        {oldUrls.gpkd.map((url, idx) => (
-                            <div key={`old-${idx}`} className="relative aspect-video rounded-xl overflow-hidden border-2 border-slate-100 group">
-                                <img src={url} className="w-full h-full object-cover" alt="old-gpkd" />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                    <span className="text-[8px] bg-white/90 text-slate-800 px-2 py-1 rounded font-bold uppercase tracking-tighter">Ảnh đã lưu</span>
-                                </div>
-                                <button type="button" onClick={() => setOldUrls(prev => ({ ...prev, gpkd: prev.gpkd.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
-                            </div>
-                        ))}
                         {files.gpkd.map((file, idx) => (
-                            <div key={`new-${idx}`} className="relative aspect-video rounded-xl overflow-hidden border-2 border-emerald-400">
-                                <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="new-gpkd" />
+                            <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border-2 border-emerald-400 shadow-md">
+                                <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
                                 <button type="button" onClick={() => setFiles(p => ({ ...p, gpkd: p.gpkd.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><X size={10} /></button>
                             </div>
                         ))}
-                        <label className="border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center hover:bg-blue-50 cursor-pointer min-h-[100px]">
+                        <label className="border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center hover:bg-blue-50 cursor-pointer min-h-[100px] transition-colors bg-slate-50">
                             <input type="file" hidden multiple onChange={(e) => setFiles(prev => ({ ...prev, gpkd: [...prev.gpkd, ...Array.from(e.target.files)] }))} accept="image/*" />
-                            <Plus size={20} className="text-slate-400" /><span className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Thêm mới</span>
+                            <Plus size={20} className="text-slate-400" /><span className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Chọn tệp tin</span>
                         </label>
                     </div>
+                    {/* Hiển thị ảnh cũ để tham khảo */}
+                    {oldUrls.gpkd.length > 0 && (
+                        <div className="mt-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ảnh đang lưu trên hệ thống:</p>
+                            <div className="flex gap-2 overflow-x-auto pb-2">
+                                {oldUrls.gpkd.map((url, i) => (
+                                    <img key={i} src={url} className="h-14 w-20 object-cover rounded-lg border border-slate-200 opacity-60 grayscale-[50%]" alt="old-gpkd" />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
+                {/* 2 & 3. CCCD */}
                 <div className="grid grid-cols-2 gap-4">
-                    <UploadBox title="2. CCCD mặt trước" file={files.front} oldUrl={oldUrls.front} onFileSelect={(file) => { setFiles(p => ({ ...p, front: file })); setOldUrls(p => ({ ...p, front: null })); }} />
-                    <UploadBox title="3. CCCD mặt sau" file={files.back} oldUrl={oldUrls.back} onFileSelect={(file) => { setFiles(p => ({ ...p, back: file })); setOldUrls(p => ({ ...p, back: null })); }} />
+                    <div className="space-y-2">
+                        <UploadBox title="2. CCCD mặt trước (Tải lên mới)" file={files.front} onFileSelect={(f) => setFiles(p => ({ ...p, front: f }))} />
+                        {oldUrls.front && (
+                            <div className="px-2 py-1 bg-slate-50 rounded border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase text-center mb-1">Ảnh cũ</p>
+                                <img src={oldUrls.front} className="h-12 mx-auto rounded opacity-50" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <UploadBox title="3. CCCD mặt sau (Tải lên mới)" file={files.back} onFileSelect={(f) => setFiles(p => ({ ...p, back: f }))} />
+                        {oldUrls.back && (
+                            <div className="px-2 py-1 bg-slate-50 rounded border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase text-center mb-1">Ảnh cũ</p>
+                                <img src={oldUrls.back} className="h-12 mx-auto rounded opacity-50" />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -264,7 +274,28 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                             onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
                         />
                     </div>
-                    <OCRInput label="Địa chỉ trụ sở" name="businessAddress" value={formData.businessAddress} isTextArea onChange={(e) => setFormData(p => ({ ...p, businessAddress: e.target.value }))} />
+                    <OCRInput
+                        label="Địa chỉ trụ sở"
+                        name="businessAddress"
+                        value={formData.businessAddress}
+                        isTextArea
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData(p => ({ ...p, businessAddress: val }));
+                            // Kiểm tra ngay khi nhập
+                            if (val.length > 0 && !/[a-zA-ZÀ-ỹ]/.test(val)) {
+                                setAddressError("Địa chỉ không hợp lệ (phải chứa cả chữ cái)");
+                            } else {
+                                setAddressError("");
+                            }
+                        }}
+                    />
+                    {/* Hiển thị thông báo lỗi ngay */}
+                    {addressError && (
+                        <p className="text-[10px] text-rose-500 font-bold uppercase animate-pulse">
+                            * {addressError}
+                        </p>
+                    )}
                 </div>
 
                 <h3 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-sm tracking-widest pt-4"><User size={16} className="text-blue-600" /> Người đại diện</h3>
@@ -276,8 +307,48 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                         onChange={(e) => setFormData(p => ({ ...p, representativeCICNumber: formatCIC(e.target.value) }))}
                     />
                     <div className="grid grid-cols-2 gap-3">
-                        <OCRInput label="Ngày cấp" name="representativeCICDate" type="date" value={formData.representativeCICDate} onChange={(e) => setFormData(p => ({ ...p, representativeCICDate: e.target.value }))} />
-                        <OCRInput label="Nơi cấp" name="representativeCICPlace" value={formData.representativeCICPlace} onChange={(e) => setFormData(p => ({ ...p, representativeCICPlace: e.target.value }))} />
+                        <OCRInput
+                            label="Ngày cấp"
+                            name="representativeCICDate"
+                            type="date"
+                            value={formData.representativeCICDate}
+                            max={today} // Chặn chọn ngày tương lai trên lịch của trình duyệt
+                            hasError={!!dateError}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, representativeCICDate: val }));
+                                // Kiểm tra: Nếu có nhập và ngày nhập lớn hơn ngày hiện tại
+                                if (val && val > today) {
+                                    setDateError("Ngày cấp không được là ngày trong tương lai");
+                                } else {
+                                    setDateError("");
+                                }
+                            }}
+                        />
+                        {dateError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
+                                * {dateError}
+                            </p>
+                        )}
+                        <OCRInput
+                            label="Nơi cấp"
+                            name="representativeCICPlace"
+                            isTextArea
+                            value={formData.representativeCICPlace}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, representativeCICPlace: val }));
+                                if (val.length > 0 && !/[a-zA-ZÀ-ỹ]/.test(val)) {
+                                    setPlaceError("Nơi cấp không hợp lệ (phải chứa tên cơ quan/tỉnh thành)");
+                                } else {
+                                    setPlaceError("");
+                                }
+                            }} />
+                        {placeError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
+                                * {placeError}
+                            </p>
+                        )}
                     </div>
                 </div>
 

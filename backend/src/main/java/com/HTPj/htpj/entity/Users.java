@@ -21,7 +21,7 @@ public class Users {
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
-    @Column(name = "username", unique = true, columnDefinition = "VARCHAR(255)")
+    @Column(name = "username",columnDefinition = "VARCHAR(255)")
     String username;
 
     @Column(name = "first_name")

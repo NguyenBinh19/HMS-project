@@ -7,12 +7,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "agencies")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "agencies")
 public class Agency {
 
     @Id
@@ -20,7 +20,7 @@ public class Agency {
     @Column(name = "agency_id")
     private Long agencyId;
 
-    @Column(name = "agency_name", nullable = false, length = 255)
+    @Column(name = "agency_name", nullable = false, length = 255, columnDefinition = "nvarchar(255)")
     private String agencyName;
 
     @Column(name = "email", length = 255)
@@ -32,7 +32,7 @@ public class Agency {
     @Column(name = "hotline", length = 50)
     private String hotline;
 
-    @Column(name = "address")
+    @Column(name = "address",columnDefinition = "nvarchar(255)")
     private String address;
 
     @Column(name = "credit_limit")
@@ -40,6 +40,9 @@ public class Agency {
 
     @Column(name = "current_credit")
     private BigDecimal currentCredit;
+
+    @Column(name = "wallet_balance", precision = 18, scale = 2)
+    private BigDecimal walletBalance;
 
     @Column(name = "status", length = 50)
     private String status;
@@ -52,5 +55,9 @@ public class Agency {
 
     @OneToMany(mappedBy = "agency")
     private List<PartnerVerification> verifications;
+
+    @ManyToOne
+    @JoinColumn(name = "rank_id")
+    private Rank rank;
 
 }

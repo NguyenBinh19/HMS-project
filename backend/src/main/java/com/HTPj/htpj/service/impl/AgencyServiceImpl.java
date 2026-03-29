@@ -1,25 +1,28 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
-import com.HTPj.htpj.entity.Agency;
-import com.HTPj.htpj.entity.PartnerVerification;
-import com.HTPj.htpj.entity.Users;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.AgencyMapper;
-import com.HTPj.htpj.repository.AgencyRepository;
-import com.HTPj.htpj.repository.PartnerVerificationRepository;
-import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AgencyService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,6 +34,8 @@ public class AgencyServiceImpl implements AgencyService {
     private final PartnerVerificationRepository verificationRepository;
     private final AgencyMapper agencyMapper;
     private final UserRepository userRepository;
+    private final AgencyBookingRepository agencyBookingRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
     public List<AgencyResponse> getAllAgencies() {
@@ -101,6 +106,16 @@ public class AgencyServiceImpl implements AgencyService {
         return getAgencyDetail(agencyId);
     }
 
+    @Override
+    public AgencyDetailResponse findAgencyFinanceInfo(Long id) {
+        Agency agency = agencyRepository.findAgenciesFinanceInfo(id);
+
+        return AgencyDetailResponse.builder()
+                .agencyId(agency.getAgencyId())
+                .walletBalance(agency.getWalletBalance())
+                .build();
+    }
+
     private Long getCurrentAgencyId() {
 
         Authentication authentication = SecurityContextHolder
@@ -121,5 +136,142 @@ public class AgencyServiceImpl implements AgencyService {
         }
 
         return agency.getAgencyId();
+    }
+
+    @Override
+    public AgencyDetailResponse findAgencyFinanceInfoHeader(Long id) {
+        Agency agency = agencyRepository.findAgenciesFinanceInfo(id);
+
+        Integer usedPercent = 0;
+        if (agency.getCreditLimit() != null && agency.getCreditLimit().compareTo(BigDecimal.ZERO) > 0) {
+            usedPercent = agency.getCurrentCredit()
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(agency.getCreditLimit(), 0, RoundingMode.HALF_UP)
+                    .intValue();
+        }
+
+        return AgencyDetailResponse.builder()
+                .agencyId(agency.getAgencyId())
+                .walletBalance(agency.getWalletBalance())
+                .creditLimit(agency.getCreditLimit())
+                .currentCredit(agency.getCurrentCredit())
+                .creditUsedPercent(usedPercent)
+                .build();
+    }
+
+    public CreditSummaryDto getCreditSummary(Long agencyId) {
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        BigDecimal creditLimit = agency.getCreditLimit() != null ? agency.getCreditLimit() : BigDecimal.ZERO;
+        BigDecimal currentCredit = agency.getCurrentCredit() != null ? agency.getCurrentCredit() : BigDecimal.ZERO;
+        BigDecimal remainingCredit = currentCredit;
+
+        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+
+        BigDecimal debt = unpaidBookings.stream()
+                .map(b -> {
+                    BigDecimal principal = b.getPrincipalRemaining() != null ? b.getPrincipalRemaining() : BigDecimal.ZERO;
+                    BigDecimal penalty = b.getPenaltyInterest() != null ? b.getPenaltyInterest() : BigDecimal.ZERO;
+                    return principal.add(penalty);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int usedPercent = creditLimit.compareTo(BigDecimal.ZERO) == 0 ? 0 :
+                debt.multiply(BigDecimal.valueOf(100))
+                        .divide(creditLimit, 0, RoundingMode.HALF_UP)
+                        .intValue();
+
+        LocalDate dueDate = YearMonth.now().atDay(25);
+
+        return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
+    }
+
+
+    @Transactional
+    public void payDebt(Long agencyId, BigDecimal payment) {
+        if (payment == null) {
+            throw new IllegalArgumentException("Số tiền thanh toán không được null");
+        }
+
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+
+        if (unpaidBookings.isEmpty()) {
+            throw new RuntimeException("Không có nợ cần thanh toán");
+        }
+
+        BigDecimal walletBalance = agency.getWalletBalance() != null ? agency.getWalletBalance() : BigDecimal.ZERO;
+        if (walletBalance.compareTo(payment) < 0) {
+            throw new RuntimeException("Số dư ví không đủ để thanh toán nợ");
+        }
+
+        agency.setWalletBalance(walletBalance.subtract(payment));
+
+        AgencyBooking booking = unpaidBookings.get(0);
+
+        BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
+        BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
+
+        if (payment.compareTo(penalty) >= 0) {
+            payment = payment.subtract(penalty);
+            penalty = BigDecimal.ZERO;
+        } else {
+            penalty = penalty.subtract(payment);
+            payment = BigDecimal.ZERO;
+        }
+
+        //cấm sửa chỗ này logic quan trọng chỉ hoàn trả tín dụng khi trả gốc chứ không phải nãi
+        agency.setCurrentCredit(agency.getCurrentCredit() != null
+                ? agency.getCurrentCredit().add(payment)
+                : payment);
+
+        if (payment.compareTo(BigDecimal.ZERO) > 0) {
+            if (payment.compareTo(principal) >= 0) {
+                payment = payment.subtract(principal);
+                principal = BigDecimal.ZERO;
+            } else {
+                principal = principal.subtract(payment);
+                payment = BigDecimal.ZERO;
+            }
+        }
+
+        booking.setPenaltyInterest(penalty);
+        booking.setPrincipalRemaining(principal);
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
+            booking.setIsPaid(true);
+        }
+
+        agencyBookingRepository.save(booking);
+
+        if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
+            agency.setCurrentCredit(agency.getCurrentCredit() != null
+                    ? agency.getCurrentCredit().add(payment)
+                    : payment);
+        }
+
+        agencyRepository.save(agency);
+
+        BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
+        TransactionHistory historyCreditMD = TransactionHistory.builder()
+                .transactionDate(LocalDateTime.now())
+                .transactionType("Payment")
+                .description("Thanh toán dư nợ tín dụng từ ví sang tín dụng")
+                .sourceType("Ví")
+                .amount(amountPaid)
+                .balanceAfter(agency.getWalletBalance())
+                .status("Success")
+                .direction("OUT")
+                .agency(agency)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
+        historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
+        transactionHistoryRepository.save(historyCreditMD);
     }
 }

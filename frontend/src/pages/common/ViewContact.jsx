@@ -13,11 +13,12 @@ import {
 } from 'lucide-react';
 import Header from "@/components/common/Homepage/Header.jsx";
 import Footer from "@/components/common/Homepage/Footer.jsx";
+import SupportModal from "@/components/common/Homepage/SupportModal.jsx";
 
 const ContactPage = () => {
     const navigate = useNavigate();
     const [mapError, setMapError] = useState(false);
-
+    const [isSupportOpen, setIsSupportOpen] = useState(false);
     useEffect(() => {
         window.scrollTo(0, 0);
         document.title = "Liên hệ | HMS-B2B Project";
@@ -126,28 +127,34 @@ const ContactPage = () => {
                                 Giải quyết mọi phiền toái <br/> trong vận hành
                             </h2>
                             <p className="text-slate-400 mb-12 text-lg leading-relaxed font-medium">
-                            Đội ngũ sinh viên nhiệt huyết từ ĐH FPT cam kết đồng hành và hỗ trợ các chủ khách sạn tối ưu hóa quy trình kinh doanh bằng công nghệ thuần Việt.
+                                Đội ngũ sinh viên nhiệt huyết từ ĐH FPT cam kết đồng hành và hỗ trợ các chủ khách sạn
+                                tối ưu hóa quy trình kinh doanh bằng công nghệ thuần Việt.
                             </p>
 
                             <button
-                                onClick={() => navigate("/support-form")}
-                                className="group w-full md:w-fit bg-white text-slate-900 px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-blue-600 hover:text-white transition-all duration-500 shadow-xl active:scale-95"
+                                onClick={() => setIsSupportOpen(true)}
+                                className="group w-full md:w-fit bg-blue-600 text-white px-12 py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-white hover:text-slate-900 transition-all duration-500 shadow-2xl active:scale-95"
                             >
-                                Gửi lời nhắn cho nhóm <Send size={18} className="group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
+                                Gửi lời nhắn cho nhóm <Send size={16}
+                                                            className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"/>
                             </button>
 
                             <div className="mt-12 pt-12 border-t border-slate-800 flex items-center justify-between">
                                 <div className="flex items-center gap-6">
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">Team hỗ trợ 24/7</p>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-none">Team
+                                        hỗ trợ 24/7</p>
                                 </div>
-                                <Globe size={20} className="text-slate-800 animate-spin-slow" />
+                                <Globe size={20} className="text-slate-800 animate-spin-slow"/>
                             </div>
                         </div>
                     </div>
                 </section>
             </main>
-
-            <Footer />
+            <SupportModal
+                isOpen={isSupportOpen}
+                onClose={() => setIsSupportOpen(false)}
+            />
+            <Footer/>
         </div>
     );
 };

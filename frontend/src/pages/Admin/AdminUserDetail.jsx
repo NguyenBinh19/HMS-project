@@ -6,8 +6,6 @@ import {
     CheckCircle2, Ban, Award
 } from "lucide-react";
 import { userService } from "@/services/user.service.js";
-import AgencyRankingTab from "./SetAgencyRanking.jsx";
-import SetHotelCommissions from "./SetHotelCommission.jsx";
 
 const AdminUserDetail = () => {
     const { userId } = useParams();
@@ -230,23 +228,14 @@ const AdminUserDetail = () => {
                             Thông tin cơ bản
                         </button>
 
-                        {isAgency && (
-                            <button
-                                onClick={() => setActiveTab("ranking")}
-                                className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'ranking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}
-                            >
-                                <Award size={16}/> Phân hạng đại lý
-                            </button>
-                        )}
-
-                        {isHotel && (
-                            <button
-                                onClick={() => setActiveTab("commission")}
-                                className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'commission' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}
-                            >
-                                <Award size={16}/> Cấu hình chiết khấu
-                            </button>
-                        )}
+                        {/*{isAgency && (*/}
+                        {/*    <button*/}
+                        {/*        onClick={() => setActiveTab("ranking")}*/}
+                        {/*        className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'ranking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}*/}
+                        {/*    >*/}
+                        {/*        <Award size={16}/> Phân hạng đại lý*/}
+                        {/*    </button>*/}
+                        {/*)}*/}
                     </div>
                 </div>
                 {/* Content Area */}

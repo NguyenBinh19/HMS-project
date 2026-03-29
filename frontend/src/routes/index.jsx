@@ -6,6 +6,7 @@ import ResetPassword from "../pages/Auth/ResetPassword";
 import VerifyEmail from "../pages/Auth/VerifyEmail";
 import VerifyOtp from "../pages/Auth/VerifyOtp";
 import OAuthCallback from "../pages/Auth/OAuthCallback";
+import SelectRole from "../pages/Auth/SelectRole";
 import SessionExpiredHandler from "../common/SessionExpiredHandler";
 import RoomTypes from "../pages/Hotel/RoomTypes"
 import MainLayout from "../components/common/Homepage/MainLayout.jsx";
@@ -35,6 +36,7 @@ import HotelProfile from "@/pages/Hotel/HotelProfile.jsx"
 import FeedbackHistory from "@/pages/Agency/FeedbackHistory.jsx";
 import HotelFeedbackManagement from "@/pages/Hotel/HotelFeedbackManage.jsx";
 import FrontDesk from "@/pages/Hotel/FrontDesk.jsx";
+import RateAndAllotment from "@/pages/Hotel/RateAndAllotment.jsx";
 import UserProfile from "@/pages/common/UserProfile.jsx";
 import AdminUserList from "@/pages/Admin/AdminUserList.jsx";
 import AdminUserDetail from "@/pages/Admin/AdminUserDetail.jsx";
@@ -56,7 +58,14 @@ import PayoutList from "@/pages/Admin/PayoutList.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import HotelSearchResult from "@/pages/Hotel/HotelSearchResult.jsx"
 import RoomTypeDetailList from "@/pages/Hotel/RoomTypeDetailList.jsx"
+import PrepaidWallet from "@/pages/Agency/PrepaidWallet.jsx";
+import CommissionList from "@/pages/Admin/CommissionList.jsx"
+import HotelBookingDetail from "@/pages/Hotel/HotelBookingDetail.jsx"
 import { ROLES, ROLE_GROUP } from "../constant/roles.js";
+import CreditWallet from "../pages/Agency/CreditWallet.jsx";
+import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
+import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
+import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -72,6 +81,7 @@ const AppRoutes = () => {
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/verify-otp" element={<VerifyOtp />} />
                 <Route path="/oauth-callback" element={<OAuthCallback />} />
+                <Route path="/select-role" element={<SelectRole />} />
                 <Route path="/about-us" element={<ViewAboutUs />} />
                 <Route path="/contact" element={<ViewContact />} />
                 <Route path="/private-policy" element={<PrivatePolicy />} />
@@ -107,6 +117,9 @@ const AppRoutes = () => {
                     <Route path="agency-profile" element={<AgencyProfile />} />
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
+                    <Route path="prepaid" element={<PrepaidWallet />} />
+                    <Route path="credit-wallet" element={<CreditWallet />} />
+                    <Route path="transaction-history" element={<TransactionHistoryPage />} />
                 </Route>
 
                 {/*Luồng Hotel Admin*/}
@@ -130,9 +143,11 @@ const AppRoutes = () => {
                     <Route path="profile" element={<HotelProfile />} />
                     <Route path="addon-services" element={<AddonServiceManager />} />
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
-                    <Route path="front-desk" element={<FrontDesk />} />
-                    <Route path="revenue-report" element={<RevenueReport />} />
-                    <Route path="payout-state" element={<PayoutStatement />} />
+                    <Route path="front-desk" element={<FrontDesk/>} />
+                    <Route path="rate-allotment" element={<RateAndAllotment/>} />
+                    <Route path="revenue-report" element={<RevenueReport/>} />
+                    <Route path="payout-state" element={<PayoutStatement/>} />
+                    <Route path="view-booking/:bookingCode" element={<HotelBookingDetail />} />
                 </Route>
 
                 {/*Luồng Admin System*/}
@@ -152,7 +167,10 @@ const AppRoutes = () => {
                     <Route path="users" element={<AdminUserList />} />
                     <Route path="users/:userId" element={<AdminUserDetail />} />
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
+                    <Route path="set-ranking" element={<SetAgencyRanking />} />
+                    <Route path="system-config" element={<SystemConfigPage/>} />
                     {/*Luồng Admin Financial*/}
+                    <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
                     <Route path="payout-list" element={<PayoutList />} />
                 </Route>

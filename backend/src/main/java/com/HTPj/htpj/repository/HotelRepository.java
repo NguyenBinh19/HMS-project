@@ -45,5 +45,15 @@ public interface HotelRepository extends JpaRepository<Hotel, Integer> {
     @Query("SELECT COALESCE(MAX(h.hotelId),0) + 1 FROM Hotel h")
     Integer generateHotelId();
 
+    List<Hotel> findByCommissionId(Long commissionId);
+
+    @Query("""
+    SELECT h FROM Hotel h
+    WHERE h.commissionId = :commissionId
+    AND h.commissionType = 'DEAL'
+    AND h.status = 'ACTIVE'
+""")
+    List<Hotel> findHotelUsingDeal(@Param("commissionId") Long commissionId);
+
 
 }

@@ -4,6 +4,8 @@ import { jwtDecode } from "jwt-decode";
 const ProtectedRoute = ({ children, roles: requiredRoles }) => {
     const token = localStorage.getItem("accessToken");
     const location = useLocation();
+
+    // Đọc user từ localStorage nhưng ưu tiên dữ liệu từ Token
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
     if (!token) {
@@ -11,59 +13,69 @@ const ProtectedRoute = ({ children, roles: requiredRoles }) => {
     }
 
     let userRolesStrings = [];
-    let hotelIdFromToken = null;
-    let agencyIdFromToken = null;
+    let currentHotelId = null;
+    let currentAgencyId = null;
 
     try {
         const decoded = jwtDecode(token);
 
-        // 1. Chuẩn hóa Roles (Xử lý cả mảng String hoặc mảng Object)
-        const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
+        // 1. Lấy Roles từ Token (Nguồn tin cậy nhất)
+        const rawRoles = decoded.scope || decoded.roles || decoded.authorities || [];
         userRolesStrings = Array.isArray(rawRoles)
             ? rawRoles.map(r => (typeof r === 'object' ? r.name : r))
             : rawRoles.split(" ");
 
-        // Nếu Token không có roles, lấy từ storedUser (đề phòng)
-        if (userRolesStrings.length === 0 && storedUser.roles) {
-            userRolesStrings = storedUser.roles.map(r => (typeof r === 'object' ? r.name : r));
-        }
+        // 2. Lấy ID định danh (Ưu tiên Token > localStorage)
+        // Lấy ID từ Token (Cũ)
+        const hotelIdFromToken = decoded.hotelId || decoded.hotel_id;
+        const agencyIdFromToken = decoded.agencyId || decoded.agency_id;
 
-        hotelIdFromToken = decoded.hotelId;
-        agencyIdFromToken = decoded.agencyId;
+        // Lấy ID từ localStorage (Mới - do fetchStatus cập nhật)
+        const hotelIdFromLocal = storedUser.hotelId;
+        const agencyIdFromLocal = storedUser.agencyId;
+
+        // KẾT HỢP: Chỉ cần 1 trong 2 nguồn có ID là hợp lệ
+        currentHotelId = hotelIdFromToken || hotelIdFromLocal;
+        currentAgencyId = agencyIdFromToken || agencyIdFromLocal;
+        // console.log("Check KYC Thực tế - HotelID:", currentHotelId, "AgencyID:", currentAgencyId);
     } catch (error) {
+        console.error("Token decoding failed:", error);
         return <Navigate to="/login" replace />;
     }
 
-    // 2. Ưu tiên ADMIN
-    if (userRolesStrings.some(role => role.includes("ADMIN"))) return children;
+    // // 3. Ưu tiên ADMIN - Cho phép vào mọi trang
+    // if (userRolesStrings.some(role => role.includes("ADMIN"))) return children;
 
-    // 3. Lấy ID và ép kiểu về String để check (Tránh lỗi 0, null, undefined)
-    const currentHotelId = String(storedUser.hotelId || hotelIdFromToken || "");
-    const currentAgencyId = String(storedUser.agencyId || agencyIdFromToken || "");
-
-    // 4. THOÁT LOOP: Cho phép ở lại các trang KYC
-    const kycPaths = ["/kyc/status", "/kyc-intro", "/kyc-form"];
+    // 4. THOÁT LOOP: Luôn cho phép ở lại các trang KYC
+    const kycPaths = ["/kyc/status", "/profile"];
     if (kycPaths.some(path => location.pathname.startsWith(path))) {
         return children;
     }
 
-    // 5. Kiểm tra Role Route
+    // 5. Kiểm tra quyền truy cập Route (requiredRoles)
     if (requiredRoles && requiredRoles.length > 0) {
+        // Kiểm tra xem User có ít nhất 1 role nằm trong danh sách requiredRoles không
         const isAllowed = requiredRoles.some(role => userRolesStrings.includes(role));
-        if (!isAllowed) return <Navigate to="/" replace />;
+        if (!isAllowed) {
+            // Nếu là Admin nhưng đi lạc vào trang Hotel/Agency -> về Admin Dashboard
+            if (userRolesStrings.some(role => role.includes("ADMIN"))) {
+                return <Navigate to="/admin/dashboard" replace />;
+            }
+            // Các trường hợp khác về trang chủ
+            return <Navigate to="/homepage" replace />;
+        }
     }
 
-    // 6. CHẶN DASHBOARD: Kiểm tra định danh dựa trên Role
+    // 6. KIỂM TRA TRẠNG THÁI XÁC THỰC (KYC)
     const isHotelRole = userRolesStrings.some(r => r.includes("HOTEL"));
     const isAgencyRole = userRolesStrings.some(r => r.includes("AGENCY"));
 
-    // Nếu là Hotel mà ID trống (chuỗi rỗng sau khi ép kiểu)
-    if (isHotelRole && (currentHotelId === "" || currentHotelId === "null")) {
+    // Cách check: Chỉ cần ID là falsy (null, undefined, "", 0) là chặn
+    if (isHotelRole && !currentHotelId) {
         return <Navigate to="/kyc/status" replace />;
     }
 
-    // Nếu là Agency mà ID trống
-    if (isAgencyRole && (currentAgencyId === "" || currentAgencyId === "null")) {
+    if (isAgencyRole && !currentAgencyId) {
         return <Navigate to="/kyc/status" replace />;
     }
 

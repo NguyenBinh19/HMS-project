@@ -13,7 +13,7 @@ const AdminDashboard = () => {
                 {/* 1. Header & Filters */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-black">Admin Dashboard</h1>
+                        <h1 className="text-2xl font-black">ADMIN DASHBOARD</h1>
                         <div className="flex bg-slate-100 p-1 rounded-xl">
                             {['Hôm nay', '7 ngày qua', 'Tháng này', 'Quý này'].map((tab, i) => (
                                 <button key={tab} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${i === 0 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-blue-600'}`}>

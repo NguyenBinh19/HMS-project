@@ -1,8 +1,18 @@
 import React from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Info, AlertTriangle } from "lucide-react";
 
-export default function Toast({ message, type = "info" }) {
+export default function Toast({ message, type = "info", onClose, autoClose, autoCloseTime }) {
+  useEffect(() => {
+    if (autoClose) {
+      const timer = setTimeout(() => {
+        onClose(); // Lệnh này sẽ báo cho Portal biết để xóa Toast này đi
+      }, autoCloseTime);
+      return () => clearTimeout(timer); // Dọn dẹp nếu người dùng đóng thủ công
+    }
+  }, [autoClose, autoCloseTime, onClose]);
+
   const styles = {
     success: {
       bg: "bg-green-50 border-green-400 text-green-700",

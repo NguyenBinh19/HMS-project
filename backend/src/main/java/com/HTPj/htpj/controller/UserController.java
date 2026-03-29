@@ -129,4 +129,13 @@ public class UserController {
                 .result(userServiceImpl.updateUser(userId, request))
                 .build();
     }
+
+    // SSO: Select role for users who logged in via Google without a role
+    @PostMapping("/select-role")
+    ApiResponse<UserResponse> selectRole(@RequestBody java.util.Map<String, String> request) {
+        return ApiResponse.<UserResponse>builder()
+                .message("Role selected successfully")
+                .result(userServiceImpl.selectRoleForCurrentUser(request.get("role")))
+                .build();
+    }
 }

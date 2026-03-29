@@ -4,12 +4,12 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { authService } from "../../services/auth.service.js";
 import { jwtDecode } from "jwt-decode";
 import {
-    Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, LogIn, Plane, X, ShieldAlert
+    Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, LogIn, Plane, X, ShieldAlert, Hotel
 } from "lucide-react";
 import Toast from "../../components/common/notification/Toast.jsx";
 import ToastPortal from "../../components/common/notification/ToastPortal.jsx";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
-const token = localStorage.getItem("accessToken");
+// const token = localStorage.getItem("accessToken");
 
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL = "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop";
@@ -18,28 +18,37 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { updateUser } = useAuth();
-    const getRolesFromToken = () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return [];
+    const getRolesFromToken = (accessToken) => {
+        if (!accessToken) return [];
+        try {
+            const decoded = jwtDecode(accessToken);
+            const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
+            return Array.isArray(rawRoles) ? rawRoles : rawRoles.split(" ");
+        } catch (e) {
+            return [];
+        }
+    };
 
-    try {
-        const decoded = jwtDecode(token);
+    const getRedirectByRole = (roles = [], accessToken) => {
+        try {
+            const decoded = jwtDecode(accessToken);
 
-        if (decoded.roles) return decoded.roles;
-        if (decoded.authorities) return decoded.authorities;
-        if (decoded.scope) return decoded.scope.split(" ");
+            const hotelId = decoded.hotelId;
+            const agencyId = decoded.agencyId;
+            console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
+            if (roles.some(r => r.includes("ADMIN"))) return "/admin";
+            if (roles.some(r => r.includes("HOTEL"))) {
+                return hotelId ? "/hotel/dashboard" : "/kyc/status";
+            }
+            if (roles.some(r => r.includes("AGENCY"))) {
+                return agencyId ? "/agency/agency-dashboard" : "/kyc/status";
+            }
+        } catch (error) {
+            console.error("Lỗi điều hướng:", error);
+        }
+        return "/homepage";
+    };
 
-        return [];
-    } catch (e) {
-        return [];
-    }
-};
-
-const getRedirectByRole = (roles = []) => {
-    if (roles.includes("ROLE_ADMIN")) return "/admin";
-    
-    return "/homepage";
-};
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -49,7 +58,8 @@ const getRedirectByRole = (roles = []) => {
     const [errorModal, setErrorModal] = useState({
         show: false,
         title: "",
-        message: ""
+        message: "",
+        unverifiedEmail: ""
     });
 
     const [focusedField, setFocusedField] = useState(null);
@@ -81,20 +91,39 @@ const getRedirectByRole = (roles = []) => {
         try {
             const res = await authService.login(formData.email, formData.password);
 
-            console.log("Login Response:", res);
-            if (res) {
-                if (updateUser) {
-                    await updateUser(res.user);
-                }
-                setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
-                const roles = getRolesFromToken();
+            if (res?.result?.token) {
+                const accessToken = res.result.token;
+                localStorage.setItem("accessToken", accessToken);
 
-                const redirectPath =
-                    from !== "/" ? from : getRedirectByRole(roles);
+                // 1. Giải mã token để lấy thông tin User mới nhất
+                const decoded = jwtDecode(accessToken);
+
+                // 2. Tạo object user từ claims của token
+                const userProfile = {
+                    userId: decoded.userId,
+                    email: decoded.email,
+                    agencyId: decoded.agencyId,
+                    hotelId: decoded.hotelId,
+                    roles: decoded.scope
+                };
+
+                // 3. Lưu vào localStorage và cập nhật Context
+                localStorage.setItem("user", JSON.stringify(userProfile));
+                if (updateUser) {
+                    await updateUser(userProfile);
+                }
+
+                // 4. Lấy roles và điều hướng dựa trên Token mới
+                const roles = getRolesFromToken(accessToken);
+                const redirectPath = from !== "/" ? from : getRedirectByRole(roles, accessToken);
+
+                setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
 
                 setTimeout(() => {
                     navigate(redirectPath, { replace: true });
-                }, 800);
+                }, 600);
+            } else {
+                setError("Đăng nhập thành công nhưng không nhận được thông tin xác thực.");
             }
         } catch (err) {
             console.error("Login Error:", err);
@@ -117,7 +146,7 @@ const getRedirectByRole = (roles = []) => {
                 }
                 else if (status === 403 || lowerMsg.includes("disabled") || lowerMsg.includes("chưa được xác thực")) {
                     modalTitle = "Tài khoản chưa kích hoạt";
-                    modalMsg = "Vui lòng kiểm tra email của bạn để xác thực tài khoản trước khi đăng nhập.";
+                    modalMsg = "Tài khoản của bạn chưa được xác thực. Vui lòng nhập mã OTP đã gửi đến email hoặc yêu cầu gửi lại mã mới.";
                     shouldShowModal = true;
                 }
                 else if (status === 401 || lowerMsg.includes("bad credentials")) {
@@ -136,7 +165,9 @@ const getRedirectByRole = (roles = []) => {
                 setErrorModal({
                     show: true,
                     title: modalTitle,
-                    message: modalMsg
+                    message: modalMsg,
+                    unverifiedEmail: modalTitle === "Tài khoản chưa kích hoạt" ? formData.email : ""
+
                 });
             }
 
@@ -169,26 +200,19 @@ const getRedirectByRole = (roles = []) => {
 
                 <div className="flex flex-col relative overflow-y-auto custom-scrollbar bg-white">
 
-                    <div className="absolute top-0 right-0 p-8 hidden md:flex gap-4">
-                        <span className="text-sm font-semibold text-slate-400">Bạn chưa có tài khoản?</span>
-                        <Link to="/register" className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                            Đăng ký ngay
-                        </Link>
-                    </div>
-
                     <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-16">
                         <div className="max-w-md mx-auto w-full">
 
-                            <div className="mb-10 relative">
+                            <div className="mb-10 relative text-center">
                                 <div className="absolute -top-10 -left-10 w-20 h-20 bg-blue-100 rounded-full blur-xl opacity-50"></div>
-                                <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
-                                    Tiếp tục hành trình
-                                    <Plane className="text-blue-500 animate-pulse" size={28} />
-                                </h1>
+                                <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2 flex items-center justify-center gap-3">
+                                    <Hotel className="text-blue-500 animate-pulse" size={28} />
+                                    HMS-B2B
+                                </h2>
                                 <p className="text-slate-500 text-lg font-medium">
-                                    Đăng nhập để mở khóa những <span className="text-blue-600 font-bold">ưu đãi độc quyền</span>.
+                                    Hệ thống quản lý khách sạn<span className="text-blue-600 font-bold"> chuyên nghiệp</span>.
                                 </p>
-                                <div className="h-1.5 w-20 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mt-4"></div>
+                                <div className="h-1.5 w-20 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mt-4 mx-auto"></div>
                             </div>
 
                             {error && (
@@ -217,7 +241,7 @@ const getRedirectByRole = (roles = []) => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'email' || formData.email
-                                            ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
+                                            ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
                                             : 'top-4 text-slate-400 font-medium'
                                         }
                              `}>
@@ -244,7 +268,7 @@ const getRedirectByRole = (roles = []) => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'password' || formData.password
-                                            ? '-top-2.5 bg-white px-2 text-xs font-bold text-blue-600'
+                                            ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
                                             : 'top-4 text-slate-400 font-medium'
                                         }
                              `}>
@@ -272,28 +296,41 @@ const getRedirectByRole = (roles = []) => {
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : <>Đăng nhập ngay <LogIn size={20} className="group-hover:translate-x-1 transition-transform" /></>}
                                 </button>
+                                <div className="text-center mt-4">
+                                    <span className="text-sm text-slate-500 font-medium">
+                                        Bạn chưa có tài khoản?{" "}
+                                    </span>
+                                    <Link
+                                        to="/register"
+                                        className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                    >
+                                        Đăng ký ngay
+                                    </Link>
+                                </div>
                             </form>
 
-                            <div className="my-8 flex items-center gap-4">
+                            <div className="my-6 flex items-center gap-4">
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hoặc tiếp tục với</span>
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 mt-6">
                                 <button
                                     type="button"
                                     onClick={() => handleSocialLogin('google')}
-                                    className="flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-600 text-sm group"
+                                    className="col-span-2 mx-auto flex items-center justify-center gap-3 py-3 px-6 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-600 text-sm group"
                                 >
-                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="G" className="w-5 h-5 group-hover:scale-110 transition-transform" /> Google
+                                    <img
+                                        src="https://www.svgrepo.com/show/475656/google-color.svg"
+                                        alt="G"
+                                        className="w-5 h-5 group-hover:scale-110 transition-transform"
+                                    />
+                                    Google
                                 </button>
                             </div>
                         </div>
 
-                        <p className="mt-8 text-center text-slate-500 font-medium md:hidden">
-                            Chưa có tài khoản? <Link to="/register" className="text-blue-600 font-black hover:underline">Đăng ký ngay</Link>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -319,7 +356,18 @@ const getRedirectByRole = (roles = []) => {
                             </p>
                         </div>
 
-                        <div className="p-4 bg-slate-50 flex justify-center">
+                        <div className="p-4 bg-slate-50 flex flex-col gap-3">
+                            {errorModal.unverifiedEmail && (
+                                <button
+                                    onClick={() => {
+                                        closeErrorModal();
+                                        navigate(`/verify-otp?email=${encodeURIComponent(errorModal.unverifiedEmail)}`);
+                                    }}
+                                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all active:scale-95"
+                                >
+                                    Xác thực OTP ngay
+                                </button>
+                            )}
                             <button
                                 onClick={closeErrorModal}
                                 className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all active:scale-95"
