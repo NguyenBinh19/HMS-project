@@ -46,7 +46,7 @@ public class SePayWebhookServiceImpl implements SePayWebhookService {
                         .transactionDate(txDate)
                         .transactionType("Top-up")
                         .description("Nạp tiền qua SePay")
-                        .sourceType("Wallet")
+                        .sourceType("Ví")
                         .amount(amount)
                         .balanceAfter(newBalance)
                         .status("Success")

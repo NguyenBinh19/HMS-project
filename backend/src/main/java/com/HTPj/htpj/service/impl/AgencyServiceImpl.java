@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,6 +36,7 @@ public class AgencyServiceImpl implements AgencyService {
     private final UserRepository userRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+
     @Override
     public List<AgencyResponse> getAllAgencies() {
 
@@ -168,7 +170,11 @@ public class AgencyServiceImpl implements AgencyService {
         List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
 
         BigDecimal debt = unpaidBookings.stream()
-                .map(AgencyBooking::getTotalAmount)
+                .map(b -> {
+                    BigDecimal principal = b.getPrincipalRemaining() != null ? b.getPrincipalRemaining() : BigDecimal.ZERO;
+                    BigDecimal penalty = b.getPenaltyInterest() != null ? b.getPenaltyInterest() : BigDecimal.ZERO;
+                    return principal.add(penalty);
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         int usedPercent = creditLimit.compareTo(BigDecimal.ZERO) == 0 ? 0 :
@@ -181,56 +187,91 @@ public class AgencyServiceImpl implements AgencyService {
         return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
     }
 
+
     @Transactional
-    public void payDebt(Long agencyId) {
+    public void payDebt(Long agencyId, BigDecimal payment) {
+        if (payment == null) {
+            throw new IllegalArgumentException("Số tiền thanh toán không được null");
+        }
+
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new RuntimeException("Agency not found"));
 
-        String currentMonth = YearMonth.now().toString();
         List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
 
-        BigDecimal debt = unpaidBookings.stream()
-                .map(AgencyBooking::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        if (debt.compareTo(BigDecimal.ZERO) <= 0) {
+        if (unpaidBookings.isEmpty()) {
             throw new RuntimeException("Không có nợ cần thanh toán");
         }
 
         BigDecimal walletBalance = agency.getWalletBalance() != null ? agency.getWalletBalance() : BigDecimal.ZERO;
-
-        if (walletBalance.compareTo(debt) < 0) {
+        if (walletBalance.compareTo(payment) < 0) {
             throw new RuntimeException("Số dư ví không đủ để thanh toán nợ");
         }
 
-        agency.setWalletBalance(walletBalance.subtract(debt));
+        agency.setWalletBalance(walletBalance.subtract(payment));
 
-        agency.setCurrentCredit(agency.getCreditLimit());
+        AgencyBooking booking = unpaidBookings.get(0);
+
+        BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
+        BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
+
+        if (payment.compareTo(penalty) >= 0) {
+            payment = payment.subtract(penalty);
+            penalty = BigDecimal.ZERO;
+        } else {
+            penalty = penalty.subtract(payment);
+            payment = BigDecimal.ZERO;
+        }
+
+        //cấm sửa chỗ này logic quan trọng chỉ hoàn trả tín dụng khi trả gốc chứ không phải nãi
+        agency.setCurrentCredit(agency.getCurrentCredit() != null
+                ? agency.getCurrentCredit().add(payment)
+                : payment);
+
+        if (payment.compareTo(BigDecimal.ZERO) > 0) {
+            if (payment.compareTo(principal) >= 0) {
+                payment = payment.subtract(principal);
+                principal = BigDecimal.ZERO;
+            } else {
+                principal = principal.subtract(payment);
+                payment = BigDecimal.ZERO;
+            }
+        }
+
+        booking.setPenaltyInterest(penalty);
+        booking.setPrincipalRemaining(principal);
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
+            booking.setIsPaid(true);
+        }
+
+        agencyBookingRepository.save(booking);
+
+        if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
+            agency.setCurrentCredit(agency.getCurrentCredit() != null
+                    ? agency.getCurrentCredit().add(payment)
+                    : payment);
+        }
 
         agencyRepository.save(agency);
 
-        agencyBookingRepository.findByAgencyIdAndMonth(agencyId, currentMonth).ifPresent(ab -> {
-            ab.setIsPaid(true);
-            ab.setUpdatedAt(LocalDateTime.now());
-            agencyBookingRepository.save(ab);
-        });
-
+        BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
         TransactionHistory historyCreditMD = TransactionHistory.builder()
                 .transactionDate(LocalDateTime.now())
                 .transactionType("Payment")
                 .description("Thanh toán dư nợ tín dụng từ ví sang tín dụng")
                 .sourceType("Ví")
-                .amount(debt)
-                .balanceAfter(walletBalance.subtract(debt))
+                .amount(amountPaid)
+                .balanceAfter(agency.getWalletBalance())
                 .status("Success")
-                .transactionCode("")
                 .direction("OUT")
                 .agency(agency)
                 .createdAt(LocalDateTime.now())
                 .build();
+
         historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
         historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
         transactionHistoryRepository.save(historyCreditMD);
     }
-
 }

@@ -39,8 +39,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     @Value("${jwt.valid-duration}")
     private long validDuration;
 
-
-    private String frontendUrl = "http://localhost:5173";
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,

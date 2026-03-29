@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -82,8 +83,10 @@ public class AgencyController {
     }
 
     @PostMapping("/{agencyId}/pay-debt")
-    public ApiResponse<String> payDebt(@PathVariable Long agencyId) {
-        agencyService.payDebt(agencyId);
+    public ApiResponse<String> payDebt(
+            @PathVariable Long agencyId,
+            @RequestParam BigDecimal payment) {
+        agencyService.payDebt(agencyId, payment);
         return ApiResponse.<String>builder()
                 .result("Thanh toán nợ thành công")
                 .build();

@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -448,11 +449,18 @@ public class BookingServiceImpl implements BookingService {
                             .month(monthStr)
                             .totalAmount(BigDecimal.ZERO)
                             .createdAt(LocalDateTime.now())
+                            .isPaid(false)
                             .build());
 
+            BigDecimal totalAmount = agencyBooking.getTotalAmount().add(finalAmountPaid);
+
             agencyBooking.setTotalAmount(
-                    agencyBooking.getTotalAmount().add(finalAmountPaid)
+                    totalAmount
             );
+            agencyBooking.setPrincipalRemaining(
+                    totalAmount
+            );
+
             agencyBooking.setUpdatedAt(LocalDateTime.now());
             agencyBookingRepository.save(agencyBooking);
         } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
@@ -1096,29 +1104,70 @@ public class BookingServiceImpl implements BookingService {
         LocalDate today = LocalDate.now();
 
         for (AgencyBooking booking : allBookings) {
-            BigDecimal principal = booking.getTotalAmount();
-            BigDecimal penalty = BigDecimal.ZERO;
+            if (Boolean.TRUE.equals(booking.getIsPaid())) {
+                continue;
+            }
+
+            BigDecimal principal = booking.getPrincipalRemaining();
+            BigDecimal penalty = booking.getPenaltyInterest();
 
             YearMonth ym = YearMonth.parse(booking.getMonth());
             LocalDate dueDate = ym.plusMonths(1).atDay(2);
 
             if (today.isAfter(dueDate)) {
-                long daysLate = ChronoUnit.DAYS.between(dueDate.plusDays(1), today);
+                LocalDate startDate = dueDate.plusDays(1);
+                LocalDate lastCalc = booking.getUpdatedAt() != null
+                        ? booking.getUpdatedAt().toLocalDate()
+                        : startDate.minusDays(1);
+
+                LocalDate calcFrom = lastCalc.isBefore(startDate) ? startDate : lastCalc.plusDays(1);
+
+                long daysLate = ChronoUnit.DAYS.between(calcFrom, today) + 1;
+                int workingDays = countWorkingDays(startDate, calcFrom.minusDays(1));
 
                 for (int i = 0; i < daysLate; i++) {
-                    LocalDate d = dueDate.plusDays(1 + i);
-                    if (d.getDayOfMonth() <= 15) {
-                        penalty = penalty.add(principal.multiply(BigDecimal.valueOf(0.0003)));
-                    } else {
-                        penalty = penalty.add(principal.multiply(BigDecimal.valueOf(0.0005)));
+                    LocalDate d = calcFrom.plusDays(i);
+
+                    if (isBusinessDay(d)) {
+                        workingDays++;
                     }
+
+                    BigDecimal rate = (workingDays <= 15)
+                            ? BigDecimal.valueOf(0.0003)
+                            : BigDecimal.valueOf(0.0005);
+
+                    penalty = penalty.add(principal.multiply(rate));
                 }
+
+                Agency agency = agencyRepository.findById(booking.getAgencyId())
+                        .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+                if (workingDays <= 15) {
+                    agency.setStatus("WARNING");
+                } else {
+                    agency.setStatus("LOCKED");
+                }
+
+                agencyRepository.save(agency);
             }
 
-            booking.setUpdatedAt(LocalDateTime.now());
             booking.setPenaltyInterest(penalty);
-            booking.setPrincipalRemaining(principal);
+            booking.setUpdatedAt(LocalDateTime.now());
             agencyBookingRepository.save(booking);
         }
     }
+
+    private boolean isBusinessDay(LocalDate date) {
+        DayOfWeek dow = date.getDayOfWeek();
+        return dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY;
+    }
+
+    private int countWorkingDays(LocalDate start, LocalDate end) {
+        int count = 0;
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            if (isBusinessDay(d)) count++;
+        }
+        return count;
+    }
+
 }

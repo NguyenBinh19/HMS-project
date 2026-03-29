@@ -6,6 +6,10 @@ server:
 spring:
   application:
     name: hms
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   jpa:
     hibernate:
       ddl-auto: update
