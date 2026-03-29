@@ -55,4 +55,6 @@ public interface BookingService {
 
     // UC-053: Report No-show
     NoShowResponse reportNoShow(NoShowRequest request);
+
+    void recalculateDebts();
 }

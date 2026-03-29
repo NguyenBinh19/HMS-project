@@ -23,4 +23,6 @@ public interface AgencyService {
     AgencyDetailResponse findAgencyFinanceInfoHeader(Long id);
 
     CreditSummaryDto getCreditSummary(Long agencyId);
+
+    void payDebt(Long agencyId);
 }

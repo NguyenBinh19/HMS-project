@@ -80,4 +80,13 @@ public class AgencyController {
                 .result(agencyService.getCreditSummary(agencyId))
                 .build();
     }
+
+    @PostMapping("/{agencyId}/pay-debt")
+    public ApiResponse<String> payDebt(@PathVariable Long agencyId) {
+        agencyService.payDebt(agencyId);
+        return ApiResponse.<String>builder()
+                .result("Thanh toán nợ thành công")
+                .build();
+    }
+
 }

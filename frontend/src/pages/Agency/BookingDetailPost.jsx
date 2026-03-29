@@ -444,7 +444,7 @@ const BookingDetailPost = () => {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Trạng thái TT:</span>
-                                    <span className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                                    <span className={`font-bold ${booking.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-500'}`}>
                                         {booking.paymentStatus?.toUpperCase() || "—"}
                                     </span>
                                 </div>

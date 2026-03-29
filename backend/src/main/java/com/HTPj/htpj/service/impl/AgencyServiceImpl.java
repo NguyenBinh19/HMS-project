@@ -4,16 +4,13 @@ import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
-import com.HTPj.htpj.entity.Agency;
-import com.HTPj.htpj.entity.PartnerVerification;
-import com.HTPj.htpj.entity.Users;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.AgencyMapper;
-import com.HTPj.htpj.repository.AgencyRepository;
-import com.HTPj.htpj.repository.PartnerVerificationRepository;
-import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AgencyService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,7 +33,8 @@ public class AgencyServiceImpl implements AgencyService {
     private final PartnerVerificationRepository verificationRepository;
     private final AgencyMapper agencyMapper;
     private final UserRepository userRepository;
-
+    private final AgencyBookingRepository agencyBookingRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
     @Override
     public List<AgencyResponse> getAllAgencies() {
 
@@ -164,18 +163,74 @@ public class AgencyServiceImpl implements AgencyService {
 
         BigDecimal creditLimit = agency.getCreditLimit() != null ? agency.getCreditLimit() : BigDecimal.ZERO;
         BigDecimal currentCredit = agency.getCurrentCredit() != null ? agency.getCurrentCredit() : BigDecimal.ZERO;
-
         BigDecimal remainingCredit = currentCredit;
 
-        BigDecimal debt = creditLimit.subtract(currentCredit);
+        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+
+        BigDecimal debt = unpaidBookings.stream()
+                .map(AgencyBooking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         int usedPercent = creditLimit.compareTo(BigDecimal.ZERO) == 0 ? 0 :
                 debt.multiply(BigDecimal.valueOf(100))
                         .divide(creditLimit, 0, RoundingMode.HALF_UP)
                         .intValue();
 
-        LocalDate dueDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+        LocalDate dueDate = YearMonth.now().atDay(25);
 
         return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
     }
+
+    @Transactional
+    public void payDebt(Long agencyId) {
+        Agency agency = agencyRepository.findById(agencyId)
+                .orElseThrow(() -> new RuntimeException("Agency not found"));
+
+        String currentMonth = YearMonth.now().toString();
+        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+
+        BigDecimal debt = unpaidBookings.stream()
+                .map(AgencyBooking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (debt.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Không có nợ cần thanh toán");
+        }
+
+        BigDecimal walletBalance = agency.getWalletBalance() != null ? agency.getWalletBalance() : BigDecimal.ZERO;
+
+        if (walletBalance.compareTo(debt) < 0) {
+            throw new RuntimeException("Số dư ví không đủ để thanh toán nợ");
+        }
+
+        agency.setWalletBalance(walletBalance.subtract(debt));
+
+        agency.setCurrentCredit(agency.getCreditLimit());
+
+        agencyRepository.save(agency);
+
+        agencyBookingRepository.findByAgencyIdAndMonth(agencyId, currentMonth).ifPresent(ab -> {
+            ab.setIsPaid(true);
+            ab.setUpdatedAt(LocalDateTime.now());
+            agencyBookingRepository.save(ab);
+        });
+
+        TransactionHistory historyCreditMD = TransactionHistory.builder()
+                .transactionDate(LocalDateTime.now())
+                .transactionType("Payment")
+                .description("Thanh toán dư nợ tín dụng từ ví sang tín dụng")
+                .sourceType("Ví")
+                .amount(debt)
+                .balanceAfter(walletBalance.subtract(debt))
+                .status("Success")
+                .transactionCode("")
+                .direction("OUT")
+                .agency(agency)
+                .createdAt(LocalDateTime.now())
+                .build();
+        historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
+        historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
+        transactionHistoryRepository.save(historyCreditMD);
+    }
+
 }

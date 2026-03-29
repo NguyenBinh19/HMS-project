@@ -87,7 +87,7 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
                             </td>
                             <td className="px-8 py-6">
                                     <span className={`px-3 py-1.5 rounded-full text-[9px] font-black border uppercase ${
-                                        item.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+                                        item.paymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
                                     }`}>
                                         {item.paymentStatus}
                                     </span>

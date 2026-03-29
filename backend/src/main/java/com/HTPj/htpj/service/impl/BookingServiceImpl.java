@@ -34,6 +34,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
     private final AgencyRepository agencyRepository;
     private final AgencyCreditHistoryRepository agencyCreditHistoryRepository;
     private final SystemConfigRepository systemConfigRepository;
-
+    private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
@@ -138,7 +139,7 @@ public class BookingServiceImpl implements BookingService {
         return responses;
     }
 
-    private BigDecimal calculateTotalPrice(RoomType roomType,LocalDate checkIn,LocalDate checkOut) {
+    private BigDecimal calculateTotalPrice(RoomType roomType, LocalDate checkIn, LocalDate checkOut) {
 
         BigDecimal basePrice = roomType.getBasePrice();
 
@@ -400,7 +401,6 @@ public class BookingServiceImpl implements BookingService {
         BigDecimal finalAmountPaid = saved.getFinalAmount();
 
         if ("CREDIT".equalsIgnoreCase(paymentMethod)) {
-
             BigDecimal creditBefore = agency.getCurrentCredit();
             BigDecimal creditAfter = creditBefore.subtract(finalAmountPaid);
 
@@ -415,10 +415,8 @@ public class BookingServiceImpl implements BookingService {
                     .description("Thanh toán hóa đơn " + saved.getBookingCode())
                     .createdAt(LocalDateTime.now())
                     .build();
-
             agencyCreditHistoryRepository.save(history);
 
-            // add credit transaction history
             TransactionHistory historyCreditMD = TransactionHistory.builder()
                     .transactionDate(LocalDateTime.now())
                     .transactionType("Payment")
@@ -440,6 +438,23 @@ public class BookingServiceImpl implements BookingService {
             agency.setCurrentCredit(creditAfter);
             agencyRepository.save(agency);
 
+            YearMonth currentMonth = YearMonth.from(LocalDate.now());
+            String monthStr = currentMonth.toString();
+
+            AgencyBooking agencyBooking = agencyBookingRepository
+                    .findByAgencyIdAndMonth(agency.getAgencyId(), monthStr)
+                    .orElse(AgencyBooking.builder()
+                            .agencyId(agency.getAgencyId())
+                            .month(monthStr)
+                            .totalAmount(BigDecimal.ZERO)
+                            .createdAt(LocalDateTime.now())
+                            .build());
+
+            agencyBooking.setTotalAmount(
+                    agencyBooking.getTotalAmount().add(finalAmountPaid)
+            );
+            agencyBooking.setUpdatedAt(LocalDateTime.now());
+            agencyBookingRepository.save(agencyBooking);
         } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
 
             BigDecimal walletBefore = agency.getWalletBalance();
@@ -448,7 +463,6 @@ public class BookingServiceImpl implements BookingService {
             agency.setWalletBalance(walletAfter);
             agencyRepository.save(agency);
 
-            //viet phan luu transaction vao day
             TransactionHistory history = TransactionHistory.builder()
                     .transactionDate(LocalDateTime.now())
                     .transactionType("Payment")
@@ -1073,6 +1087,38 @@ public class BookingServiceImpl implements BookingService {
                             roomAllotmentRepository.save(allotment);
                         });
             }
+        }
+    }
+
+    @Override
+    public void recalculateDebts() {
+        List<AgencyBooking> allBookings = agencyBookingRepository.findAll();
+        LocalDate today = LocalDate.now();
+
+        for (AgencyBooking booking : allBookings) {
+            BigDecimal principal = booking.getTotalAmount();
+            BigDecimal penalty = BigDecimal.ZERO;
+
+            YearMonth ym = YearMonth.parse(booking.getMonth());
+            LocalDate dueDate = ym.plusMonths(1).atDay(2);
+
+            if (today.isAfter(dueDate)) {
+                long daysLate = ChronoUnit.DAYS.between(dueDate.plusDays(1), today);
+
+                for (int i = 0; i < daysLate; i++) {
+                    LocalDate d = dueDate.plusDays(1 + i);
+                    if (d.getDayOfMonth() <= 15) {
+                        penalty = penalty.add(principal.multiply(BigDecimal.valueOf(0.0003)));
+                    } else {
+                        penalty = penalty.add(principal.multiply(BigDecimal.valueOf(0.0005)));
+                    }
+                }
+            }
+
+            booking.setUpdatedAt(LocalDateTime.now());
+            booking.setPenaltyInterest(penalty);
+            booking.setPrincipalRemaining(principal);
+            agencyBookingRepository.save(booking);
         }
     }
 }

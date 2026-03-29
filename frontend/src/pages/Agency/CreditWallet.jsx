@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Wallet, CreditCard, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../services/axios.config";
+import Swal from "sweetalert2";
 
 const CreditWallet = () => {
     const navigate = useNavigate();
@@ -10,7 +11,12 @@ const CreditWallet = () => {
     const agencyId = user?.agencyId;
 
     const [transactions, setTransactions] = useState([]);
-    const [summary, setSummary] = useState({});
+    const [summary, setSummary] = useState({
+        totalCredit: 0,
+        usedCredit: 0,
+        remainingCredit: 0,
+    });
+
 
     useEffect(() => {
         if (agencyId) {
@@ -78,7 +84,29 @@ const CreditWallet = () => {
                         <p className="text-sm text-slate-600">Nợ cần thanh toán</p>
                         <p className="text-2xl font-bold text-orange-600">{formatCurrency(summary.debt)}</p>
                         <p className="text-xs text-slate-500 mt-1">Hạn chót: {summary.dueDate}</p>
-                        <button className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">
+                        <button
+                            onClick={() => {
+                                api.post(`/agencies/${agencyId}/pay-debt`)
+                                    .then(() => {
+                                        Swal.fire({
+                                            icon: "success",
+                                            title: "Thanh toán thành công",
+                                            text: "Khoản nợ đã được xử lý!",
+                                            confirmButtonColor: "#3085d6",
+                                        });
+                                        return api.get(`/agencies/${agencyId}/credit-summary`);
+                                    })
+                                    .then((res) => setSummary(res.data.result || {}))
+                                    .catch((err) => {
+                                        Swal.fire({
+                                            icon: "error",
+                                            title: "Thanh toán thất bại",
+                                            text: err.message,
+                                            confirmButtonColor: "#d33",
+                                        });
+                                    });
+                            }}
+                            className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">
                             Thanh toán nợ
                         </button>
                     </div>

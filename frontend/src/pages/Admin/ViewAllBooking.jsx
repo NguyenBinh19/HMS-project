@@ -297,9 +297,9 @@ const AdminBookingList = () => {
                                 </td>
                                 <td className="px-8 py-6 text-right">
                                     <div className="font-black text-slate-900 text-base">{formatVND(item.finalAmount)}</div>
-                                    <div className={`text-[9px] font-bold uppercase mt-1 flex items-center justify-end gap-1.5 ${item.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    <div className={`text-[9px] font-bold uppercase mt-1 flex items-center justify-end gap-1.5 ${item.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
                                         <CreditCard size={12}/>
-                                        {item.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chờ thanh toán'}
+                                        {item.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chờ thanh toán'}
                                     </div>
                                 </td>
                                 <td className="px-8 py-6 text-center">
