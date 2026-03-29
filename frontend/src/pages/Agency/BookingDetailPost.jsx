@@ -121,13 +121,15 @@ const BookingDetailPost = () => {
     const canCancel = () => {
         if (!booking) return false;
         const s = booking.bookingStatus?.toUpperCase();
+        // Chỉ cho phép hủy khi chưa Check-in và trạng thái là CONFIRMED hoặc BOOKED
         const validStatus = ['CONFIRMED', 'BOOKED'].includes(s);
+        if (!validStatus) return false;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const checkIn = new Date(booking.checkInDate);
         checkIn.setHours(0, 0, 0, 0);
-
-        return validStatus && checkIn >= today;
+        // Không cho phép bấm nút hủy nếu ngày hiện tại đã sau ngày Check-in
+        return checkIn >= today;
     };
 
     // Điều kiện cho phép sửa thông tin
@@ -146,26 +148,31 @@ const BookingDetailPost = () => {
     // Hàm xử lý hủy đơn
     const handleCancelBooking = async (reason) => {
         const isConfirmed = window.confirm(
-            "QUAN TRỌNG: Bạn có chắc chắn muốn hủy đơn hàng này không?\n" +
-            "- Hành động này KHÔNG THỂ hoàn tác.\n" +
-            "- Vui lòng kiểm tra kỹ điều khoản hủy đơn hàng của hệ thống trước khi xác nhận."
+            "XÁC NHẬN HỦY: Hành động này không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?"
         );
-
         if (!isConfirmed) return;
+
         try {
             const payload = {
                 bookingCode: booking.bookingCode,
-                reason: reason || "Khách yêu cầu hủy"
+                reason: reason || "Yêu cầu hủy"
             };
-
-            const res = await bookingService.cancelBooking(payload);
-
-            setBooking(prev => ({ ...prev, bookingStatus: 'CANCELLED' }));
-
-            // Hiển thị thông báo thành công kèm số tiền phạt từ BE
-            // alert(`Hủy thành công! \nPhí phạt: ${formatCurrency(res.cancellationPenalty)} \nTiền hoàn lại ví: ${formatCurrency(res.refundAmount)}`);
-            alert(`Hủy thành công!`);
-
+            const response = await bookingService.cancelBooking(payload);
+            const data = response.result;
+            // Cập nhật trạng thái tại chỗ
+            setBooking(prev => ({
+                ...prev,
+                bookingStatus: 'CANCELLED'
+            }));
+            // Hiển thị thông báo chi tiết
+            alert(
+                `Hủy thành công!\n` +
+                `---------------------------\n` +
+                `Mã đơn: ${data.bookingCode}\n` +
+                `Phí phạt hủy: ${formatCurrency(data.cancellationPenalty)}\n` +
+                `Tiền hoàn lại: ${formatCurrency(data.refundAmount)}\n` +
+                `Lý do: ${data.reason}`
+            );
         } catch (err) {
             const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
             alert("Lỗi: " + errorMsg);
@@ -452,7 +459,11 @@ const BookingDetailPost = () => {
                                 </div>
                                 <div className="bg-[#fef2f2] p-3 rounded-lg border-l-4 border-rose-500">
                                     <p className="text-[11px] font-bold text-rose-700">Chính sách hủy</p>
-                                    <p className="text-xs text-rose-600 leading-relaxed">Vui lòng liên hệ khách sạn để biết chính sách hủy.</p>
+                                    <p className="text-xs text-rose-600 leading-relaxed">
+                                        Phí phạt được tính dựa trên thời điểm hủy so với ngày Check-in.
+                                        Hệ thống sẽ tự động trừ phí vào số tiền đã thanh toán và hoàn trả phần còn lại
+                                        vào ví của bạn.
+                                    </p>
                                 </div>
                             </div>
                         </div>

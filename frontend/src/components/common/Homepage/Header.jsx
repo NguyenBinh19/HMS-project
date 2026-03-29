@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     Building2, Menu, X, LogOut, UserCircle, ShieldCheck,
-    ChevronDown, User, LayoutDashboard
+    ChevronDown, User, LayoutDashboard, Clock, Loader2, AlertCircle
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import api from "../../../services/axios.config";
+import { kycService } from "@/services/kyc.service.js";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +15,9 @@ const Header = () => {
     const [userRoles, setUserRoles] = useState([]);
     const [hotelIdFromToken, setHotelIdFromToken] = useState(null);
     const [agencyIdFromToken, setAgencyIdFromToken] = useState(null);
+
+    const [kycData, setKycData] = useState(null);
+    const [isCheckingKyc, setIsCheckingKyc] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -71,13 +75,89 @@ const Header = () => {
         }
     }, [location.pathname]); // Cập nhật lại khi chuyển trang
 
+    // 1. Logic fetch KYC
+    useEffect(() => {
+        const fetchUserKyc = async () => {
+            // Chỉ check nếu: Có user, không phải Admin, chưa có HotelId/AgencyId
+            if (user && !isAdmin && !currentHotelId && !currentAgencyId) {
+                setIsCheckingKyc(true);
+                try {
+                    const res = await kycService.getVerificationsByUserId();
+                    if (res?.result && res.result.length > 0) {
+                        // Lấy bản ghi mới nhất dựa trên ID hoặc thời gian
+                        const latest = res.result.sort((a, b) => b.id - a.id)[0];
+                        setKycData(latest);
+                    }
+                } catch (err) {
+                    console.error("Lỗi fetch KYC:", err);
+                } finally {
+                    setIsCheckingKyc(false);
+                }
+            }
+        };
+        fetchUserKyc();
+    }, [user, userRoles, location.pathname]);
+
     // 3. Logic tính toán quyền hạn (Sử dụng useMemo để tối ưu)
     const isAdmin = useMemo(() => userRoles.some(role => role.includes("ADMIN")), [userRoles]);
     const isAgencyManager = useMemo(() => userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER")), [userRoles]);
 
     const currentHotelId = user?.hotelId || hotelIdFromToken;
     const currentAgencyId = user?.agencyId || agencyIdFromToken;
-    const needsKyc = user && !isAdmin && !currentHotelId && !currentAgencyId;
+    // const needsKyc = user &&
+    //     !isAdmin &&
+    //     !currentHotelId &&
+    //     !currentAgencyId;
+
+    // 3. Hàm render Button KYC
+    const renderKycStatus = () => {
+        if (isAdmin || currentHotelId || currentAgencyId || !user) return null;
+        if (isCheckingKyc) {
+            return (
+                <div className="flex items-center gap-2 px-4 py-2 text-slate-400 text-xs">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Đang kiểm tra hồ sơ...</span>
+                </div>
+            );
+        }
+        // Trường hợp đang chờ duyệt
+        if (kycData?.status === "PENDING") {
+            return (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shadow-sm">
+                    <Clock size={18} className="animate-pulse" />
+                    <div className="flex flex-col leading-none">
+                        <span className="text-[12px] font-bold">Đang chờ duyệt</span>
+                        <span className="text-[10px] opacity-70">Hồ sơ KYC đang xử lý</span>
+                    </div>
+                </div>
+            );
+        }
+        // Trường hợp bị từ chối
+        if (kycData?.status === "REJECTED") {
+            return (
+                <button
+                    onClick={() => navigate("/kyc-intro")}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all"
+                >
+                    <AlertCircle size={18} />
+                    <div className="flex flex-col items-start leading-none">
+                        <span className="text-[12px] font-bold">Làm lại hồ sơ</span>
+                        <span className="text-[10px] opacity-80">Hồ sơ bị từ chối</span>
+                    </div>
+                </button>
+            );
+        }
+        // Trường hợp chưa gửi hồ sơ (null hoặc status khác)
+        return (
+            <button
+                onClick={() => navigate("/kyc-intro")}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse shadow-lg shadow-amber-200 hover:bg-amber-600"
+            >
+                <ShieldCheck size={18} />
+                <span>Xác minh ngay</span>
+            </button>
+        );
+    };
 
     // 4. Định dạng tiền tệ
     const formatCurrency = (value) => {
@@ -237,12 +317,7 @@ const Header = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                                {needsKyc && (
-                                    <button onClick={() => navigate("/kyc-intro")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-sm animate-pulse shadow-lg shadow-amber-200 hover:bg-amber-600">
-                                        <ShieldCheck size={18} />
-                                        <span className="hidden xl:inline">Xác minh ngay</span>
-                                    </button>
-                                )}
+                                {renderKycStatus()}
                                 <button onClick={() => navigate("/profile")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>
                                     <User size={18} /><span>Hồ sơ</span>
                                 </button>

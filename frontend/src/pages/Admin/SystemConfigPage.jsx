@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import RankCycleTab from '@/components/admin/systemConfig/RankCycleTab.jsx';
+import CancelPolicyTab from '@/components/admin/systemConfig/CancelPolicyTab.jsx';
 
 const SystemConfigPage = () => {
     const [activeTab, setActiveTab] = useState('RANK_CYCLE');
 
     const tabs = [
+        { id: 'CANCEL_POLICY', label: 'Chính sách hủy' },
+        { id: 'RANK_CYCLE', label: 'Chu kỳ xếp hạng' },
         { id: 'FINANCE', label: 'Tài chính' },
         { id: 'OPERATION', label: 'Vận hành & TTL' },
-        { id: 'RANK_CYCLE', label: 'Chu kỳ xếp hạng' },
         { id: 'NOTI', label: 'Thông báo' },
     ];
 
@@ -35,6 +37,7 @@ const SystemConfigPage = () => {
                 {/* Tab Content */}
                 <div className="bg-white p-2 rounded-[32px]">
                     {activeTab === 'RANK_CYCLE' && <RankCycleTab />}
+                    {activeTab === 'CANCEL_POLICY' && <CancelPolicyTab />}
                     {/* Các tab khác tương tự... */}
                 </div>
             </div>
