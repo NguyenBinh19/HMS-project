@@ -230,4 +230,14 @@ public class BookingController {
                 .build();
     }
 
+    //get booking detail by id
+    @GetMapping("/detail/id/{bookingId}")
+    ApiResponse<BookingDetailResponse> getBookingDetailById(
+            @PathVariable Long bookingId
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.getBookingDetailById(bookingId))
+                .build();
+    }
+
 }
