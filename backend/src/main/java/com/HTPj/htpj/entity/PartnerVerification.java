@@ -36,7 +36,7 @@ public class PartnerVerification {
     @Column(name = "reviewed_by", length = 255)
     private String reviewedBy;
 
-    @Column(name = "rejection_reason", length = 1000)
+    @Column(name = "rejection_reason", columnDefinition = "nvarchar(1000)")
     private String rejectionReason;
 
     @Column(name = "version", nullable = false)

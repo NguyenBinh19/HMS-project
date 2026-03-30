@@ -245,6 +245,10 @@ public class KycServiceImpl implements KycService {
                 hotel.setHotelName(legalName);
                 hotel.setAddress(address);
                 hotel.setStatus("ACTIVE");
+
+                hotel.setCreatedAt(now);
+                hotel.setUpdatedAt(now);
+
                 hotel.setCommissionValue(selectedCommission.getCommissionValue());
                 hotel.setRateType(selectedCommission.getRateType());
                 hotel.setCommissionId(selectedCommission.getCommissionId());
@@ -262,14 +266,20 @@ public class KycServiceImpl implements KycService {
                 Rank basicRank = rankRepository.findByRankCode("BASIC")
                         .orElseThrow(() -> new AppException(ErrorCode.RANK_NOT_FOUND));
 
+                LocalDateTime now = LocalDateTime.now();
+
                 Agency agency = new Agency();
                 agency.setAgencyName(legalName);
                 agency.setAddress(address);
                 agency.setStatus("ACTIVE");
 
+                agency.setCreatedAt(now);
+                agency.setUpdatedAt(now);
+
                 agency.setRank(basicRank);
                 agency.setCreditLimit(BigDecimal.ZERO);
                 agency.setCurrentCredit(BigDecimal.ZERO);
+                agency.setWalletBalance(BigDecimal.ZERO);
 
                 Agency savedAgency = agencyRepository.save(agency);
                 verification.setAgency(savedAgency);

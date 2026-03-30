@@ -28,7 +28,7 @@ public class Promotion {
     @Column(nullable = false)
     private String code;
 
-    @Column(nullable = false)
+    @Column(nullable = false,columnDefinition = "nvarchar(255)")
     private String name;
 
     @Column(name = "type_promotion", nullable = false)
