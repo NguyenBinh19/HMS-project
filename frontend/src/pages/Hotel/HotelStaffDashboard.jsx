@@ -18,6 +18,8 @@ const StaffDashboard = () => {
     });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
     const fetchStaffList = async () => {
         try {
@@ -46,10 +48,31 @@ const StaffDashboard = () => {
         setModalConfig({ isOpen: true, data: staff, isViewOnly: true });
     };
 
+    // const handleToggleStatus = async (staff) => {
+    //     const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
+    //     if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
+    //
+    //     try {
+    //         if (staff.status === 'ACTIVE') {
+    //             await staffService.lockStaff(staff.id);
+    //         } else {
+    //             await staffService.unLockStaff(staff.id);
+    //         }
+    //         fetchStaffList();
+    //     } catch (error) {
+    //         alert(`Lỗi khi ${actionText} tài khoản`);
+    //     }
+    // };
+
     const handleToggleStatus = async (staff) => {
+        if (staff.id === currentUserId) {
+            alert("Bạn không thể tự khóa tài khoản của chính mình!");
+            return;
+        }
+        console.log("ID người dùng đang đăng nhập:", currentUserId);
+        console.log("ID của nhân viên trong hàng này:", staff.id);
         const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
         if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
-
         try {
             if (staff.status === 'ACTIVE') {
                 await staffService.lockStaff(staff.id);
@@ -139,10 +162,16 @@ const StaffDashboard = () => {
                                     </td>
                                     <td className="px-8 py-6 text-center">
                                         <div className="flex flex-col items-center gap-1">
-                                            <Toggle checked={staff.status === 'ACTIVE'} onChange={() => handleToggleStatus(staff)} />
-                                            <span className={`text-[9px] font-bold uppercase ${staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                    {staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
-                                                </span>
+                                            <Toggle checked={staff.status === 'ACTIVE'}
+                                                    onChange={() => handleToggleStatus(staff)}
+                                                    disabled={staff.id === currentUserId}/>
+                                            <span className={`text-[9px] font-bold uppercase ${
+                                                staff.id === currentUserId
+                                                    ? 'text-slate-400'
+                                                    : (staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500')
+                                            }`}>
+                                                {staff.id === currentUserId ? 'Đang truy cập' : (staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa')}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
@@ -211,10 +240,17 @@ const StaffDashboard = () => {
     );
 };
 
-const Toggle = ({ checked, onChange }) => (
+const Toggle = ({ checked, onChange, disabled }) => (
     <label className="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" className="sr-only peer" checked={checked} onChange={onChange} />
-        <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
+        <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={checked}
+            onChange={disabled ? null : onChange} // Chặn sự kiện change
+            disabled={disabled}
+        />
+        <div
+            className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
     </label>
 );
 

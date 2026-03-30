@@ -66,6 +66,7 @@ import CreditWallet from "../pages/Agency/CreditWallet.jsx";
 import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
 import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
 import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
+import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -161,6 +162,7 @@ const AppRoutes = () => {
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
                     <Route path="view-booking/:bookingCode" element={<AdminBookingDetail />} />
+                    <Route path="view-booking/:bookingId" element={<AdminBookingDetailById />} />
                     <Route path="partners" element={<PartnerList />} />
                     <Route path="partners/agency/:id" element={<PartnerDetail />} />
                     <Route path="partners/hotel/:id" element={<PartnerDetail />} />

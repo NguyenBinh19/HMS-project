@@ -19,6 +19,7 @@ public class TemporalConfig {
 
     private final RoomHoldRepository roomHoldRepository;
 
+
     @Bean
     public WorkflowServiceStubs workflowServiceStubs() {
         return WorkflowServiceStubs.newInstance(

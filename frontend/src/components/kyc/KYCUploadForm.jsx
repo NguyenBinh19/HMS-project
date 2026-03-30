@@ -132,8 +132,14 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
             alert("Vui lòng điền các thông tin bắt buộc!");
             return;
         }
-        const rawTaxCode = formData.taxCode.replace("-", "");
 
+        // Nếu có bất kỳ thông báo lỗi nào đang tồn tại, không cho phép submit
+        if (dateError || addressError || placeError) {
+            alert("Thông tin nhập vào không hợp lệ. Vui lòng kiểm tra lại các trường báo đỏ!");
+            return;
+        }
+
+        const rawTaxCode = formData.taxCode.replace("-", "");
         if (rawTaxCode.length !== 10 && rawTaxCode.length !== 13) {
             alert("Mã số thuế phải có 10 hoặc 13 số!");
             return;

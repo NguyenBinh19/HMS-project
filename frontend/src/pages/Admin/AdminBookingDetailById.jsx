@@ -9,7 +9,7 @@ import {
 import { bookingService } from '@/services/booking.service.js';
 
 const AdminBookingDetail = () => {
-    const { bookingCode } = useParams();
+    const { bookingId } = useParams();
     const navigate = useNavigate();
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -28,7 +28,7 @@ const AdminBookingDetail = () => {
         const fetchDetail = async () => {
             setLoading(true);
             try {
-                const data = await bookingService.getBookingDetailOfAdmin(bookingCode);
+                const data = await bookingService.getBookingDetailById(bookingId);
                 if (data && data.result) setBooking(data.result);
             } catch (err) {
                 console.error("Lỗi lấy chi tiết:", err);
@@ -98,7 +98,7 @@ const AdminBookingDetail = () => {
                             </div>
 
                             <div className="mb-10">
-                                {/*<span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>*/}
+                                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>
                                 <h2 className="text-4xl font-black text-slate-900 tracking-tight">{booking.bookingCode}</h2>
                                 <p className="text-slate-400 font-bold text-xs mt-2 flex items-center gap-2">
                                     <Clock size={14}/> Khởi tạo lúc: {new Date(booking.createdAt).toLocaleTimeString('vi-VN')} ngày {formatDate(booking.createdAt)}
