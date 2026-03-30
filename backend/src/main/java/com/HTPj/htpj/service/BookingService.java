@@ -57,4 +57,6 @@ public interface BookingService {
     NoShowResponse reportNoShow(NoShowRequest request);
 
     void recalculateDebts();
+
+    BookingDetailResponse getBookingDetailById(Long bookingId);
 }
