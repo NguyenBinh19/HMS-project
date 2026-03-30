@@ -15,7 +15,7 @@ const AdminBookingDetail = () => {
     const [loading, setLoading] = useState(true);
 
     const STATUS_CONFIG = {
-        "BOOKED": { label: "CHỜ THANH TOÁN", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+        "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
         "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
         "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
         "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
