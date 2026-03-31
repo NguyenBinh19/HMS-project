@@ -10,6 +10,11 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+
 @Service
 @Slf4j
 public class EmailServiceImpl implements EmailService {
@@ -200,6 +205,98 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception e) {
             log.error("Failed to send staff account email to {}", to, e);
         }
+    }
+
+    @Override
+    public void sendPayoutStatementNotification(String to, String hotelName, String statementCode,
+                                                LocalDate periodStart, LocalDate periodEnd,
+                                                BigDecimal grossRevenue, BigDecimal totalCommission,
+                                                BigDecimal netPayout, Integer totalBookings) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Bảng sao kê thanh toán " + statementCode);
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String period = periodStart.format(fmt) + " - " + periodEnd.format(fmt);
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "<p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Payout Statement</p>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + hotelName + ",</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Bảng sao kê thanh toán cho kỳ <strong>" + period + "</strong> đã được tạo.</p>"
+                    + "<div style='background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0;'>"
+                    + "<table style='width: 100%; border-collapse: collapse;'>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Ma sao ke:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + statementCode + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Ky sao ke:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + period + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Tong so booking:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + totalBookings + "</td></tr>"
+                    + "<tr style='border-top: 1px solid #e2e8f0;'><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Doanh thu gop:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + formatCurrency(grossRevenue) + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Hoa hong san:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #ef4444;'>-" + formatCurrency(totalCommission) + "</td></tr>"
+                    + "<tr style='border-top: 2px solid #3b82f6;'><td style='padding: 12px 0; color: #1e293b; font-size: 16px; font-weight: bold;'>Thanh toan thuc nhan:</td>"
+                    + "<td style='padding: 12px 0; text-align: right; font-weight: bold; color: #3b82f6; font-size: 18px;'>" + formatCurrency(netPayout) + "</td></tr>"
+                    + "</table></div>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Vui long dang nhap vao he thong de xem chi tiet va xac nhan bang sao ke.</p>"
+                    + "<div style='text-align: center; margin: 24px 0;'>"
+                    + "<a href='https://www.jushotel.site/hotel/payout-state' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 14px;'>Xem chi tiet sao ke</a>"
+                    + "</div>"
+                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Day la email tu dong tu he thong HMS. Vui long khong tra loi email nay.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Payout statement notification sent to {} for statement {}", to, statementCode);
+        } catch (Exception e) {
+            log.error("Failed to send payout statement notification to {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendPaymentSentNotification(String to, String hotelName, String statementCode,
+                                            BigDecimal netPayout, String bankReference) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("HMS - Thanh toan da duoc chuyen " + statementCode);
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #10b981, #059669); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
+                    + "<p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Payment Confirmation</p>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + hotelName + ",</h2>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Chung toi xin thong bao rang khoan thanh toan cho bang sao ke <strong>" + statementCode + "</strong> da duoc chuyen thanh cong.</p>"
+                    + "<div style='background: #f0fdf4; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #bbf7d0;'>"
+                    + "<table style='width: 100%; border-collapse: collapse;'>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>So tien:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #10b981; font-size: 18px;'>" + formatCurrency(netPayout) + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Ma giao dich ngan hang:</td>"
+                    + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + bankReference + "</td></tr>"
+                    + "</table></div>"
+                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Day la email tu dong tu he thong HMS.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Payment sent notification sent to {} for statement {}", to, statementCode);
+        } catch (Exception e) {
+            log.error("Failed to send payment sent notification to {}", to, e);
+        }
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        if (amount == null) return "0";
+        return String.format("%,.0f VND", amount);
     }
 
 }

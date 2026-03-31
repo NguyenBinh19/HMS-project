@@ -6,10 +6,6 @@ server:
 spring:
   application:
     name: hms
-  servlet:
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
   jpa:
     hibernate:
       ddl-auto: update
@@ -39,7 +35,7 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID:815111395458-jg0lh3ker5tkrlicliapsm26a3t41p6f.apps.googleusercontent.com}
             client-secret: ${GOOGLE_CLIENT_SECRET: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}
             scope: openid, profile, email
-            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+            redirect-uri: "https://www.jushotel.site/hms/oauth2/callback/{registrationId}"
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
