@@ -79,4 +79,26 @@ public class PayoutAdminController {
                 .result(payoutStatementService.markAsPaid(request))
                 .build();
     }
+
+
+    /**
+     * Generate payout statements for the current billing cycle (26th prev month - 25th this month).
+     * Can also specify custom period with periodStart and periodEnd params.
+     */
+    @PostMapping("/generate")
+    ApiResponse<List<PayoutStatementResponse>> generateStatements(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodStart,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodEnd
+    ) {
+        List<PayoutStatementResponse> result;
+        if (periodStart != null && periodEnd != null) {
+            result = payoutStatementService.generateStatementsForPeriod(periodStart, periodEnd);
+        } else {
+            result = payoutStatementService.generateCurrentCycleStatements();
+        }
+        return ApiResponse.<List<PayoutStatementResponse>>builder()
+                .message("Đã tạo thành công " + result.size() + " bản sao kê")
+                .result(result)
+                .build();
+    }
 }

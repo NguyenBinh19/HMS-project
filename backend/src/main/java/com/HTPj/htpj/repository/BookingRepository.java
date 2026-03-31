@@ -191,4 +191,32 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("bookingCode") String bookingCode,
             @Param("hotelId") Integer hotelId
     );
+
+    // Payout Statement: Find completed bookings by hotel and checkout date range
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus = 'COMPLETED'
+      AND b.checkOutDate >= :periodStart
+      AND b.checkOutDate <= :periodEnd
+    ORDER BY b.checkOutDate ASC
+    """)
+    List<Booking> findCompletedBookingsByHotelAndCheckoutPeriod(
+            @Param("hotelId") Integer hotelId,
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd
+    );
+
+    // Payout Statement: Get all distinct hotelIds that have completed bookings in a period
+    @Query("""
+    SELECT DISTINCT b.hotelId FROM Booking b
+    WHERE b.bookingStatus = 'COMPLETED'
+      AND b.checkOutDate >= :periodStart
+      AND b.checkOutDate <= :periodEnd
+    """)
+    List<Integer> findHotelIdsWithCompletedBookingsInPeriod(
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd
+    );
 }

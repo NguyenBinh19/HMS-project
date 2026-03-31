@@ -8,16 +8,14 @@ import com.HTPj.htpj.dto.response.financial.PayoutLineItemResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutListItemResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutListResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
-import com.HTPj.htpj.entity.Hotel;
-import com.HTPj.htpj.entity.PayoutLineItem;
-import com.HTPj.htpj.entity.PayoutStatement;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
-import com.HTPj.htpj.repository.HotelRepository;
-import com.HTPj.htpj.repository.PayoutLineItemRepository;
-import com.HTPj.htpj.repository.PayoutStatementRepository;
+import com.HTPj.htpj.repository.*;
+import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.PayoutStatementService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -25,19 +23,189 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PayoutStatementServiceImpl implements PayoutStatementService {
 
     private final PayoutStatementRepository statementRepository;
     private final PayoutLineItemRepository lineItemRepository;
     private final HotelRepository hotelRepository;
-
+    private final BookingRepository bookingRepository;
+    private final EmailService emailService;
+    private final AgencyRepository agencyRepository;
     private static final BigDecimal MIN_PAYOUT_THRESHOLD = new BigDecimal("50");
+
+    // ---- Statement Generation ----
+
+    @Override
+    @Transactional
+    public List<PayoutStatementResponse> generateStatementsForPeriod(LocalDate periodStart, LocalDate periodEnd) {
+        log.info("Generating payout statements for period {} to {}", periodStart, periodEnd);
+
+        // Find all hotels that have completed bookings in this period
+        List<Integer> hotelIds = bookingRepository.findHotelIdsWithCompletedBookingsInPeriod(periodStart, periodEnd);
+        log.info("Found {} hotels with completed bookings in period", hotelIds.size());
+
+        List<PayoutStatementResponse> results = new ArrayList<>();
+
+        for (Integer hotelId : hotelIds) {
+            // Skip if statement already exists for this hotel and period
+            if (statementRepository.existsByHotelIdAndPeriodStartAndPeriodEnd(hotelId, periodStart, periodEnd)) {
+                log.info("Statement already exists for hotel {} in period {} - {}, skipping", hotelId, periodStart, periodEnd);
+                continue;
+            }
+
+            Hotel hotel = hotelRepository.findById(hotelId).orElse(null);
+            if (hotel == null) {
+                log.warn("Hotel {} not found, skipping", hotelId);
+                continue;
+            }
+
+            // Get all completed bookings for this hotel in the period
+            List<Booking> bookings = bookingRepository.findCompletedBookingsByHotelAndCheckoutPeriod(
+                    hotelId, periodStart, periodEnd);
+
+            if (bookings.isEmpty()) continue;
+
+            // Calculate totals
+            BigDecimal grossRevenue = BigDecimal.ZERO;
+            BigDecimal totalCommission = BigDecimal.ZERO;
+            BigDecimal totalRefunds = BigDecimal.ZERO;
+            int totalRoomNights = 0;
+
+            // Generate statement code: STM-YYYYMM-hotelId
+            String periodCode = periodEnd.format(DateTimeFormatter.ofPattern("yyyyMM"));
+            String statementCode = String.format("STM-%s-%04d", periodCode, hotelId);
+
+            // Create statement first
+            PayoutStatement statement = PayoutStatement.builder()
+                    .statementCode(statementCode)
+                    .hotelId(hotelId)
+                    .periodStart(periodStart)
+                    .periodEnd(periodEnd)
+                    .status("PENDING_CONFIRMATION")
+                    .totalBookings(bookings.size())
+                    .build();
+
+            statement = statementRepository.save(statement);
+
+            // Create line items for each booking
+            List<PayoutLineItem> lineItems = new ArrayList<>();
+            for (Booking booking : bookings) {
+                BigDecimal bookingGross = booking.getFinalAmount() != null
+                        ? booking.getFinalAmount() : BigDecimal.ZERO;
+                BigDecimal bookingRefund = booking.getRefundAmount() != null
+                        ? booking.getRefundAmount() : BigDecimal.ZERO;
+
+                // Calculate commission based on hotel's commission settings
+                BigDecimal commissionAmount = calculateCommission(bookingGross, hotel);
+
+                BigDecimal netAmount = bookingGross.subtract(commissionAmount).subtract(bookingRefund);
+
+                int roomNights = booking.getNights() != null ? booking.getNights() : 0;
+
+                String agencyName = agencyRepository.findById(booking.getAgencyId())
+                        .map(Agency::getAgencyName)
+                        .orElse("Unknown Agency");
+            System.out.print(agencyName);
+                PayoutLineItem lineItem = PayoutLineItem.builder()
+                        .payoutStatement(statement)
+                        .bookingId(booking.getBookingId())
+                        .bookingCode(booking.getBookingCode())
+                        .agencyName(agencyName)
+                        .checkInDate(booking.getCheckInDate())
+                        .checkOutDate(booking.getCheckOutDate())
+                        .roomNights(roomNights)
+                        .grossAmount(bookingGross)
+                        .commissionAmount(commissionAmount)
+                        .refundAmount(bookingRefund)
+                        .netAmount(netAmount)
+                        .build();
+
+                lineItems.add(lineItem);
+
+                grossRevenue = grossRevenue.add(bookingGross);
+                totalCommission = totalCommission.add(commissionAmount);
+                totalRefunds = totalRefunds.add(bookingRefund);
+                totalRoomNights += roomNights;
+            }
+
+            lineItemRepository.saveAll(lineItems);
+
+            // Update statement totals
+            BigDecimal netPayout = grossRevenue.subtract(totalCommission).subtract(totalRefunds);
+            statement.setGrossRevenue(grossRevenue);
+            statement.setTotalCommission(totalCommission);
+            statement.setTotalRefunds(totalRefunds);
+            statement.setAdjustments(BigDecimal.ZERO);
+            statement.setNetPayout(netPayout);
+            statement.setTotalRoomNights(totalRoomNights);
+
+            // UC-088.E2: Below minimum threshold → ROLLOVER
+            if (netPayout.compareTo(MIN_PAYOUT_THRESHOLD) < 0) {
+                statement.setStatus("ROLLOVER");
+            }
+
+            statementRepository.save(statement);
+
+            results.add(toResponse(statement, hotel.getHotelName(), false));
+            log.info("Generated statement {} for hotel {} ({}): netPayout={}",
+                    statementCode, hotelId, hotel.getHotelName(), netPayout);
+        }
+
+        log.info("Generated {} payout statements for period {} to {}", results.size(), periodStart, periodEnd);
+        return results;
+    }
+
+    @Override
+    @Transactional
+    public List<PayoutStatementResponse> generateCurrentCycleStatements() {
+        LocalDate today = LocalDate.now();
+        // Billing cycle: 26th of previous month to 25th of current month
+        LocalDate periodStart;
+        LocalDate periodEnd;
+
+        if (today.getDayOfMonth() >= 26) {
+            // We are on or after the 26th, so current cycle is 26th this month to 25th next month
+            periodStart = today.withDayOfMonth(26);
+            periodEnd = today.plusMonths(1).withDayOfMonth(25);
+        } else {
+            // We are before the 26th, so the recently closed cycle is 26th prev month to 25th this month
+            periodStart = today.minusMonths(1).withDayOfMonth(26);
+            periodEnd = today.withDayOfMonth(25);
+        }
+
+        return generateStatementsForPeriod(periodStart, periodEnd);
+    }
+
+    /**
+     * Calculate commission for a booking based on hotel's commission settings.
+     * Hotel entity stores commissionValue, commissionType, rateType.
+     */
+    private BigDecimal calculateCommission(BigDecimal grossAmount, Hotel hotel) {
+        if (hotel.getCommissionValue() == null || grossAmount == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal commissionValue = hotel.getCommissionValue();
+        String rateType = hotel.getRateType();
+
+        if ("PERCENT".equalsIgnoreCase(rateType)) {
+            return grossAmount.multiply(commissionValue)
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        } else {
+            // FIXED amount per booking
+            return commissionValue;
+        }
+    }
 
     // ---- UC-070: Hotel Owner methods ----
 
@@ -227,6 +395,21 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             Hotel hotel = hotelRepository.findById(stmt.getHotelId())
                     .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
             results.add(toResponse(stmt, hotel.getHotelName(), false));
+
+            // UC-088.2: Send "Payment Sent" email to Hotel
+            if (hotel.getEmail() != null && !hotel.getEmail().isBlank()) {
+                try {
+                    emailService.sendPaymentSentNotification(
+                            hotel.getEmail(),
+                            hotel.getHotelName(),
+                            stmt.getStatementCode(),
+                            stmt.getNetPayout(),
+                            request.getBankReference()
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to send payment notification for statement {}", stmt.getStatementCode(), e);
+                }
+            }
         }
         return results;
     }

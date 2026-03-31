@@ -7,9 +7,16 @@ import com.HTPj.htpj.dto.request.financial.PayoutListRequest;
 import com.HTPj.htpj.dto.response.financial.PayoutListResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PayoutStatementService {
+
+    // Generate payout statements for a billing cycle (26th prev month -> 25th current month)
+    List<PayoutStatementResponse> generateStatementsForPeriod(LocalDate periodStart, LocalDate periodEnd);
+
+    // Auto-generate statements for the current billing cycle
+    List<PayoutStatementResponse> generateCurrentCycleStatements();
 
     // UC-070: Hotel views their settlement statements
     List<PayoutStatementResponse> getHotelStatements(Integer hotelId);
