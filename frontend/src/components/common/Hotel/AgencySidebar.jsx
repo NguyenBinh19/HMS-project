@@ -77,11 +77,17 @@ const Sidebar = () => {
             {/* Menu List */}
             <div className="flex-1 py-6 overflow-y-auto">
                 {menuItems.map((item, index) => {
-                    const isExactActive = location.pathname === item.path;
+                    // const isExactActive = location.pathname === item.path;
+                    //
+                    // const isParentActive = item.subItems
+                    //     ? item.subItems.some(sub => location.pathname.startsWith(sub.path))
+                    //     : location.pathname === item.path;
+
+                    const isActive = location.pathname.startsWith(item.path);
 
                     const isParentActive = item.subItems
                         ? item.subItems.some(sub => location.pathname.startsWith(sub.path))
-                        : location.pathname === item.path;
+                        : isActive;
 
                     return (
                         <div key={index} className="flex flex-col">
@@ -90,12 +96,12 @@ const Sidebar = () => {
                                 to={item.path}
                                 className={`
                                     flex items-center gap-4 px-6 py-3 cursor-pointer transition-all duration-200 group
-                                    ${isExactActive
+                                    ${isActive
                                         ? "text-blue-600 bg-blue-50 border-r-4 border-blue-600 font-bold"
                                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"}
                                 `}
                             >
-                                <span className={`${isExactActive ? "" : "group-hover:scale-110 transition-transform"}`}>
+                                <span className={`${isActive ? "" : "group-hover:scale-110 transition-transform"}`}>
                                     {item.icon}
                                 </span>
                                 <span className="text-sm uppercase tracking-tight">{item.label}</span>
