@@ -113,7 +113,7 @@ const RevenueReport = ({ hotelId = 2016 }) => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase flex items-center gap-3">
-                        <BarChart3 className="text-blue-600" size={32} /> Báo cáo doanh thu
+                        Báo cáo doanh thu
                     </h1>
                     <p className="text-slate-500 font-medium mt-1 italic text-sm">
                         Hệ thống quản lý khách sạn
@@ -160,14 +160,14 @@ const RevenueReport = ({ hotelId = 2016 }) => {
                 </div>
 
                 {/* Lọc theo nguồn khách (OTA/Trực tiếp) */}
-                <div className="flex items-center gap-3 ml-auto border-l pl-6 border-slate-100">
-                    <Filter size={18} className="text-slate-400" />
-                    <select value={source} onChange={(e) => setSource(e.target.value)} className="bg-transparent font-bold text-slate-600 outline-none text-sm cursor-pointer">
-                        <option value="">Tất cả nguồn</option>
-                        <option value="OTA">Kênh OTA (Agoda, Booking...)</option>
-                        <option value="DIRECT">Khách trực tiếp/Vãng lai</option>
-                    </select>
-                </div>
+                {/*<div className="flex items-center gap-3 ml-auto border-l pl-6 border-slate-100">*/}
+                {/*    <Filter size={18} className="text-slate-400" />*/}
+                {/*    <select value={source} onChange={(e) => setSource(e.target.value)} className="bg-transparent font-bold text-slate-600 outline-none text-sm cursor-pointer">*/}
+                {/*        <option value="">Tất cả nguồn</option>*/}
+                {/*        <option value="OTA">Kênh OTA (Agoda, Booking...)</option>*/}
+                {/*        <option value="DIRECT">Khách trực tiếp/Vãng lai</option>*/}
+                {/*    </select>*/}
+                {/*</div>*/}
             </div>
 
             {/* THẺ CHỈ SỐ KPI  */}

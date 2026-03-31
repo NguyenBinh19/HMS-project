@@ -370,7 +370,7 @@ const SettlementDetail = ({ hotelId: propHotelId }) => {
                 {!selectedStatementId ? (
                     <>
                         <div className="flex items-center gap-4 mb-4">
-                            <h1 className="text-2xl font-black uppercase tracking-tighter">Doi soat</h1>
+                            <h1 className="text-2xl font-black uppercase tracking-tighter">Đối Soát</h1>
                         </div>
                         <StatementListView hotelId={hotelId} onSelectStatement={setSelectedStatementId} />
                     </>
