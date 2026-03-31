@@ -74,7 +74,24 @@ export default function BookingCheckoutPage() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [data, setData] = useState(location.state || {});
+    // const [data, setData] = useState(location.state || {});
+    // Khởi tạo data: Ưu tiên dữ liệu cũ đang thanh toán dở
+    const [data, setData] = useState(() => {
+        const savedJSON = localStorage.getItem("pending_checkout");
+        const newState = location.state; // Dữ liệu mới nhất từ trang tìm kiếm/phòng
+        if (savedJSON) {
+            const savedData = JSON.parse(savedJSON);
+            // Nếu có đơn mới từ location.state VÀ nó khác với đơn trong storage
+            if (newState?.holdCode && newState.holdCode !== savedData.holdCode) {
+                // Khách đang đặt phòng khác rồi! Xóa dữ liệu cũ
+                localStorage.removeItem("pending_checkout");
+                return newState;
+            }
+            // Nếu không có đơn mới (vừa nạp tiền về), hoặc trùng code thì dùng storage
+            return savedData;
+        }
+        return newState || {};
+    });
     const [isExtending, setIsExtending] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("");
@@ -87,8 +104,19 @@ export default function BookingCheckoutPage() {
     const MAX_EXTENSIONS = 3;
     const [isAgreed, setIsAgreed] = useState(false);
 
-    const [customerInfo, setCustomerInfo] = useState({
-        name: "", email: "", phone: "", notes: ""
+    // Khởi tạo thông tin khách hàng từ dữ liệu đã lưu (nếu có)
+    const [customerInfo, setCustomerInfo] = useState(() => {
+        const savedJSON = localStorage.getItem("pending_checkout");
+        const newState = location.state;
+        if (savedJSON) {
+            const savedData = JSON.parse(savedJSON);
+            // nếu code khác nhau thì trả về trắng để nhập mới
+            if (newState?.holdCode && newState.holdCode !== savedData.holdCode) {
+                return { name: "", email: "", phone: "", notes: "" };
+            }
+            return savedData.customerInfo || { name: "", email: "", phone: "", notes: "" };
+        }
+        return { name: "", email: "", phone: "", notes: "" };
     });
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -266,6 +294,20 @@ export default function BookingCheckoutPage() {
             setIsSubmitting(false);
         }
     };
+
+    const handleGoToDeposit = () => {
+        // 1. Lưu lại toàn bộ data hiện tại của trang Checkout vào máy khách
+        const checkoutState = {
+            ...data,
+            customerInfo, // Lưu luôn cả thông tin khách đã nhập dở
+            selectedAddons,
+            paymentMethod
+        };
+        localStorage.setItem("pending_checkout", JSON.stringify(checkoutState));
+        // 2. Chuyển hướng sang trang nạp tiền
+        navigate("/agency/prepaid");
+    };
+
     const currentGrandTotal = Number(grandTotal || 0);
     const walletBal = Number(balances.walletBalance || 0);
     const creditBal = Number(balances.creditBalance || 0);
@@ -378,10 +420,10 @@ export default function BookingCheckoutPage() {
                                                 {paymentMethod === "WALLET" ? "💰" : "👛"}
                                             </div>
                                             <div>
-                            <span
-                                className={`font-bold text-[15px] ${paymentMethod === "WALLET" ? "text-blue-700" : "text-slate-800"}`}>
-                                Ví trả trước (Prepaid Wallet)
-                            </span>
+                                                <span
+                                                    className={`font-bold text-[15px] ${paymentMethod === "WALLET" ? "text-blue-700" : "text-slate-800"}`}>
+                                                    Ví trả trước (Prepaid Wallet)
+                                                </span>
                                                 <p className="text-[11px] text-slate-500 font-medium">Sử dụng số dư
                                                     trong ví của bạn để thanh toán ngay lập tức</p>
                                             </div>
@@ -398,9 +440,19 @@ export default function BookingCheckoutPage() {
                                 </label>
                                 {/* Cảnh báo số dư không đủ */}
                                 {isWalletInsufficient && (
-                                    <div className="px-4 py-2 bg-red-50/50 rounded-lg flex items-center gap-2 text-red-500 text-[10px] font-bold italic animate-in fade-in slide-in-from-top-1">
-                                        <AlertCircle size={14} />
-                                        Số dư không đủ (Thiếu: {formatCurrency(currentGrandTotal - walletBal)})
+                                    <div
+                                        className="px-4 py-2 bg-red-50/50 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-top-1">
+                                        <div
+                                            className="flex items-center gap-2 text-red-500 text-[10px] font-bold italic">
+                                            <AlertCircle size={14}/>
+                                            Thiếu: {formatCurrency(currentGrandTotal - walletBal)}
+                                        </div>
+                                        <button
+                                            onClick={handleGoToDeposit}
+                                            className="text-[10px] bg-red-500 text-white px-2 py-1 rounded-md font-bold hover:bg-red-600 transition-colors"
+                                        >
+                                            Nạp tiền ngay
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -450,11 +502,18 @@ export default function BookingCheckoutPage() {
 
                                 {/* Cảnh báo hạn mức không đủ ngay dưới Option */}
                                 {grandTotal > balances.creditBalance && (
-                                    <div
-                                        className="px-4 py-2 bg-red-50/50 rounded-lg flex items-center gap-2 text-red-500 text-[10px] font-bold italic animate-in fade-in slide-in-from-top-1">
-                                        <AlertCircle size={14}/>
-                                        Hạn mức không đủ (Thiếu: {formatCurrency(grandTotal - balances.creditBalance)})
+                                    <div className="px-4 py-2 bg-red-50/50 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-top-1">
+                                    <div className="flex items-center gap-2 text-red-500 text-[10px] font-bold italic">
+                                    <AlertCircle size={14}/>
+                                     Hạn mức không đủ (Thiếu: {formatCurrency(grandTotal - balances.creditBalance)})
                                     </div>
+                                    <button
+                                        onClick={handleGoToDeposit}
+                                        className="text-[10px] bg-red-500 text-white px-2 py-1 rounded-md font-bold hover:bg-red-600 transition-colors"
+                                    >
+                                        Nạp tiền ngay
+                                    </button>
+                    </div>
                                 )}
                             </div>
                         </div>

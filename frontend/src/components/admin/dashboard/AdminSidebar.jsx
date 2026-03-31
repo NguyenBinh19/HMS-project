@@ -29,7 +29,7 @@ const SidebarAdmin = () => {
         { icon: <CreditCard size={20} />, label: "QUẢN LÝ HẠN MỨC & HẠNG", path: "/admin/set-ranking" },
         { icon: <HandCoins size={20} />, label: "XỬ LÝ GIAO DỊCH THANH TOÁN", path: "/admin/payout-list" },
         { icon: <ClipboardCheck size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
-        { icon: <FileText size={20} />, label: "QUẢN LÝ KHIẾU NẠI", path: "/admin/dispute-center" },
+        // { icon: <FileText size={20} />, label: "QUẢN LÝ KHIẾU NẠI", path: "/admin/dispute-center" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users" },
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
         { icon: <BookOpen size={20} />, label: "NHẬT KÝ HỆ THỐNG", path: "/admin/audit-logs" },

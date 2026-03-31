@@ -16,6 +16,15 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
         setRotation(0);
     }, [currentDocIndex]);
 
+    useEffect(() => {
+        // Khi Modal mở: Khóa cuộn body
+        document.body.style.overflow = 'hidden';
+        // Khi Modal đóng (Cleanup function): Mở lại cuộn body
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     // Đảm bảo lấy đúng data từ API Response
     const actualData = data?.result || data;
 
@@ -242,7 +251,8 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                         <div
                             className="w-full h-full flex items-center justify-center transition-all duration-300 ease-out cursor-grab active:cursor-grabbing"
                             onWheel={(e) => {
-                                // Cuộn lên là phóng to, cuộn xuống là thu nhỏ
+                                // Chặn hành vi cuộn của trình duyệt
+                                if (e.cancelable) e.preventDefault();
                                 if (e.deltaY < 0) handleZoomIn();
                                 else handleZoomOut();
                             }}

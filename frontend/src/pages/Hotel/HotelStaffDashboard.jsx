@@ -110,8 +110,8 @@ const StaffDashboard = () => {
                 <StaffStats data={staffs} />
 
                 {/* Bảng danh sách */}
-                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden mt-8">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 mt-8">
+                    <div className="overflow-visible rounded-[24px">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/30 border-b border-slate-50">
                             <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
@@ -122,7 +122,7 @@ const StaffDashboard = () => {
                                 <th className="px-8 py-5 text-right">Thao tác</th>
                             </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-slate-50 min-h-[450px]">
                             {loading ? (
                                 <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-medium">Đang tải dữ liệu...</td></tr>
                             ) : staffs.length === 0 ? (

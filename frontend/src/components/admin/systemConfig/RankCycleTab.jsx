@@ -68,12 +68,21 @@ const RankCycleTab = () => {
     }, []);
 
     const handleChange = (type, val) => {
-        let cleanVal = val.replace(/[^0-9-]/g, '');
-        // Tự động thêm dấu gạch ngang
-        if (cleanVal.length === 2 && !cleanVal.includes('-') && val.length > configs[type].length) {
-            cleanVal += '-';
+        // 1. Chỉ giữ lại số (loại bỏ mọi ký tự khác kể cả dấu - cũ)
+        let numbersOnly = val.replace(/[^0-9]/g, '');
+        // 2. Giới hạn tối đa 4 chữ số (Tháng: 2, Ngày: 2)
+        numbersOnly = numbersOnly.slice(0, 4);
+        let formatted = '';
+        // 3. Logic chèn dấu gạch ngang thông minh
+        if (numbersOnly.length > 2) {
+            // Nếu có hơn 2 số, format thành XX-XX
+            formatted = `${numbersOnly.slice(0, 2)}-${numbersOnly.slice(2)}`;
+        } else {
+            // Nếu có 2 số trở xuống, để nguyên số (cho phép xóa tự do)
+            formatted = numbersOnly;
         }
-        setConfigs(prev => ({ ...prev, [type]: cleanVal.slice(0, 5) }));
+        // 4. Cập nhật state
+        setConfigs(prev => ({ ...prev, [type]: formatted }));
     };
 
     const handleUpdateSingle = async (type) => {

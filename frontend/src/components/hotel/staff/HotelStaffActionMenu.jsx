@@ -1,50 +1,90 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Edit3, History, Eye, Lock, Unlock } from 'lucide-react';
+import { MoreVertical, Edit3, UserSearch } from 'lucide-react';
 
-const StaffActionMenu = ({ onEdit, onToggle, onViewDetails, onViewHistory, status }) => {
+const StaffActionMenu = ({ onEdit, onViewDetails, status }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [openUp, setOpenUp] = useState(false); // Trạng thái xác định hướng mở
     const menuRef = useRef(null);
+
+    // Hàm tính toán vị trí khi mở menu
+    const toggleMenu = (e) => {
+        if (!isOpen) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const screenHeight = window.innerHeight;
+
+            // Tính toán khoảng cách từ nút bấm đến đáy màn hình
+            const spaceBelow = screenHeight - rect.bottom;
+
+            // Nếu khoảng trống dưới ít hơn 280px (chiều cao menu + an toàn)
+            // THÌ ưu tiên mở lên trên
+            if (spaceBelow < 280) {
+                setOpenUp(true);
+            } else {
+                setOpenUp(false);
+            }
+        }
+        setIsOpen(!isOpen);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleAction = (callback) => {
-        if (callback) callback();
-        setIsOpen(false);
-    };
+    const actions = [
+        {
+            label: 'Xem chi tiết',
+            icon: <UserSearch size={16} />,
+            onClick: onViewDetails,
+            color: 'text-slate-600'
+        },
+        {
+            label: 'Chỉnh sửa thông tin',
+            icon: <Edit3 size={16} />,
+            onClick: onEdit,
+            color: 'text-slate-600'
+        },
+    ];
 
     return (
         <div className="relative inline-block text-left" ref={menuRef}>
             <button
-                onClick={() => setIsOpen(!isOpen)}
-                className={`p-2 rounded-lg transition-all active:scale-90 ${
+                onClick={toggleMenu}
+                className={`p-2 rounded-lg transition-all ${
                     isOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-100 text-slate-400'
                 }`}
             >
-                <MoreVertical size={20} />
+                <MoreVertical size={18} />
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-slate-100 z-[110] py-2 animate-in fade-in zoom-in duration-150 origin-top-right">
-                    <div className="px-4 py-2 mb-1 border-b border-slate-50">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thao tác nhân viên</span>
+                <div
+                    className={`absolute right-0 w-60 bg-white rounded-2xl shadow-2xl border border-slate-100 z-[999] overflow-hidden animate-in fade-in zoom-in duration-150 
+                        ${openUp
+                        ? 'bottom-full mb-2 origin-bottom-right' // Mở lên trên nút bấm
+                        : 'top-full mt-2 origin-top-right'     // Mở xuống dưới nút bấm
+                    }`}
+                >
+                    <div className="py-2">
+                        {actions.map((action, index) => (
+                            <button
+                                key={index}
+                                onClick={() => {
+                                    action.onClick();
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-bold hover:bg-slate-50 transition-colors ${action.color}`}
+                            >
+                                <span className="opacity-70">{action.icon}</span>
+                                {action.label}
+                            </button>
+                        ))}
                     </div>
-
-                    <button onClick={() => handleAction(onViewDetails)} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><Eye size={16} /></div>
-                        <span className="font-medium">Xem chi tiết hồ sơ</span>
-                    </button>
-
-                    <button onClick={() => handleAction(onEdit)} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-600 transition-all">
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center"><Edit3 size={16} /></div>
-                        <span className="font-medium">Chỉnh sửa thông tin</span>
-                    </button>
-
                 </div>
             )}
         </div>
