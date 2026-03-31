@@ -40,6 +40,7 @@ public enum ErrorCode {
     USERNAME_EXISTED(1103, "Username already exists", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(1104, "Email already exists", HttpStatus.BAD_REQUEST),
     PHONE_EXISTED(1105, "Phone already exists", HttpStatus.BAD_REQUEST),
+    INVALID_ADMIN_ROLE(1100, "Invalid admin role", HttpStatus.FORBIDDEN),
 
     //hotel + room
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),

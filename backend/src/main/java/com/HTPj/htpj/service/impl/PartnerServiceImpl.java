@@ -169,12 +169,20 @@ public class PartnerServiceImpl implements PartnerService {
         String rawPassword = generateRandomPassword(8);
         staff.setPassword(passwordEncoder.encode(rawPassword));
 
-        Role role = roleRepository.findByName(request.getPermission())
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-
-        staff.setRoles(Set.of(role));
+//        Role role = roleRepository.findByName(request.getPermission())
+//                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+//
+//        staff.setRoles(Set.of(role));
 
         if ("ROLE_HOTEL_MANAGER".equals(scope)) {
+
+            if (request.getPermission() == null)
+                throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+
+            Role role = roleRepository.findByName(request.getPermission())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+            staff.setRoles(Set.of(role));
 
             if (manager.getHotel() == null)
                 throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
@@ -182,11 +190,25 @@ public class PartnerServiceImpl implements PartnerService {
             staff.setHotel(manager.getHotel());
 
         } else if ("ROLE_AGENCY_MANAGER".equals(scope)) {
+            if (request.getPermission() == null)
+                throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+
+            Role role = roleRepository.findByName(request.getPermission())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+            staff.setRoles(Set.of(role));
 
             if (manager.getAgency() == null)
                 throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
 
             staff.setAgency(manager.getAgency());
+        } else if ("ROLE_ADMIN".equals(scope)) {
+            staff.setIsAdmin(true);
+
+            Role adminRole = roleRepository.findByName("ADMIN_STAFF")
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+            staff.setRoles(Set.of(adminRole));
 
         } else {
             throw new AppException(ErrorCode.INVALID_MANAGER_ROLE);
@@ -200,7 +222,7 @@ public class PartnerServiceImpl implements PartnerService {
                 rawPassword
         );
 
-        return "Staff created successfully";
+        return "Created user successfully";
     }
 
     @Override
@@ -250,6 +272,28 @@ public class PartnerServiceImpl implements PartnerService {
     }
 
     @Override
+    public List<ListStaffResponse> getAdminList() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String scope = jwt.getClaim("scope");
+
+        if (!"ROLE_ADMIN".equals(scope)) {
+            throw new AppException(ErrorCode.INVALID_ADMIN_ROLE);
+        }
+
+        List<Users> staffList = userRepository.findByIsAdminTrue();
+
+        return staffList.stream()
+                .map(partnerMapper::toListStaffResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void lockStaff(String userId) {
         Users user = userRepository.findById(userId)
@@ -275,6 +319,14 @@ public class PartnerServiceImpl implements PartnerService {
     @Transactional
     public void updateStaff(UpdateStaffRequest request) {
 
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        String scope = jwt.getClaim("scope");
+
         Users user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
@@ -284,6 +336,11 @@ public class PartnerServiceImpl implements PartnerService {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setStatus(request.getStatus());
+
+        if ("ROLE_ADMIN".equals(scope)) {
+            userRepository.save(user);
+            return;
+        }
 
         if (request.getPermission() != null) {
 
