@@ -222,4 +222,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("periodStart") LocalDate periodStart,
             @Param("periodEnd") LocalDate periodEnd
     );
+
+    @Query("""
+    SELECT b FROM Booking b
+    WHERE b.agencyId = :agencyId
+    """)
+    List<Booking> findByAgencyId(@Param("agencyId") Long agencyId);
 }

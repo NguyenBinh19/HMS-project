@@ -4,6 +4,8 @@ import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
+import com.HTPj.htpj.dto.response.agency.AgencyUserBookingResponse;
+import com.HTPj.htpj.dto.response.agency.BookingItemResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
@@ -22,9 +24,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ public class AgencyServiceImpl implements AgencyService {
     private final UserRepository userRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public List<AgencyResponse> getAllAgencies() {
@@ -273,5 +275,88 @@ public class AgencyServiceImpl implements AgencyService {
         historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
         historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
         transactionHistoryRepository.save(historyCreditMD);
+    }
+
+    @Override
+    public List<AgencyUserBookingResponse> getAgencyUserBookingSummary() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String userId = jwt.getClaim("userId");
+
+        Users currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (currentUser.getAgency() == null) {
+            throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+        }
+
+        Long agencyId = currentUser.getAgency().getAgencyId();
+
+        // Lấy booking theo agency
+        List<Booking> bookings = bookingRepository.findByAgencyId(agencyId);
+
+        if (bookings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Map userId -> Users
+        Set<String> userIds = bookings.stream()
+                .map(Booking::getUserId)
+                .collect(Collectors.toSet());
+
+        Map<String, Users> userMap = userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(Users::getId, u -> u));
+
+        // Group booking theo user
+        Map<String, List<Booking>> grouped = bookings.stream()
+                .collect(Collectors.groupingBy(Booking::getUserId));
+
+        return grouped.entrySet().stream().map(entry -> {
+
+            String uid = entry.getKey();
+            List<Booking> userBookings = entry.getValue();
+
+            Users user = userMap.get(uid);
+
+            BigDecimal totalMoney = BigDecimal.ZERO;
+
+            List<BookingItemResponse> bookingItems = new ArrayList<>();
+
+            for (Booking b : userBookings) {
+
+                BigDecimal refund = b.getRefundAmount() == null
+                        ? BigDecimal.ZERO
+                        : b.getRefundAmount();
+
+                BigDecimal payment = b.getFinalAmount().subtract(refund);
+
+                totalMoney = totalMoney.add(payment);
+
+                bookingItems.add(
+                        BookingItemResponse.builder()
+                                .bookingId(b.getBookingId())
+                                .bookingStatus(b.getBookingStatus())
+                                .paymentAmount(payment)
+                                .build()
+                );
+            }
+
+            return AgencyUserBookingResponse.builder()
+                    .userId(uid)
+                    .username(user != null ? user.getUsername() : null)
+                    .fullName(user != null
+                            ? (user.getFirstName() + " " + user.getLastName())
+                            : null)
+                    .totalBooking(userBookings.size())
+                    .totalMoneyUsage(totalMoney)
+                    .bookings(bookingItems)
+                    .build();
+
+        }).collect(Collectors.toList());
     }
 }
