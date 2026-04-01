@@ -162,7 +162,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
         try {
             const res = await payoutService.confirmPayout(statementId);
             if (res.code === 1000) {
-                toast.success("Xac nhan doi soat thanh cong!");
+                toast.success("Xác nhận đối soát thành công!");
                 setStatement(res.result);
             }
         } catch (error) {
@@ -328,7 +328,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
                                     className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 shadow-xl shadow-blue-900/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                                 >
                                     {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                                    XÁC NHẬN CHI TRẢ
+                                    XÁC NHẬN
                                 </button>
                             </>
                         ) : (
@@ -370,7 +370,7 @@ const SettlementDetail = ({ hotelId: propHotelId }) => {
                 {!selectedStatementId ? (
                     <>
                         <div className="flex items-center gap-4 mb-4">
-                            <h1 className="text-2xl font-black uppercase tracking-tighter">Doi soat</h1>
+                            <h1 className="text-2xl font-black uppercase tracking-tighter">Đối soát</h1>
                         </div>
                         <StatementListView hotelId={hotelId} onSelectStatement={setSelectedStatementId} />
                     </>

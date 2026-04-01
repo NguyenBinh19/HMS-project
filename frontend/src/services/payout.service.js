@@ -33,10 +33,38 @@ const markAsPaid = async (data) => {
     return response.data;
 };
 
+// Hotel: Get all statements for a hotel (Settlement Dashboard)
+const getHotelStatements = async (hotelId) => {
+    const response = await api.get(`/settlement/hotel/${hotelId}`);
+    return response.data;
+};
+
+// Hotel: Get statement detail with line items
+const getHotelStatementDetail = async (statementId) => {
+    const response = await api.get(`/settlement/detail/${statementId}`);
+    return response.data;
+};
+
+// Hotel: Confirm payout statement
+const confirmPayout = async (statementId) => {
+    const response = await api.post('/settlement/confirm', { statementId });
+    return response.data;
+};
+
+// Hotel: Dispute a statement
+const disputePayout = async (statementId, reasonCode, description) => {
+    const response = await api.post('/settlement/dispute', { statementId, reasonCode, description });
+    return response.data;
+};
+
 export const payoutService = {
     getPayoutList,
     getStatementDetail,
     generateStatements,
     exportBatchPayment,
-    markAsPaid
+    markAsPaid,
+    getHotelStatements,
+    getHotelStatementDetail,
+    confirmPayout,
+    disputePayout
 };

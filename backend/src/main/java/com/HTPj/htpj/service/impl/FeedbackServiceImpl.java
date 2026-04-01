@@ -274,20 +274,33 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     private String getCurrentUserId() {
-        String username = getCurrentUsername();
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        return user.getId();
+        var context = SecurityContextHolder.getContext();
+        var authentication = context.getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            String userId = jwt.getClaim("userId");
+
+            if (userId == null) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            return userId;
+        }
+
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 
     private Integer getCurrentUserHotelId() {
-        String username = getCurrentUsername();
+        String userId = getCurrentUserId();
         PartnerVerification pv = verificationRepository
-                .findTopBySubmittedByOrderByVersionDesc(username)
+                .findTopBySubmittedByOrderByVersionDesc(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        if (pv.getHotel() == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-        }
         return pv.getHotel().getHotelId();
     }
 }
