@@ -36,8 +36,13 @@ public interface AgencyMapper {
                 .address(agency.getAddress())
                 .creditLimit(agency.getCreditLimit())
                 .currentCredit(agency.getCurrentCredit())
+                .walletBalance(agency.getWalletBalance())
                 .status(agency.getStatus())
+                .createdAt(agency.getCreatedAt())
+                .updatedAt(agency.getUpdatedAt())
                 .verification(verificationInfoResponse)
+                .rankId(agency.getRank().getId())
+                .rankName(agency.getRank().getRankName())
                 .build();
     }
 }

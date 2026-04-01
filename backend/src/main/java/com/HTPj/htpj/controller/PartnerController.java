@@ -62,6 +62,14 @@ public class PartnerController {
                 .build();
     }
 
+    @GetMapping("/list-admin")
+    public ApiResponse<List<ListStaffResponse>> getAdminList() {
+        return ApiResponse.<List<ListStaffResponse>>builder()
+                .result(partnerService.getAdminList())
+                .build();
+    }
+
+
     @PutMapping("/lock/{userId}")
     public ApiResponse<String> lockStaff(@PathVariable String userId) {
 

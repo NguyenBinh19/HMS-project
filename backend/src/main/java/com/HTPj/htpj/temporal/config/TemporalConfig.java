@@ -54,7 +54,7 @@ public class TemporalConfig {
 
         factory.start();
 
-        System.out.println("✅ Temporal Worker started");
+        System.out.println("Temporal Worker started");
 
         return factory;
     }
