@@ -3,6 +3,7 @@
 // 1. Role gốc từ backend
 export const ROLES = {
     ADMIN: "ROLE_ADMIN",
+    ADMIN_STAFF:"ROLE_ADMIN_STAFF",
 
     HOTEL_MANAGER: "ROLE_HOTEL_MANAGER",
     HOTEL_STAFF: "ROLE_HOTEL_STAFF",

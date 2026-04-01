@@ -41,6 +41,10 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
         setFormData({ ...formData, phone: value });
     };
+    const validateVietnamesePhone = (phone) => {
+        const vnf_regex = /^(03|05|07|08|09)+([0-9]{8})$/;
+        return vnf_regex.test(phone);
+    };
 
     const handleNameChange = (field, value) => {
         const formattedName = value.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
@@ -50,7 +54,11 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isViewOnly) return;
-
+        const cleanPhone = formData.phone.trim();
+        if (!validateVietnamesePhone(cleanPhone)) {
+            alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (03, 05, 07, 08, 09...).");
+            return;
+        }
         try {
             const updatePayload = {
                 userId: formData.userId,
@@ -135,6 +143,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <Input
                                 label="Số điện thoại"
                                 icon={<Phone size={14}/>}
+                                inputMode="numeric"
                                 placeholder="Nhập 10 số..."
                                 value={formData.phone}
                                 disabled={isViewOnly}

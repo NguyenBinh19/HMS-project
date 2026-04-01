@@ -67,6 +67,7 @@ import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
 import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
 import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
+import AdminStaffDashboard from "@/pages/Admin/AdminStaffDashboard.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -154,7 +155,7 @@ const AppRoutes = () => {
                 {/*Luồng Admin System*/}
                 <Route path="/admin"
                     element={
-                        <ProtectedRoute roles={[ROLES.ADMIN]}>
+                        <ProtectedRoute roles={["ROLE_ADMIN", "ROLE_ADMIN_STAFF"]}>
                             <AdminLayout />
                         </ProtectedRoute>
                     }>
@@ -171,6 +172,7 @@ const AppRoutes = () => {
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
                     <Route path="set-ranking" element={<SetAgencyRanking />} />
                     <Route path="system-config" element={<SystemConfigPage/>} />
+                    <Route path="staff" element={<AdminStaffDashboard/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />

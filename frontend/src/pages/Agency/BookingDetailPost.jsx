@@ -186,7 +186,12 @@ const BookingDetailPost = () => {
 
     // Điều kiện đánh giá
     const canReview = () => {
-        return booking?.bookingStatus?.toUpperCase() === 'CHECKOUT' && !booking.hasFeedback;
+        return booking?.bookingStatus?.toUpperCase() === 'COMPLETED' && !booking.hasFeedback;
+    };
+
+    const canDownloadVoucher = () => {
+        const s = booking?.bookingStatus?.toUpperCase();
+        return s === 'BOOKED' || s === 'CONFIRMED';
     };
 
     if (loading) {
@@ -251,11 +256,11 @@ const BookingDetailPost = () => {
                             {/* Nút Tải Voucher */}
                             <button
                                 onClick={handleDownloadVoucher}
-                                disabled={isDownloading}
+                                disabled={isDownloading || !canDownloadVoucher()}
                                 className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
-                                    isDownloading
-                                        ? "bg-slate-300 cursor-wait text-slate-500" // Đổi màu khi đang tải
-                                        : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95"
+                                    isDownloading || !canDownloadVoucher()
+                                        ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-100"
+                                        : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95 shadow-sm"
                                 }`}
                             >
                                 {isDownloading ? (
@@ -283,18 +288,18 @@ const BookingDetailPost = () => {
                             </button>
 
                             {/* Đánh giá: Hiện sau CHECKOUT */}
-                            {booking.bookingStatus?.toUpperCase() === 'CHECKOUT' && (
+                            {booking.bookingStatus?.toUpperCase() === 'COMPLETED' && (
                                 <button
                                     onClick={() => setIsReviewModalOpen(true)}
                                     disabled={booking.hasFeedback}
                                     className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all ${
                                         booking.hasFeedback
-                                            ? "bg-slate-100 text-slate-400 border border-transparent"
+                                            ? "bg-slate-100 text-slate-400 border border-transparent cursor-not-allowed"
                                             : "bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                                     }`}
                                 >
                                     <Star size={18} fill={booking.hasFeedback ? "none" : "currentColor"}/>
-                                    {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá"}
+                                    {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá ngay"}
                                 </button>
                             )}
 

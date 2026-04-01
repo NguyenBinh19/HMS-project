@@ -13,15 +13,30 @@ import {
     ShieldCheck,
     ClipboardCheck,
     Building2,
-    BookOpen, Award
+    BookOpen, Award, UserRoundCog
 } from "lucide-react";
 
 const SidebarAdmin = () => {
     const location = useLocation();
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = currentUser?.roles || "";
+    // Kiểm tra xem có phải Admin tổng không
+    const isFullAdmin = userRole === "ROLE_ADMIN";
 
     const menuItems = [
         { icon: <LayoutDashboard size={20} />, label: "DASHBOARD", path: "/admin/dashboard" },
-        { icon: <Settings size={20} />, label: "CẤU HÌNH HỆ THỐNG", path: "/admin/system-config" },
+        {
+            icon: <Settings size={20} />,
+            label: "CẤU HÌNH HỆ THỐNG",
+            path: "/admin/system-config",
+            hideForStaff: true
+        },
+        {
+            icon: <UserRoundCog size={20} />,
+            label: "QUẢN LÝ NHÂN VIÊN HỆ THỐNG",
+            path: "/admin/staff",
+            hideForStaff: true
+        },
         { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules" },
         { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
         { icon: <Contact2 size={20} />, label: "XỬ LÝ XÁC MINH KYC", path: "/admin/kyc-queue" },
@@ -34,18 +49,26 @@ const SidebarAdmin = () => {
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
         { icon: <BookOpen size={20} />, label: "NHẬT KÝ HỆ THỐNG", path: "/admin/audit-logs" },
     ];
+    // 3. Lọc menu dựa trên quyền
+    const filteredMenuItems = menuItems.filter(item => {
+        // Nếu không phải Admin tổng (isFullAdmin = false) và mục này yêu cầu ẩn (hideForStaff = true)
+        if (!isFullAdmin && item.hideForStaff) {
+            return false;
+        }
+        return true;
+    });
 
     return (
         <aside className="w-[280px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0 font-sans shadow-lg">
             <div className="h-14 bg-[#337ab7] flex items-center px-4 flex-shrink-0">
                 <span className="text-white font-semibold text-base uppercase tracking-wider flex items-center gap-3">
                     <ShieldCheck size={22} fill="white" fillOpacity={0.2} />
-                    SYSTEM ADMIN
+                    {isFullAdmin ? "SYSTEM ADMIN" : "STAFF ADMIN"}
                 </span>
             </div>
 
             <div className="flex-1 py-2 overflow-y-auto custom-scrollbar">
-                {menuItems.map((item, index) => {
+                {filteredMenuItems.map((item, index) => {
                     const isActive = location.pathname.startsWith(item.path);
 
                     return (

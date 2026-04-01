@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Building, User, Edit3, CheckCircle2, Plus, X, RefreshCw } from 'lucide-react';
 import { kycService } from '@/services/kyc.service.js';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from "jwt-decode";
 const KYCUploadForm = ({ onBack, onSubmit }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [isFetchingOldData, setIsFetchingOldData] = useState(false);
     const [addressError, setAddressError] = useState("");
@@ -14,29 +15,32 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
+    const handleSmartBack = () => {
+        if (isUpdateMode) {
+            navigate(-1);
+        } else {
+            if (onBack) {
+                onBack();
+            } else {
+                navigate(-1);
+            }
+        }
+    };
     const getPartnerTypeFromToken = () => {
         try {
             const token = localStorage.getItem("accessToken");
             if (!token) return "HOTEL";
-
             const decoded = jwtDecode(token);
-
-            // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
             const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
-
-            // 2. Chuẩn hóa về mảng String
             const rolesArray = Array.isArray(rawRoles)
                 ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
                 : String(rawRoles).split(" ");
-
             if (rolesArray.some(role => role.includes("AGENCY"))) {
                 return "AGENCY";
             }
-
             if (rolesArray.some(role => role.includes("HOTEL"))) {
                 return "HOTEL";
             }
-
             return "HOTEL";
         } catch (err) {
             console.error("Lỗi Decode Token trong KYC Form:", err);
@@ -359,7 +363,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                 </div>
 
                 <div className="flex gap-4 pt-6">
-                    <button type="button" onClick={onBack} className="flex-1 py-3.5 font-bold text-slate-500 border-2 rounded-xl hover:bg-slate-50 uppercase text-xs">Quay lại</button>
+                    <button type="button" onClick={handleSmartBack} className="flex-1 py-3.5 font-bold text-slate-500 border-2 rounded-xl hover:bg-slate-50 uppercase text-xs">Quay lại</button>
                     <button type="button" onClick={handleFinalSubmit} disabled={loading} className={`flex-[2] text-white py-3.5 rounded-xl font-black shadow-lg uppercase text-xs tracking-widest ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                         {loading ? "Đang xử lý..." : "Xác nhận hồ sơ"}
                     </button>

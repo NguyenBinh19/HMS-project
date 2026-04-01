@@ -3,6 +3,16 @@ import { X, Calendar, MapPin, Phone, ShieldCheck, User, AtSign, CheckCircle2 } f
 import { staffService } from '@/services/staff.service.js';
 
 const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = false }) => {
+    // 1. Lấy thông tin người đang đăng nhập
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
+    const currentUserRole = currentUser?.roles || "";
+
+    // 2. Kiểm tra xem người đang đăng nhập có phải ADMIN tổng không
+    // Chỉ ROLE_ADMIN mới được Edit. ADMIN_STAFF sẽ bị ép vào trạng thái viewOnly.
+    const isFullAdmin = currentUserRole.includes("ROLE_ADMIN");
+    const effectiveViewOnly = isViewOnly || !isFullAdmin;
+
     const [formData, setFormData] = useState({
         userId: '',
         firstName: '',
@@ -11,7 +21,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
         email: '',
         phone: '',
         status: 'ACTIVE',
-        permission: '',
+        permission: 'ADMIN_STAFF', // Mặc định là ADMIN_STAFF
         address: '',
         dob: ''
     });
@@ -29,7 +39,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                 email: initialData.email || '',
                 phone: initialData.phone || '',
                 status: initialData.status || 'ACTIVE',
-                permission: initialData.permission || 'AGENCY_STAFF',
+                permission: initialData.permission || 'ADMIN_STAFF',
                 address: initialData.address || '',
                 dob: initialData.dob || '',
             });
@@ -37,27 +47,33 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     }, [initialData, isOpen]);
 
     const handlePhoneChange = (e) => {
+        if (effectiveViewOnly) return;
         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
         setFormData(prev => ({ ...prev, phone: value }));
     };
+
     const validateVietnamesePhone = (phone) => {
         const vnf_regex = /^(03|05|07|08|09)+([0-9]{8})$/;
         return vnf_regex.test(phone);
     };
 
     const handleNameChange = (field, value) => {
+        if (effectiveViewOnly) return;
         const formattedName = value.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
         setFormData(prev => ({ ...prev, [field]: formattedName }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isViewOnly || isSubmitting) return;
+        // Chặn tuyệt đối nếu không phải ADMIN tổng
+        if (effectiveViewOnly || isSubmitting) return;
+
         const cleanPhone = formData.phone.trim();
         if (!validateVietnamesePhone(cleanPhone)) {
-            alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (03, 05, 07, 08, 09...).");
+            alert("Số điện thoại không hợp lệ!");
             return;
         }
+
         try {
             setIsSubmitting(true);
             const updatePayload = {
@@ -68,11 +84,11 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                 email: formData.email,
                 phone: formData.phone,
                 status: formData.status,
-                permission: formData.permission,
+                permission: formData.permission, // Luôn gửi permission hiện tại (ADMIN_STAFF)
             };
 
             await staffService.updateStaff(updatePayload);
-            alert("Cập nhật nhân viên đại lý thành công!");
+            alert("Cập nhật thông tin Quản trị viên thành công!");
             onSuccess();
             onClose();
         } catch (error) {
@@ -92,10 +108,10 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                 <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-blue-50/50 to-white">
                     <div>
                         <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-                            {isViewOnly ? "Chi Tiết Nhân Sự" : "Cập Nhật Thông Tin"}
+                            {effectiveViewOnly ? "Chi Tiết Quản Trị Viên" : "Cập Nhật Quản Trị Viên"}
                         </h2>
                         <p className="text-xs text-[#006AFF] font-bold uppercase mt-1 tracking-widest">
-                            Hồ sơ nhân viên Agency
+                            Hệ thống quản lý nhân sự
                         </p>
                     </div>
                     <button type="button" onClick={onClose} className="p-2 hover:bg-rose-50 hover:text-rose-500 rounded-full transition-all text-slate-400">
@@ -113,7 +129,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                         </div>
                         <div className="grid grid-cols-2 gap-4 bg-slate-50 p-5 rounded-[24px] border border-slate-100">
                             <Input label="Tên đăng nhập" value={formData.username} disabled />
-                            <Input label="Email liên kết" value={formData.email} disabled />
+                            <Input label="Email" value={formData.email} disabled />
                         </div>
                     </div>
 
@@ -126,13 +142,13 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <Input
                                 label="Họ & Tên đệm"
                                 value={formData.lastName}
-                                disabled={isViewOnly}
+                                disabled={effectiveViewOnly}
                                 onChange={e => handleNameChange('lastName', e.target.value)}
                             />
                             <Input
-                                label="Tên nhân viên"
+                                label="Tên"
                                 value={formData.firstName}
-                                disabled={isViewOnly}
+                                disabled={effectiveViewOnly}
                                 onChange={e => handleNameChange('firstName', e.target.value)}
                             />
                         </div>
@@ -140,49 +156,44 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <Input
                                 label="Số điện thoại"
                                 icon={<Phone size={14}/>}
-                                inputMode="numeric"
                                 value={formData.phone}
-                                disabled={isViewOnly}
+                                disabled={effectiveViewOnly}
                                 onChange={handlePhoneChange}
                             />
                             <Input label="Ngày sinh" icon={<Calendar size={14}/>} value={formData.dob || 'Chưa cập nhật'} disabled />
                         </div>
-                        <Input label="Địa chỉ liên hệ" icon={<MapPin size={14}/>} value={formData.address || 'Chưa cập nhật'} disabled />
+                        <Input label="Địa chỉ" icon={<MapPin size={14}/>} value={formData.address || 'Chưa cập nhật'} disabled />
                     </div>
 
                     {/* Section 3: Quyền hạn & Trạng thái */}
                     <div className="space-y-4 pb-10">
                         <div className="flex items-center gap-2 text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">
-                            <ShieldCheck size={14} /> Phân quyền & Trạng thái
+                            <ShieldCheck size={14} /> Cấp bậc & Trạng thái
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest ml-1">Vai trò Agency</label>
-                                <select
-                                    disabled={isViewOnly}
-                                    value={formData.permission}
-                                    onChange={e => setFormData(prev => ({...prev, permission: e.target.value}))}
-                                    className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-700 cursor-pointer focus:border-blue-400 transition-all appearance-none"
-                                >
-                                    <option value="AGENCY_MANAGER">QUẢN LÝ ĐẠI LÝ</option>
-                                    <option value="AGENCY_STAFF">NHÂN VIÊN ĐẠI LÝ</option>
-                                </select>
+                            {/* Cấp bậc: Khóa cứng không cho sửa */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Vai trò</label>
+                                <div className="w-full px-5 py-4 bg-slate-100 border-2 border-transparent rounded-2xl font-bold text-slate-500 flex items-center gap-2">
+                                    {formData.permission === 'ADMIN' ? "ADMIN TỔNG" : "ADMIN STAFF"}
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest ml-1">Trạng thái tài khoản</label>
+                            {/* Trạng thái: Chỉ ADMIN tổng mới được đổi, và không được tự khóa mình */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Trạng thái</label>
                                 <select
-                                    disabled={isViewOnly}
-                                    value={formData.status}
-                                    onChange={e => setFormData(prev => ({...prev, status: e.target.value}))}
-                                    className={`w-full px-4 py-4 border rounded-2xl outline-none font-black transition-all appearance-none ${
-                                        formData.status === 'ACTIVE'
-                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                            : 'bg-rose-50 text-rose-600 border-rose-100'
+                                    disabled={effectiveViewOnly || formData.userId === currentUserId}
+                                    className={`w-full px-5 py-4 border-2 border-transparent rounded-2xl font-bold outline-none transition-all ${
+                                        (effectiveViewOnly || formData.userId === currentUserId)
+                                            ? "bg-slate-100 text-slate-500 cursor-not-allowed"
+                                            : "bg-slate-50 focus:border-[#006AFF] text-slate-800"
                                     }`}
+                                    value={formData.status}
+                                    onChange={e => setFormData({...formData, status: e.target.value})}
                                 >
-                                    <option value="ACTIVE">● ĐANG HOẠT ĐỘNG</option>
-                                    <option value="LOCKED">● ĐÃ KHÓA</option>
+                                    <option value="ACTIVE">ĐANG HOẠT ĐỘNG</option>
+                                    <option value="LOCKED">ĐANG KHÓA</option>
                                 </select>
                             </div>
                         </div>
@@ -191,16 +202,18 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
 
                 {/* Footer */}
                 <div className="p-8 border-t border-slate-100 flex gap-4 bg-white">
-                    <button type="button" onClick={onClose} className="flex-1 py-4 text-slate-500 font-bold rounded-2xl hover:bg-slate-50 transition-all border border-slate-200">
-                        {isViewOnly ? "Đóng" : "Hủy bỏ"}
+                    <button type="button" onClick={onClose}
+                            className="flex-1 py-4 text-slate-500 font-bold rounded-2xl hover:bg-slate-50 transition-all border border-slate-200">
+                        {effectiveViewOnly ? "Đóng" : "Hủy bỏ"}
                     </button>
-                    {!isViewOnly && (
+
+                    {!effectiveViewOnly && (
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             className="flex-[2] py-4 bg-[#006AFF] text-white font-black rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? "ĐANG XỬ LÝ..." : <><CheckCircle2 size={20} /> XÁC NHẬN CẬP NHẬT</>}
+                            {isSubmitting ? "ĐANG XỬ LÝ..." : <><CheckCircle2 size={20} /> CẬP NHẬT HỒ SƠ</>}
                         </button>
                     )}
                 </div>

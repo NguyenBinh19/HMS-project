@@ -13,13 +13,6 @@ const AgencyStaffStats = ({ data = [] }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <StatCard title="Tổng nhân viên" value={totalStaff} icon={Users} color="text-blue-600" />
             <StatCard title="Đang hoạt động" value={activeStaff} icon={PieChart} color="text-emerald-600" />
-            {/*<StatCard*/}
-            {/*    title="Tổng chi tiêu / Hạn mức"*/}
-            {/*    value={`${totalUsed.toLocaleString()}đ`}*/}
-            {/*    description={`Trên tổng ${totalLimit.toLocaleString()}đ`}*/}
-            {/*    icon={CreditCard}*/}
-            {/*    color="text-orange-600"*/}
-            {/*/>*/}
         </div>
     );
 };

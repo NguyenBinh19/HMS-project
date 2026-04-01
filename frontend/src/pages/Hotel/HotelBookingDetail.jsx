@@ -17,10 +17,11 @@ const HotelBookingDetail = () => {
     const STATUS_CONFIG = {
         "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", text: "text-amber-500", shadow: "shadow-amber-200" },
         "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", text: "text-emerald-600", shadow: "shadow-emerald-200" },
-        "CHECKIN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", text: "text-blue-600", shadow: "shadow-blue-200" },
-        "CHECKOUT": { label: "HOÀN THÀNH", color: "bg-slate-600", text: "text-slate-600", shadow: "shadow-slate-200" },
+        "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", text: "text-blue-600", shadow: "shadow-blue-200" },
+        "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
+        "COMPLETED": { label: "HOÀN THÀNH", color: "bg-slate-600", text: "text-slate-600", shadow: "shadow-slate-200" },
         "CANCELLED": { label: "ĐÃ HỦY", color: "bg-rose-600", text: "text-rose-600", shadow: "shadow-rose-200" },
-        "NOSHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", text: "text-purple-600", shadow: "shadow-purple-200" },
+        "NO_SHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", text: "text-purple-600", shadow: "shadow-purple-200" },
     };
 
     useEffect(() => {

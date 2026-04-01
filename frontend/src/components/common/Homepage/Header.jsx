@@ -100,6 +100,7 @@ const Header = () => {
 
     // 3. Logic tính toán quyền hạn (Sử dụng useMemo để tối ưu)
     const isAdmin = useMemo(() => userRoles.some(role => role.includes("ADMIN")), [userRoles]);
+    const isFullAdmin = useMemo(() => userRoles.some(role => role === "ROLE_ADMIN"), [userRoles]);
     const isAgencyManager = useMemo(() => userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER")), [userRoles]);
 
     const currentHotelId = user?.hotelId || hotelIdFromToken;
@@ -270,30 +271,65 @@ const Header = () => {
                                         onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
                                         className="flex items-center gap-3 cursor-pointer group p-1.5 rounded-2xl border border-transparent hover:border-slate-100 hover:bg-slate-50 transition-all"
                                     >
-                                        <div className="w-10 h-10 rounded-full bg-[#006AFF] flex items-center justify-center text-white font-bold text-sm shadow-lg">AD</div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[15px] font-bold text-slate-800 leading-none">Admin</span>
-                                            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md mt-1 self-start uppercase tracking-wider">Super Admin</span>
+                                        {/* Avatar hiển thị chữ cái đầu của tên */}
+                                        <div
+                                            className="w-10 h-10 rounded-full bg-[#006AFF] flex items-center justify-center text-white font-bold text-sm shadow-lg uppercase">
+                                            {user?.firstName?.charAt(0) || 'AD'}
                                         </div>
-                                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <div className="flex flex-col">
+                                            <span className="text-[15px] font-bold text-slate-800 leading-none">
+                                                {user?.lastName} {user?.firstName}
+                                            </span>
+                                            {/* Hiển thị Label động dựa trên Role */}
+                                            <span
+                                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 self-start uppercase tracking-wider ${
+                                                    isFullAdmin ? "text-blue-500 bg-blue-50" : "text-amber-600 bg-amber-50"
+                                                }`}>
+                                                {isFullAdmin ? "Super Admin" : "Admin Staff"}
+                                            </span>
+                                        </div>
+                                        <ChevronDown size={16}
+                                                     className={`text-slate-400 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`}/>
                                     </div>
                                     {isAdminDropdownOpen && (
-                                        <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-150">
-                                            <button onClick={() => { navigate("/profile"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600"><User size={18} /> Hồ sơ cá nhân</button>
-                                            <button onClick={() => { navigate("/admin/dashboard"); setIsAdminDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600"><LayoutDashboard size={18} /> Dashboard quản trị</button>
+                                        <div
+                                            className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-150">
+                                            <button onClick={() => {
+                                                navigate("/profile");
+                                                setIsAdminDropdownOpen(false);
+                                            }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600">
+                                                <User size={18}/> Hồ sơ cá nhân
+                                            </button>
+                                            <button onClick={() => {
+                                                navigate("/admin/dashboard");
+                                                setIsAdminDropdownOpen(false);
+                                            }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600">
+                                                <LayoutDashboard size={18}/> Dashboard quản trị
+                                            </button>
                                             <div className="h-px bg-slate-100 my-1"></div>
-                                            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"><LogOut size={18} /> Đăng xuất</button>
+                                            <button onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors">
+                                                <LogOut size={18}/> Đăng xuất
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         ) : isAgencyManager ? (
-                            <div className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100">
-                                <div onClick={() => navigate("/agency/prepaid")} className="flex flex-col cursor-pointer p-1.5 min-w-[120px]">
+                            <div
+                                className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100">
+                                <div onClick={() => navigate("/agency/prepaid")}
+                                     className="flex flex-col cursor-pointer p-1.5 min-w-[120px]">
                                     <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Số dư khả dụng</span>
-                                    <span className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.walletBalance)}</span>
+                                    <span
+                                        className="text-lg font-black text-slate-800">{formatCurrency(financeInfo.walletBalance)}</span>
                                 </div>
-                                <button onClick={() => navigate("/agency/prepaid")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition active:scale-95">Nạp tiền</button>
+                                <button onClick={() => navigate("/agency/prepaid")}
+                                        className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition active:scale-95">Nạp
+                                    tiền
+                                </button>
                                 <div className="flex flex-col p-1.5 min-w-[150px]">
                                     <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
                                         Hạn mức tín dụng
@@ -306,20 +342,29 @@ const Header = () => {
                                     </span>
                                 </div>
 
-                                <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600"><UserCircle size={20} /></div>
+                                <Link to="/profile"
+                                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">
+                                    <div
+                                        className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                        <UserCircle size={20}/></div>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
-                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>
+                                        <span
+                                            className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
+                                        <span
+                                            className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>
                                     </div>
                                 </Link>
-                                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><LogOut size={20} /></button>
+                                <button onClick={handleLogout}
+                                        className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><LogOut
+                                    size={20}/></button>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                            <div
+                                className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                                 {renderKycStatus()}
-                                <button onClick={() => navigate("/profile")} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>
-                                    <User size={18} /><span>Hồ sơ</span>
+                                <button onClick={() => navigate("/profile")}
+                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>
+                                    <User size={18}/><span>Hồ sơ</span>
                                 </button>
                                 <div className="flex items-center gap-3 px-4 py-1.5">
                                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20} /></div>

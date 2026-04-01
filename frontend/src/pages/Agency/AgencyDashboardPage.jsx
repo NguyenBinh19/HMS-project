@@ -14,6 +14,7 @@ import { jwtDecode } from "jwt-decode";
 import { rankService } from '@/services/rank.service';
 import { bookingService } from '@/services/booking.service';
 import { staffService } from '@/services/staff.service';
+import { agencyService } from '@/services/agency.service';
 import api from "@/services/axios.config";
 
 const AgencyDashboard = () => {
@@ -46,18 +47,30 @@ const AgencyDashboard = () => {
         setLoading(true);
 
         try {
+            // Bước 1: Lấy thông tin cơ bản của Agency để có rankId
+            const agencyProfileRes = await agencyService.getAgencyProfileDetail();
+            const agencyData = agencyProfileRes.result;
+            const currentRankId = agencyData.rankId;
+
+            // Bước 2: Gọi đồng thời các API còn lại (bao gồm chi tiết Rank)
             const results = await Promise.allSettled([
-                rankService.getAgencyRankDetail({ agencyId }), // 0. Rank
-                api.get(`/agencies/agency-detail/${agencyId}`), // 1. Detail (Wallet)
-                api.get(`/agencies/${agencyId}/credit-summary`), // 2. Credit Summary
-                bookingService.getBookingHistory(), // 3. Bookings
-                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // 4. Transactions
-                staffService.getStaffList() // 5. Staff
+                rankService.getRankDetail(currentRankId),         // 0. Chi tiết Rank (Màu sắc, icon...)
+                api.get(`/agencies/${agencyId}/credit-summary`), // 1. Tín dụng
+                bookingService.getBookingHistory(),              // 2. Đơn hàng
+                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // 3. Giao dịch
+                staffService.getStaffList()                      // 4. Nhân sự
             ]);
 
-            // 1. Xử lý Rank
+            // --- XỬ LÝ LOGIC RANK ---
             if (results[0].status === 'fulfilled') {
-                setRankData(results[0].value.result);
+                const rankDetail = results[0].value.result;
+                setRankData({
+                    currentRankName: rankDetail.rankName,
+                    color: rankDetail.color,
+                    description: rankDetail.description,
+                    rankCode: rankDetail.rankCode,       // "BASIC"
+                    progressPercent: rankDetail.upgradeMinTotalRevenue === 0 ? 100 : 0
+                });
             }
             // 2. Xử lý Tài chính
             if (results[1].status === 'fulfilled' && results[2].status === 'fulfilled') {
@@ -178,22 +191,42 @@ const AgencyDashboard = () => {
                 <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative overflow-hidden">
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hạng đại
-                                lý</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                Hạng đại lý
+                            </p>
                             <div
-                                className="bg-amber-500 text-white px-4 py-1 rounded-lg font-black text-sm inline-block italic">
-                                {rankData?.currentRankName || 'THÀNH VIÊN'}
+                                style={{
+                                    backgroundColor: rankData?.color || '#94a3b8',
+                                    boxShadow: `0 4px 12px ${rankData?.color}40`
+                                }}
+                                className="text-white px-4 py-1 rounded-lg font-black text-sm inline-block italic"
+                            >
+                                {rankData?.currentRankName || 'BASIC'}
                             </div>
                         </div>
-                        <Trophy className="text-amber-400" size={32}/>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-500" style={{width: `${rankData?.progressPercent || 0}%`}}/>
+                        <div className="p-2 rounded-full bg-slate-50">
+                            {/* Có thể thay đổi Icon dựa trên rankData.icon nếu cần */}
+                            <Trophy style={{ color: rankData?.color || '#94a3b8' }} size={28} />
                         </div>
-                        <p className="text-[10px] font-bold text-slate-500">
-                            {rankData?.messageToNextRank || 'Đặt thêm đơn để thăng hạng'}
+                    </div>
+
+                    <div className="space-y-2">
+                        {/* Hiển thị mô tả từ description trong JSON */}
+                        <p className="text-[11px] font-bold text-slate-500 leading-tight italic">
+                            {rankData?.description || 'Hạng thành viên cơ bản'}
                         </p>
+
+                        {/* Thanh tiến trình */}
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full transition-all duration-1000 ease-out"
+                                style={{
+                                    width: `${rankData?.progressPercent || 0}%`,
+                                    backgroundColor: rankData?.color || '#94a3b8'
+                                }}
+                            />
+                        </div>
+                        {rankData?.rankCode === 'BASIC'}
                     </div>
                 </div>
 

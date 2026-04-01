@@ -14,10 +14,52 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { kycService } from "@/services/kyc.service.js";
+import { jwtDecode } from "jwt-decode";
 
 const VerificationStatusPage = () => {
     const navigate = useNavigate();
+    // Hàm xử lý quay lại
+    const handleGoBack = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            let isAgency = false;
+            if (token) {
+                try {
+                    const decoded = jwtDecode(token);
+                    const roles = decoded.roles || decoded.authorities || [];
+                    const rolesStr = JSON.stringify(roles).toUpperCase();
 
+                    if (rolesStr.includes("AGENCY") || decoded.agencyId) {
+                        isAgency = true;
+                    }
+                } catch (e) {
+                    console.error("Token decode error:", e);
+                }
+            }
+            if (!isAgency) {
+                const hasAgencyId = !!storedUser.agencyId;
+                const isAgencyByType = storedUser.partnerType === "AGENCY";
+                let isAgencyByRole = false;
+                if (storedUser.roles) {
+                    if (Array.isArray(storedUser.roles)) {
+                        isAgencyByRole = storedUser.roles.some(r =>
+                            (typeof r === 'string' ? r : r.name).toUpperCase().includes("AGENCY")
+                        );
+                    } else if (typeof storedUser.roles === 'string') {
+                        isAgencyByRole = storedUser.roles.toUpperCase().includes("AGENCY");
+                    }
+                }
+                isAgency = hasAgencyId || isAgencyByType || isAgencyByRole;
+            }
+            // 3. Thực hiện điều hướng
+            const dashboardPath = isAgency ? "/agency/agency-dashboard" : "/hotel/dashboard";
+            navigate(dashboardPath);
+        } catch (error) {
+            console.error("Lỗi điều hướng:", error);
+            navigate("/");
+        }
+    };
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -102,7 +144,7 @@ const VerificationStatusPage = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={handleGoBack}
                         className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
                     >
                         <ChevronLeft size={16}/> QUAY LẠI

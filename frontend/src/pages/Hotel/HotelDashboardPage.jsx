@@ -139,7 +139,7 @@ const HotelDashboard = () => {
                         footer="Doanh thu TB trên mỗi phòng"
                         icon={<Star size={20} />}
                     />
-                    <TrustScoreCard score={feedbackStats?.trustScore || 0} />
+                    <TrustScoreCard stats={feedbackStats} />
                 </div>
 
                 <div className="grid grid-cols-12 gap-8">
@@ -283,19 +283,76 @@ const StatCard = ({label, value, sub, subColor, footer, progress, icon}) => (
     </div>
 );
 
-const TrustScoreCard = ({ score }) => (
-    <div className="bg-white p-7 rounded-[32px] shadow-sm border border-slate-100 flex flex-col items-center justify-center relative">
-        <p className="absolute top-7 left-7 text-[11px] font-black text-[#A3AED0] uppercase tracking-[0.15em]">Tín nhiệm</p>
-        <div className="relative w-20 h-20 flex items-center justify-center mt-4">
-            <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle cx="40" cy="40" r="35" fill="transparent" stroke="#F4F7FE" strokeWidth="6" />
-                <circle cx="40" cy="40" r="35" fill="transparent" stroke="#4318FF" strokeWidth="6" strokeDasharray="220" strokeDashoffset={220 - (score / 100) * 220} strokeLinecap="round" />
-            </svg>
-            <span className="text-xl font-black text-[#1B2559]">{score}</span>
+const TrustScoreCard = ({ stats }) => {
+    // Lấy giá trị trung bình, mặc định là 0 nếu null
+    const score = stats?.averageScore || 0;
+    const total = stats?.totalReviews || 0;
+
+    // Tính toán màu sắc dựa trên số điểm
+    const getScoreColor = (s) => {
+        if (s >= 8) return "#05CD99"; // Xanh lá - Tuyệt vời
+        if (s >= 5) return "#4318FF"; // Xanh dương - Tốt
+        return "#EE5D50"; // Đỏ - Cần cải thiện
+    };
+
+    return (
+        <div className="bg-white p-7 rounded-[32px] shadow-sm border border-slate-100 group hover:shadow-md transition-all relative overflow-hidden">
+            <p className="text-[11px] font-black text-[#A3AED0] uppercase tracking-[0.15em] mb-4">Chỉ số tín nhiệm</p>
+
+            <div className="flex items-center gap-6">
+                {/* Vòng tròn điểm số */}
+                <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+                    <svg className="absolute inset-0 w-full h-full -rotate-90">
+                        {/* Vòng nền */}
+                        <circle cx="48" cy="48" r="40" fill="transparent" stroke="#F4F7FE" strokeWidth="8" />
+                        {/* Vòng tiến trình (Giả sử thang điểm 10 nên nhân 10 để ra %) */}
+                        <circle
+                            cx="48"
+                            cy="48"
+                            r="40"
+                            fill="transparent"
+                            stroke={getScoreColor(score)}
+                            strokeWidth="8"
+                            strokeDasharray="251.2"
+                            strokeDashoffset={251.2 - (score * 10 / 100) * 251.2}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000 ease-out"
+                        />
+                    </svg>
+                    <div className="text-center">
+                        <span className="text-2xl font-black text-[#1B2559]">{score > 0 ? score.toFixed(1) : 'N/A'}</span>
+                        <p className="text-[8px] font-bold text-[#A3AED0] uppercase">/ 10.0</p>
+                    </div>
+                </div>
+
+                {/* Chỉ số phụ */}
+                <div className="flex-1 space-y-3">
+                    <div>
+                        <div className="flex justify-between text-[10px] font-black uppercase mb-1">
+                            <span>Sạch sẽ</span>
+                            <span className="text-[#4318FF]">{stats?.cleanlinessAvg || 0}</span>
+                        </div>
+                        <div className="h-1 w-full bg-[#F4F7FE] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#05CD99]" style={{ width: `${(stats?.cleanlinessAvg || 0) * 10}%` }}></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="flex justify-between text-[10px] font-black uppercase mb-1">
+                            <span>Dịch vụ</span>
+                            <span className="text-[#4318FF]">{stats?.serviceAvg || 0}</span>
+                        </div>
+                        <div className="h-1 w-full bg-[#F4F7FE] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#4318FF]" style={{ width: `${(stats?.serviceAvg || 0) * 10}%` }}></div>
+                        </div>
+                    </div>
+                    <p className="text-[9px] font-bold text-[#A3AED0] italic mt-2">
+                        Dựa trên {total} đánh giá
+                    </p>
+                </div>
+            </div>
         </div>
-        <p className="mt-3 text-[10px] font-bold text-[#A3AED0] uppercase">Trust Score</p>
-    </div>
-);
+    );
+};
 
 const StatusBadge = ({ status }) => {
     const s = status?.toUpperCase();
