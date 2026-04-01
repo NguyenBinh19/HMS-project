@@ -15,7 +15,7 @@ const AdminBookingDetail = () => {
     const [loading, setLoading] = useState(true);
 
     const STATUS_CONFIG = {
-        "BOOKED": { label: "CHỜ THANH TOÁN", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+        "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
         "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
         "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
         "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
@@ -98,7 +98,7 @@ const AdminBookingDetail = () => {
                             </div>
 
                             <div className="mb-10">
-                                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>
+                                {/*<span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>*/}
                                 <h2 className="text-4xl font-black text-slate-900 tracking-tight">{booking.bookingCode}</h2>
                                 <p className="text-slate-400 font-bold text-xs mt-2 flex items-center gap-2">
                                     <Clock size={14}/> Khởi tạo lúc: {new Date(booking.createdAt).toLocaleTimeString('vi-VN')} ngày {formatDate(booking.createdAt)}

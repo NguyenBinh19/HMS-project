@@ -9,7 +9,7 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
         username: '',
         email: '',
         phone: '',
-        permission: 'HOTEL_STAFF'
+        permission: 'ADMIN_STAFF'
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -161,15 +161,11 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
                                 />
                             </InputGroup>
 
-                            <InputGroup label="Vai trò" icon={<ShieldCheck size={14}/>}>
-                                <select
-                                    className="w-full px-5 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#006AFF] transition-all font-black text-[#006AFF] appearance-none cursor-pointer"
-                                    value={formData.permission}
-                                    onChange={(e) => setFormData({...formData, permission: e.target.value})}
-                                >
-                                    <option value="HOTEL_MANAGER">QUẢN LÝ (Manager)</option>
-                                    <option value="HOTEL_STAFF">NHÂN VIÊN (Staff)</option>
-                                </select>
+                            <InputGroup label="Vai trò hệ thống" icon={<ShieldCheck size={14}/>}>
+                                <div className="w-full px-5 py-4 bg-blue-50 border-2 border-blue-100 rounded-2xl font-black text-[#006AFF] flex items-center gap-2 cursor-not-allowed">
+                                    ADMIN_STAFF
+                                </div>
+                                <p className="text-[9px] text-slate-400 mt-1 ml-2">* Nhân sự mới mặc định là Quản trị viên cấp dưới</p>
                             </InputGroup>
                         </div>
                     </div>

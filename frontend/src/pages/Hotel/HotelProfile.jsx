@@ -49,10 +49,23 @@ const HotelProfileManager = () => {
                 newErrors.phone = "Số điện thoại không hợp lệ (10-11 số)";
             }
         }
-
         if (formData.email && formData.email.trim() !== "") {
             if (!/\S+@\S+\.\S+/.test(formData.email)) {
                 newErrors.email = "Định dạng email không hợp lệ";
+            }
+        }
+        // Thành phố
+        const cityVal = formData.city || "";
+        if (cityVal.trim() !== "") { // Chỉ kiểm tra khi có nhập
+            if (/^\d+$/.test(cityVal.trim())) {
+                newErrors.city = "Thành phố không hợp lệ (không thể chỉ có số)";
+            }
+        }
+        // Địa chỉ chi tiết
+        const addrVal = formData.address || "";
+        if (addrVal.trim() !== "") { // Chỉ kiểm tra khi có nhập
+            if (/^\d+$/.test(addrVal.trim())) {
+                newErrors.address = "Địa chỉ không hợp lệ (không thể chỉ có số)";
             }
         }
 
@@ -203,7 +216,7 @@ const HotelProfileManager = () => {
                                     error={errors.city}
                                 />
                                 <div className="md:col-span-2">
-                                    <InputField label="Địa chỉ chi tiết" value={formData.address} onChange={v => setFormData({...formData, address: v})} />
+                                    <InputField label="Địa chỉ chi tiết" value={formData.address} onChange={v => setFormData({...formData, address: v})} error={errors.address}/>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mô tả khách sạn</label>

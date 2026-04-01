@@ -4,7 +4,7 @@ import {
     ArrowLeft, Building2, CreditCard, FileCheck,
     History, Info, MapPin, Phone, Mail, User,
     Star, Globe, Loader2, CreditCard as CardIcon,
-    HotelIcon, CheckCircle2, ShieldAlert
+    HotelIcon, CheckCircle2, ShieldAlert, Wallet
 } from "lucide-react";
 import { partnerService } from "@/services/partner.service.js";
 import { toast } from "react-hot-toast";
@@ -106,6 +106,11 @@ const PartnerDetail = () => {
             default: return "bg-slate-100 text-slate-500 border-slate-200";
         }
     };
+
+    const creditLimit = partner.creditLimit || 0;
+    const currentCredit = partner.currentCredit || 0;
+    const creditUsed = creditLimit - currentCredit; // Số tiền đã tiêu
+    const creditPercent = creditLimit > 0 ? (creditUsed / creditLimit) * 100 : 0;
 
     return (
         <div className="p-8 bg-[#F8FAFC] min-h-screen">
@@ -260,10 +265,104 @@ const PartnerDetail = () => {
                         </div>
                     )}
 
-                    {/* ... (Giữ nguyên các tab Finance) ... */}
+                    {/* tab Finance */}
                     {activeTab === "finance" && isAgency && (
-                        <div className="max-w-2xl">
-                            {/* Logic finance agency */}
+                        <div className="space-y-10 animate-in fade-in duration-500">
+                            <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
+                                Quản lý tài chính
+                            </h4>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Thẻ Ví tiền */}
+                                <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-[32px] space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="p-3 bg-white rounded-2xl text-emerald-600 shadow-sm">
+                                            <Wallet size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-black text-emerald-700 bg-white px-3 py-1 rounded-full border border-emerald-100">VÍ TRẢ TRƯỚC</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-emerald-800/60 uppercase tracking-widest">Số dư ví hiện tại</p>
+                                        <h2 className="text-2xl font-black text-emerald-700 mt-1">
+                                            {formatCurrency(partner.walletBalance)}
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {/* Thẻ Hạng Rank */}
+                                <div className="bg-amber-50 border border-amber-100 p-8 rounded-[32px] space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="p-3 bg-white rounded-2xl text-amber-600 shadow-sm">
+                                            <Star size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-black text-amber-700 bg-white px-3 py-1 rounded-full border border-amber-100">HẠNG ĐẠI LÝ</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-amber-800/60 uppercase tracking-widest">Cấp bậc hiện tại</p>
+                                        <h2 className="text-2xl font-black text-amber-700 mt-1 uppercase italic">
+                                            {partner.rankName || "BASIC"}
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {/* Thẻ Tổng Tín Dụng */}
+                                <div className="bg-blue-600 p-8 rounded-[32px] space-y-4 shadow-xl shadow-blue-100 relative overflow-hidden">
+                                    <div className="absolute -right-4 -bottom-4 opacity-10 text-white rotate-12">
+                                        <CardIcon size={120} />
+                                    </div>
+                                    <div className="flex justify-between items-center relative z-10">
+                                        <div className="p-3 bg-white/20 rounded-2xl text-white backdrop-blur-md">
+                                            <CreditCard size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-black text-white bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">TỔNG HẠN MỨC</span>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Hạn mức được cấp</p>
+                                        <h2 className="text-2xl font-black text-white mt-1">
+                                            {formatCurrency(partner.creditLimit)}
+                                        </h2>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Chi tiết sử dụng tín dụng */}
+                            <div className="bg-slate-50 border border-slate-100 rounded-[40px] p-10 space-y-8">
+                                <div className="flex justify-between items-end">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Tình trạng sử dụng nợ</p>
+                                        <h3 className="text-xl font-black text-slate-800 uppercase">Phân tích nợ tín dụng</h3>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-2xl font-black text-blue-600">{creditPercent.toFixed(1)}%</span>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase">Đã sử dụng</p>
+                                    </div>
+                                </div>
+
+                                {/* Thanh Progress */}
+                                <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                                    <div
+                                        className="h-full bg-blue-600 transition-all duration-1000"
+                                        style={{ width: `${creditPercent}%` }}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                                    <div className="flex items-center gap-4 p-6 bg-white rounded-[24px] border border-slate-100">
+                                        <div className="w-2 h-10 bg-blue-600 rounded-full" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase">Dư nợ đã sử dụng</p>
+                                            <p className="text-lg font-black text-slate-800">{formatCurrency(creditLimit - currentCredit)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-6 bg-white rounded-[24px] border border-slate-100">
+                                        <div className="w-2 h-10 bg-emerald-500 rounded-full" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase">Khả dụng còn lại</p>
+                                            <p className="text-lg font-black text-slate-800">{formatCurrency(partner.currentCredit)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -1,16 +1,16 @@
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import StaffStats from '@/components/hotel/staff/HotelStaffStatistic.jsx';
-import StaffActionMenu from '@/components/hotel/staff/HotelStaffActionMenu.jsx';
-import StaffFormModal from '@/components/hotel/staff/HotelStaffModal.jsx';
-import StaffCreateModal from "@/components/hotel/staff/HotelStaffCreateModal.jsx";
+import { Plus, ChevronLeft, ChevronRight, Loader2, CreditCard } from 'lucide-react';
+import StaffStats from '@/components/admin/staff/AdminStaffStatistic.jsx';
+import StaffActionMenu from '@/components/admin/staff/AdminStaffActionMenu.jsx';
+import StaffFormModal from '@/components/admin/staff/AdminStaffModal.jsx';
+import StaffCreateModal from "@/components/admin/staff/AdminCreateModal.jsx";
 import React, { useState, useMemo, useEffect } from 'react';
 import { staffService } from '@/services/staff.service.js';
+import { ROLES } from '@/constant/roles.js';
 
 const StaffDashboard = () => {
     const [staffs, setStaffs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    // Cập nhật cấu trúc modalConfig để quản lý chế độ Xem chi tiết
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
         data: null,
@@ -19,15 +19,25 @@ const StaffDashboard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
     const currentUser = JSON.parse(localStorage.getItem('user'));
+    const userRole = currentUser?.roles || "";
+    // Chỉ ADMIN TỔNG (ROLE_ADMIN) mới có quyền CRUD
+    const isFullAdmin = userRole === "ROLE_ADMIN";
+    // ADMIN STAFF vẫn vào được nhưng chỉ để xem
+    const isAdminStaff = userRole === "ROLE_ADMIN_STAFF";
     const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
     const fetchStaffList = async () => {
         try {
             setLoading(true);
-            const response = await staffService.getStaffList();
-            setStaffs(response.result || []);
+            const response = await staffService.getStaffAdminList();
+            const data = response.result || [];
+            // SỬA TẠI ĐÂY: Kiểm tra đúng giá trị trả về từ API (ADMIN_STAFF và ADMIN)
+            const adminStaff = data.filter(s =>
+                s.permission?.includes("ADMIN")
+            );
+            setStaffs(adminStaff);
         } catch (error) {
-            console.error("Lỗi khi tải danh sách:", error);
+            console.error("Lỗi khi tải danh sách Admin:", error);
         } finally {
             setLoading(false);
         }
@@ -35,8 +45,8 @@ const StaffDashboard = () => {
 
     useEffect(() => { fetchStaffList(); }, []);
 
-    // Xử lý các hành động mở Modal
     const handleAddStaff = () => {
+        if (!isFullAdmin) return alert("Chỉ Admin tổng mới có quyền thêm mới!");
         setIsCreateOpen(true);
     };
 
@@ -51,7 +61,6 @@ const StaffDashboard = () => {
     // const handleToggleStatus = async (staff) => {
     //     const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
     //     if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
-    //
     //     try {
     //         if (staff.status === 'ACTIVE') {
     //             await staffService.lockStaff(staff.id);
@@ -65,12 +74,16 @@ const StaffDashboard = () => {
     // };
 
     const handleToggleStatus = async (staff) => {
+        // 1. Chặn tự khóa mình
         if (staff.id === currentUserId) {
             alert("Bạn không thể tự khóa tài khoản của chính mình!");
             return;
         }
-        console.log("ID người dùng đang đăng nhập:", currentUserId);
-        console.log("ID của nhân viên trong hàng này:", staff.id);
+        // 2. Chặn ADMIN_STAFF khóa ADMIN
+        if (userRole === 'ADMIN_STAFF' && staff.permission === 'ADMIN') {
+            alert("Bạn không có quyền thay đổi trạng thái của Quản trị viên cấp cao!");
+            return;
+        }
         const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
         if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
         try {
@@ -97,26 +110,28 @@ const StaffDashboard = () => {
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-2xl font-bold text-slate-800">Quản lý Nhân viên Khách sạn</h1>
-                    <button
-                        onClick={handleAddStaff}
-                        className="bg-[#006AFF] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
-                    >
-                        <Plus size={20} /> Thêm nhân viên
-                    </button>
+                    <h1 className="text-2xl font-bold text-slate-800">QUẢN LÝ NHÂN VIÊN HỆ THỐNG</h1>
+                    {/* CHỈ ADMIN TỔNG MỚI THẤY NÚT THÊM */}
+                    {isFullAdmin && (
+                        <button
+                            onClick={handleAddStaff}
+                            className="bg-[#006AFF] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
+                        >
+                            <Plus size={20}/> Thêm quản trị viên
+                        </button>
+                    )}
                 </div>
 
-                {/* Thống kê nhanh */}
-                <StaffStats data={staffs} />
+                <StaffStats data={staffs}/>
 
-                {/* Bảng danh sách */}
+                {/* Table */}
                 <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 mt-8">
                     <div className="overflow-visible rounded-[24px">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/30 border-b border-slate-50">
                             <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
-                                <th className="px-8 py-5">Nhân viên</th>
-                                <th className="px-8 py-5">Chức vụ</th>
+                                <th className="px-8 py-5">Quản trị viên</th>
+                                <th className="px-8 py-5">Vai trò</th>
                                 <th className="px-8 py-5">Thông tin cá nhân</th>
                                 <th className="px-8 py-5 text-center">Trạng thái</th>
                                 <th className="px-8 py-5 text-right">Thao tác</th>
@@ -124,19 +139,27 @@ const StaffDashboard = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-50 min-h-[450px]">
                             {loading ? (
-                                <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-medium">Đang tải dữ liệu...</td></tr>
+                                <tr>
+                                    <td colSpan="5" className="text-center py-20"><Loader2
+                                        className="animate-spin mx-auto text-blue-500"/></td>
+                                </tr>
                             ) : staffs.length === 0 ? (
-                                <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-medium">Chưa có nhân viên nào.</td></tr>
+                                <tr>
+                                    <td colSpan="5" className="text-center py-20 text-slate-400">Chưa có nhân viên đại
+                                        lý nào.
+                                    </td>
+                                </tr>
                             ) : currentTableData.map((staff) => (
                                 <tr key={staff.id} className="hover:bg-blue-50/30 transition-colors group">
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-[#006AFF] font-bold uppercase">
-                                                {(staff.lastName?.[0] || staff.username?.[0] || 'U')}
+                                            <div
+                                                className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-[#006AFF] font-bold uppercase">
+                                                {(staff.lastName?.[0] || staff.username?.[0] || 'A')}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-800">
-                                                    {staff.firstName || staff.lastName
+                                                    {staff.lastName || staff.firstName
                                                         ? `${staff.lastName || ''} ${staff.firstName || ''}`.trim()
                                                         : staff.username}
                                                 </p>
@@ -146,12 +169,14 @@ const StaffDashboard = () => {
                                     </td>
                                     <td className="px-8 py-6">
                                             <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${
-                                                staff.permission === 'HOTEL_MANAGER'
-                                                    ? 'bg-purple-50 text-purple-600 border-purple-100'
+                                                staff.permission === "ADMIN" || staff.permission === "ROLE_ADMIN"
+                                                    ? 'bg-rose-50 text-rose-600 border-rose-100'
                                                     : 'bg-blue-50 text-[#006AFF] border-blue-100'
                                             }`}>
-                                                {staff.permission === 'HOTEL_MANAGER' ? 'QUẢN LÝ' : 'NHÂN VIÊN'}
-                                            </span>
+                                           {staff.permission === "ADMIN" || staff.permission === "ROLE_ADMIN"
+                                               ? 'ADMIN TỔNG'
+                                               : 'ADMIN STAFF'}
+                                        </span>
                                     </td>
                                     <td className="px-8 py-6">
                                         <p className="text-sm text-slate-600 font-medium">{staff.phone || 'Chưa có SĐT'}</p>
@@ -161,25 +186,19 @@ const StaffDashboard = () => {
                                         {staff.dob && <p className="text-[10px] text-slate-400">NS: {staff.dob}</p>}
                                     </td>
                                     <td className="px-8 py-6 text-center">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <Toggle checked={staff.status === 'ACTIVE'}
-                                                    onChange={() => handleToggleStatus(staff)}
-                                                    disabled={staff.id === currentUserId}/>
-                                            <span className={`text-[9px] font-bold uppercase ${
-                                                staff.id === currentUserId
-                                                    ? 'text-slate-400'
-                                                    : (staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500')
-                                            }`}>
-                                                {staff.id === currentUserId ? 'Đang truy cập' : (staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa')}
-                                            </span>
-                                        </div>
+                                        <Toggle
+                                            checked={staff.status === 'ACTIVE'}
+                                            onChange={() => handleToggleStatus(staff)}
+                                            disabled={!isFullAdmin || staff.id === currentUserId}
+                                        />
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <StaffActionMenu
-                                            onEdit={() => handleEditStaff(staff)}
-                                            onToggle={() => handleToggleStatus(staff)}
+                                            isFullAdmin={isFullAdmin}
+                                            onEdit={isFullAdmin ? () => handleEditStaff(staff) : null}
+                                            onToggle={isFullAdmin ? () => handleToggleStatus(staff) : null}
                                             onViewDetails={() => handleViewDetails(staff)}
-                                            onViewHistory={() => alert(`Lịch sử đặt phòng của: ${staff.username}`)}
+                                            onViewHistory={() => alert(`Lịch sử giao dịch: ${staff.username}`)}
                                             status={staff.status}
                                         />
                                     </td>
@@ -190,13 +209,14 @@ const StaffDashboard = () => {
                     </div>
 
                     {/* Phân Trang */}
-                    <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
+                    <div
+                        className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(prev => prev - 1)}
                             className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
-                            <ChevronLeft size={18} />
+                        <ChevronLeft size={18}/>
                         </button>
                         {[...Array(totalPages)].map((_, index) => (
                             <button
@@ -216,18 +236,17 @@ const StaffDashboard = () => {
                             onClick={() => setCurrentPage(prev => prev + 1)}
                             className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
                         >
-                            <ChevronRight size={18} />
+                            <ChevronRight size={18}/>
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Modal dùng chung cho Thêm/Sửa/Xem */}
             <StaffFormModal
                 isOpen={modalConfig.isOpen}
-                onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+                onClose={() => setModalConfig({...modalConfig, isOpen: false})}
                 initialData={modalConfig.data}
-                isViewOnly={modalConfig.isViewOnly}
+                isViewOnly={modalConfig.isViewOnly || !isFullAdmin}
                 onSuccess={fetchStaffList}
             />
             <StaffCreateModal
@@ -235,12 +254,11 @@ const StaffDashboard = () => {
                 onClose={() => setIsCreateOpen(false)}
                 onSuccess={fetchStaffList}
             />
-
         </div>
     );
 };
 
-const Toggle = ({ checked, onChange, disabled }) => (
+const Toggle = ({checked, onChange, disabled}) => (
     <label className="relative inline-flex items-center cursor-pointer">
         <input
             type="checkbox"

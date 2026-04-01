@@ -35,8 +35,8 @@ const Login = () => {
 
             const hotelId = decoded.hotelId;
             const agencyId = decoded.agencyId;
-            console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
-            if (roles.some(r => r.includes("ADMIN"))) return "/admin";
+            // console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
+            if (roles.some(r => r.includes("ADMIN"))) return "/admin/dashboard";
             if (roles.some(r => r.includes("HOTEL"))) {
                 return hotelId ? "/hotel/dashboard" : "/kyc/status";
             }

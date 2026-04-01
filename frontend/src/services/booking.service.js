@@ -264,6 +264,17 @@ const getBookingDetailOfAdmin = async (bookingCode) => {
     }
 };
 
+// Chi tiết booking theo bookingId
+const getBookingDetailById = async (bookingId) => {
+    try {
+        const response = await api.get(`/booking/detail/id/${bookingId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Booking Detail By Id Error:", error);
+        throw error;
+    }
+};
+
 export const bookingService = {
     checkAvailability,
     holdRoom,
@@ -290,4 +301,5 @@ export const bookingService = {
     reportNoShow,
     cancelBooking,
     getBookingDetailOfAdmin,
+    getBookingDetailById
 };

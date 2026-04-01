@@ -5,8 +5,7 @@ import {
 } from "lucide-react";
 import { addonServiceApi } from "@/services/addonService.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
-
-const HOTEL_ID = 2;
+import { jwtDecode } from "jwt-decode";
 
 const CATEGORIES = [
     { key: "all", label: "Tất cả" },
@@ -38,6 +37,18 @@ const CATEGORY_ICONS = {
 };
 
 const UNITS = ["Lượt", "Theo Khách", "Theo Giờ", "Theo Ngày", "Theo Phòng"];
+const getHotelIdFromToken = () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return null;
+    try {
+        const decoded = jwtDecode(token);
+        // Lấy hotelId từ các trường phổ biến trong JWT của bạn
+        return decoded.hotelId || decoded.hotel_id || JSON.parse(localStorage.getItem("user"))?.hotelId;
+    } catch (error) {
+        console.error("Lỗi giải mã token:", error);
+        return null;
+    }
+};
 
 /* ========== MODAL FORM ========== */
 const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
@@ -59,6 +70,10 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
     const handleChange = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
     const handleSubmit = async () => {
+        const hotelId = getHotelIdFromToken();
+        if (!hotelId) {
+            return alert("Không tìm thấy ID khách sạn quản lý. Vui lòng đăng nhập lại!");
+        }
         // 1. Validate Tên dịch vụ
         if (!form.serviceName.trim()) {
             return alert("Vui lòng nhập tên dịch vụ!");
@@ -88,7 +103,7 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
         try {
             const payload = {
                 ...form,
-                hotelId: HOTEL_ID,
+                hotelId: hotelId,
                 netPrice: 0,
                 publicPrice: form.publicPrice ? Number(form.publicPrice) : null,
             };
@@ -262,11 +277,18 @@ const AddonServiceManager = () => {
     const toastRef = useRef(null);
 
     const fetchServices = async () => {
+        const hotelId = getHotelIdFromToken();
+        if (!hotelId) {
+            console.error("Không tìm thấy Hotel ID");
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
-            const res = await addonServiceApi.getAddonServicesByHotel(HOTEL_ID);
+            // Sử dụng hotelId lấy từ token
+            const res = await addonServiceApi.getAddonServicesByHotel(hotelId);
             setServices(res?.result || []);
-        } catch {
+        } catch (err) {
             setServices([]);
         } finally {
             setLoading(false);

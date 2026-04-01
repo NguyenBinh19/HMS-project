@@ -66,6 +66,8 @@ import CreditWallet from "../pages/Agency/CreditWallet.jsx";
 import TransactionHistoryPage from "../pages/Agency/TransactionHistoryPage.jsx";
 import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
 import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
+import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
+import AdminStaffDashboard from "@/pages/Admin/AdminStaffDashboard.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -153,7 +155,7 @@ const AppRoutes = () => {
                 {/*Luồng Admin System*/}
                 <Route path="/admin"
                     element={
-                        <ProtectedRoute roles={[ROLES.ADMIN]}>
+                        <ProtectedRoute roles={["ROLE_ADMIN", "ROLE_ADMIN_STAFF"]}>
                             <AdminLayout />
                         </ProtectedRoute>
                     }>
@@ -161,6 +163,7 @@ const AppRoutes = () => {
                     <Route path="kyc-queue" element={<KYCQueuePage />} />
                     <Route path="view-booking" element={<ViewAllBooking />} />
                     <Route path="view-booking/:bookingCode" element={<AdminBookingDetail />} />
+                    <Route path="view-booking/:bookingId" element={<AdminBookingDetailById />} />
                     <Route path="partners" element={<PartnerList />} />
                     <Route path="partners/agency/:id" element={<PartnerDetail />} />
                     <Route path="partners/hotel/:id" element={<PartnerDetail />} />
@@ -169,6 +172,7 @@ const AppRoutes = () => {
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
                     <Route path="set-ranking" element={<SetAgencyRanking />} />
                     <Route path="system-config" element={<SystemConfigPage/>} />
+                    <Route path="staff" element={<AdminStaffDashboard/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />

@@ -14,6 +14,8 @@ public interface PartnerService {
 
     List<ListStaffResponse> getStaffList();
 
+    List<ListStaffResponse> getAdminList();
+
     void lockStaff(String userId);
 
     void unLockStaff(String userId);

@@ -249,7 +249,7 @@ const BookingSuccessPage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate("/homepage")}
+                        onClick={() => navigate("/agency/agency-dashboard")}
                         className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                     >
                         <Home className="mb-2 text-slate-400" size={24}/>

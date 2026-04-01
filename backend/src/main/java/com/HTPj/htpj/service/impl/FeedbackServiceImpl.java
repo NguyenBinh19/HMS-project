@@ -295,7 +295,6 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
-
     private Integer getCurrentUserHotelId() {
         String userId = getCurrentUserId();
         PartnerVerification pv = verificationRepository

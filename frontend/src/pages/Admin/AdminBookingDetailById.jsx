@@ -8,27 +8,27 @@ import {
 } from 'lucide-react';
 import { bookingService } from '@/services/booking.service.js';
 
-const HotelBookingDetail = () => {
-    const { bookingCode } = useParams();
+const AdminBookingDetail = () => {
+    const { bookingId } = useParams();
     const navigate = useNavigate();
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const STATUS_CONFIG = {
-        "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", text: "text-amber-500", shadow: "shadow-amber-200" },
-        "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", text: "text-emerald-600", shadow: "shadow-emerald-200" },
-        "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", text: "text-blue-600", shadow: "shadow-blue-200" },
+        "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+        "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
+        "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
         "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
-        "COMPLETED": { label: "HOÀN THÀNH", color: "bg-slate-600", text: "text-slate-600", shadow: "shadow-slate-200" },
-        "CANCELLED": { label: "ĐÃ HỦY", color: "bg-rose-600", text: "text-rose-600", shadow: "shadow-rose-200" },
-        "NO_SHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", text: "text-purple-600", shadow: "shadow-purple-200" },
+        "COMPLETED": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
+        "CANCELLED": { label: "ĐÃ HỦY", color: "bg-rose-600", border: "border-rose-200", text: "text-white" },
+        "NO_SHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", border: "border-purple-200", text: "text-white" },
     };
 
     useEffect(() => {
         const fetchDetail = async () => {
             setLoading(true);
             try {
-                const data = await bookingService.getBookingDetailOfAdmin(bookingCode);
+                const data = await bookingService.getBookingDetailById(bookingId);
                 if (data && data.result) setBooking(data.result);
             } catch (err) {
                 console.error("Lỗi lấy chi tiết:", err);
@@ -329,4 +329,4 @@ const HotelBookingDetail = () => {
     );
 };
 
-export default HotelBookingDetail;
+export default AdminBookingDetail;

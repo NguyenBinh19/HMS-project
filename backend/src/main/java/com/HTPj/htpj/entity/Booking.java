@@ -72,7 +72,7 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "guest_name", length = 255)
+    @Column(name = "guest_name", columnDefinition = "nvarchar(255)")
     private String guestName;
 
     @Column(name = "guest_phone", length = 20)

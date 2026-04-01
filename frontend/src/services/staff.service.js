@@ -55,12 +55,24 @@ const updateStaff = async (updateStaffRequest) => {
     }
 };
 
+// Lấy danh sách nhân viên Admin
+const getStaffAdminList = async () => {
+    try {
+        const response = await api.get(`/partners/list-admin`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Staff Admin List Error:", error);
+        throw error;
+    }
+};
+
 export const staffService = {
     createStaff,
     getStaffList,
     updateStaff,
     unLockStaff,
-    lockStaff
+    lockStaff,
+    getStaffAdminList,
 };
 
 

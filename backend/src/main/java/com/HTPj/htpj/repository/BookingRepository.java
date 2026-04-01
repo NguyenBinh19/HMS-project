@@ -192,6 +192,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("hotelId") Integer hotelId
     );
 
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.bookingDetails WHERE b.bookingId = :bookingId AND b.userId = :userId")
+    Optional<Booking> findByIdAndUserId(@Param("bookingId") Long bookingId, @Param("userId") String userId);
+
     // Payout Statement: Find completed bookings by hotel and checkout date range
     @Query("""
     SELECT DISTINCT b FROM Booking b

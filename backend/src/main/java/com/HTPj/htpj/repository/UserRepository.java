@@ -58,4 +58,6 @@ public interface UserRepository extends JpaRepository<Users, String> {
     List<Users> findByHotel_HotelId(Integer hotelId);
 
     List<Users> findByAgency_AgencyId(Long agencyId);
+
+    List<Users> findByIsAdminTrue();
 }

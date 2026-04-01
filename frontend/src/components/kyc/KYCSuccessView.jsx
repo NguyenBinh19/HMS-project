@@ -1,19 +1,34 @@
 import React from 'react';
-import { Check, RefreshCw, LogIn, ExternalLink } from 'lucide-react';
-import { useNavigate } from "react-router-dom";
+import { Check, RefreshCw, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useNavigate, useLocation } from "react-router-dom"; // Thêm useLocation
 
 const KYCSuccessView = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Kiểm tra xem có phải từ luồng Update chuyển sang không
+    // (Giả sử trang Upload hồ sơ truyền state: { isUpdate: true })
+    const isUpdateMode = location.state?.isUpdate || false;
+
+    const handleAction = () => {
+        if (isUpdateMode) {
+            // Nếu là Update, quay về trang quản lý trạng thái KYC
+            navigate("/kyc/status");
+        } else {
+            // Nếu là đăng ký mới, có thể về trang chủ hoặc landing page tùy bạn
+            navigate("/");
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
             <div className="bg-white w-full max-w-[540px] rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
 
                 {/* Header Section */}
                 <div className="bg-[#f0f7ff] p-8 pb-10 flex flex-col items-center text-center relative">
-                    {/* Icon và Badge */}
                     <div className="relative mb-6">
                         <div className="w-20 h-20 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-blue-50">
-                            <img src="https://cdn-icons-png.flaticon.com/512/1903/1903162.png" alt="process" className="w-12 h-12 object-contain" />
+                            <ShieldCheck className="w-12 h-12 text-blue-600" />
                         </div>
                         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#ffb800] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shadow-sm border border-white">
                             Đang xét duyệt
@@ -21,10 +36,10 @@ const KYCSuccessView = () => {
                     </div>
 
                     <h2 className="text-[22px] font-bold text-[#1e293b] mb-3 leading-tight">
-                        Hồ sơ của bạn đã được gửi thành công!
+                        {isUpdateMode ? "Cập nhật hồ sơ thành công!" : "Hồ sơ đã được gửi thành công!"}
                     </h2>
                     <p className="text-[13px] text-slate-500 leading-relaxed max-w-[400px]">
-                        Cảm ơn bạn đã hoàn tất đăng ký. Đội ngũ Admin đang kiểm tra đối chiếu thông tin doanh nghiệp của bạn.
+                        Hệ thống đã ghi nhận thông tin thay đổi. Đội ngũ quản trị sẽ tiến hành thẩm định lại hồ sơ của bạn.
                     </p>
                 </div>
 
@@ -37,34 +52,41 @@ const KYCSuccessView = () => {
                     <div className="max-w-[320px] mx-auto space-y-0">
                         <TimelineItem
                             status="done"
-                            label="Đăng ký tài khoản"
+                            label={isUpdateMode ? "Gửi yêu cầu chỉnh sửa" : "Đăng ký tài khoản"}
                         />
                         <TimelineItem
                             status="done"
-                            label="Gửi hồ sơ xác minh"
+                            label="Tiếp nhận hồ sơ"
                         />
                         <TimelineItem
                             status="active"
-                            label="Admin xét duyệt"
-                            sub="Quá trình này thường mất khoảng 2 - 24 giờ làm việc."
+                            label="Admin đang thẩm định"
+                            sub="Dự kiến hoàn tất trong 2 - 24 giờ làm việc."
                         />
                         <TimelineItem
                             status="waiting"
-                            label="Kích hoạt hoạt động"
+                            label="Kích hoạt trạng thái mới"
                             isLast
                         />
                     </div>
 
-                    {/* Buttons */}
+                    {/* Buttons: Điều hướng dựa trên ngữ cảnh */}
                     <div className="flex flex-col sm:flex-row justify-center gap-3 mt-8">
                         <button
-                            onClick={() => navigate("/")}
-                            className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl font-bold text-[14px] border border-slate-200 hover:bg-slate-50 transition-all flex-1"
+                            onClick={handleAction}
+                            className="flex items-center justify-center gap-2 bg-[#1e293b] text-white px-6 py-3.5 rounded-xl font-bold text-[14px] hover:bg-slate-800 transition-all flex-1 shadow-lg shadow-slate-200"
                         >
-                            <LogIn size={18} className="rotate-180"/> Trang chủ
+                            {isUpdateMode ? (
+                                <>Xem trạng thái KYC <ArrowRight size={18} /></>
+                            ) : (
+                                <>Về trang chủ <ArrowLeft size={18} className="rotate-180" /></>
+                            )}
                         </button>
                     </div>
 
+                    <p className="text-center text-[11px] text-slate-400 font-bold uppercase mt-6 tracking-tight">
+                        Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.
+                    </p>
                 </div>
             </div>
         </div>
@@ -81,7 +103,7 @@ const TimelineItem = ({status, label, sub, isLast}) => {
                 <div
                     className={`w-[26px] h-[26px] rounded-full flex items-center justify-center z-10 transition-colors ${
                         isDone ? 'bg-[#10b981]' : isActive ? 'bg-[#ffb800]' : 'bg-slate-200'
-                }`}>
+                    }`}>
                     {isDone ? (
                         <Check size={16} className="text-white stroke-[3]" />
                     ) : isActive ? (
