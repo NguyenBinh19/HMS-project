@@ -21,11 +21,15 @@ public class TemporalConfig {
 
     private final RoomHoldRepository roomHoldRepository;
 
+    @Value("${temporal.connection.target}")
+    private String target;
+
     @Bean
     public WorkflowServiceStubs workflowServiceStubs() {
         return WorkflowServiceStubs.newInstance(
                 WorkflowServiceStubsOptions.newBuilder()
-                        .setTarget("hms-temporal:7233")
+                        .setTarget(target)
+//                        .setTarget("hms-temporal:7233")
                         .build()
         );
     }
