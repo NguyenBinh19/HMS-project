@@ -68,6 +68,7 @@ import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
 import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
 import AdminStaffDashboard from "@/pages/Admin/AdminStaffDashboard.jsx";
+import StaffSpendingLimit from "@/pages/Agency/StaffSpendingLimit.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -122,6 +123,7 @@ const AppRoutes = () => {
                     <Route path="prepaid" element={<PrepaidWallet />} />
                     <Route path="credit-wallet" element={<CreditWallet />} />
                     <Route path="transaction-history" element={<TransactionHistoryPage />} />
+                    <Route path="staff-spending-limit" element={<StaffSpendingLimit />} />
                 </Route>
 
                 {/*Luồng Hotel Admin*/}

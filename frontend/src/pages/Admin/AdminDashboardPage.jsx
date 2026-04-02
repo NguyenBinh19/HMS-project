@@ -106,7 +106,7 @@ const AdminDashboard = () => {
                 {/* 1. Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
                     <div>
-                        <h1 className="text-2xl font-black italic tracking-tighter">ADMIN DASHBOARD</h1>
+                        <h1 className="text-2xl font-black tracking-tighter">ADMIN DASHBOARD</h1>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 text-blue-600">Hệ thống quản lý đối tác & đặt phòng</p>
                     </div>
                     {/*<div className="flex items-center gap-3">*/}
