@@ -16,15 +16,18 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
         dob: ''
     });
 
-    // Xử lý loại bỏ ký tự lỗi phông từ Backend nếu có
-    const sanitizeText = (text) => (!text || text.includes('?')) ? '' : text;
+    // Xử lý loại bỏ ký tự lỗi phông
+    const sanitizeText = (text) => {
+        if (!text) return '';
+        return text.includes('?') ? '' : text;
+    };
 
     useEffect(() => {
         if (initialData) {
             setFormData({
                 userId: initialData.id || '',
-                firstName: sanitizeText(initialData.firstName),
-                lastName: sanitizeText(initialData.lastName),
+                firstName: initialData.firstName || '',
+                lastName: initialData.lastName || '',
                 username: initialData.username || '',
                 email: initialData.email || '',
                 phone: initialData.phone || '',

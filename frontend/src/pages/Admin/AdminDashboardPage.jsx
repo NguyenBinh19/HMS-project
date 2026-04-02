@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     TrendingUp, Wallet, Users, Calendar,
     ArrowUpRight, FileCheck, Landmark, AlertCircle,
@@ -13,6 +14,7 @@ import { bookingService } from '@/services/booking.service';
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
     const [data, setData] = useState({
         activeUsers: 0,
         kycPending: [],
@@ -107,18 +109,18 @@ const AdminDashboard = () => {
                         <h1 className="text-2xl font-black italic tracking-tighter">ADMIN DASHBOARD</h1>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 text-blue-600">Hệ thống quản lý đối tác & đặt phòng</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="hidden lg:flex bg-slate-100 p-1 rounded-xl mr-4">
-                            {['Hôm nay', 'Tháng này'].map((tab, i) => (
-                                <button key={tab} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${i === 1 ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-                        <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all">
-                            <Download size={16} /> Xuất báo cáo
-                        </button>
-                    </div>
+                    {/*<div className="flex items-center gap-3">*/}
+                    {/*    <div className="hidden lg:flex bg-slate-100 p-1 rounded-xl mr-4">*/}
+                    {/*        {['Hôm nay', 'Tháng này'].map((tab, i) => (*/}
+                    {/*            <button key={tab} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${i === 1 ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>*/}
+                    {/*                {tab}*/}
+                    {/*            </button>*/}
+                    {/*        ))}*/}
+                    {/*    </div>*/}
+                    {/*    <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all">*/}
+                    {/*        <Download size={16} /> Xuất báo cáo*/}
+                    {/*    </button>*/}
+                    {/*</div>*/}
                 </div>
 
                 {/* 2. Top Stats Cards */}
@@ -126,7 +128,7 @@ const AdminDashboard = () => {
                     <StatCard
                         label="Tổng giá trị Booking"
                         value={formatVND(data.stats.totalRevenue)}
-                        trend="+12.5%"
+                        // trend="+12.5%"
                         sub="Tổng doanh thu tích lũy"
                         icon={<TrendingUp size={20} />}
                         color="blue"
@@ -134,7 +136,7 @@ const AdminDashboard = () => {
                     <StatCard
                         label="Lợi nhuận ước tính"
                         value={formatVND(data.stats.totalRevenue * 0.1)}
-                        trend="+8%"
+                        // trend="+8%"
                         sub="Tạm tính 10% hoa hồng sàn"
                         icon={<Wallet size={20} />}
                         color="emerald"
@@ -164,7 +166,7 @@ const AdminDashboard = () => {
                     <div className="col-span-12 lg:col-span-8 bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
                         <div className="flex justify-between items-center mb-8">
                             <h3 className="font-black uppercase tracking-tighter">Giao dịch đặt phòng gần đây</h3>
-                            <button className="text-xs font-bold text-blue-600 hover:underline">Xem tất cả</button>
+                            <button onClick={() => navigate('/admin/view-booking')} className="text-xs font-bold text-blue-600 hover:underline">Xem tất cả</button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-separate border-spacing-y-3">
@@ -214,23 +216,25 @@ const AdminDashboard = () => {
                         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="font-black uppercase tracking-tighter">Cần xử lý gấp</h3>
-                                <span className="bg-red-100 text-red-600 text-[10px] px-2 py-1 rounded-lg font-black italic">
+                                <span
+                                    className="bg-red-100 text-red-600 text-[10px] px-2 py-1 rounded-lg font-black italic">
                                     {(data.kycPending?.length || 0) + (data.payoutStats?.readyCount || 0)} yêu cầu
                                 </span>
                             </div>
                             <div className="space-y-4">
                                 <UrgentItem
                                     icon={<FileCheck className="text-amber-600"/>}
+                                    onClick={() => navigate('/admin/kyc-queue')}
                                     bg="bg-amber-50"
                                     title={`${data.kycPending?.length || 0} Đối tác chờ duyệt`}
                                     desc="Yêu cầu KYC Agency/Hotel mới"
                                 />
-                                <UrgentItem
-                                    icon={<Landmark className="text-emerald-600"/>}
-                                    bg="bg-emerald-50"
-                                    title={`${data.payoutStats?.readyCount || 0} Lệnh rút tiền`}
-                                    desc={`Khả dụng: ${formatVND(data.payoutStats?.totalPayoutLiability)}`}
-                                />
+                                {/*<UrgentItem*/}
+                                {/*    icon={<Landmark className="text-emerald-600"/>}*/}
+                                {/*    bg="bg-emerald-50"*/}
+                                {/*    title={`${data.payoutStats?.readyCount || 0} Lệnh rút tiền`}*/}
+                                {/*    desc={`Khả dụng: ${formatVND(data.payoutStats?.totalPayoutLiability)}`}*/}
+                                {/*/>*/}
                                 <div className="pt-4 border-t border-slate-100 mt-4">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">KYC Mới nhất</h4>
                                     {data.kycPending.slice(0, 2).map((item, idx) => (
@@ -316,8 +320,8 @@ const StatCard = ({ label, value, trend, sub, icon, color, live }) => {
     );
 };
 
-const UrgentItem = ({ icon, bg, title, desc }) => (
-    <div className={`flex items-center gap-4 p-4 rounded-2xl ${bg} cursor-pointer hover:translate-x-2 transition-all border border-transparent hover:border-white shadow-sm hover:shadow-md`}>
+const UrgentItem = ({ icon, bg, title, desc, onClick }) => (
+    <div onClick={onClick} className={`flex items-center gap-4 p-4 rounded-2xl ${bg} cursor-pointer hover:translate-x-2 transition-all border border-transparent hover:border-white shadow-sm hover:shadow-md`}>
         <div className="p-3 bg-white rounded-xl shadow-xs">{icon}</div>
         <div className="flex-1">
             <h4 className="text-xs font-black text-slate-800 tracking-tight">{title}</h4>

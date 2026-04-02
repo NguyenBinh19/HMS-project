@@ -161,6 +161,9 @@ public class PartnerServiceImpl implements PartnerService {
 
         Users staff = new Users();
 
+        staff.setFirstName(request.getFirstName());
+        staff.setLastName(request.getLastName());
+
         staff.setUsername(request.getUsername());
         staff.setEmail(request.getEmail());
         staff.setPhone(request.getPhone());
