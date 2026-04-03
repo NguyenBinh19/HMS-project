@@ -172,7 +172,8 @@ const Header = () => {
             "/": "Trang chủ | HMS-B2B",
             "/contact": "Liên hệ | HMS-B2B",
             "/about-us": "Về chúng tôi | HMS-B2B",
-            "/profile": "Hồ sơ cá nhân | HMS-B2B"
+            "/profile": "Hồ sơ cá nhân | HMS-B2B",
+            "/demo": "Trải nghiệm | HMS-B2B"
         };
         document.title = titles[location.pathname] || "HMS-B2B Project";
     }, [location.pathname]);
@@ -189,6 +190,7 @@ const Header = () => {
         { name: "Về chúng tôi", href: "/about-us" },
         { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
+        { name: "Trải nghiệm hệ thống", href: "/demo" },
     ];
 
     useEffect(() => {
@@ -256,10 +258,12 @@ const Header = () => {
                     <div className="hidden lg:flex items-center gap-3">
                         {!user ? (
                             <div className="flex items-center gap-3">
-                                <button onClick={() => navigate("/login")} className="px-6 py-2.5 text-[15px] font-bold text-slate-700 hover:text-blue-600 transition-colors">
+                                <button onClick={() => navigate("/login")}
+                                        className="px-6 py-2.5 text-[15px] font-bold text-slate-700 hover:text-blue-600 transition-colors">
                                     Đăng nhập
                                 </button>
-                                <button onClick={() => navigate("/register")} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                                <button onClick={() => navigate("/register")}
+                                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
                                     Đăng ký đối tác
                                 </button>
                             </div>

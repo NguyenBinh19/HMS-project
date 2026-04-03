@@ -69,6 +69,10 @@ import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
 import AdminStaffDashboard from "@/pages/Admin/AdminStaffDashboard.jsx";
 import StaffSpendingLimit from "@/pages/Agency/StaffSpendingLimit.jsx";
+import DemoRoleSelection from "@/pages/Demo/DemoRoleSelection.jsx";
+import DemoAgencyLayout from "@/pages/Demo/Agency/DemoAgencyLayout.jsx";
+import DemoAgencyDashboard from "@/pages/Demo/Agency/DemoAgencyDashboard.jsx";
+import DemoAgencyProfile from "@/pages/Demo/Agency/DemoAgencyProfile.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -179,6 +183,17 @@ const AppRoutes = () => {
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
                     <Route path="payout-list" element={<PayoutList />} />
+                </Route>
+
+                {/*Luồng Demo*/}
+                <Route path="/demo" element={<DemoRoleSelection />} />
+                {/*Luồng Demo Agency Manager*/}
+                <Route path="/demo-agency" element={<DemoAgencyLayout />}>
+                    <Route path="dashboard" element={<DemoAgencyDashboard/>} />
+                    <Route path="profile" element={<DemoAgencyProfile/>} />
+                    {/*<Route path="search-hotel" element={<SearchHotelDemo />} />*/}
+                    {/*<Route path="booking-list" element={<BookingListDemo />} />*/}
+
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
