@@ -53,7 +53,6 @@ const StaffBookingAnalytics = () => {
         currency: 'VND'
     }).format(val || 0);
 
-    // Xử lý logic hiển thị tên (tránh trường hợp "null null" hoặc chuỗi rỗng)
     const getDisplayName = (staff) => {
         if (!staff.fullName || staff.fullName.includes('null') || staff.fullName.trim() === '') {
             return staff.username;

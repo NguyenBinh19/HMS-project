@@ -5,8 +5,6 @@ import {
     ArrowUpRight, FileCheck, Landmark, AlertCircle,
     Search, Server, Zap, Globe, Download, Loader2, Clock, CheckCircle2
 } from 'lucide-react';
-
-// Import các services của bạn
 import { userService } from '@/services/user.service';
 import { kycService } from '@/services/kyc.service';
 import { payoutService } from '@/services/payout.service';
@@ -39,7 +37,7 @@ const AdminDashboard = () => {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                // Gọi API đồng thời
+                // Gọi API
                 const [userRes, kycRes, payoutRes, bookingRes] = await Promise.all([
                     userService.getUserMetrics(),
                     kycService.getPartnerVerificationsByStatus('PENDING'),
@@ -47,22 +45,21 @@ const AdminDashboard = () => {
                     bookingService.viewAllBookingByAdmin({ size: 100 })
                 ]);
 
-                // 1. Xử lý dữ liệu User (Dựa trên JSON: {"activeUsers":24})
+                // 1. Xử lý dữ liệu User
                 const activeUsersCount = userRes?.result?.activeUsers || 0;
 
-                // 2. Xử lý dữ liệu KYC (Dựa trên JSON: mảng các đối tượng AGENCY/HOTEL)
+                // 2. Xử lý dữ liệu KYC
                 const kycList = Array.isArray(kycRes?.result) ? kycRes.result : [];
 
-                // 3. Xử lý dữ liệu Payout (Dựa trên JSON: object chứa readyCount, totalPayoutLiability...)
+                // 3. Xử lý dữ liệu Payout
                 const payoutData = payoutRes?.result || null;
 
-                // 4. Xử lý dữ liệu Booking (Dựa trên JSON: mảng các booking)
+                // 4. Xử lý dữ liệu Booking
                 const allBookings = Array.isArray(bookingRes?.result) ? bookingRes.result : [];
 
                 // Tính toán thống kê từ danh sách booking
                 const bookingStats = allBookings.reduce((acc, curr) => {
                     acc.totalRevenue += (curr.finalAmount || 0);
-                    // Đếm theo bookingStatus (Lưu ý: API trả về cả 'booked' và 'BOOKED')
                     const status = curr.bookingStatus?.toUpperCase();
                     if (status === 'BOOKED' || status === 'PENDING') acc.pendingBookings++;
                     if (status === 'CONFIRMED' || status === 'COMPLETED') acc.confirmedBookings++;
@@ -259,25 +256,25 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* 4. System Health Section */}
-                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
-                    <div className="flex justify-between items-center mb-8">
-                        <div className="flex items-center gap-2">
-                            <Server size={20} className="text-slate-400" />
-                            <h3 className="font-black uppercase tracking-tighter">Sức khỏe hệ thống (Realtime)</h3>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        <div className="space-y-6">
-                            <HealthBar label="Database Latency" percent={24} color="bg-emerald-500" />
-                            <HealthBar label="API Response Time" percent={35} color="bg-blue-500" />
-                            <HealthBar label="Cloud Storage" percent={58} color="bg-indigo-500" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <LatencyItem icon={<Globe size={16}/>} label="Booking Svc" time="120ms" status="Mượt" sColor="text-emerald-500" />
-                            <LatencyItem icon={<CheckCircle2 size={16}/>} label="Auth Svc" time="45ms" status="Tốt" sColor="text-emerald-500" />
-                        </div>
-                    </div>
-                </div>
+                {/*<div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">*/}
+                {/*    <div className="flex justify-between items-center mb-8">*/}
+                {/*        <div className="flex items-center gap-2">*/}
+                {/*            <Server size={20} className="text-slate-400" />*/}
+                {/*            <h3 className="font-black uppercase tracking-tighter">Sức khỏe hệ thống (Realtime)</h3>*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">*/}
+                {/*        <div className="space-y-6">*/}
+                {/*            <HealthBar label="Database Latency" percent={24} color="bg-emerald-500" />*/}
+                {/*            <HealthBar label="API Response Time" percent={35} color="bg-blue-500" />*/}
+                {/*            <HealthBar label="Cloud Storage" percent={58} color="bg-indigo-500" />*/}
+                {/*        </div>*/}
+                {/*        <div className="grid grid-cols-2 gap-4">*/}
+                {/*            <LatencyItem icon={<Globe size={16}/>} label="Booking Svc" time="120ms" status="Mượt" sColor="text-emerald-500" />*/}
+                {/*            <LatencyItem icon={<CheckCircle2 size={16}/>} label="Auth Svc" time="45ms" status="Tốt" sColor="text-emerald-500" />*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
             </div>
         </div>
     );
