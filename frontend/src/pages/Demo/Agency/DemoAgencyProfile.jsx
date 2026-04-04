@@ -190,11 +190,11 @@ const DemoAgencyProfile = () => {
                                 </div>
                                 <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-slate-400 text-[10px] font-black uppercase">Dư nợ hiện
+                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện
                                             tại</p>
                                         <ArrowUpRight size={14} className="text-red-400"/>
                                     </div>
-                                    <p className="text-xl font-black text-red-400">{formatVND(profile.finance.currentDebt)}</p>
+                                    <p className="text-xl font-black text-red-400">{formatVND(profile.finance.currentCredit)}</p>
                                     {/*<p className="text-[9px] text-slate-500 font-bold uppercase mt-2">Hạn: {profile.finance.dueDate}</p>*/}
                                 </div>
                                 {/*<div>*/}

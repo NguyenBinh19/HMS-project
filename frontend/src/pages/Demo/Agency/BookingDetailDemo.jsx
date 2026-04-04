@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft, Copy, Download, UserCircle, FileText,
-    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar, Loader2
+    XCircle, CheckCircle2, Info, Star, Calendar, Loader2,
+    MapPin, Phone, Mail, BedDouble, Users, MessageSquare
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { bookingService } from '@/services/booking.service.js';
-import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.jsx';
-import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
-import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
+import { MOCK_BOOKING_FULL_DETAIL } from "@/constant/agency_mockData.js";
+
+// Giả lập các Modal
+const EditGuestModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Sửa khách</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
+const SubmitFeedbackModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Đánh giá</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
+const CancelBookingModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Hủy phòng</h3><button onClick={onClose} className="mt-4 bg-rose-600 text-white px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -24,188 +26,67 @@ const getStatusConfig = (status) => {
     const s = status?.toUpperCase();
     switch (s) {
         case "BOOKED":
-            return { label: "ĐÃ ĐẶT", color: "bg-amber-500", desc: "Đơn hàng đã thanh toán." };
+            return { label: "ĐÃ ĐẶT", color: "bg-[#3b82f6]", desc: "Đơn hàng đã đặt chỗ." };
         case "CONFIRMED":
-            return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
+            return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công." };
         case "CHECKED-IN":
-            return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách hàng đã làm thủ tục nhận phòng." };
+            return { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", desc: "Khách đã nhận phòng." };
         case "COMPLETED":
-            return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch đã kết thúc." };
+            return { label: "HOÀN THÀNH", color: "bg-slate-600", desc: "Giao dịch kết thúc." };
         case "CANCELLED":
-            return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy hoặc quá hạn thanh toán." };
-        case "NO_SHOW":
-            return { label: "KHÔNG ĐẾN", color: "bg-purple-600", desc: "Khách hàng không đến nhận phòng theo lịch." };
+            return { label: "ĐÃ HỦY", color: "bg-rose-600", desc: "Đơn hàng đã bị hủy." };
         default:
             return { label: s, color: "bg-slate-400", desc: "" };
     }
 };
 
 const BookingDetailPost = () => {
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const bookingCode = decodeURIComponent(id || "");
-
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
-        const fetchDetail = async () => {
-            setLoading(true);
-            try {
-                const res = await bookingService.getBookingDetail(bookingCode);
-                setBooking(res.result);
-            } catch (err) {
-                setError("Không thể tải chi tiết đơn hàng. Vui lòng thử lại.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (bookingCode) fetchDetail();
-    }, [bookingCode]);
-
-    //Download voucher
-    const handleDownloadVoucher = async () => {
-        if (!booking?.bookingCode) return;
-
-        try {
-            setIsDownloading(true);
-            const response = await bookingService.downloadVoucher(booking.bookingCode);
-
-            // Kiểm tra nếu response rỗng
-            if (!response) {
-                throw new Error("Dữ liệu file trống");
-            }
-
-            const blob = new Blob([response], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-
-            const sanitizedName = (booking.guestName || "Guest").trim().replace(/\s+/g, '_');
-            link.setAttribute("download", `Voucher_${booking.bookingCode}_${sanitizedName}.pdf`);
-
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
-            // Giải phóng bộ nhớ
-            setTimeout(() => window.URL.revokeObjectURL(url), 100);
-            alert("Tải Voucher thành công!");
-
-        } catch (error) {
-            console.error("Download Error:", error);
-            const status = error.response?.status;
-            if (status === 403) {
-                alert("Lỗi: Voucher chỉ khả dụng cho đơn hàng đã xác nhận (Confirmed).");
-            } else if (status === 404) {
-                alert("Lỗi: Không tìm thấy file Voucher trên hệ thống.");
-            } else {
-                alert("Hệ thống không thể tạo file lúc này. Vui lòng thử lại sau.");
-            }
-        } finally {
-            setIsDownloading(false);
-        }
-    };
-
-    // Hàm xử lý sau khi Modal lưu thành công
-    const handleUpdateSuccess = (updatedBooking) => {
-        setBooking(updatedBooking);
-    };
-
-    // Xử lý hủy phòng
-    const canCancel = () => {
-        if (!booking) return false;
-        const s = booking.bookingStatus?.toUpperCase();
-        // Chỉ cho phép hủy khi chưa Check-in và trạng thái là CONFIRMED hoặc BOOKED
-        const validStatus = ['BOOKED'].includes(s);
-        if (!validStatus) return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const checkIn = new Date(booking.checkInDate);
-        checkIn.setHours(0, 0, 0, 0);
-        // Không cho phép bấm nút hủy nếu ngày hiện tại đã sau ngày Check-in
-        return checkIn >= today;
-    };
-
-    const canEdit = () => {
-        if (!booking || !booking.checkInDate) return false;
-
-        const today = new Date();
-        const checkIn = new Date(booking.checkInDate);
-        // Reset thời gian về 0h để so sánh
-        today.setHours(0, 0, 0, 0);
-        checkIn.setHours(0, 0, 0, 0);
-        // Cho phép sửa nếu ngày check-in vẫn còn ở tương lai (sau ngày hôm nay)
-        return checkIn.getTime() > today.getTime();
-    };
-
-    // Hàm xử lý hủy đơn
-    const handleCancelBooking = async (reason) => {
-        const isConfirmed = window.confirm(
-            "XÁC NHẬN HỦY: Hành động này không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?"
-        );
-        if (!isConfirmed) return;
-
-        try {
-            const payload = {
-                bookingCode: booking.bookingCode,
-                reason: reason || "Yêu cầu hủy"
-            };
-            const response = await bookingService.cancelBooking(payload);
-            const data = response.result;
-            // Cập nhật trạng thái tại chỗ
-            setBooking(prev => ({
-                ...prev,
-                bookingStatus: 'CANCELLED'
-            }));
-            // Hiển thị thông báo chi tiết
-            alert(
-                `Hủy thành công!\n` +
-                `---------------------------\n` +
-                `Mã đơn: ${data.bookingCode}\n` +
-                `Phí phạt hủy: ${formatCurrency(data.cancellationPenalty)}\n` +
-                `Tiền hoàn lại: ${formatCurrency(data.refundAmount)}\n` +
-                `Lý do: ${data.reason}`
-            );
-        } catch (err) {
-            const errorMsg = err.response?.data?.message || "Không thể hủy đơn hàng này.";
-            alert("Lỗi: " + errorMsg);
-        }
-    };
+        // Giả lập fetch API
+        const timer = setTimeout(() => {
+            setBooking(MOCK_BOOKING_FULL_DETAIL);
+            setLoading(false);
+        }, 600);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
         alert("Đã sao chép: " + text);
     };
 
-    // Điều kiện đánh giá
-    const canReview = () => {
-        return booking?.bookingStatus?.toUpperCase() === 'COMPLETED' && !booking.hasFeedback;
+    const handleDownloadVoucher = () => {
+        setIsDownloading(true);
+        setTimeout(() => {
+            setIsDownloading(false);
+            alert("Đã kích hoạt tải Voucher!");
+        }, 1200);
     };
 
-    const canDownloadVoucher = () => {
-        const s = booking?.bookingStatus?.toUpperCase();
-        return s === 'BOOKED' || s === 'CONFIRMED';
+    // Logic kiểm tra trạng thái
+    const canDownloadVoucher = () => ['BOOKED', 'CONFIRMED'].includes(booking?.bookingStatus?.toUpperCase());
+    const canEdit = () => {
+        if (!booking) return false;
+        const today = new Date().setHours(0,0,0,0);
+        const checkIn = new Date(booking.checkInDate).setHours(0,0,0,0);
+        return checkIn > today;
     };
+    const canCancel = () => ['BOOKED'].includes(booking?.bookingStatus?.toUpperCase());
 
     if (loading) {
         return (
             <div className="bg-[#f0f2f5] min-h-screen flex items-center justify-center">
-                <p className="text-slate-500">Đang tải chi tiết đơn hàng...</p>
-            </div>
-        );
-    }
-
-    if (error || !booking) {
-        return (
-            <div className="bg-[#f0f2f5] min-h-screen flex flex-col items-center justify-center gap-4">
-                <p className="text-rose-500">{error || "Không tìm thấy đơn hàng"}</p>
-                <button onClick={() => navigate(-1)} className="text-sm text-blue-600 underline">Quay lại</button>
+                <div className="text-center">
+                    <Loader2 className="animate-spin text-blue-600 mx-auto mb-2" size={32} />
+                    <p className="text-slate-500 text-sm font-medium">Đang tải chi tiết đơn hàng...</p>
+                </div>
             </div>
         );
     }
@@ -219,14 +100,15 @@ const BookingDetailPost = () => {
                 {/* Tiêu đề trang */}
                 <div className="mb-4">
                     <h1 className="text-xl font-bold text-slate-800">Chi tiết đơn hàng</h1>
-                    <p className="text-xs text-slate-500">Quản lý và thực hiện các nghiệp vụ sau bán cho đơn hàng đã xác nhận</p>
+                    <p className="text-xs text-slate-500">Quản lý và thực hiện các nghiệp vụ sau bán cho đơn hàng đã xác
+                        nhận</p>
                 </div>
 
                 {/* Banner Trạng thái */}
                 <div className="bg-[#3b82f6] rounded-lg p-4 mb-4 flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-3">
                         <div className="bg-white rounded-full p-1">
-                            <CheckCircle2 className="text-[#3b82f6]" size={20} />
+                            <CheckCircle2 className="text-[#3b82f6]" size={20}/>
                         </div>
                         <div>
                             <h2 className="text-white font-bold text-sm uppercase tracking-wide">{statusConfig.label}</h2>
@@ -237,7 +119,7 @@ const BookingDetailPost = () => {
                         onClick={() => handleCopy(booking.bookingCode)}
                         className="flex items-center gap-1.5 text-white text-xs font-medium hover:underline"
                     >
-                        <Copy size={14} /> Sao chép
+                        <Copy size={14}/> Sao chép
                     </button>
                 </div>
 
@@ -250,7 +132,7 @@ const BookingDetailPost = () => {
                             <h3 className="text-sm font-bold text-slate-800">Các tác vụ hậu mãi</h3>
                             <span className="text-[10px] text-slate-400 font-medium">Chế độ ẩn giá (Agent Mode)</span>
                         </div>
-                        {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
+
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             {/* Nút Tải Voucher */}
                             <button
@@ -329,9 +211,10 @@ const BookingDetailPost = () => {
                                     {booking.hotelStarRating > 0 && (
                                         <div className="flex gap-0.5 mt-1">
                                             {[...Array(booking.hotelStarRating)].map((_, i) => (
-                                                <Star key={i} size={14} fill="#fabb05" className="text-[#fabb05]" />
+                                                <Star key={i} size={14} fill="#fabb05" className="text-[#fabb05]"/>
                                             ))}
-                                            <span className="text-xs text-slate-400 ml-2">Khách sạn {booking.hotelStarRating} sao</span>
+                                            <span
+                                                className="text-xs text-slate-400 ml-2">Khách sạn {booking.hotelStarRating} sao</span>
                                         </div>
                                     )}
                                     {booking.hotelAddress && (
@@ -365,7 +248,8 @@ const BookingDetailPost = () => {
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-slate-400">Số khách:</span>
-                                        <span className="font-semibold text-slate-700">{booking.totalGuests} người</span>
+                                        <span
+                                            className="font-semibold text-slate-700">{booking.totalGuests} người</span>
                                     </div>
                                 </div>
 
@@ -375,14 +259,16 @@ const BookingDetailPost = () => {
                                         <p className="text-xs font-bold text-slate-800 mb-2">Danh sách phòng:</p>
                                         <div className="space-y-2">
                                             {booking.roomDetails.map((room, i) => (
-                                                <div key={i} className="text-xs flex justify-between bg-slate-50 rounded-lg px-3 py-2">
+                                                <div key={i}
+                                                     className="text-xs flex justify-between bg-slate-50 rounded-lg px-3 py-2">
                                                     <span className="font-semibold text-slate-700">
                                                         {room.quantity}x {room.roomTitle}
                                                     </span>
                                                     <span className="text-slate-500">
                                                         {room.bedType && `${room.bedType} · `}{room.maxGuests} khách tối đa
                                                     </span>
-                                                    <span className="font-bold text-emerald-600">{formatCurrency(room.totalAmount)}</span>
+                                                    <span
+                                                        className="font-bold text-emerald-600">{formatCurrency(room.totalAmount)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -395,9 +281,12 @@ const BookingDetailPost = () => {
                                         <p className="text-xs font-bold text-slate-800 mb-1">Dịch vụ thêm:</p>
                                         <div className="space-y-1">
                                             {booking.addonServices.map((s, i) => (
-                                                <div key={i} className="text-xs flex justify-between px-3 py-1.5 bg-blue-50 rounded-lg">
-                                                    <span className="text-slate-700">{s.serviceName} × {s.quantity}</span>
-                                                    <span className="font-bold text-blue-700">{formatCurrency(s.totalPrice)}</span>
+                                                <div key={i}
+                                                     className="text-xs flex justify-between px-3 py-1.5 bg-blue-50 rounded-lg">
+                                                    <span
+                                                        className="text-slate-700">{s.serviceName} × {s.quantity}</span>
+                                                    <span
+                                                        className="font-bold text-blue-700">{formatCurrency(s.totalPrice)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -419,20 +308,24 @@ const BookingDetailPost = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Cột trái: Thanh toán */}
                             <div className="space-y-3">
-                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thông tin thanh toán</p>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thông tin
+                                    thanh toán</p>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Tổng tiền:</span>
-                                    <span className="font-bold text-slate-900">{formatCurrency(booking.totalAmount)}</span>
+                                    <span
+                                        className="font-bold text-slate-900">{formatCurrency(booking.totalAmount)}</span>
                                 </div>
                                 {booking.discountAmount > 0 && (
                                     <div className="flex justify-between text-xs">
                                         <span className="text-slate-500">Giảm giá:</span>
-                                        <span className="font-bold text-rose-600">- {formatCurrency(booking.discountAmount)}</span>
+                                        <span
+                                            className="font-bold text-rose-600">- {formatCurrency(booking.discountAmount)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between text-xs border-t pt-2">
                                     <span className="text-slate-600 font-semibold">Thành tiền:</span>
-                                    <span className="font-bold text-emerald-600 text-sm">{formatCurrency(booking.finalAmount)}</span>
+                                    <span
+                                        className="font-bold text-emerald-600 text-sm">{formatCurrency(booking.finalAmount)}</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Phương thức TT:</span>
@@ -440,7 +333,8 @@ const BookingDetailPost = () => {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-slate-500">Trạng thái TT:</span>
-                                    <span className={`font-bold ${booking.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                                    <span
+                                        className={`font-bold ${booking.paymentStatus === 'PAID' ? 'text-emerald-600' : 'text-amber-500'}`}>
                                         {booking.paymentStatus?.toUpperCase() || "—"}
                                     </span>
                                 </div>
@@ -448,7 +342,8 @@ const BookingDetailPost = () => {
 
                             {/* Cột phải: Chính sách */}
                             <div className="space-y-3">
-                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chính sách quan trọng</p>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chính sách
+                                    quan trọng</p>
                                 <div className="bg-[#f8f9fa] p-3 rounded-lg border-l-4 border-blue-500">
                                     <p className="text-[11px] font-bold text-slate-700">Trạng thái đơn</p>
                                     <p className="text-xs text-slate-600">{booking.bookingStatus?.toUpperCase()}</p>
@@ -466,42 +361,13 @@ const BookingDetailPost = () => {
                     </div>
                 </div>
 
-                {/* Nút quay lại */}
-                <div className="mt-6 flex justify-end">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-md transition-all border border-slate-200"
-                    >
-                        <ArrowLeft size={14} /> Quay lại danh sách
-                    </button>
-                </div>
+                {/* Modals */}
+                <EditGuestModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}/>
+                <SubmitFeedbackModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)}/>
+                <CancelBookingModal isOpen={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)}/>
             </div>
-            {/* MODAL CHỈNH SỬA */}
-            {/* Modals */}
-            <EditGuestModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                booking={booking}
-                onSaveSuccess={handleUpdateSuccess}
-            />
-
-            <SubmitFeedbackModal
-                isOpen={isReviewModalOpen}
-                onClose={() => setIsReviewModalOpen(false)}
-                booking={booking}
-                onSuccess={() => setBooking(prev => ({ ...prev, hasFeedback: true }))}
-            />
-
-            <CancelBookingModal
-                isOpen={isCancelModalOpen}
-                onClose={() => setIsCancelModalOpen(false)}
-                booking={booking}
-                onConfirm={handleCancelBooking}
-            />
         </div>
     );
 };
 
 export default BookingDetailPost;
-
-    

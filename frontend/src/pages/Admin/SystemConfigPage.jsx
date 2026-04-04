@@ -3,14 +3,14 @@ import RankCycleTab from '@/components/admin/systemConfig/RankCycleTab.jsx';
 import CancelPolicyTab from '@/components/admin/systemConfig/CancelPolicyTab.jsx';
 
 const SystemConfigPage = () => {
-    const [activeTab, setActiveTab] = useState('RANK_CYCLE');
+    const [activeTab, setActiveTab] = useState('CANCEL_POLICY');
 
     const tabs = [
         { id: 'CANCEL_POLICY', label: 'Chính sách hủy' },
         { id: 'RANK_CYCLE', label: 'Chu kỳ xếp hạng' },
-        { id: 'FINANCE', label: 'Tài chính' },
-        { id: 'OPERATION', label: 'Vận hành & TTL' },
-        { id: 'NOTI', label: 'Thông báo' },
+        // { id: 'FINANCE', label: 'Tài chính' },
+        // { id: 'OPERATION', label: 'Vận hành & TTL' },
+        // { id: 'NOTI', label: 'Thông báo' },
     ];
 
     return (

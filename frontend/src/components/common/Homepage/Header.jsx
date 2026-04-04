@@ -7,6 +7,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import api from "../../../services/axios.config";
 import { kycService } from "@/services/kyc.service.js";
+import { MOCK_AGENCY_DATA } from '@/constant/agency_mockData.js';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);

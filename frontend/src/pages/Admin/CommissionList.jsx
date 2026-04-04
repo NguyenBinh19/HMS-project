@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     Plus,
     Edit2,
@@ -18,6 +18,7 @@ const CommissionList = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
+    const [activeTab, setActiveTab] = useState('ALL');
 
     // confirmModal lưu ID và số lượng hotel
     const [confirmModal, setConfirmModal] = useState({ show: false, id: null, hotelCount: 0 });
@@ -44,7 +45,6 @@ const CommissionList = () => {
         if (commissionType === 'DEAL') {
             try {
                 const res = await commissionService.getHotelsUsingDeal(commissionId);
-                // Nếu API trả về mảng trong res.result
                 const count = res.result?.length || 0;
                 setConfirmModal({ show: true, id: commissionId, hotelCount: count });
             } catch (error) {
@@ -86,6 +86,17 @@ const CommissionList = () => {
         );
     };
 
+    const filteredCommissions = useMemo(() => {
+        if (activeTab === 'ALL') return commissions;
+        return commissions.filter(item => item.commissionType === activeTab);
+    }, [commissions, activeTab]);
+    // Định nghĩa danh sách các Tab
+    const tabs = [
+        { id: 'ALL', label: 'Tất cả' },
+        { id: 'DEFAULT', label: 'Mặc định' },
+        { id: 'DEAL', label: 'Khuyến mãi' },
+        { id: 'HOTEL', label: 'Khách sạn' },
+    ];
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -104,13 +115,31 @@ const CommissionList = () => {
                         <Plus size={18} /> Thêm mới
                     </button>
                 </div>
-
+                {/* THANH TAB */}
+                <div className="px-6 py-2 bg-white border-b border-gray-50 flex gap-6">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`pb-3 pt-2 text-xs font-black uppercase tracking-widest transition-all relative ${
+                                activeTab === tab.id
+                                    ? 'text-blue-600'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                        >
+                            {tab.label}
+                            {activeTab === tab.id && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+                            )}
+                        </button>
+                    ))}
+                </div>
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-gray-50/50 text-gray-400 text-[10px] uppercase font-black tracking-widest">
                         <tr>
-                            <th className="px-6 py-4">ID</th>
+                            <th className="px-6 py-4">STT</th>
                             <th className="px-6 py-4">Loại hình</th>
                             <th className="px-6 py-4">Giá trị</th>
                             <th className="px-6 py-4">Hiệu lực</th>
@@ -126,15 +155,15 @@ const CommissionList = () => {
                                     <span className="text-xs font-bold text-gray-400 uppercase">Đang tải dữ liệu...</span>
                                 </td>
                             </tr>
-                        ) : commissions.length === 0 ? (
+                        ) : filteredCommissions.length === 0 ? (
                             <tr>
                                 <td colSpan="6" className="px-6 py-20 text-center text-gray-400 font-bold uppercase text-xs">Trống</td>
                             </tr>
                         ) : (
-                            commissions.map((item) => (
+                            filteredCommissions.map((item, index) => (
                                 <tr key={item.commissionId}
                                     className={`hover:bg-gray-50/50 transition-colors ${!item.isActive ? 'opacity-60 bg-gray-50/30' : ''}`}>
-                                    <td className="px-6 py-4 font-black text-xs text-gray-400">#{item.commissionId}</td>
+                                    <td className="px-6 py-4 font-black text-xs text-gray-400">{index + 1}</td>
                                     <td className="px-6 py-4">{renderTypeTag(item.commissionType)}</td>
                                     <td className="px-6 py-4">
                                         <span

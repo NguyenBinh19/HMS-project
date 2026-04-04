@@ -224,7 +224,7 @@ const AgencyProfile = () => {
                                 </div>
                                 <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-slate-400 text-[10px] font-black uppercase">Dư nợ</p>
+                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện tại</p>
                                         <ArrowUpRight size={14} className="text-red-400" />
                                     </div>
                                     <p className="text-xl font-black text-red-400">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profile.currentCredit)}</p>

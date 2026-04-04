@@ -33,26 +33,26 @@ const DemoSidebar = () => {
         {
             icon: <Search size={20} />,
             label: "TÌM KIẾM PHÒNG",
-            path: "/demo/search-hotel"
+            path: "/demo-agency/search-hotel"
         },
         {
             icon: <Wallet size={20} />,
             label: "TRUNG TÂM TÀI CHÍNH",
-            path: "/demo/prepaid",
+            path: "/demo-agency/prepaid",
             subItems: [
-                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/demo/prepaid" },
-                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/demo/credit-wallet" },
+                { icon: <Wallet size={18} />, label: "Ví trả trước", path: "/demo-agency/prepaid" },
+                { icon: <CreditCard size={18} />, label: "Tín dụng", path: "/demo-agency/credit" },
             ]
         },
         {
             icon: <History size={20} />,
             label: "LỊCH SỬ GIAO DỊCH",
-            path: "/demo/transaction-history"
+            path: "/demo-agency/transaction-history"
         },
         {
             icon: <CalendarDays size={20} />,
             label: "QUẢN LÝ BOOKING",
-            path: "/demo/booking-list",
+            path: "/demo-agency/booking-list",
         }
     ];
 
@@ -65,8 +65,8 @@ const DemoSidebar = () => {
         <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0 z-40">
             {/* Header Sidebar */}
             <div className="h-16 bg-slate-900 flex flex-col justify-center px-6 shadow-sm flex-shrink-0">
-                <span className="text-white font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                    <Building2 size={18} className="text-blue-400" /> TRAVEL AGENCY
+                <span className="text-white text-center font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+                    TRAVEL AGENCY
                 </span>
                 <span className="text-[10px] text-amber-400 font-black uppercase tracking-[0.2em]">
                     Demo Experience Mode
