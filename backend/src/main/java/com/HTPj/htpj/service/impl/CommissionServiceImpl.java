@@ -10,11 +10,13 @@ import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
 import com.HTPj.htpj.entity.Commission;
 import com.HTPj.htpj.entity.CommissionHotel;
 import com.HTPj.htpj.entity.Hotel;
+import com.HTPj.htpj.entity.SystemLog;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.CommissionHotelRepository;
 import com.HTPj.htpj.repository.CommissionRepository;
 import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.repository.SystemLogRepository;
 import com.HTPj.htpj.service.CommissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,11 +38,21 @@ public class CommissionServiceImpl implements CommissionService {
     CommissionRepository commissionRepository;
     CommissionHotelRepository commissionHotelRepository;
     HotelRepository hotelRepository;
+    SystemLogRepository systemLogRepository;
 
     private String getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return jwt.getClaim("userId");
+    }
+
+    private void saveLog(String action) {
+        SystemLog log = new SystemLog();
+        log.setUserId(getUserId());
+        log.setAction(action);
+        log.setUpdatedAt(LocalDateTime.now());
+
+        systemLogRepository.save(log);
     }
 
     @Override
@@ -66,6 +78,9 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setIsActive(true);
             commission.setStartDate(null);
             commission.setEndDate(null);
+
+            saveLog("Tạo % hoa hồng mặc định: "
+                    + commission.getCommissionValue() + "%");
         }
 
         // DEAL
@@ -78,6 +93,10 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setEndDate(request.getEndDate());
             commission.setIsActive(request.getIsActive());
             commission.setNote(request.getNote());
+
+            saveLog("Tạo % hoa hồng khuyến mãi: từ "
+                    + request.getStartDate() + " - " + request.getEndDate()
+                    + ", giá trị: " + commission.getCommissionValue() + "%");
         }
 
         // HOTEL
@@ -124,6 +143,10 @@ public class CommissionServiceImpl implements CommissionService {
                 hotel.setCommissionType("HOTEL");
 
                 hotelRepository.save(hotel);
+
+                saveLog("Tạo % hoa hồng cho khách sạn: "
+                        + hotel.getHotelId() + " - " + hotel.getHotelName()
+                        + ", giá trị: " + commission.getCommissionValue() + "%");
             }
         }
 
@@ -150,6 +173,9 @@ public class CommissionServiceImpl implements CommissionService {
         commission.setUpdatedBy(getUserId());
 
         commissionRepository.save(commission);
+
+        saveLog("Dừng hoạt động % hoa hồng: commissionId = "
+                + commission.getCommissionId());
 
         return "Archived successfully";
     }
@@ -210,8 +236,10 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setCommissionValue(request.getCommissionValue());
             commission.setNote(request.getNote());
             commission.setReason(request.getReason());
-        }
 
+            saveLog("Cập nhật hoa hồng mặc định thành: "
+                    + commission.getCommissionValue() + "%");
+        }
         // deal
         else if ("DEAL".equals(type)) {
             List<Hotel> hotelsUsingCommission =
@@ -235,6 +263,11 @@ public class CommissionServiceImpl implements CommissionService {
                 commission.setNote(request.getNote());
                 commission.setReason(request.getReason());
             }
+
+            saveLog("Cập nhật hoa hồng: commissionId = "
+                    + commission.getCommissionId()
+                    + ", thời gian: " + request.getStartDate()
+                    + " - " + request.getEndDate());
         }
 
         // hotel
@@ -294,6 +327,10 @@ public class CommissionServiceImpl implements CommissionService {
                     hotelRepository.save(hotel);
                 }
             }
+
+            saveLog("Cập nhật hoa hồng khách sạn, mã hoa hồng: "
+                    + commission.getCommissionId()
+                    + ", giá trị: " + commission.getCommissionValue() + "%");
         }
 
         // common update
@@ -326,6 +363,9 @@ public class CommissionServiceImpl implements CommissionService {
         commission.setUpdatedBy(getUserId());
 
         commissionRepository.save(commission);
+
+        saveLog("Kích hoạt % hoa hồng: commissionId = "
+                + commission.getCommissionId());
 
         return "Active commission thành công";
     }
