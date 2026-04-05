@@ -122,4 +122,11 @@ public class PayoutAdminController {
                 .result(payoutStatementService.getDisputeDetail(statementId))
                 .build();
     }
+
+    @GetMapping("/disputed")
+    public ApiResponse<List<PayoutStatementResponse>> getDisputedStatements() {
+        return ApiResponse.<List<PayoutStatementResponse>>builder()
+                .result(payoutStatementService.getDisputedStatements())
+                .build();
+    }
 }

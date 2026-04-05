@@ -592,4 +592,20 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
         return response;
     }
+
+    @Override
+    public List<PayoutStatementResponse> getDisputedStatements() {
+
+        List<PayoutStatement> statements =
+                statementRepository.findByStatuses(List.of("DISPUTED"));
+
+        return statements.stream().map(stmt -> {
+
+            Hotel hotel = hotelRepository.findById(stmt.getHotelId())
+                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+
+            return toResponse(stmt, hotel.getHotelName(), false);
+
+        }).toList();
+    }
 }

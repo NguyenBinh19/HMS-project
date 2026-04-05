@@ -58,4 +58,5 @@ public interface PayoutStatementRepository extends JpaRepository<PayoutStatement
 
     boolean existsByHotelIdAndPeriodStartAndPeriodEnd(
             Integer hotelId, LocalDate periodStart, LocalDate periodEnd);
+
 }

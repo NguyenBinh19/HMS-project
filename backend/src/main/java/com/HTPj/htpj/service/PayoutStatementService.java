@@ -41,4 +41,6 @@ public interface PayoutStatementService {
     void resolveDispute(ResolveDisputeRequest request, MultipartFile[] files);
 
     DisputeDetailResponse getDisputeDetail(Long statementId);
+
+    List<PayoutStatementResponse> getDisputedStatements();
 }
