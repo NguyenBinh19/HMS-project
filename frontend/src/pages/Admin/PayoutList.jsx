@@ -155,8 +155,9 @@ const PayoutList = () => {
     };
 
     const stats = payoutData ? [
+        { label: "Chờ xác nhận", value: payoutData.pendingCount || 0, color: "text-indigo-600", bg: "bg-indigo-50", icon: <Clock size={22} /> },
         { label: "Sẵn sàng thanh toán", value: payoutData.readyCount || 0, color: "text-blue-600", bg: "bg-blue-50", icon: <CheckCircle2 size={22} /> },
-        { label: "Đang xử lý", value: payoutData.processingCount || 0, color: "text-indigo-600", bg: "bg-indigo-50", icon: <Clock size={22} /> },
+        // { label: "Đang xử lý", value: payoutData.processingCount || 0, color: "text-indigo-600", bg: "bg-indigo-50", icon: <Clock size={22} /> },
         { label: "Đã thanh toán", value: payoutData.paidCount || 0, color: "text-emerald-600", bg: "bg-emerald-50", icon: <Landmark size={22} /> },
         { label: "Tổng phải trả", value: formatMoney(payoutData.totalPayoutLiability) + " VND", color: "text-orange-600", bg: "bg-orange-50", icon: <FileText size={22} /> },
     ] : [];

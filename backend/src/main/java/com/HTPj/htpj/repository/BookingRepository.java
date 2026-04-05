@@ -195,31 +195,31 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.bookingDetails WHERE b.bookingId = :bookingId AND b.userId = :userId")
     Optional<Booking> findByIdAndUserId(@Param("bookingId") Long bookingId, @Param("userId") String userId);
 
-    // Payout Statement: Find completed bookings by hotel and checkout date range
+    // Payout Statement: Find completed & paid bookings not yet processed, up to periodEnd
     @Query("""
     SELECT DISTINCT b FROM Booking b
     LEFT JOIN FETCH b.bookingDetails
     WHERE b.hotelId = :hotelId
       AND b.bookingStatus = 'COMPLETED'
-      AND b.checkOutDate >= :periodStart
+      AND b.paymentStatus = 'PAID'
+      AND (b.payoutProcessed = false OR b.payoutProcessed IS NULL)
       AND b.checkOutDate <= :periodEnd
     ORDER BY b.checkOutDate ASC
     """)
-    List<Booking> findCompletedBookingsByHotelAndCheckoutPeriod(
+    List<Booking> findUnprocessedPaidBookingsByHotel(
             @Param("hotelId") Integer hotelId,
-            @Param("periodStart") LocalDate periodStart,
             @Param("periodEnd") LocalDate periodEnd
     );
 
-    // Payout Statement: Get all distinct hotelIds that have completed bookings in a period
+    // Payout Statement: Get all distinct hotelIds with unprocessed paid bookings up to periodEnd
     @Query("""
     SELECT DISTINCT b.hotelId FROM Booking b
     WHERE b.bookingStatus = 'COMPLETED'
-      AND b.checkOutDate >= :periodStart
+      AND b.paymentStatus = 'PAID'
+      AND (b.payoutProcessed = false OR b.payoutProcessed IS NULL)
       AND b.checkOutDate <= :periodEnd
     """)
-    List<Integer> findHotelIdsWithCompletedBookingsInPeriod(
-            @Param("periodStart") LocalDate periodStart,
+    List<Integer> findHotelIdsWithUnprocessedPaidBookings(
             @Param("periodEnd") LocalDate periodEnd
     );
 }

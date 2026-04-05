@@ -66,11 +66,11 @@ public class PayoutStatement {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
-    @Column(name = "dispute_reason", columnDefinition = "NVARCHAR(MAX)")
-    private String disputeReason;
-
-    @Column(name = "dispute_reason_code", length = 50)
-    private String disputeReasonCode;
+//    @Column(name = "dispute_reason", columnDefinition = "NVARCHAR(MAX)")
+//    private String disputeReason;
+//
+//    @Column(name = "dispute_reason_code", length = 50)
+//    private String disputeReasonCode;
 
     @Column(name = "bank_reference", length = 100)
     private String bankReference;

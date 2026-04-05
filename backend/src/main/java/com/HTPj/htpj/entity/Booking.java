@@ -110,6 +110,9 @@ public class Booking {
     @Column(name = "refund_amount", precision = 12, scale = 2)
     private BigDecimal refundAmount;
 
+    @Column(name = "payout_processed")
+    private Boolean payoutProcessed;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;

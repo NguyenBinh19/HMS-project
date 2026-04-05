@@ -59,14 +59,14 @@ public class PayoutAdminController {
     /**
      * UC-088.1: Export Batch Payment File — marks selected as PROCESSING
      */
-    @PostMapping("/export-batch")
-    ApiResponse<List<PayoutStatementResponse>> exportBatchPayment(
-            @RequestBody List<Long> statementIds
-    ) {
-        return ApiResponse.<List<PayoutStatementResponse>>builder()
-                .result(payoutStatementService.exportBatchPayment(statementIds))
-                .build();
-    }
+//    @PostMapping("/export-batch")
+//    ApiResponse<List<PayoutStatementResponse>> exportBatchPayment(
+//            @RequestBody List<Long> statementIds
+//    ) {
+//        return ApiResponse.<List<PayoutStatementResponse>>builder()
+//                .result(payoutStatementService.exportBatchPayment(statementIds))
+//                .build();
+//    }
 
     /**
      * UC-088.2: Mark As Paid (Manual Reconciliation)

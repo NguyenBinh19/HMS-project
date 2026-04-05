@@ -53,9 +53,9 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     public List<PayoutStatementResponse> generateStatementsForPeriod(LocalDate periodStart, LocalDate periodEnd) {
         log.info("Generating payout statements for period {} to {}", periodStart, periodEnd);
 
-        // Find all hotels that have completed bookings in this period
-        List<Integer> hotelIds = bookingRepository.findHotelIdsWithCompletedBookingsInPeriod(periodStart, periodEnd);
-        log.info("Found {} hotels with completed bookings in period", hotelIds.size());
+        // Find all hotels that have unprocessed paid bookings (current period + late-paid from previous)
+        List<Integer> hotelIds = bookingRepository.findHotelIdsWithUnprocessedPaidBookings(periodEnd);
+        log.info("Found {} hotels with unprocessed paid bookings up to {}", hotelIds.size(), periodEnd);
 
         List<PayoutStatementResponse> results = new ArrayList<>();
 
@@ -72,9 +72,9 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 continue;
             }
 
-            // Get all completed bookings for this hotel in the period
-            List<Booking> bookings = bookingRepository.findCompletedBookingsByHotelAndCheckoutPeriod(
-                    hotelId, periodStart, periodEnd);
+            // Get all unprocessed paid bookings for this hotel (current period + late-paid from previous)
+            List<Booking> bookings = bookingRepository.findUnprocessedPaidBookingsByHotel(
+                    hotelId, periodEnd);
 
             if (bookings.isEmpty()) continue;
 
@@ -118,7 +118,6 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 String agencyName = agencyRepository.findById(booking.getAgencyId())
                         .map(Agency::getAgencyName)
                         .orElse("Unknown Agency");
-            System.out.print(agencyName);
                 PayoutLineItem lineItem = PayoutLineItem.builder()
                         .payoutStatement(statement)
                         .bookingId(booking.getBookingId())
@@ -142,6 +141,12 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             }
 
             lineItemRepository.saveAll(lineItems);
+
+            // Mark all included bookings as processed so they won't be picked up again
+            for (Booking booking : bookings) {
+                booking.setPayoutProcessed(true);
+            }
+            bookingRepository.saveAll(bookings);
 
             // Update statement totals
             BigDecimal netPayout = grossRevenue.subtract(totalCommission).subtract(totalRefunds);
@@ -179,18 +184,18 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     @Transactional
     public List<PayoutStatementResponse> generateCurrentCycleStatements() {
         LocalDate today = LocalDate.now();
-        // Billing cycle: 26th of previous month to 25th of current month
+        // Generate for the most recently COMPLETED billing cycle (26th→25th)
         LocalDate periodStart;
         LocalDate periodEnd;
 
         if (today.getDayOfMonth() >= 26) {
-            // We are on or after the 26th, so current cycle is 26th this month to 25th next month
-            periodStart = today.withDayOfMonth(26);
-            periodEnd = today.plusMonths(1).withDayOfMonth(25);
-        } else {
-            // We are before the 26th, so the recently closed cycle is 26th prev month to 25th this month
+            // After the 26th: last completed cycle ended on the 25th of this month
             periodStart = today.minusMonths(1).withDayOfMonth(26);
             periodEnd = today.withDayOfMonth(25);
+        } else {
+            // Before the 26th: last completed cycle ended on the 25th of previous month
+            periodStart = today.minusMonths(2).withDayOfMonth(26);
+            periodEnd = today.minusMonths(1).withDayOfMonth(25);
         }
 
         return generateStatementsForPeriod(periodStart, periodEnd);
@@ -258,6 +263,12 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
         }
 
+        // BR-FIN-02: Confirm window is 3rd–5th of the month only
+        int dayOfMonth = LocalDate.now().getDayOfMonth();
+        if (dayOfMonth < 3 || dayOfMonth > 5) {
+            throw new AppException(ErrorCode.STATEMENT_CONFIRM_WINDOW_CLOSED);
+        }
+
         String userId = getCurrentUserId();
 
         stmt.setStatus("APPROVED");
@@ -289,8 +300,8 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         }
 
         stmt.setStatus("DISPUTED");
-        stmt.setDisputeReasonCode(request.getReasonCode());
-        stmt.setDisputeReason(request.getDescription());
+//        stmt.setDisputeReasonCode(request.getReasonCode());
+//        stmt.setDisputeReason(request.getDescription());
         statementRepository.save(stmt);
 
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
@@ -343,7 +354,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
         List<PayoutListItemResponse> payoutItems = new ArrayList<>();
         BigDecimal totalLiability = BigDecimal.ZERO;
-        int readyCount = 0, processingCount = 0, paidCount = 0, blockedCount = 0;
+        int pendingCount = 0,readyCount = 0, processingCount = 0, paidCount = 0, blockedCount = 0;
 
         for (PayoutStatement s : statements) {
             Hotel hotel = hotelMap.get(s.getHotelId());
@@ -378,6 +389,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             }
 
             switch (s.getStatus()) {
+                case "PENDING_CONFIRMATION" -> pendingCount++;
                 case "APPROVED" -> readyCount++;
                 case "PROCESSING" -> processingCount++;
                 case "PAID" -> paidCount++;
@@ -390,6 +402,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .payouts(payoutItems)
                 .totalPayoutLiability(totalLiability)
                 .totalRecords(statements.size())
+                .pendingCount(pendingCount)
                 .readyCount(readyCount)
                 .processingCount(processingCount)
                 .paidCount(paidCount)
@@ -407,7 +420,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             PayoutStatement stmt = statementRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.STATEMENT_NOT_FOUND));
 
-            if (!"PROCESSING".equals(stmt.getStatus())) {
+            if (!"APPROVED".equals(stmt.getStatus())) {
                 throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
             }
 
@@ -446,34 +459,34 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         return results;
     }
 
-    @Override
-    @Transactional
-    public List<PayoutStatementResponse> exportBatchPayment(List<Long> statementIds) {
-        List<PayoutStatementResponse> results = new ArrayList<>();
-
-        for (Long id : statementIds) {
-            PayoutStatement stmt = statementRepository.findById(id)
-                    .orElseThrow(() -> new AppException(ErrorCode.STATEMENT_NOT_FOUND));
-
-            if (!"APPROVED".equals(stmt.getStatus())) {
-                throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
-            }
-
-            // UC-088.E2: Below minimum threshold — mark as ROLLOVER
-            if (stmt.getNetPayout() != null
-                    && stmt.getNetPayout().compareTo(MIN_PAYOUT_THRESHOLD) < 0) {
-                stmt.setStatus("ROLLOVER");
-            } else {
-                stmt.setStatus("PROCESSING");
-            }
-            statementRepository.save(stmt);
-
-            Hotel hotel = hotelRepository.findById(stmt.getHotelId())
-                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-            results.add(toResponse(stmt, hotel.getHotelName(), false));
-        }
-        return results;
-    }
+//    @Override
+//    @Transactional
+//    public List<PayoutStatementResponse> exportBatchPayment(List<Long> statementIds) {
+//        List<PayoutStatementResponse> results = new ArrayList<>();
+//
+//        for (Long id : statementIds) {
+//            PayoutStatement stmt = statementRepository.findById(id)
+//                    .orElseThrow(() -> new AppException(ErrorCode.STATEMENT_NOT_FOUND));
+//
+//            if (!"APPROVED".equals(stmt.getStatus())) {
+//                throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
+//            }
+//
+//            // UC-088.E2: Below minimum threshold — mark as ROLLOVER
+//            if (stmt.getNetPayout() != null
+//                    && stmt.getNetPayout().compareTo(MIN_PAYOUT_THRESHOLD) < 0) {
+//                stmt.setStatus("ROLLOVER");
+//            } else {
+//                stmt.setStatus("PROCESSING");
+//            }
+//            statementRepository.save(stmt);
+//
+//            Hotel hotel = hotelRepository.findById(stmt.getHotelId())
+//                    .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+//            results.add(toResponse(stmt, hotel.getHotelName(), false));
+//        }
+//        return results;
+//    }
 
     // ---- Helpers ----
 
@@ -495,8 +508,8 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .status(s.getStatus())
                 .confirmedBy(s.getConfirmedBy())
                 .confirmedAt(s.getConfirmedAt())
-                .disputeReason(s.getDisputeReason())
-                .disputeReasonCode(s.getDisputeReasonCode())
+//                .disputeReason(s.getDisputeReason())
+//                .disputeReasonCode(s.getDisputeReasonCode())
                 .bankReference(s.getBankReference())
                 .paidAt(s.getPaidAt())
                 .createdAt(s.getCreatedAt())

@@ -115,6 +115,7 @@ public enum ErrorCode {
     STATEMENT_ALREADY_PAID(2413, "This statement has already been settled", HttpStatus.CONFLICT),
     PAYOUT_MISSING_BANK_INFO(2414, "Hotel bank account information is missing", HttpStatus.BAD_REQUEST),
     PAYOUT_BELOW_THRESHOLD(2415, "Net payout is below the minimum threshold", HttpStatus.BAD_REQUEST),
+    STATEMENT_CONFIRM_WINDOW_CLOSED(2416, "Confirmation window has closed (3rd-5th of the month only)", HttpStatus.BAD_REQUEST),
 
     //financial - export (UC-084)
     EXPORT_INVALID_TYPE(2421, "Invalid report type for export", HttpStatus.BAD_REQUEST),
