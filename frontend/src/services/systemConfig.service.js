@@ -22,7 +22,19 @@ const updateCancelConfig = async (payload) => {
     }
 };
 
+// Audit log của Admin
+const getAllAuditLog = async () => {
+    try {
+        const response = await api.get(`/systemlogs`);
+        return response.data;
+    } catch (error) {
+        console.error("Get All Audit Log Error:", error);
+        throw error;
+    }
+};
+
 export const systemConfigService = {
     getAllCancelConfig,
     updateCancelConfig,
+    getAllAuditLog,
 }

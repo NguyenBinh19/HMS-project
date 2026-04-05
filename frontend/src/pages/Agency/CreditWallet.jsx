@@ -128,9 +128,9 @@ const CreditWallet = () => {
           <div className="bg-blue-50 rounded-md p-4 shadow-sm flex flex-col items-center">
             <p className="text-sm text-slate-600">Tổng hạn mức được cấp</p>
             <p className="text-2xl font-bold text-blue-600">{formatCurrency(summary.creditLimit)}</p>
-            <button className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">
-              Xin nới hạn mức
-            </button>
+            {/*<button className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm shadow hover:bg-blue-700 transition">*/}
+            {/*  Xin nới hạn mức*/}
+            {/*</button>*/}
           </div>
         </div>
       </div>

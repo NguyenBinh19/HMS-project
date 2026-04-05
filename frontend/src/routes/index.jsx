@@ -83,6 +83,7 @@ import BookingCheckoutDemo from "@/pages/Demo/Agency/BookingCheckoutDemo.jsx";
 import BookingSuccessDemo from "@/pages/Demo/Agency/BookingSuccessDemo.jsx";
 import BookingListDemo from "@/pages/Demo/Agency/BookingListDemo.jsx";
 import BookingDetailDemo from "@/pages/Demo/Agency/BookingDetailDemo.jsx";
+import ViewAuditLogs from "@/pages/Admin/ViewAuditLogs.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -189,6 +190,7 @@ const AppRoutes = () => {
                     <Route path="set-ranking" element={<SetAgencyRanking />} />
                     <Route path="system-config" element={<SystemConfigPage/>} />
                     <Route path="staff" element={<AdminStaffDashboard/>} />
+                    <Route path="audit-logs" element={<ViewAuditLogs/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />

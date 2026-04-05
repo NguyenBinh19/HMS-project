@@ -19,8 +19,8 @@ public class DataSourceConfig {
     @Bean
     public DataSource dataSource() {
         String url = String.format(
-                "jdbc:sqlserver://;serverName=%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
-                props.getIp(), props.getName()
+            "jdbc:sqlserver://;serverName=%s;databaseName=%s;encrypt=true;trustServerCertificate=true;",
+            props.getIp(), props.getName()
         );
 
         DriverManagerDataSource ds = new DriverManagerDataSource();
@@ -31,3 +31,4 @@ public class DataSourceConfig {
         return ds;
     }
 }
+

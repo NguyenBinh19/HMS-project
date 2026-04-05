@@ -302,10 +302,10 @@ const BookingDetailPost = () => {
                                 </button>
                             )}
 
-                            <button
-                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
-                                <FileText size={14}/> Hóa đơn
-                            </button>
+                            {/*<button*/}
+                            {/*    className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">*/}
+                            {/*    <FileText size={14}/> Hóa đơn*/}
+                            {/*</button>*/}
 
                             {/* Nút Hủy phòng */}
                             <button

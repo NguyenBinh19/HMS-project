@@ -7,9 +7,9 @@ import {
 import { MOCK_BOOKING_FULL_DETAIL } from "@/constant/agency_mockData.js";
 
 // Giả lập các Modal
-const EditGuestModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Sửa khách</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
-const SubmitFeedbackModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Đánh giá</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
-const CancelBookingModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Modal Hủy phòng</h3><button onClick={onClose} className="mt-4 bg-rose-600 text-white px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
+const EditGuestModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Sửa thông tin khách</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
+const SubmitFeedbackModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Đánh giá</h3><button onClick={onClose} className="mt-4 bg-slate-100 px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
+const CancelBookingModal = ({ isOpen, onClose }) => isOpen ? <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-in fade-in duration-200"><div className="bg-white p-6 rounded-xl shadow-xl"><h3>Hủy phòng</h3><button onClick={onClose} className="mt-4 bg-rose-600 text-white px-4 py-2 rounded-lg text-sm">Đóng</button></div></div> : null;
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -183,11 +183,6 @@ const BookingDetailPost = () => {
                                     {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá ngay"}
                                 </button>
                             )}
-
-                            <button
-                                className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">
-                                <FileText size={14}/> Hóa đơn
-                            </button>
 
                             {/* Nút Hủy phòng */}
                             <button

@@ -118,12 +118,6 @@ const DemoCreditWallet = () => {
                     <div className="bg-blue-50 rounded-md p-4 shadow-sm flex flex-col items-center border border-blue-100">
                         <p className="text-sm text-slate-600">Tổng hạn mức được cấp</p>
                         <p className="text-2xl font-bold text-blue-600">{formatCurrency(creditLimit)}</p>
-                        <button
-                            onClick={handleRequestLimit}
-                            className="mt-3 px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm font-semibold shadow hover:bg-blue-700 transition w-full max-w-[150px]"
-                        >
-                            Xin nới hạn mức
-                        </button>
                     </div>
 
                 </div>
