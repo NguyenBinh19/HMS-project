@@ -87,6 +87,15 @@ public class PayoutStatement {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "bank_name", columnDefinition = "NVARCHAR(255)")
+    private String bankName;
+
+    @Column(name = "bank_account_holder", columnDefinition = "NVARCHAR(255)")
+    private String bankAccountHolder;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

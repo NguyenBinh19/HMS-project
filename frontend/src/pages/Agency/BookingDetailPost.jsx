@@ -24,7 +24,7 @@ const getStatusConfig = (status) => {
     const s = status?.toUpperCase();
     switch (s) {
         case "BOOKED":
-            return { label: "CHỜ THANH TOÁN", color: "bg-amber-500", desc: "Đơn hàng sẽ bị hủy nếu không thanh toán đúng hạn." };
+            return { label: "ĐÃ ĐẶT", color: "bg-amber-500", desc: "Đơn hàng đã thanh toán." };
         case "CONFIRMED":
             return { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", desc: "Thanh toán thành công. Sẵn sàng cho ngày Check-in." };
         case "CHECKED-IN":

@@ -231,7 +231,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ADMIN_STAFF')")
     public long countActiveUsers() {
         return userRepository.countByStatus("ACTIVE");
     }

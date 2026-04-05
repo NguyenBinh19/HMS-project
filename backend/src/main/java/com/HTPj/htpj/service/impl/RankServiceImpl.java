@@ -41,6 +41,7 @@ public class RankServiceImpl implements RankService {
     AgencyBookingRevenueRepository revenueRepository;
     PartnerVerificationRepository partnerVerificationRepository;
     RankHistoryRepository rankHistoryRepository;
+    SystemLogRepository systemLogRepository;
     NotificationService notificationService;
 
     public enum RankPeriodType {
@@ -60,6 +61,14 @@ public class RankServiceImpl implements RankService {
         return jwt.getClaim("userId");
     }
 
+    private void saveLog(String action) {
+        SystemLog log = new SystemLog();
+        log.setUserId(getCurrentUserId());
+        log.setAction(action);
+        log.setUpdatedAt(LocalDateTime.now());
+
+        systemLogRepository.save(log);
+    }
 
     @Override
     public String createRank(CreateRankRequest request) {
@@ -85,9 +94,12 @@ public class RankServiceImpl implements RankService {
 
         rankRepository.save(rank);
 
+        saveLog("Tạo rank: code=" + rank.getRankCode()
+                + ", name=" + rank.getRankName()
+                + ", priority=" + rank.getPriority());
+
         return "Create rank successfully";
     }
-
 
     @Override
     public String updateRank(Integer id, UpdateRankRequest request) {
@@ -119,6 +131,8 @@ public class RankServiceImpl implements RankService {
 
         rankRepository.save(rank);
 
+        saveLog("Cập nhật thông tin của hạng: "+ rank.getRankCode() + " - " + rank.getRankName());
+
         return "Update rank successfully";
     }
 
@@ -136,7 +150,6 @@ public class RankServiceImpl implements RankService {
         return response;
     }
 
-
     @Override
     public List<RankResponse> getAllRanks() {
 
@@ -148,7 +161,6 @@ public class RankServiceImpl implements RankService {
             return res;
         }).toList();
     }
-
 
     @Override
     public String deleteRank(Integer id) {
@@ -167,6 +179,8 @@ public class RankServiceImpl implements RankService {
         rank.setUpdatedBy(getCurrentUserId());
 
         rankRepository.save(rank);
+
+        saveLog("Dừng hoạt động hạng: " + rank.getRankCode() + " - " + rank.getRankName());
 
         return "Delete rank successfully";
     }
@@ -217,7 +231,6 @@ public class RankServiceImpl implements RankService {
         }
         return "Update " + periodType.name() + " successfully";
     }
-
 
     @Override
     public String getRankPeriod(String type) {
@@ -319,7 +332,6 @@ public class RankServiceImpl implements RankService {
         }
         return map;
     }
-
 
     @Override
     public List<AgencyRankChangeResponse> getUpgradeCandidates(RankEvaluateRequest request) {
@@ -515,7 +527,13 @@ public class RankServiceImpl implements RankService {
 
         rankHistoryRepository.save(history);
 
+        saveLog("Cập nhật xếp hạng cho agency: "
+                + agency.getAgencyName()
+                + " từ " + currentRank.getRankCode()
+                + " -> " + targetRank.getRankCode());
+
         List<Users> agencyUsers = userRepository.findByAgency_AgencyId(request.getAgencyId());
+
         String action = "APPROVE".equalsIgnoreCase(request.getStatus()) ? "được cập nhật" : "được giữ nguyên";
         for (Users u : agencyUsers) {
             notificationService.sendNotification(u.getId(), "RANK",

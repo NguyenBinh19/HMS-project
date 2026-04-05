@@ -79,7 +79,7 @@ const Header = () => {
     // 1. Logic fetch KYC
     useEffect(() => {
         const fetchUserKyc = async () => {
-            // Chỉ check nếu: Có user, không phải Admin, chưa có HotelId/AgencyId
+            // Check nếu: Có user, không phải Admin, chưa có HotelId/AgencyId
             if (user && !isAdmin && !currentHotelId && !currentAgencyId) {
                 setIsCheckingKyc(true);
                 try {
@@ -99,7 +99,6 @@ const Header = () => {
         fetchUserKyc();
     }, [user, userRoles, location.pathname]);
 
-    // 3. Logic tính toán quyền hạn (Sử dụng useMemo để tối ưu)
     const isAdmin = useMemo(() => userRoles.some(role => role.includes("ADMIN")), [userRoles]);
     const isFullAdmin = useMemo(() => userRoles.some(role => role === "ROLE_ADMIN"), [userRoles]);
     const isAgencyManager = useMemo(() => userRoles.some(role => role.includes("ROLE_AGENCY_MANAGER")), [userRoles]);
@@ -111,7 +110,7 @@ const Header = () => {
     //     !currentHotelId &&
     //     !currentAgencyId;
 
-    // 3. Hàm render Button KYC
+    // Hàm render Button KYC
     const renderKycStatus = () => {
         if (isAdmin || currentHotelId || currentAgencyId || !user) return null;
         if (isCheckingKyc) {
@@ -161,13 +160,13 @@ const Header = () => {
         );
     };
 
-    // 4. Định dạng tiền tệ
+    // Định dạng tiền tệ
     const formatCurrency = (value) => {
         if (!value) return "0 ₫";
         return Number(value).toLocaleString("vi-VN") + " ₫";
     };
 
-    // 5. Cập nhật Tiêu đề trang động
+    // Cập nhật Tiêu đề trang động
     useEffect(() => {
         const titles = {
             "/homepage": "Trang chủ | HMS-B2B",
@@ -399,18 +398,58 @@ const Header = () => {
                 <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
                     <nav className="flex flex-col space-y-2">
                         {!user && navLinks.map((link) => (
-                            <Link key={link.name} to={link.href} onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl hover:bg-slate-50 text-slate-700">{link.name}</Link>
+                            <Link
+                                key={link.name}
+                                to={link.href}
+                                onClick={() => setIsMenuOpen(false)}
+                                className="px-4 py-3 text-lg font-bold rounded-xl hover:bg-slate-50 text-slate-700"
+                            >
+                                {link.name}
+                            </Link>
                         ))}
-                        {isAdmin && (
+
+                        {/* 2. Menu dành riêng cho Admin */}
+                        {user && isAdmin && (
                             <>
                                 <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-blue-600 bg-blue-50">Dashboard Admin</Link>
                                 <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ cá nhân</Link>
                             </>
                         )}
+
+                        {/* 3. Menu dành cho Agency/Hotel (Non-admin) */}
+                        {user && !isAdmin && (
+                            <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ của tôi</Link>
+                        )}
                     </nav>
-                    <button onClick={handleLogout} className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100">
-                        <LogOut size={22} /> Đăng xuất tài khoản
-                    </button>
+
+                    {/* 4. Khu vực Action Buttons */}
+                    <div className="pt-4 border-t border-slate-100">
+                        {user ? (
+                            // Chỉ hiện Logout khi đã đăng nhập
+                            <button
+                                onClick={handleLogout}
+                                className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100"
+                            >
+                                <LogOut size={22} /> Đăng xuất tài khoản
+                            </button>
+                        ) : (
+                            // Hiện Đăng nhập/Đăng ký khi chưa đăng nhập trên Mobile
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => { navigate("/login"); setIsMenuOpen(false); }}
+                                    className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold"
+                                >
+                                    Đăng nhập
+                                </button>
+                                <button
+                                    onClick={() => { navigate("/register"); setIsMenuOpen(false); }}
+                                    className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold"
+                                >
+                                    Đăng ký đối tác
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </header>

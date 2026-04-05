@@ -12,11 +12,15 @@ import {
     Eye,
     List,
     CreditCard,
-    Building2
+    Building2, BarChart3
 } from "lucide-react";
 
 const Sidebar = () => {
     const location = useLocation();
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = currentUser?.roles || "";
+    // Kiểm tra xem có phải Admin tổng không
+    const isFullAgency = userRole === "ROLE_AGENCY_MANAGER";
 
     const menuItems = [
         {
@@ -36,8 +40,13 @@ const Sidebar = () => {
         },
         {
             icon: <Users size={20} />,
-            label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN",
-            path: "/agency/staff"
+            label: "QUẢN LÝ NHÂN VIÊN",
+            path: "/agency/staff",
+            hideForStaff: true,
+            subItems: [
+                { icon: <Users size={18} />, label: "Danh sách nhân viên", path: "/agency/staff" },
+                { icon: <BarChart3 size={18} />, label: "Thống kê doanh số", path: "/agency/staff-spending-limit" },
+            ]
         },
         {
             icon: <Wallet size={20} />,
@@ -65,6 +74,13 @@ const Sidebar = () => {
         }
     ];
 
+    const filteredMenuItems = menuItems.filter(item => {
+        if (!isFullAgency && item.hideForStaff) {
+            return false;
+        }
+        return true;
+    });
+
     return (
         <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
             {/* Header Sidebar*/}
@@ -76,7 +92,7 @@ const Sidebar = () => {
 
             {/* Menu List */}
             <div className="flex-1 py-6 overflow-y-auto">
-                {menuItems.map((item, index) => {
+                {filteredMenuItems.map((item, index) => {
                     // const isExactActive = location.pathname === item.path;
                     //
                     // const isParentActive = item.subItems

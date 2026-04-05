@@ -22,7 +22,19 @@ const getAgencyProfileDetail = async () => {
     }
 };
 
+// Xem thông tin booking của nhân viên
+const getAgencyStaffBooking = async () => {
+    try {
+        const response = await api.get(`/agencies/user-booking`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Agency Staff Booking Error:", error);
+        throw error;
+    }
+};
+
 export const agencyService = {
     upAgencyProfileDetail,
-    getAgencyProfileDetail
+    getAgencyProfileDetail,
+    getAgencyStaffBooking
 };

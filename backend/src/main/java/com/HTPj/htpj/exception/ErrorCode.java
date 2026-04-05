@@ -116,6 +116,11 @@ public enum ErrorCode {
     PAYOUT_MISSING_BANK_INFO(2414, "Hotel bank account information is missing", HttpStatus.BAD_REQUEST),
     PAYOUT_BELOW_THRESHOLD(2415, "Net payout is below the minimum threshold", HttpStatus.BAD_REQUEST),
     STATEMENT_CONFIRM_WINDOW_CLOSED(2416, "Confirmation window has closed (3rd-5th of the month only)", HttpStatus.BAD_REQUEST),
+    INVALID_BANK_INFO(2416, "Don't have bank info", HttpStatus.BAD_REQUEST),
+    DISPUTE_ALREADY_EXIST(2417, "This statement has already been disputed", HttpStatus.BAD_REQUEST),
+    DISPUTE_NOT_FOUND(2418, "Dispute not found", HttpStatus.BAD_REQUEST),
+    DISPUTE_ALREADY_RESOLVED(2419, "This statement has already been solved", HttpStatus.BAD_REQUEST),
+    FILE_UPLOAD_FAILED(2420, "File upload fail, upload again", HttpStatus.BAD_REQUEST),
 
     //financial - export (UC-084)
     EXPORT_INVALID_TYPE(2421, "Invalid report type for export", HttpStatus.BAD_REQUEST),

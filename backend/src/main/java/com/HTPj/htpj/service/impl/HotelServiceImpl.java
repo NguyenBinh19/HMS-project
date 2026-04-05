@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.request.hotel.BankInfoRequest;
 import com.HTPj.htpj.dto.request.hotel.UpdateHotelRequest;
 import com.HTPj.htpj.dto.response.hotel.*;
 import com.HTPj.htpj.dto.response.kyc.VerificationInfoResponse;
@@ -468,6 +469,31 @@ public class HotelServiceImpl implements HotelService {
         }
 
         return getHotelDetail(hotelId);
+    }
+
+    @Override
+    public BankInfoResponse getBankInfo(Integer hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        return BankInfoResponse.builder()
+                .bankName(hotel.getBankName())
+                .bankAccountNumber(hotel.getBankAccountNumber())
+                .bankAccountHolder(hotel.getBankAccountHolder())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateBankInfo(Integer hotelId, BankInfoRequest request) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        hotel.setBankName(request.getBankName());
+        hotel.setBankAccountNumber(request.getBankAccountNumber());
+        hotel.setBankAccountHolder(request.getBankAccountHolder());
+
+        hotelRepository.save(hotel);
     }
 
 
