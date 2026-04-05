@@ -3,12 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import {
     TrendingUp, Wallet, Users, Calendar,
     ArrowUpRight, FileCheck, Landmark, AlertCircle,
-    Search, Server, Zap, Globe, Download, Loader2, Clock, CheckCircle2
+    Search, Server, Zap, Globe, Download, Loader2, Clock, CheckCircle2, AlertOctagon,
 } from 'lucide-react';
 import { userService } from '@/services/user.service';
 import { kycService } from '@/services/kyc.service';
 import { payoutService } from '@/services/payout.service';
 import { bookingService } from '@/services/booking.service';
+
+const STATUS_CONFIG = {
+    "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+    "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
+    "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
+    "COMPLETED": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
+    "CANCELLED": { label: "ĐÃ HỦY", color: "bg-rose-600", border: "border-rose-200", text: "text-white" },
+    "NO_SHOW": { label: "KHÔNG ĐẾN", color: "bg-purple-600", border: "border-purple-200", text: "text-white" },
+};
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -18,6 +27,7 @@ const AdminDashboard = () => {
         kycPending: [],
         payoutStats: null,
         bookings: [],
+        disputesCount: 0,
         stats: {
             totalRevenue: 0,
             pendingBookings: 0,
@@ -33,16 +43,26 @@ const AdminDashboard = () => {
         currency: 'VND'
     }).format(val || 0);
 
+    const getStatusBadge = (status) => {
+        const s = status?.toUpperCase();
+        const config = STATUS_CONFIG[s] || { label: s, color: "bg-slate-400", border: "border-slate-200", text: "text-white" };
+        return (
+            <span className={`whitespace-nowrap px-3 py-1 rounded-lg text-[9px] font-black border tracking-wider shadow-sm ${config.color} ${config.text} ${config.border}`}>
+                {config.label}
+            </span>
+        );
+    };
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
                 // Gọi API
-                const [userRes, kycRes, payoutRes, bookingRes] = await Promise.all([
+                const [userRes, kycRes, payoutRes, bookingRes, disputeRes] = await Promise.all([
                     userService.getUserMetrics(),
                     kycService.getPartnerVerificationsByStatus('PENDING'),
                     payoutService.getPayoutList({ status: 'PENDING' }),
-                    bookingService.viewAllBookingByAdmin({ size: 100 })
+                    bookingService.viewAllBookingByAdmin({ size: 100 }),
+                    payoutService.getDisputedStatements()
                 ]);
 
                 // 1. Xử lý dữ liệu User
@@ -66,6 +86,9 @@ const AdminDashboard = () => {
                     return acc;
                 }, { totalRevenue: 0, pendingBookings: 0, confirmedBookings: 0 });
 
+                const disputesList = disputeRes?.result || [];
+                const activeDisputes = disputesList.filter(d => d.status !== 'RESOLVED').length;
+
                 setData({
                     activeUsers: activeUsersCount,
                     kycPending: kycList,
@@ -75,6 +98,7 @@ const AdminDashboard = () => {
                         ...bookingStats,
                         totalBookings: allBookings.length
                     },
+                    disputesCount: activeDisputes,
                     chartData: [32, 48, 42, 56, 48, 52, 64]
                 });
             } catch (error) {
@@ -121,7 +145,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* 2. Top Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <StatCard
                         label="Tổng giá trị Booking"
                         value={formatVND(data.stats.totalRevenue)}
@@ -130,14 +154,14 @@ const AdminDashboard = () => {
                         icon={<TrendingUp size={20} />}
                         color="blue"
                     />
-                    <StatCard
-                        label="Lợi nhuận ước tính"
-                        value={formatVND(data.stats.totalRevenue * 0.1)}
-                        // trend="+8%"
-                        sub="Tạm tính 10% hoa hồng sàn"
-                        icon={<Wallet size={20} />}
-                        color="emerald"
-                    />
+                    {/*<StatCard*/}
+                    {/*    label="Lợi nhuận ước tính"*/}
+                    {/*    value={formatVND(data.stats.totalRevenue * 0.1)}*/}
+                    {/*    // trend="+8%"*/}
+                    {/*    sub="Tạm tính 10% hoa hồng sàn"*/}
+                    {/*    icon={<Wallet size={20} />}*/}
+                    {/*    color="emerald"*/}
+                    {/*/>*/}
                     <StatCard
                         label="Người dùng Active"
                         value={data.activeUsers}
@@ -180,7 +204,7 @@ const AdminDashboard = () => {
                                 {data.bookings.slice(0, 6).map((b, i) => (
                                     <tr key={i} className="bg-slate-50/50 hover:bg-slate-50 transition-colors group">
                                         <td className="py-4 pl-4 rounded-l-2xl">
-                                            <span className="text-xs font-black text-blue-600">#{b.bookingCode.split('-')[1] || b.bookingCode.slice(-5)}</span>
+                                            <span className="text-xs font-black text-blue-600">{b.bookingCode}</span>
                                         </td>
                                         <td className="py-4">
                                             <p className="text-xs font-bold">{b.guestName}</p>
@@ -193,13 +217,7 @@ const AdminDashboard = () => {
                                             <span className="text-xs font-black">{formatVND(b.finalAmount)}</span>
                                         </td>
                                         <td className="py-4 pr-4 rounded-r-2xl text-center">
-                                                <span className={`text-[9px] font-black px-3 py-1 rounded-lg uppercase ${
-                                                    b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'COMPLETED' || b.bookingStatus === 'paid'
-                                                        ? 'bg-emerald-100 text-emerald-600'
-                                                        : 'bg-amber-100 text-amber-600'
-                                                }`}>
-                                                    {b.bookingStatus}
-                                                </span>
+                                            {getStatusBadge(b.bookingStatus)}
                                         </td>
                                     </tr>
                                 ))}
@@ -215,7 +233,7 @@ const AdminDashboard = () => {
                                 <h3 className="font-black uppercase tracking-tighter">Cần xử lý gấp</h3>
                                 <span
                                     className="bg-red-100 text-red-600 text-[10px] px-2 py-1 rounded-lg font-black italic">
-                                    {(data.kycPending?.length || 0) + (data.payoutStats?.readyCount || 0)} yêu cầu
+                                    {(data.kycPending?.length || 0) + (data.disputesCount || 0)} yêu cầu
                                 </span>
                             </div>
                             <div className="space-y-4">
@@ -226,12 +244,13 @@ const AdminDashboard = () => {
                                     title={`${data.kycPending?.length || 0} Đối tác chờ duyệt`}
                                     desc="Yêu cầu KYC Agency/Hotel mới"
                                 />
-                                {/*<UrgentItem*/}
-                                {/*    icon={<Landmark className="text-emerald-600"/>}*/}
-                                {/*    bg="bg-emerald-50"*/}
-                                {/*    title={`${data.payoutStats?.readyCount || 0} Lệnh rút tiền`}*/}
-                                {/*    desc={`Khả dụng: ${formatVND(data.payoutStats?.totalPayoutLiability)}`}*/}
-                                {/*/>*/}
+                                <UrgentItem
+                                    icon={<AlertOctagon className="text-rose-600"/>}
+                                    onClick={() => navigate('/admin/dispute')}
+                                    bg="bg-rose-50"
+                                    title={`${data.disputesCount} Khiếu nại tài chính`}
+                                    desc="Cần đối soát và phản hồi ngay"
+                                />
                                 <div className="pt-4 border-t border-slate-100 mt-4">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">KYC Mới nhất</h4>
                                     {data.kycPending.slice(0, 2).map((item, idx) => (
