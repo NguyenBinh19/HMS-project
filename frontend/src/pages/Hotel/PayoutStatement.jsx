@@ -7,7 +7,17 @@ import {
 import StatementHeader from '@/components/hotel/finance/StatementHeader';
 import { payoutService } from '@/services/payout.service';
 import { toast } from 'react-hot-toast';
-
+const BANK_LIST = [
+    { code: "VCB", name: "Vietcombank" },
+    { code: "TCB", name: "Techcombank" },
+    { code: "ACB", name: "ACB" },
+    { code: "BIDV", name: "BIDV" },
+    { code: "VTB", name: "VietinBank" },
+    { code: "MB", name: "MB Bank" },
+    { code: "VPB", name: "VPBank" },
+    { code: "TPB", name: "TPBank" },
+    { code: "STB", name: "Sacombank" }
+];
 const STATUS_MAP = {
     PENDING_CONFIRMATION: { label: "Chờ xác nhận", color: "bg-amber-100 text-amber-700" },
     APPROVED: { label: "Đã xác nhận", color: "bg-emerald-100 text-emerald-700" },
@@ -120,6 +130,13 @@ const StatementDetailView = ({ statementId, onBack }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 5;
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+    const [bankInfo, setBankInfo] = useState({
+        bankName: "",
+        bankAccountHolder: "",
+        bankAccountNumber: ""
+    });
 
     const fetchDetail = useCallback(async () => {
         setLoading(true);
@@ -139,7 +156,15 @@ const StatementDetailView = ({ statementId, onBack }) => {
     useEffect(() => {
         if (statementId) fetchDetail();
     }, [statementId, fetchDetail]);
-
+    useEffect(() => {
+        if (statement) {
+            setBankInfo({
+                bankName: statement.bankName || "",
+                bankAccountHolder: statement.bankAccountHolder || "",
+                bankAccountNumber: statement.bankAccountNumber || ""
+            });
+        }
+    }, [statement]);
     const lineItems = statement?.lineItems || [];
 
     const filteredData = useMemo(() => {
@@ -148,7 +173,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
             (item.agencyName || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm, lineItems]);
-
+    const [errors, setErrors] = useState({});
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     const currentTableData = useMemo(() => {
         const firstPageIndex = (currentPage - 1) * rowsPerPage;
@@ -157,16 +182,38 @@ const StatementDetailView = ({ statementId, onBack }) => {
     }, [currentPage, filteredData]);
 
     const handleConfirm = async () => {
-        if (!window.confirm("Xác nhận đối soát kỳ này?")) return;
+        const newErrors = {};
+
+        if (!bankInfo.bankName) {
+            newErrors.bankName = "Chọn ngân hàng";
+        }
+
+        if (!bankInfo.bankAccountHolder) {
+            newErrors.bankAccountHolder = "Nhập chủ tài khoản";
+        }
+
+        if (!bankInfo.bankAccountNumber) {
+            newErrors.bankAccountNumber = "Nhập số tài khoản";
+        } else if (!/^[0-9]{8,20}$/.test(bankInfo.bankAccountNumber)) {
+            newErrors.bankAccountNumber = "Số tài khoản phải từ 8-20 chữ số";
+        }
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        setErrors({});
         setIsSubmitting(true);
+
         try {
-            const res = await payoutService.confirmPayout(statementId);
+            const res = await payoutService.confirmPayout(statementId, bankInfo);
+
             if (res.code === 1000) {
                 toast.success("Xác nhận đối soát thành công!");
                 setStatement(res.result);
+                setShowConfirmModal(false);
             }
         } catch (error) {
-            console.error("Lỗi xác nhận đối soát:", error);
             toast.error(error.response?.data?.message || "Xác nhận thất bại");
         } finally {
             setIsSubmitting(false);
@@ -220,9 +267,9 @@ const StatementDetailView = ({ statementId, onBack }) => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs"><Printer size={14}/></button>
+                    <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs"><Printer size={14} /></button>
                     <button className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2">
-                        <Download size={14}/> EXCEL
+                        <Download size={14} /> EXCEL
                     </button>
                 </div>
             </div>
@@ -323,7 +370,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
                                     Khiếu nại
                                 </button>
                                 <button
-                                    onClick={handleConfirm}
+                                    onClick={() => setShowConfirmModal(true)}
                                     disabled={isSubmitting}
                                     className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-500 shadow-xl shadow-blue-900/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                                 >
@@ -332,11 +379,10 @@ const StatementDetailView = ({ statementId, onBack }) => {
                                 </button>
                             </>
                         ) : (
-                            <div className={`flex items-center gap-3 font-bold text-xs px-6 py-3 rounded-2xl border ${
-                                status === "DISPUTED"
-                                    ? "text-red-400 bg-red-500/10 border-red-500/20"
-                                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                            }`}>
+                            <div className={`flex items-center gap-3 font-bold text-xs px-6 py-3 rounded-2xl border ${status === "DISPUTED"
+                                ? "text-red-400 bg-red-500/10 border-red-500/20"
+                                : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                                }`}>
                                 {status === "DISPUTED" ? (
                                     <><AlertCircle size={16} /> ĐÃ KHIẾU NẠI</>
                                 ) : (
@@ -347,6 +393,88 @@ const StatementDetailView = ({ statementId, onBack }) => {
                     </div>
                 </div>
             </div>
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4">
+                        <h2 className="text-lg font-black">Nhập thông tin ngân hàng</h2>
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-bold text-slate-700">
+                                Ngân hàng <span className="text-red-500">*</span>
+                            </label>
+
+                            <select
+                                className="w-full p-3 border rounded-xl bg-white"
+                                value={bankInfo.bankName}
+                                onChange={(e) =>
+                                    setBankInfo(prev => ({ ...prev, bankName: e.target.value }))
+                                }
+                            >
+                                <option value="">-- Chọn ngân hàng --</option>
+                                {BANK_LIST.map(bank => (
+                                    <option key={bank.code} value={bank.name}>
+                                        {bank.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {errors.bankName && <p className="text-red-500 text-xs">{errors.bankName}</p>}
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-sm font-bold text-slate-700">
+                                Chủ tài khoản <span className="text-red-500">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                className="w-full p-3 border rounded-xl"
+                                value={bankInfo.bankAccountHolder}
+                                onChange={(e) =>
+                                    setBankInfo(prev => ({ ...prev, bankAccountHolder: e.target.value }))
+                                }
+                            />
+
+                            {errors.bankAccountHolder && <p className="text-red-500 text-xs">{errors.bankAccountHolder}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-sm font-bold text-slate-700">
+                                Số tài khoản <span className="text-red-500">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                className="w-full p-3 border rounded-xl"
+                                value={bankInfo.bankAccountNumber}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, ""); 
+                                    setBankInfo(prev => ({ ...prev, bankAccountNumber: value }));
+                                }}
+                            />
+
+                            {errors.bankAccountNumber && <p className="text-red-500 text-xs">{errors.bankAccountNumber}</p>}
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-4">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-4 py-2 rounded-xl border"
+                            >
+                                Hủy
+                            </button>
+
+                            <button
+                                onClick={handleConfirm}
+                                disabled={isSubmitting}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-xl flex items-center gap-2"
+                            >
+                                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                                Xác nhận
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
@@ -382,6 +510,7 @@ const SettlementDetail = ({ hotelId: propHotelId }) => {
                 )}
             </div>
         </div>
+
     );
 };
 

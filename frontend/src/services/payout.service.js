@@ -46,8 +46,15 @@ const getHotelStatementDetail = async (statementId) => {
 };
 
 // Hotel: Confirm payout statement
-const confirmPayout = async (statementId) => {
-    const response = await api.post('/settlement/confirm', { statementId });
+const confirmPayout = async (statementId, bankInfo) => {
+    console.log("payload:", {
+    statementId,
+    ...bankInfo
+});
+    const response = await api.post('/settlement/confirm', {
+        statementId,
+        ...bankInfo
+    });
     return response.data;
 };
 
