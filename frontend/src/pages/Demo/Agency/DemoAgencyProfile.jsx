@@ -1,63 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Building2, Info, Phone, Mail, MapPin,
-    Globe, CheckCircle2, Loader2, Smartphone,
-    CreditCard, Wallet, ArrowUpRight, Check,
-    ShieldCheck, Edit3, AlertCircle
+    Building2, Phone, Mail, Globe, CheckCircle2,
+    Loader2, Smartphone, CreditCard, Wallet,
+    ArrowUpRight, Check, ShieldCheck, Edit3, AlertCircle
 } from 'lucide-react';
-import { agencyService } from "@/services/agency.service.js";
-import { partnerService } from "@/services/partner.service.js";
 import { toast } from "react-hot-toast";
+import { MOCK_AGENCY_DATA } from '@/constant/agency_mockData.js';
 
-const AgencyProfile = () => {
+const DemoAgencyProfile = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showSuccessBanner, setShowSuccessBanner] = useState(false);
-    const [originalData, setOriginalData] = useState(null);
     const [errors, setErrors] = useState({});
 
-    const [profile, setProfile] = useState({
-        agencyName: "",
-        email: "",
-        hotline: "",
-        contactPhone: "",
-        address: "",
-        taxCode: "",
-        legalName: "",
-        representativeName: "",
-        businessLicenseNumber: "",
-        creditLimit: 0,
-        currentCredit: 0
-    });
+    // Khởi tạo State từ dữ liệu Mock chung
+    const [profile, setProfile] = useState(MOCK_AGENCY_DATA);
 
-    // 2. Hàm Validate logic
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 600);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const PHONE_REGEX = /^[0-9]{10,11}$/;
+
+    // Logic validate dữ liệu
     const validateForm = () => {
         let newErrors = {};
 
-        // Validate Tên đại lý
         if (!profile.agencyName?.trim()) {
             newErrors.agencyName = "Tên hiển thị không được để trống";
         }
 
-        // Validate Email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(profile.email)) {
             newErrors.email = "Định dạng email không hợp lệ";
         }
 
-        // Validate Hotline (Cho phép 10-11 số)
         if (profile.hotline && profile.hotline.trim() !== "") {
-            if (!phoneRegex.test(profile.hotline.replace(/\s/g, ""))) {
+            const cleanHotline = profile.hotline.replace(/\s/g, "");
+            if (!PHONE_REGEX.test(cleanHotline)) {
                 newErrors.hotline = "Hotline phải từ 10-11 số";
             }
         }
 
-        // Validate SĐT liên hệ
         if (profile.contactPhone && profile.contactPhone.trim() !== "") {
-            if (!phoneRegex.test(profile.contactPhone.replace(/\s/g, ""))) {
+            const cleanPhone = profile.contactPhone.replace(/\s/g, "");
+            if (!PHONE_REGEX.test(cleanPhone)) {
                 newErrors.contactPhone = "Số điện thoại không hợp lệ";
             }
         }
@@ -66,67 +57,23 @@ const AgencyProfile = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const fetchAgencyDetail = async () => {
-        setLoading(true);
-        try {
-            const response = await agencyService.getAgencyProfileDetail();
-            const res = response.result;
-            setOriginalData(res);
-
-            setProfile({
-                agencyName: res.agencyName || "",
-                email: res.email || "",
-                hotline: res.hotline || "",
-                contactPhone: res.contactPhone || "",
-                address: res.address || "",
-                taxCode: res.verification?.taxCode || "Chưa cập nhật",
-                legalName: res.verification?.legalName || "Chưa cập nhật",
-                representativeName: res.verification?.representativeName || "Chưa cập nhật",
-                businessLicenseNumber: res.verification?.businessLicenseNumber || "Chưa cập nhật",
-                creditLimit: res.creditLimit || 0,
-                currentCredit: res.currentCredit || 0
-            });
-        } catch (error) {
-            toast.error("Không thể tải thông tin đại lý");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchAgencyDetail(); }, []);
-
-    const handleGoToKYC = () => {
-        // Gửi kèm agencyId và kycId sang màn hình KYC
-        navigate('/kyc/status', {
-            state: {
-                oldKycId: originalData?.verification?.id,
-                partnerType: 'AGENCY'
-            }
-        });
-    };
-
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!validateForm()) {
             toast.error("Vui lòng kiểm tra lại các thông tin nhập liệu!");
             return;
         }
+
         setSaving(true);
-        try {
-            const updateBody = {
-                agencyName: profile.agencyName?.trim(),
-                email: profile.email?.trim(),
-                hotline: profile.hotline?.trim(),
-                contactPhone: profile.contactPhone?.trim()
-            };
-            const response = await agencyService.upAgencyProfileDetail(updateBody);
-            if (response.code === 1000) {
-                toast.success("Cập nhật thành công!");
-                setShowSuccessBanner(true);
-                setTimeout(() => setShowSuccessBanner(false), 5000);
-            }
-        } catch (error) {
-            toast.error("Lưu thất bại!");
-        } finally { setSaving(false); }
+        setTimeout(() => {
+            setSaving(false);
+            toast.success("Cập nhật thành công (Chế độ Demo)!");
+            setShowSuccessBanner(true);
+            setTimeout(() => setShowSuccessBanner(false), 5000);
+        }, 1000);
+    };
+
+    const handleGoToKYC = () => {
+        toast.info("Tính năng cập nhật KYC yêu cầu quyền Admin hệ thống.");
     };
 
     if (loading) return (
@@ -136,9 +83,12 @@ const AgencyProfile = () => {
         </div>
     );
 
+    const formatVND = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+
     return (
         <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10">
             <div className="max-w-5xl mx-auto">
+                {/* Banner Success */}
                 {showSuccessBanner && (
                     <div className="mb-6 bg-emerald-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-in slide-in-from-top-4">
                         <div className="flex items-center gap-3">
@@ -149,11 +99,20 @@ const AgencyProfile = () => {
                 )}
 
                 <div className="flex justify-between items-center mb-10">
-                    <h1 className="text-3xl font-black text-slate-900 uppercase">Hồ sơ đại lý</h1>
-                    <button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2">
-                        {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                        LƯU THAY ĐỔI
-                    </button>
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 uppercase">Hồ sơ đại lý</h1>
+                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Demo Mode Active</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-widest shadow-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                            LƯU THAY ĐỔI
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -174,6 +133,9 @@ const AgencyProfile = () => {
                                 <ReadOnlyField label="Mã số thuế" value={profile.taxCode} />
                                 <ReadOnlyField label="Số GPKD" value={profile.businessLicenseNumber} />
                                 <ReadOnlyField label="Người đại diện" value={profile.representativeName} />
+                                <div className="md:col-span-2">
+                                    <ReadOnlyField label="Địa chỉ trụ sở" value={profile.address} />
+                                </div>
                             </div>
                         </section>
 
@@ -214,23 +176,53 @@ const AgencyProfile = () => {
 
                     {/* TÀI CHÍNH */}
                     <div className="space-y-6">
-                        <section className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <section
+                            className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute -bottom-4 -right-4 opacity-10"><Wallet size={120}/></div>
-                            <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-8 flex items-center gap-2"><CreditCard size={18} /> Tài chính</h2>
+                            <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                                <CreditCard size={18}/> Tài chính
+                            </h2>
                             <div className="space-y-8">
                                 <div>
-                                    <p className="text-slate-400 text-[10px] font-black uppercase mb-1">Hạn mức</p>
-                                    <p className="text-2xl font-black italic">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profile.creditLimit)}</p>
+                                    <p className="text-slate-400 text-[10px] font-black uppercase mb-1">Hạn mức tín
+                                        dụng</p>
+                                    <p className="text-2xl font-black italic">{formatVND(profile.finance.creditLimit)}</p>
                                 </div>
                                 <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện tại</p>
-                                        <ArrowUpRight size={14} className="text-red-400" />
+                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện
+                                            tại</p>
+                                        <ArrowUpRight size={14} className="text-red-400"/>
                                     </div>
-                                    <p className="text-xl font-black text-red-400">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profile.currentCredit)}</p>
+                                    <p className="text-xl font-black text-red-400">{formatVND(profile.finance.currentCredit)}</p>
+                                    {/*<p className="text-[9px] text-slate-500 font-bold uppercase mt-2">Hạn: {profile.finance.dueDate}</p>*/}
                                 </div>
+                                {/*<div>*/}
+                                {/*    <p className="text-slate-400 text-[10px] font-black uppercase mb-1">Số dư ví</p>*/}
+                                {/*    <p className="text-xl font-black text-emerald-400">{formatVND(profile.finance.walletBalance)}</p>*/}
+                                {/*</div>*/}
                             </div>
                         </section>
+
+                        <div className="p-6 bg-blue-50 rounded-[32px] border border-blue-100">
+                            <div className="flex items-center gap-2 text-blue-600 mb-2">
+                                <AlertCircle size={16}/>
+                                <span className="text-[10px] font-black uppercase">Chế độ trải nghiệm</span>
+                            </div>
+                            <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
+                                Bạn có thể thay đổi các thông tin liên hệ để xem cách hệ thống validate dữ liệu thực tế.
+                            </p>
+                        </div>
+                        <div className="bg-amber-50 rounded-[32px] p-6 border border-amber-100">
+                            <div className="flex items-center gap-2 text-amber-600 mb-2">
+                                <AlertCircle size={16}/>
+                                <span className="text-[10px] font-black uppercase">Lưu ý trải nghiệm</span>
+                            </div>
+                            <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                                Trong bản chính thức, các thông tin pháp lý chỉ được thay đổi thông qua quy trình tái
+                                xác minh (KYC) để đảm bảo an toàn.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -238,17 +230,18 @@ const AgencyProfile = () => {
     );
 };
 
-// Components con
-const ReadOnlyField = ({ label, value }) => (
+// Sub-components
+const ReadOnlyField = ({label, value}) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
-        <div className="bg-slate-50 border border-slate-100 px-4 py-3.5 rounded-2xl text-slate-600 font-bold text-sm truncate">
+        <div
+            className="bg-slate-50 border border-slate-100 px-4 py-3.5 rounded-2xl text-slate-600 font-bold text-sm truncate">
             {value}
         </div>
     </div>
 );
 
-const EditableField = ({ label, value, onChange, icon, error }) => (
+const EditableField = ({label, value, onChange, icon, error}) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{label}</label>
         <div className="relative">
@@ -275,4 +268,4 @@ const EditableField = ({ label, value, onChange, icon, error }) => (
     </div>
 );
 
-export default AgencyProfile;
+export default DemoAgencyProfile;

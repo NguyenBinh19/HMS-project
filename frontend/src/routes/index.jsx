@@ -77,6 +77,21 @@ import DemoInventory from "@/pages/Demo/hotel/DemoInventory.jsx";
 import DemoDynamicPricing from "@/pages/Demo/hotel/DemoDynamicPricing.jsx";
 import DemoRevenueReport from "@/pages/Demo/hotel/DemoRevenueReport.jsx";
 import DemoPayout from "@/pages/Demo/hotel/DemoPayout.jsx";
+import DemoRoleSelection from "@/pages/Demo/DemoRoleSelection.jsx";
+import DemoAgencyLayout from "@/pages/Demo/Agency/DemoAgencyLayout.jsx";
+import DemoAgencyDashboard from "@/pages/Demo/Agency/DemoAgencyDashboard.jsx";
+import DemoAgencyProfile from "@/pages/Demo/Agency/DemoAgencyProfile.jsx";
+import DemoPrepaidWallet from "@/pages/Demo/Agency/DemoPrepaidWallet.jsx";
+import DemoCreditWallet from "@/pages/Demo/Agency/DemoCreditWallet.jsx";
+import DemoTransactionHistoryPage from "@/pages/Demo/Agency/DemoTransactionHistoryPage.jsx";
+import DemoSearchHotel from "@/pages/Demo/Agency/DemoSearchHotel.jsx";
+import DemoListSearchResult from "@/pages/Demo/Agency/DemoListSearchResult.jsx";
+import HotelDetailPageDemo from "@/pages/Demo/Agency/HotelDetailPageDemo.jsx";
+import BookingCheckoutDemo from "@/pages/Demo/Agency/BookingCheckoutDemo.jsx";
+import BookingSuccessDemo from "@/pages/Demo/Agency/BookingSuccessDemo.jsx";
+import BookingListDemo from "@/pages/Demo/Agency/BookingListDemo.jsx";
+import BookingDetailDemo from "@/pages/Demo/Agency/BookingDetailDemo.jsx";
+import ViewAuditLogs from "@/pages/Admin/ViewAuditLogs.jsx"
 const AppRoutes = () => {
     return (
         <>
@@ -183,11 +198,34 @@ const AppRoutes = () => {
                     <Route path="set-ranking" element={<SetAgencyRanking />} />
                     <Route path="system-config" element={<SystemConfigPage/>} />
                     <Route path="staff" element={<AdminStaffDashboard/>} />
+                    <Route path="audit-logs" element={<ViewAuditLogs/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
                     <Route path="payout-list" element={<PayoutList />} />
                 </Route>
+
+                {/*Luồng Demo*/}
+                <Route path="/demo" element={<DemoRoleSelection />} />
+                {/*Luồng Demo Agency Manager*/}
+                <Route path="/demo-agency" element={<DemoAgencyLayout />}>
+                    <Route path="dashboard" element={<DemoAgencyDashboard/>} />
+                    <Route path="profile" element={<DemoAgencyProfile/>} />
+                    <Route path="prepaid" element={<DemoPrepaidWallet/>} />
+                    <Route path="credit" element={<DemoCreditWallet/>} />
+                    <Route path="transaction-history" element={<DemoTransactionHistoryPage />} />
+                    <Route path="search-hotel">
+                        <Route index element={<DemoSearchHotel />} />
+                        <Route path="list" element={<DemoListSearchResult />} />
+                        <Route path="hotels/:id" element={<HotelDetailPageDemo />} />
+                    </Route>
+                    <Route path="booking-checkout" element={<BookingCheckoutDemo />} />
+                    <Route path="booking-list">
+                        <Route index element={<BookingListDemo />} />
+                        <Route path="detail/:id" element={<BookingDetailDemo />} />
+                    </Route>
+                </Route>
+                <Route path="demo-agency/booking-success" element={<BookingSuccessDemo />} />
 
                 {/*Demo Mode - Hotel Owner*/}
                 <Route path="/demo/hotel" element={<DemoLayout />}>

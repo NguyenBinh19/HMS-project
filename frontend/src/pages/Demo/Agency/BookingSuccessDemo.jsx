@@ -5,68 +5,50 @@ import {
     Check, Copy, Home, Download, Wallet, MapPin, Loader2,
     Info, FileText, CreditCard, AlertCircle
 } from "lucide-react";
-import { bookingService } from "@/services/booking.service.js";
-import api from "@/services/axios.config.js";
 
-const BookingSuccessPage = () => {
+const BookingSuccessDemo = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { booking, checkoutData } = location.state || {};
+
+    // Lấy dữ liệu từ state (payload truyền từ màn hình Checkout)
+    const state = location.state || {};
 
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState(null);
-    const [currentBalance, setCurrentBalance] = useState(null);
+    // Giả lập số dư mới (Thực tế sẽ gọi API như code mẫu của bạn)
+    const [currentBalance, setCurrentBalance] = useState(15000000);
 
+    // Chuẩn hóa dữ liệu hiển thị từ state
     const display = useMemo(() => ({
-        code: booking?.bookingCode || checkoutData?.bookingCode || "N/A",
-        hotelName: checkoutData?.hotelName || "Khách sạn chưa xác định",
-        guestName: checkoutData?.guestName || "Khách hàng lẻ",
-        guestPhone: checkoutData?.guestPhone || "Chưa có SĐT",
-        guestEmail: checkoutData?.guestEmail || checkoutData?.email || booking?.guestEmail || "Chưa có email",
-        checkIn: checkoutData?.checkInDate || "",
-        checkOut: checkoutData?.checkOutDate || "",
-        totalPrice: booking?.grandPrice || checkoutData?.grandPrice || booking?.totalPrice || checkoutData?.totalPrice || 0,
-        paymentMethod: checkoutData?.paymentMethod || "WALLET",
-        rooms: checkoutData?.rooms?.length || 1,
-        nights: checkoutData?.totalNights || 1
-    }), [booking, checkoutData]);
-
-    useEffect(() => {
-        const fetchLatestBalance = async () => {
-            const user = JSON.parse(localStorage.getItem("user") || "{}");
-            if (user?.agencyId) {
-                try {
-                    // Gọi API finance để lấy số dư ĐÃ TRỪ sau khi đặt phòng thành công
-                    const res = await api.get(`/agencies/${user.agencyId}/finance`);
-                    if (res.data?.result) {
-                        // Tùy vào phương thức thanh toán mà lấy Wallet hoặc Credit
-                        const balance = display.paymentMethod === "CREDIT"
-                            ? res.data.result.currentCredit
-                            : res.data.result.walletBalance;
-                        setCurrentBalance(balance);
-                    }
-                } catch (err) {
-                    console.error("Không thể cập nhật số dư mới:", err);
-                }
-            }
-        };
-        fetchLatestBalance();
-    }, [display.paymentMethod]);
+        code: state.bookingCode || "N/A",
+        hotelName: state.hotelName || "Khách sạn chưa xác định",
+        hotelImage: state.hotelImage,
+        guestName: state.guestName || "Khách hàng lẻ",
+        guestPhone: state.guestPhone || "Chưa có SĐT",
+        guestEmail: state.guestEmail || "Chưa có email",
+        checkIn: state.checkInDate || "",
+        checkOut: state.checkOutDate || "",
+        totalPrice: state.totalPrice || 0,
+        paymentMethod: state.paymentMethod || "WALLET",
+        rooms: state.totalRooms || 1,
+        nights: state.totalNights || 1
+    }), [state]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        if (!booking && !checkoutData) {
-            console.error("Không tìm thấy dữ liệu đơn hàng.");
-        }
-    }, [booking, checkoutData]);
+    }, []);
 
     // Helper định dạng
-    const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v || 0);
+    const formatCurrency = (v) => new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND"
+    }).format(v || 0);
 
     const safeFormatDate = (dateStr) => {
         if (!dateStr) return "---";
         try {
-            if (dateStr.includes("/")) return dateStr;
+            // Nếu dateStr đã là định dạng dd/MM/yyyy thì trả về luôn
+            if (dateStr.includes("/") && dateStr.length <= 10) return dateStr;
             return format(parseISO(dateStr), "dd/MM/yyyy");
         } catch (e) { return dateStr; }
     };
@@ -76,48 +58,18 @@ const BookingSuccessPage = () => {
         alert("Đã sao chép mã đặt phòng!");
     };
 
-    // Logic tải Voucher
-    const handleDownloadVoucher = async () => {
-        if (display.code === "N/A") {
-            setDownloadError("Không tìm thấy mã đặt phòng hợp lệ.");
-            return;
-        }
-
-        try {
-            setIsDownloading(true);
-            setDownloadError(null);
-
-            const response = await bookingService.downloadVoucher(display.code);
-
-            const blob = new Blob([response], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-
-            // Format tên file chuẩn Agency: Voucher_[Mã]_[TênKhách].pdf
-            const sanitizedName = display.guestName.trim().replace(/\s+/g, '_');
-            link.setAttribute("download", `Voucher_${display.code}_${sanitizedName}.pdf`);
-
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
-            // Hủy URL sau 100ms để đảm bảo download đã kích hoạt thành công
-            setTimeout(() => window.URL.revokeObjectURL(url), 100);
-        } catch (error) {
-            console.error("Download Error:", error);
-            const status = error.response?.status;
-            setDownloadError(
-                status === 403
-                    ? "Voucher chỉ khả dụng cho các đơn hàng đã XÁC NHẬN (Confirmed)."
-                    : "Hệ thống không thể tạo file lúc này. Vui lòng thử lại sau."
-            );
-        } finally {
+    const handleDownloadVoucher = () => {
+        setIsDownloading(true);
+        setDownloadError(null);
+        // Giả lập logic tải file
+        setTimeout(() => {
             setIsDownloading(false);
-        }
+            alert("Đã tải Voucher PDF cho khách " + display.guestName);
+        }, 1500);
     };
 
-    if (!booking && !checkoutData) {
+    // Giao diện khi không có dữ liệu (F5 trang)
+    if (!location.state) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="text-center p-8 bg-white rounded-2xl shadow-sm border max-w-sm">
@@ -126,7 +78,7 @@ const BookingSuccessPage = () => {
                     </div>
                     <h2 className="text-lg font-bold text-slate-800">Không tìm thấy đơn hàng</h2>
                     <p className="text-slate-500 text-sm mt-2">Vui lòng quay lại trang chủ để kiểm tra danh sách đơn hàng.</p>
-                    <button onClick={() => navigate("/homepage")} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">VỀ TRANG CHỦ</button>
+                    <button onClick={() => navigate("/")} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">VỀ TRANG CHỦ</button>
                 </div>
             </div>
         );
@@ -136,18 +88,20 @@ const BookingSuccessPage = () => {
         <div className="min-h-screen bg-[#f8fafc] pb-20 font-sans antialiased">
             <div className="max-w-4xl mx-auto pt-12 px-4 text-center">
 
-                {/* ICON THÀNH CÔNG */}
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full mb-6 shadow-sm">
-                    <Check size={40} strokeWidth={4}/>
+                {/* ICON THÀNH CÔNG VỚI HIỆU ỨNG BLUR */}
+                <div className="relative inline-flex mb-6">
+                    <div className="absolute inset-0 bg-emerald-200 blur-2xl opacity-40 rounded-full animate-pulse"></div>
+                    <div className="relative inline-flex items-center justify-center w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full shadow-sm">
+                        <Check size={40} strokeWidth={4}/>
+                    </div>
                 </div>
 
-                <h1 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Thanh toán thành công! Đơn hàng đã được xác nhận. </h1>
-                {/*<p className="text-slate-500 font-medium mb-8">*/}
-                {/*    Mã đặt phòng đã được gửi đến <span className="text-slate-800 font-bold">{display.guestEmail}</span>*/}
-                {/*</p>*/}
+                <h1 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">
+                    Thanh toán thành công! Đơn hàng đã được xác nhận.
+                </h1>
 
                 {/* BOOKING CODE CARD */}
-                <div className="bg-white border border-slate-200 rounded-2xl py-5 px-10 inline-flex items-center gap-12 shadow-sm mb-10">
+                <div className="bg-white border border-slate-200 rounded-2xl py-5 px-10 inline-flex items-center gap-12 shadow-sm mb-10 group transition-all hover:border-blue-200">
                     <span className="text-slate-400 font-black text-[11px] uppercase tracking-wider">Mã đặt phòng</span>
                     <div className="flex items-center gap-4">
                         <span className="text-2xl font-black text-blue-700 tracking-tighter uppercase">#{display.code}</span>
@@ -172,7 +126,7 @@ const BookingSuccessPage = () => {
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Khách chính</p>
-                                <p className="font-bold text-slate-700 text-base">{display.guestName}</p>
+                                <p className="font-bold text-slate-700 text-base uppercase">{display.guestName}</p>
                                 <p className="text-xs text-slate-400 font-medium">{display.guestPhone}</p>
                             </div>
                         </div>
@@ -194,40 +148,38 @@ const BookingSuccessPage = () => {
                     </div>
                 </div>
 
-                {/* CHI TIẾT THANH TOÁN */}
+                {/* CHI TIẾT THANH TOÁN (CARD MÀU XANH) */}
                 <div className="bg-[#0ea5e9] rounded-3xl p-8 text-white text-left shadow-xl shadow-blue-100 mb-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12">
                         <Wallet size={120}/>
                     </div>
                     <h3 className="font-black text-xs uppercase tracking-[0.2em] mb-6 opacity-80">Chi tiết giao dịch</h3>
                     <div className="space-y-4 relative z-10">
                         <div className="flex justify-between items-center border-b border-white/20 pb-4">
-            <span className="text-sm font-bold opacity-90 flex items-center gap-2">
-                {display.paymentMethod === "CREDIT" ? <CreditCard size={18}/> : <Wallet size={18}/>}
-                Nguồn tiền: {display.paymentMethod === "CREDIT" ? "Hạn mức Tín dụng" : "Ví trả trước"}
-            </span>
-                            {/* Hiển thị số tiền đã trừ */}
+                            <span className="text-sm font-bold opacity-90 flex items-center gap-2">
+                                {display.paymentMethod === "CREDIT" ? <CreditCard size={18}/> : <Wallet size={18}/>}
+                                Nguồn tiền: {display.paymentMethod === "CREDIT" ? "Hạn mức Tín dụng" : "Ví trả trước"}
+                            </span>
                             <span className="font-black text-2xl">-{formatCurrency(display.totalPrice)}</span>
                         </div>
 
                         <div className="flex justify-between items-center pt-2">
-            <span className="text-sm font-medium opacity-80 italic underline underline-offset-4">
-                Hệ thống đã cập nhật số dư của bạn.
-            </span>
+                            <span className="text-sm font-medium opacity-80 italic underline underline-offset-4">
+                                Hệ thống đã cập nhật số dư của bạn.
+                            </span>
                             <div className="text-right">
                                 <p className="text-[10px] font-black uppercase opacity-60">
                                     Số dư {display.paymentMethod === "CREDIT" ? "tín dụng" : "ví"} khả dụng
                                 </p>
                                 <p className="font-black text-lg tracking-tighter">
-                                    {/* Hiển thị số dư thực tế từ API, nếu đang load thì hiện "..." */}
-                                    {currentBalance !== null ? formatCurrency(currentBalance) : "---"}
+                                    {formatCurrency(currentBalance)}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* THÔNG BÁO LỖI (NẾU CÓ) */}
+                {/* THÔNG BÁO LỖI */}
                 {downloadError && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600 max-w-lg mx-auto text-sm animate-in fade-in duration-300">
                         <AlertCircle size={18}/>
@@ -249,7 +201,7 @@ const BookingSuccessPage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate("/agency/agency-dashboard")}
+                        onClick={() => navigate("/demo-agency/search-hotel")}
                         className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                     >
                         <Home className="mb-2 text-slate-400" size={24}/>
@@ -284,4 +236,4 @@ const BookingSuccessPage = () => {
     );
 };
 
-export default BookingSuccessPage;
+export default BookingSuccessDemo;

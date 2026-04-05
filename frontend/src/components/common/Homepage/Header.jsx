@@ -7,6 +7,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import api from "../../../services/axios.config";
 import { kycService } from "@/services/kyc.service.js";
+import { MOCK_AGENCY_DATA } from '@/constant/agency_mockData.js';
 import NotificationBell from "@/components/common/Notification/NotificationBell";
 
 const Header = () => {
@@ -166,6 +167,10 @@ const Header = () => {
         return Number(value).toLocaleString("vi-VN") + " ₫";
     };
 
+    const isDemoActive = useMemo(() => {
+        return location.pathname.startsWith("/demo") || location.pathname.startsWith("/demo-agency");
+    }, [location.pathname]);
+
     // Cập nhật Tiêu đề trang động
     useEffect(() => {
         const titles = {
@@ -173,7 +178,8 @@ const Header = () => {
             "/": "Trang chủ | HMS-B2B",
             "/contact": "Liên hệ | HMS-B2B",
             "/about-us": "Về chúng tôi | HMS-B2B",
-            "/profile": "Hồ sơ cá nhân | HMS-B2B"
+            "/profile": "Hồ sơ cá nhân | HMS-B2B",
+            "/demo": "Trải nghiệm | HMS-B2B"
         };
         document.title = titles[location.pathname] || "HMS-B2B Project";
     }, [location.pathname]);
@@ -190,6 +196,7 @@ const Header = () => {
         { name: "Về chúng tôi", href: "/about-us" },
         { name: "Hướng dẫn", href: "/user-guide" },
         { name: "Liên hệ", href: "/contact" },
+        { name: "Trải nghiệm hệ thống", href: "/demo", isDemo: true },
     ];
 
     useEffect(() => {
@@ -238,18 +245,24 @@ const Header = () => {
                     {/* DESKTOP NAV - Dành cho khách chưa đăng nhập */}
                     {!user && (
                         <nav className="hidden lg:flex items-center space-x-1">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    to={link.href}
-                                    className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${location.pathname === link.href
-                                        ? "text-blue-600 bg-blue-50"
-                                        : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                            {navLinks.map((link) => {
+                                // Nếu là link demo thì check biến isDemoActive,
+                                // ngược lại check pathname khớp hoàn toàn
+                                const isActive = link.isDemo ? isDemoActive : location.pathname === link.href;
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        to={link.href}
+                                        className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${
+                                            isActive
+                                                ? "text-blue-600 bg-blue-50"
+                                                : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
                                         }`}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                );
+                            })}
                         </nav>
                     )}
 
@@ -257,10 +270,12 @@ const Header = () => {
                     <div className="hidden lg:flex items-center gap-3">
                         {!user ? (
                             <div className="flex items-center gap-3">
-                                <button onClick={() => navigate("/login")} className="px-6 py-2.5 text-[15px] font-bold text-slate-700 hover:text-blue-600 transition-colors">
+                                <button onClick={() => navigate("/login")}
+                                        className="px-6 py-2.5 text-[15px] font-bold text-slate-700 hover:text-blue-600 transition-colors">
                                     Đăng nhập
                                 </button>
-                                <button onClick={() => navigate("/register")} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                                <button onClick={() => navigate("/register")}
+                                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
                                     Đăng ký đối tác
                                 </button>
                             </div>
@@ -397,16 +412,21 @@ const Header = () => {
             {isMenuOpen && (
                 <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
                     <nav className="flex flex-col space-y-2">
-                        {!user && navLinks.map((link) => (
-                            <Link
-                                key={link.name}
-                                to={link.href}
-                                onClick={() => setIsMenuOpen(false)}
-                                className="px-4 py-3 text-lg font-bold rounded-xl hover:bg-slate-50 text-slate-700"
-                            >
-                                {link.name}
-                            </Link>
-                        ))}
+                        {!user && navLinks.map((link) => {
+                            const isActive = link.isDemo ? isDemoActive : location.pathname === link.href;
+                            return (
+                                <Link
+                                    key={link.name}
+                                    to={link.href}
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className={`px-4 py-3 text-lg font-bold rounded-xl ${
+                                        isActive ? "text-blue-600 bg-blue-50" : "text-slate-700 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    {link.name}
+                                </Link>
+                            );
+                        })}
 
                         {/* 2. Menu dành riêng cho Admin */}
                         {user && isAdmin && (
@@ -447,6 +467,61 @@ const Header = () => {
                                 >
                                     Đăng ký đối tác
                                 </button>
+                            </div>
+                        )}
+                        {/* MOBILE MENU */}
+                        {isMenuOpen && (
+                            <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
+                                <nav className="flex flex-col space-y-2">
+                                    {(!user || isDemoActive) && navLinks.map((link) => {
+                                        const isActive = link.isDemo ? isDemoActive : location.pathname === link.href;
+                                        if (user && !link.isDemo) return null;
+
+                                        return (
+                                            <Link
+                                                key={link.name}
+                                                to={link.href}
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={`px-4 py-3 text-lg font-bold rounded-xl flex items-center justify-between ${
+                                                    isActive ? "text-blue-600 bg-blue-50" : "text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                {link.name}
+                                                {link.isDemo && isActive && <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                                            </Link>
+                                        );
+                                    })}
+
+                                    {/* 2. Menu dành riêng cho Admin */}
+                                    {user && isAdmin && !isDemoActive && (
+                                        <>
+                                            <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-blue-600 bg-blue-50">Dashboard Admin</Link>
+                                            <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ cá nhân</Link>
+                                        </>
+                                    )}
+
+                                    {/* 3. Menu cho User thực tế / Demo User */}
+                                    {user && !isAdmin && (
+                                        <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ của tôi</Link>
+                                    )}
+                                </nav>
+
+                                {/* 4. Khu vực Action Buttons */}
+                                <div className="pt-4 border-t border-slate-100">
+                                    {user ? (
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100"
+                                        >
+                                            <LogOut size={22} /> {isDemoActive ? "Thoát trải nghiệm" : "Đăng xuất"}
+                                        </button>
+                                    ) : (
+                                        <div className="flex flex-col gap-3">
+                                            <button onClick={() => { navigate("/login"); setIsMenuOpen(false); }} className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold">Đăng nhập</button>
+                                            <button onClick={() => { navigate("/register"); setIsMenuOpen(false); }} className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold">Đăng ký đối tác</button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
