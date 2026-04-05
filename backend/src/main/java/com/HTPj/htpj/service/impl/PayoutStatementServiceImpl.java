@@ -340,7 +340,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             notificationService.sendNotification(admin.getId(), "FINANCIAL",
                     "Phát sinh khiếu nại thanh toán",
                     "Bảng sao kê thanh toán của khách sạn " + hotel.getHotelName()
-                            + " đã bị khiếu nại. Lý do: " + request.getReasonCode(),
+                            + " đã bị khiếu nại.",
                     "PAYOUT", String.valueOf(stmt.getStatementId()), "/admin/payout-list");
         }
         return toResponse(stmt, hotel.getHotelName(), false);

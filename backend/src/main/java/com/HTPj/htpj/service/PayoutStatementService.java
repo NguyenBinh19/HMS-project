@@ -37,7 +37,6 @@ public interface PayoutStatementService {
 
     // UC-088: Admin exports batch payment file — updates status to PROCESSING
 //    List<PayoutStatementResponse> exportBatchPayment(List<Long> statementIds);
-    List<PayoutStatementResponse> exportBatchPayment(List<Long> statementIds);
 
     void resolveDispute(ResolveDisputeRequest request, MultipartFile[] files);
 
