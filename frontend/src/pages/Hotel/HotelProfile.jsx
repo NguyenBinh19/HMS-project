@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Thêm useNavigate
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Save, Hotel, MapPin, Upload, X, Loader2,
     CheckCircle2, Info, Plus, Check, Edit3, ShieldCheck
 } from 'lucide-react';
+import { Landmark, CreditCard, UserCheck } from 'lucide-react';
 import { partnerService } from "@/services/partner.service.js";
-import { toast } from "react-hot-toast";
+import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
 const HotelProfileManager = () => {
-    const navigate = useNavigate(); //
+    const navigate = useNavigate();
+    const toast = useRef();
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [originalData, setOriginalData] = useState(null);
     const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+    const [bankErrors, setBankErrors] = useState({});
 
     const [formData, setFormData] = useState({
         hotelName: "", address: "", city: "", country: "",
@@ -21,6 +24,15 @@ const HotelProfileManager = () => {
         amenitiesList: [],
         coverImageId: null
     });
+
+    const [bankLoading, setBankLoading] = useState(false);
+    const [bankData, setBankData] = useState({
+        bankName: "",
+        bankAccountNumber: "",
+        bankAccountHolder: ""
+    });
+
+    const hotelId = originalData?.id;
 
     const [existingImages, setExistingImages] = useState([]);
     const [deleteImageIds, setDeleteImageIds] = useState([]);
@@ -73,6 +85,42 @@ const HotelProfileManager = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const validateBankForm = () => {
+        let newErrors = {};
+        // 1. Validate Tên ngân hàng
+        const bankNameTrim = bankData.bankName.trim();
+        if (!bankNameTrim) {
+            newErrors.bankName = "Tên ngân hàng không được để trống";
+        }
+        else if (!/^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểếệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ\s]+$/.test(bankNameTrim)) {
+            newErrors.bankName = "Tên ngân hàng không được chứa ký tự đặc biệt";
+        }
+        else if (/^\d+$/.test(bankNameTrim)) {
+            newErrors.bankName = "Tên ngân hàng không được chỉ chứa mỗi số";
+        }
+        else if (bankNameTrim.length < 2) {
+            newErrors.bankName = "Tên ngân hàng quá ngắn";
+        }
+        // 2. Validate Số tài khoản (Thường từ 8-15 số)
+        const accountNumberClean = bankData.bankAccountNumber.replace(/\s/g, "");
+        if (!accountNumberClean) {
+            newErrors.bankAccountNumber = "Số tài khoản không được để trống";
+        } else if (!/^\d+$/.test(accountNumberClean)) {
+            newErrors.bankAccountNumber = "Số tài khoản chỉ được chứa chữ số";
+        } else if (accountNumberClean.length < 8 || accountNumberClean.length > 16) {
+            newErrors.bankAccountNumber = "Số tài khoản thường từ 8 đến 16 ký tự số";
+        }
+        // 3. Validate Chủ tài khoản (Phải là chữ In hoa, không số, không ký tự đặc biệt)
+        const holderName = bankData.bankAccountHolder.trim();
+        if (!holderName) {
+            newErrors.bankAccountHolder = "Tên chủ tài khoản không được để trống";
+        } else if (!/^[A-Z\s]+$/.test(holderName)) {
+            newErrors.bankAccountHolder = "Tên chủ tài khoản phải là CHỮ IN HOA KHÔNG DẤU";
+        }
+        setBankErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const fetchDetail = async () => {
         setLoading(true);
         try {
@@ -91,6 +139,21 @@ const HotelProfileManager = () => {
                 amenitiesList: res.amenitiesList || [],
                 coverImageId: res.coverImageId || null
             });
+
+            if (res.hotelId) {
+                try {
+                    const bankRes = await partnerService.getHotelBankInfo(res.hotelId);
+                    if (bankRes.result) {
+                        setBankData({
+                            bankName: bankRes.result.bankName || "",
+                            bankAccountNumber: bankRes.result.bankAccountNumber || "",
+                            bankAccountHolder: bankRes.result.bankAccountHolder || ""
+                        });
+                    }
+                } catch (bankErr) {
+                    console.log("Hotel chưa thiết lập thông tin ngân hàng");
+                }
+            }
 
             const mappedImages = res.images?.map(img => ({
                 id: img.imageId,
@@ -127,6 +190,22 @@ const HotelProfileManager = () => {
         } catch (error) {
             toast.error("Lỗi cập nhật");
         } finally { setSaving(false); }
+    };
+
+    const handleUpdateBank = async () => {
+        if (!validateBankForm()) {
+            toast.current.addMessage({ mode: 'warning', message: "Thông tin ngân hàng không hợp lệ!" });
+            return;
+        }
+        setBankLoading(true);
+        try {
+            const response = await partnerService.updateHotelBankInfo(originalData.hotelId, bankData);
+            if (response.code === 1000) {
+                toast.current.addMessage({ mode: 'success', message: "Cập nhật ngân hàng thành công!" });
+            }
+        } catch (error) {
+            toast.current.addMessage({ mode: 'error', message: "Lỗi cập nhật ngân hàng" });
+        } finally { setBankLoading(false); }
     };
 
     // Helper functions (toggleAmenity, addCustomAmenity, handleDeleteExisting giữ nguyên logic của bạn)
@@ -189,7 +268,8 @@ const HotelProfileManager = () => {
                     {/* Cột trái: Form */}
                     <div className="lg:col-span-8 space-y-6">
                         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-                            <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-8 flex items-center gap-2"><Info size={16}/> Thông tin chung</h3>
+                            <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-8 flex items-center gap-2">
+                                <Info size={16}/> Thông tin chung</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <InputField
                                     label="Tên khách sạn"
@@ -216,29 +296,123 @@ const HotelProfileManager = () => {
                                     error={errors.city}
                                 />
                                 <div className="md:col-span-2">
-                                    <InputField label="Địa chỉ chi tiết" value={formData.address} onChange={v => setFormData({...formData, address: v})} error={errors.address}/>
+                                    <InputField label="Địa chỉ chi tiết" value={formData.address}
+                                                onChange={v => setFormData({...formData, address: v})}
+                                                error={errors.address}/>
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mô tả khách sạn</label>
-                                    <textarea className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-600 outline-none text-sm font-medium transition-all" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                                    <label
+                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mô
+                                        tả khách sạn</label>
+                                    <textarea
+                                        className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-600 outline-none text-sm font-medium transition-all"
+                                        value={formData.description}
+                                        onChange={e => setFormData({...formData, description: e.target.value})}/>
                                 </div>
                             </div>
                         </div>
 
                         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
-                            <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-6">Tiện ích</h3>
+                            <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-6">Tiện
+                                ích</h3>
                             <div className="flex gap-2 mb-6">
-                                <input type="text" placeholder="Thêm tiện ích..." className="flex-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-blue-600" value={customAmenity} onChange={(e) => setCustomAmenity(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()} />
-                                <button onClick={addCustomAmenity} className="bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700 transition-all"><Plus size={20}/></button>
+                                <input type="text" placeholder="Thêm tiện ích..."
+                                       className="flex-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-blue-600"
+                                       value={customAmenity} onChange={(e) => setCustomAmenity(e.target.value)}
+                                       onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}/>
+                                <button onClick={addCustomAmenity}
+                                        className="bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700 transition-all">
+                                    <Plus size={20}/></button>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {formData.amenitiesList.map(item => (
-                                    <button key={item} onClick={() => toggleAmenity(item)} className="px-4 py-2 bg-blue-50 text-blue-600 border-2 border-blue-100 rounded-xl text-[11px] font-black uppercase flex items-center gap-2">
+                                    <button key={item} onClick={() => toggleAmenity(item)}
+                                            className="px-4 py-2 bg-blue-50 text-blue-600 border-2 border-blue-100 rounded-xl text-[11px] font-black uppercase flex items-center gap-2">
                                         {item} <X size={14}/>
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-8">
+                                <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em]">
+                                    Thông tin tài khoản nhận tiền
+                                </h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label
+                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ngân
+                                        hàng</label>
+                                    <input
+                                        type="text"
+                                        className={`w-full px-5 py-3.5 bg-slate-50 border-2 rounded-2xl text-sm font-bold outline-none transition-all ${
+                                            bankErrors.bankName ? 'border-rose-500' : 'border-slate-100 focus:border-blue-600'
+                                        }`}
+                                        value={bankData.bankName}
+                                        onChange={e => setBankData({...bankData, bankName: e.target.value})}
+                                        placeholder="VD: VIETCOMBANK"
+                                    />
+                                    {bankErrors.bankName && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankName}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Số
+                                        tài khoản</label>
+                                    <input
+                                        type="text"
+                                        className={`w-full px-5 py-3.5 bg-slate-50 border-2 rounded-2xl text-sm font-bold outline-none transition-all ${
+                                            bankErrors.bankAccountNumber ? 'border-rose-500' : 'border-slate-100 focus:border-blue-600'
+                                        }`}
+                                        value={bankData.bankAccountNumber}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, "");
+                                            setBankData({...bankData, bankAccountNumber: val});
+                                        }}
+                                        placeholder="123XXXXXXXXX"
+                                    />
+                                    {bankErrors.bankAccountNumber && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankAccountNumber}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Chủ
+                                        tài khoản</label>
+                                    <input
+                                        type="text"
+                                        className={`w-full px-5 py-3.5 bg-slate-50 border-2 rounded-2xl text-sm font-bold outline-none transition-all ${
+                                            bankErrors.bankAccountHolder ? 'border-rose-500' : 'border-slate-100 focus:border-blue-600'
+                                        }`}
+                                        value={bankData.bankAccountHolder}
+                                        onChange={e => {
+                                            const val = e.target.value
+                                                .toUpperCase()
+                                                .normalize("NFD")
+                                                .replace(/[\u0300-\u036f]/g, "")
+                                                .replace(/[^A-Z\s]/g, "");
+                                            setBankData({...bankData, bankAccountHolder: val});
+                                        }}
+                                        placeholder="NGUYEN VAN A"
+                                    />
+                                    {bankErrors.bankAccountHolder && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankAccountHolder}</p>}
+                                </div>
+                            </div>
+
+                            <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+                                <button
+                                    onClick={handleUpdateBank}
+                                    disabled={bankLoading}
+                                    className="w-full md:w-auto bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                >
+                                    {bankLoading ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
+                                    Lưu tài khoản ngân hàng
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* Cột phải: Ảnh & KYC */}
@@ -246,27 +420,42 @@ const HotelProfileManager = () => {
                         {/* Hình ảnh */}
                         <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-800">Album ảnh ({existingImages.length})</h3>
-                                <label className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 hover:text-white transition-all">
-                                    <input type="file" multiple className="hidden" onChange={(e) => setNewImages([...newImages, ...Array.from(e.target.files)])} />
-                                    <Upload size={18} />
+                                <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-800">Album
+                                    ảnh ({existingImages.length})</h3>
+                                <label
+                                    className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 hover:text-white transition-all">
+                                    <input type="file" multiple className="hidden"
+                                           onChange={(e) => setNewImages([...newImages, ...Array.from(e.target.files)])}/>
+                                    <Upload size={18}/>
                                 </label>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {existingImages.map(img => (
-                                    <div key={img.id} className={`relative aspect-square rounded-2xl overflow-hidden border-2 group ${formData.coverImageId === img.id ? 'border-blue-600' : 'border-slate-100'}`}>
-                                        <img src={img.url} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                                            <button onClick={() => setFormData({...formData, coverImageId: img.id})} className="text-[9px] bg-blue-600 text-white px-2 py-1 rounded font-black uppercase">Ảnh bìa</button>
-                                            <button onClick={() => handleDeleteExisting(img.id)} className="bg-rose-500 text-white p-1.5 rounded-lg hover:scale-110 transition-transform"><X size={14}/></button>
+                                    <div key={img.id}
+                                         className={`relative aspect-square rounded-2xl overflow-hidden border-2 group ${formData.coverImageId === img.id ? 'border-blue-600' : 'border-slate-100'}`}>
+                                        <img src={img.url} className="w-full h-full object-cover"/>
+                                        <div
+                                            className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                            <button onClick={() => setFormData({...formData, coverImageId: img.id})}
+                                                    className="text-[9px] bg-blue-600 text-white px-2 py-1 rounded font-black uppercase">Ảnh
+                                                bìa
+                                            </button>
+                                            <button onClick={() => handleDeleteExisting(img.id)}
+                                                    className="bg-rose-500 text-white p-1.5 rounded-lg hover:scale-110 transition-transform">
+                                                <X size={14}/></button>
                                         </div>
-                                        {formData.coverImageId === img.id && <div className="absolute top-2 left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded">BÌA</div>}
+                                        {formData.coverImageId === img.id && <div
+                                            className="absolute top-2 left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded">BÌA</div>}
                                     </div>
                                 ))}
                                 {newImages.map((file, idx) => (
-                                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-blue-400">
-                                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-60" />
-                                        <button onClick={() => setNewImages(newImages.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-slate-900 text-white rounded-full p-0.5"><X size={10}/></button>
+                                    <div key={idx}
+                                         className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-blue-400">
+                                        <img src={URL.createObjectURL(file)}
+                                             className="w-full h-full object-cover opacity-60"/>
+                                        <button onClick={() => setNewImages(newImages.filter((_, i) => i !== idx))}
+                                                className="absolute top-1 right-1 bg-slate-900 text-white rounded-full p-0.5">
+                                            <X size={10}/></button>
                                     </div>
                                 ))}
                             </div>
@@ -296,6 +485,7 @@ const HotelProfileManager = () => {
                     </div>
                 </div>
             </div>
+            <ToastPortal ref={toast} autoClose={true} autoCloseTime={3000} />
         </div>
     );
 };

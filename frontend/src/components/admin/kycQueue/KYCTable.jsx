@@ -1,6 +1,44 @@
-import React from 'react';
-import { Hotel, User, Building, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Hotel, User, Building, Building2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { KYC_STATUS } from '@/services/kyc.service.js';
+import { userService } from '@/services/user.service';
+
+// Component hiển thị Username
+const UserName = ({ userId }) => {
+    const [name, setName] = useState("");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        const getName = async () => {
+            if (!userId || userId === "null") {
+                setLoading(false);
+                return;
+            }
+            try {
+                const res = await userService.getUserById(userId);
+                if (isMounted) setName(res.result?.username || res.username || "Admin");
+            } catch (err) {
+                if (isMounted) setName("N/A");
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+        getName();
+        return () => { isMounted = false; };
+    }, [userId]);
+
+    if (loading) return <div className="h-4 w-20 bg-slate-100 animate-pulse rounded"></div>;
+
+    return (
+        <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-bold">
+                {name.charAt(0).toUpperCase()}
+            </div>
+            <span className="font-medium text-slate-700">{name}</span>
+        </div>
+    );
+};
 
 const KYCTable = ({ data, onReview, loading, pagination }) => {
     if (loading) return <div className="bg-white p-10 text-center border">Đang tải dữ liệu...</div>;
@@ -92,8 +130,15 @@ const KYCTable = ({ data, onReview, loading, pagination }) => {
                                 <td className="px-6 py-4 text-[13px] text-slate-500 font-mono tracking-tight">
                                     {row.taxCode}
                                 </td>
-                                <td className="px-6 py-4 text-[13px] text-slate-500 italic">
-                                    {row.reviewedBy || "Chờ tiếp nhận"}
+                                <td className="px-6 py-4">
+                                    {row.reviewedBy ? (
+                                        <UserName userId={row.reviewedBy}/>
+                                    ) : (
+                                        <span
+                                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[11px] font-medium border border-amber-100 italic">
+                                                <Clock size={12} className="animate-pulse"/> Chờ tiếp nhận
+                                            </span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <button
@@ -117,7 +162,9 @@ const KYCTable = ({ data, onReview, loading, pagination }) => {
             {total > 0 && (
                 <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                     <div className="text-[13px] text-slate-500">
-                        Đang xem bản ghi <b>{current * size + 1}</b> - <b>{Math.min((current + 1) * size, total)}</b> trên tổng số <b>{total}</b>
+                        Đang xem bản
+                        ghi <b>{current * size + 1}</b> - <b>{Math.min((current + 1) * size, total)}</b> trên tổng
+                        số <b>{total}</b>
                     </div>
 
                     <div className="flex items-center gap-2">

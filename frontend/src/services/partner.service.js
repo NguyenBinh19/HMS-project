@@ -91,6 +91,31 @@ const getHotelProfileDetail = async () => {
     }
 };
 
+// Lấy thông tin ngân hàng của Hotel
+const getHotelBankInfo = async (hotelId) => {
+    try {
+        const response = await api.get(`/hotels/${hotelId}/bank-info`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Hotel Bank Info Error:", error);
+        throw error;
+    }
+};
+
+// Cập nhật thông tin ngân hàng của Hotel
+const updateHotelBankInfo = async (hotelId, bankInfoRequest) => {
+    try {
+        const response = await api.put(
+            `/hotels/${hotelId}/bank-info`,
+            bankInfoRequest
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Update Hotel Bank Info Error:", error);
+        throw error;
+    }
+};
+
 export const partnerService = {
     getAllAgencyPartner,
     getAllHotelPartner,
@@ -98,5 +123,7 @@ export const partnerService = {
     getAgencyPartnerDetail,
     banPartner,
     updateHotelProfile,
-    getHotelProfileDetail
+    getHotelProfileDetail,
+    getHotelBankInfo,
+    updateHotelBankInfo,
 };

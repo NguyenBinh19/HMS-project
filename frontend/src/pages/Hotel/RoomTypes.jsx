@@ -43,8 +43,6 @@ const ManageRoomTypes = () => {
                     isActive: isActive
                 };
             });
-
-            console.log("Dữ liệu sau khi map:", mappedData);
             setRoomTypes(mappedData);
         } catch (err) {
             console.error("Lỗi tải danh sách phòng:", err);

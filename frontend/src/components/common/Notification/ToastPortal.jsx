@@ -1,7 +1,6 @@
 import React, { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import ReactDOM from "react-dom";
-import Toast from "./Toast"; // ⚠️ Đảm bảo bạn đã có file Toast.jsx hiển thị UI từng dòng
-// Nếu chưa có file Toast.jsx, xem code mẫu ở cuối câu trả lời này
+import Toast from "./Toast";
 
 const ToastPortal = forwardRef(({ autoClose = false, autoCloseTime = 3000 }, ref) => {
   const [toasts, setToasts] = useState([]);
