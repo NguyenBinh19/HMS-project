@@ -204,7 +204,7 @@ const PayoutList = () => {
 
                             {/* Bulk Actions */}
                             <div className="flex gap-2">
-                                <button
+                                {/* <button
                                     onClick={handleExportBatch}
                                     disabled={selectedIds.length === 0}
                                     className={`flex items-center gap-1 px-4 py-2 rounded-xl font-bold text-xs transition-all
@@ -215,7 +215,7 @@ const PayoutList = () => {
                                 >
                                     <Download size={14} />
                                     Export ({selectedIds.length})
-                                </button>
+                                </button> */}
 
                                 <button
                                     onClick={() => setMarkPaidModal(true)}

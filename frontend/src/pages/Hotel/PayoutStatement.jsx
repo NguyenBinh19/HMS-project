@@ -267,10 +267,10 @@ const StatementDetailView = ({ statementId, onBack }) => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs"><Printer size={14} /></button>
+                    {/* <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs"><Printer size={14} /></button>
                     <button className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2">
                         <Download size={14} /> EXCEL
-                    </button>
+                    </button> */}
                 </div>
             </div>
 
