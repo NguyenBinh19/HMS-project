@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     MapPin, Calendar, Search,
     Building2, UserCheck, ShieldCheck, Bot, Wallet,
-    Users, Plus, Minus, ChevronDown
+    Users, Plus, Minus, ChevronDown, Play
 } from "lucide-react";
 import { useLocation } from 'react-router-dom';
 import { jwtDecode } from "jwt-decode";
 import homepage from "@/assets/images/homepage.jpg";
+import DemoRoleSelect from "@/pages/Demo/DemoRoleSelect.jsx";
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -25,6 +26,7 @@ const HomePage = () => {
     const [adults, setAdults] = useState(Number(searchParams.get("adults")) || 2);
     const [children, setChildren] = useState(Number(searchParams.get("children")) || 0);
     const [showGuestPicker, setShowGuestPicker] = useState(false);
+    const [showDemoModal, setShowDemoModal] = useState(false);
     const guestRef = useRef(null);
 
     const today = new Date().toISOString().split("T")[0];
@@ -151,6 +153,9 @@ const HomePage = () => {
                         <button onClick={() => handleRoleNav("/hotel/dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#F36F21] hover:bg-[#d85e17] text-white font-bold transition-all active:scale-95 shadow-lg">
                             <Building2 size={20} /> Tôi là Khách sạn
                         </button>
+                        <button onClick={() => setShowDemoModal(true)} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold transition-all active:scale-95 shadow-lg border border-white/40">
+                            <Play size={20} /> Trải nghiệm hệ thống
+                        </button>
                     </div>
 
                     {/* ================= TÍCH HỢP SEARCH FORM ================= */}
@@ -256,6 +261,8 @@ const HomePage = () => {
                     </div>
                 </div>
             </section>
+
+            <DemoRoleSelect isOpen={showDemoModal} onClose={() => setShowDemoModal(false)} />
         </div>
     );
 };

@@ -10,6 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.FeedbackService;
+import com.HTPj.htpj.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     UserRepository userRepository;
     PartnerVerificationRepository verificationRepository;
     EmailService emailService;
+    NotificationService notificationService;
 
     private static final int FEEDBACK_WINDOW_DAYS = 180;
     private static final int REPLY_WINDOW_DAYS = 30;
@@ -102,6 +105,18 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         // POST-3: Notify Hotel Owner via email
         notifyHotelOwner(hotel, booking, user, request.getOverall());
+
+        // Notify hotel via in-app notification
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotel.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "FEEDBACK",
+                    "Đánh giá mới từ đặt phòng #" + booking.getBookingCode(),
+                    "Khách hàng đã gửi đánh giá " + request.getOverall() + " sao cho khách sạn của bạn.",
+                    "FEEDBACK", String.valueOf(review.getReviewId()),
+                    "/hotel/reviews"
+            );
+        }
 
         log.info("Feedback submitted for booking {} by user {}", booking.getBookingCode(), userId);
 
@@ -198,6 +213,17 @@ public class FeedbackServiceImpl implements FeedbackService {
         review.setReplyBy(getCurrentUsername());
         review.setStatus("RESPONDED");
         reviewRepository.save(review);
+
+        // Notify agency about reply
+        if (review.getUserId() != null) {
+            notificationService.sendNotification(
+                    review.getUserId(), "FEEDBACK",
+                    "Phản hồi từ khách sạn",
+                    "Khách sạn " + review.getHotel().getHotelName() + " đã phản hồi đánh giá của bạn.",
+                    "FEEDBACK", String.valueOf(reviewId),
+                    "agency/feedback-history"
+            );
+        }
 
         log.info("Hotel {} replied to review {}", hotelId, reviewId);
 

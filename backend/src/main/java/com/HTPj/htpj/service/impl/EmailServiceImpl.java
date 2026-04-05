@@ -231,24 +231,24 @@ public class EmailServiceImpl implements EmailService {
                     + "<p style='color: #475569; line-height: 1.6;'>Bảng sao kê thanh toán cho kỳ <strong>" + period + "</strong> đã được tạo.</p>"
                     + "<div style='background: #f8fafc; padding: 20px; border-radius: 12px; margin: 20px 0;'>"
                     + "<table style='width: 100%; border-collapse: collapse;'>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Ma sao ke:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Mã sao kê:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + statementCode + "</td></tr>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Ky sao ke:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Kỳ sao kê:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + period + "</td></tr>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Tong so booking:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Tổng số booking:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + totalBookings + "</td></tr>"
-                    + "<tr style='border-top: 1px solid #e2e8f0;'><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Doanh thu gop:</td>"
+                    + "<tr style='border-top: 1px solid #e2e8f0;'><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Doanh thu gộp:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + formatCurrency(grossRevenue) + "</td></tr>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Hoa hong san:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Hoa hồng sàn:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #ef4444;'>-" + formatCurrency(totalCommission) + "</td></tr>"
-                    + "<tr style='border-top: 2px solid #3b82f6;'><td style='padding: 12px 0; color: #1e293b; font-size: 16px; font-weight: bold;'>Thanh toan thuc nhan:</td>"
+                    + "<tr style='border-top: 2px solid #3b82f6;'><td style='padding: 12px 0; color: #1e293b; font-size: 16px; font-weight: bold;'>Thanh toán thực nhận:</td>"
                     + "<td style='padding: 12px 0; text-align: right; font-weight: bold; color: #3b82f6; font-size: 18px;'>" + formatCurrency(netPayout) + "</td></tr>"
                     + "</table></div>"
-                    + "<p style='color: #475569; line-height: 1.6;'>Vui long dang nhap vao he thong de xem chi tiet va xac nhan bang sao ke.</p>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Vui lòng đăng nhập vào hệ thống để xem chi tiết và xác nhận bảng sao kê.</p>"
                     + "<div style='text-align: center; margin: 24px 0;'>"
-                    + "<a href='https://www.jushotel.site/hotel/payout-state' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 14px;'>Xem chi tiet sao ke</a>"
+                    + "<a href='https://www.jushotel.site/hotel/payout-state' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 14px;'>Xem chi tiết sao kê</a>"
                     + "</div>"
-                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Day la email tu dong tu he thong HMS. Vui long khong tra loi email nay.</p>"
+                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Đây là email tự động từ hệ thống HMS.Vui lòng không trả lời lại email này.</p>"
                     + "</div></div>";
 
             helper.setText(htmlContent, true);
@@ -266,24 +266,24 @@ public class EmailServiceImpl implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
-            helper.setSubject("HMS - Thanh toan da duoc chuyen " + statementCode);
+            helper.setSubject("HMS - Thanh toán đã được chuyển " + statementCode);
 
             String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
                     + "<div style='background: linear-gradient(135deg, #10b981, #059669); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
                     + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - BookingSphere</h1>"
-                    + "<p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Payment Confirmation</p>"
+                    + "<p style='color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;'>Xác nhận thanh toán</p>"
                     + "</div>"
                     + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
                     + "<h2 style='color: #1e293b; margin-top: 0;'>Xin chào " + hotelName + ",</h2>"
-                    + "<p style='color: #475569; line-height: 1.6;'>Chung toi xin thong bao rang khoan thanh toan cho bang sao ke <strong>" + statementCode + "</strong> da duoc chuyen thanh cong.</p>"
+                    + "<p style='color: #475569; line-height: 1.6;'>Chúng tôi xin thông báo rằng khoản thanh toán cho bảng sao kê <strong>" + statementCode + "</strong> đã được chuyển thành công.</p>"
                     + "<div style='background: #f0fdf4; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #bbf7d0;'>"
                     + "<table style='width: 100%; border-collapse: collapse;'>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b;'>So tien:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Số tiền:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #10b981; font-size: 18px;'>" + formatCurrency(netPayout) + "</td></tr>"
-                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Ma giao dich ngan hang:</td>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Mã giao dịch ngân hàng:</td>"
                     + "<td style='padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;'>" + bankReference + "</td></tr>"
                     + "</table></div>"
-                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Day la email tu dong tu he thong HMS.</p>"
+                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Đây là email tự động từ hệ thống HMS.</p>"
                     + "</div></div>";
 
             helper.setText(htmlContent, true);
@@ -299,4 +299,52 @@ public class EmailServiceImpl implements EmailService {
         return String.format("%,.0f VND", amount);
     }
 
+    @Override
+    public void sendSupportFormEmail(String toSupportEmail, String guestName, String guestEmail,
+                                     String guestPhone, String subject, String messageContent) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(toSupportEmail);
+            helper.setReplyTo(guestEmail);
+            helper.setSubject("[Support Form] " + subject);
+
+            String phone = (guestPhone != null && !guestPhone.isBlank()) ? guestPhone : "Khong cung cap";
+
+            String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
+                    + "<div style='background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
+                    + "<h1 style='color: white; margin: 0; font-size: 24px;'>HMS - Yêu cầu hỗ trợ mới</h1>"
+                    + "</div>"
+                    + "<div style='background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;'>"
+                    + "<h2 style='color: #1e293b; margin-top: 0;'>Thông tin người gửi</h2>"
+                    + "<table style='width: 100%; border-collapse: collapse; margin-bottom: 20px;'>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b; width: 120px;'>Họ và tên:</td>"
+                    + "<td style='padding: 8px 0; font-weight: bold; color: #1e293b;'>" + escapeHtml(guestName) + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Email:</td>"
+                    + "<td style='padding: 8px 0; font-weight: bold; color: #1e293b;'>" + escapeHtml(guestEmail) + "</td></tr>"
+                    + "<tr><td style='padding: 8px 0; color: #64748b;'>Điện thoại:</td>"
+                    + "<td style='padding: 8px 0; font-weight: bold; color: #1e293b;'>" + escapeHtml(phone) + "</td></tr>"
+                    + "</table>"
+                    + "<div style='border-top: 1px solid #e2e8f0; padding-top: 20px;'>"
+                    + "<h3 style='color: #1e293b;'>Nội dung</h3>"
+                    + "<div style='background: #f8fafc; padding: 16px; border-radius: 10px; color: #475569; line-height: 1.6; white-space: pre-wrap;'>"
+                    + escapeHtml(messageContent)
+                    + "</div></div>"
+                    + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Email này được gửi từ form hỗ trợ trên website HMS.</p>"
+                    + "</div></div>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            log.info("Support form email sent to {} from guest {}", toSupportEmail, guestEmail);
+        } catch (Exception e) {
+            log.error("Failed to send support form email to {}", toSupportEmail, e);
+            throw new RuntimeException("Email sending failed");
+        }
+    }
+
+    private String escapeHtml(String input) {
+        if (input == null) return "";
+        return input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;").replace("'", "&#39;");
+    }
 }

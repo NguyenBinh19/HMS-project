@@ -7,6 +7,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import api from "../../../services/axios.config";
 import { kycService } from "@/services/kyc.service.js";
+import NotificationBell from "@/components/common/Notification/NotificationBell";
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -266,6 +267,7 @@ const Header = () => {
                             </div>
                         ) : isAdmin ? (
                             <div className="flex items-center gap-5">
+                                <NotificationBell />
                                 <div className="relative" ref={dropdownRef}>
                                     <div
                                         onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
@@ -320,6 +322,7 @@ const Header = () => {
                         ) : isAgencyManager ? (
                             <div
                                 className="flex items-center gap-6 bg-slate-50 px-4 rounded-2xl border border-slate-100">
+                                <NotificationBell />
                                 <div onClick={() => navigate("/agency/prepaid")}
                                      className="flex flex-col cursor-pointer p-1.5 min-w-[120px]">
                                     <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Số dư khả dụng</span>
@@ -361,6 +364,7 @@ const Header = () => {
                         ) : (
                             <div
                                 className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                                <NotificationBell />
                                 {renderKycStatus()}
                                 <button onClick={() => navigate("/profile")}
                                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>

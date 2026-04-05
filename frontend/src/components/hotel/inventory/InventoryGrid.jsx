@@ -16,10 +16,10 @@ const STATUS_DOT = {
 };
 
 const STATUS_LABELS = {
-    AVAILABLE: 'Available',
-    HURRY: 'Low',
-    SOLD_OUT: 'Sold Out',
-    STOP_SELL: 'Stop Sell',
+    AVAILABLE: 'Còn phòng',
+    HURRY: 'Sắp hết',
+    SOLD_OUT: 'Hết phòng',
+    STOP_SELL: 'Đóng bán',
 };
 
 const DAY_NAMES_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -62,11 +62,13 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
             {/* Header with navigation */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                    <h2 className="text-[15px] font-bold text-gray-900">Inventory Grid</h2>
+                    <h2 className="text-[15px] font-bold text-gray-900">
+                        Bảng tồn phòng
+                    </h2>
                     <button
                         onClick={onRefresh}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        title="Refresh"
+                        title="Tải lại"
                     >
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                     </button>
@@ -83,7 +85,7 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                         onClick={() => onNavigate('today')}
                         className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold transition-colors"
                     >
-                        Today
+                        Hôm nay
                     </button>
                     <button
                         onClick={() => onNavigate('next')}
@@ -112,7 +114,7 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                 </div>
             ) : gridData.length === 0 ? (
                 <div className="py-24 text-center text-sm text-gray-400">
-                    No room types found. Please set up room types first.
+                    Không có loại phòng. Vui lòng tạo loại phòng trước.
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -120,17 +122,16 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="sticky left-0 z-10 bg-gray-50 px-4 py-3 text-left font-bold text-gray-700 min-w-[180px] border-r border-gray-200">
-                                    Room Type
+                                    Loại phòng
                                 </th>
                                 <th className="sticky left-[180px] z-10 bg-gray-50 px-2 py-3 text-center font-bold text-gray-700 min-w-[60px] border-r border-gray-200">
-                                    Total
+                                    Tổng
                                 </th>
                                 {dateRange.map((date, i) => (
                                     <th
                                         key={i}
-                                        className={`px-1 py-2 text-center min-w-[54px] ${
-                                            isToday(date) ? 'bg-blue-50' : isWeekend(date) ? 'bg-amber-50/50' : ''
-                                        }`}
+                                        className={`px-1 py-2 text-center min-w-[54px] ${isToday(date) ? 'bg-blue-50' : isWeekend(date) ? 'bg-amber-50/50' : ''
+                                            }`}
                                     >
                                         <div className={`text-[10px] font-medium ${isWeekend(date) ? 'text-amber-600' : 'text-gray-400'}`}>
                                             {getDayName(date)}
@@ -150,19 +151,18 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                                         <td className="sticky left-0 z-10 bg-white px-4 py-2.5 border-r border-gray-200" rowSpan={3}>
                                             <div className="font-bold text-gray-900 text-[13px]">{roomType.roomTypeName}</div>
                                             <div className="text-[10px] text-gray-400 mt-0.5">
-                                                Physical: {roomType.totalPhysicalRooms} rooms
+                                                Tối đa: {roomType.totalPhysicalRooms} phòng
                                             </div>
                                         </td>
                                         <td className="sticky left-[180px] z-10 bg-white px-2 py-2 text-center border-r border-gray-200">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Allot</span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Phân bổ</span>
                                         </td>
                                         {roomType.dates.map((cell, i) => (
                                             <td
                                                 key={`allot-${i}`}
                                                 onClick={() => onCellClick(roomType.roomTypeId, cell)}
-                                                className={`px-1 py-1.5 text-center cursor-pointer transition-colors hover:bg-blue-50 ${
-                                                    isToday(cell.date) ? 'bg-blue-50/30' : ''
-                                                }`}
+                                                className={`px-1 py-1.5 text-center cursor-pointer transition-colors hover:bg-blue-50 ${isToday(cell.date) ? 'bg-blue-50/30' : ''
+                                                    }`}
                                             >
                                                 <span className="font-bold text-gray-900 text-[12px]">
                                                     {cell.allotment}
@@ -174,14 +174,13 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                                     {/* Sold Row */}
                                     <tr className="border-b border-gray-50">
                                         <td className="sticky left-[180px] z-10 bg-white px-2 py-1 text-center border-r border-gray-200">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Sold</span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Đã bán</span>
                                         </td>
                                         {roomType.dates.map((cell, i) => (
                                             <td
                                                 key={`sold-${i}`}
-                                                className={`px-1 py-1 text-center ${
-                                                    isToday(cell.date) ? 'bg-blue-50/30' : ''
-                                                }`}
+                                                className={`px-1 py-1 text-center ${isToday(cell.date) ? 'bg-blue-50/30' : ''
+                                                    }`}
                                             >
                                                 <span className="text-[11px] text-gray-500 font-medium">
                                                     {cell.soldCount}
@@ -193,14 +192,13 @@ const InventoryGrid = ({ gridData, loading, onCellClick, onRefresh, startDate, e
                                     {/* Available/Status Row */}
                                     <tr className="border-b border-gray-200">
                                         <td className="sticky left-[180px] z-10 bg-white px-2 py-1.5 text-center border-r border-gray-200">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Avail</span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase">Còn lại</span>
                                         </td>
                                         {roomType.dates.map((cell, i) => (
                                             <td
                                                 key={`avail-${i}`}
-                                                className={`px-1 py-1 text-center ${
-                                                    isToday(cell.date) ? 'bg-blue-50/30' : ''
-                                                }`}
+                                                className={`px-1 py-1 text-center ${isToday(cell.date) ? 'bg-blue-50/30' : ''
+                                                    }`}
                                             >
                                                 <span className={`inline-flex items-center justify-center w-7 h-5 rounded text-[10px] font-bold border ${STATUS_COLORS[cell.status]}`}>
                                                     {cell.stopSell ? 'X' : cell.available}

@@ -8,6 +8,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RankMapper;
 import com.HTPj.htpj.mapper.RankPeriodMapper;
 import com.HTPj.htpj.repository.*;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.RankService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class RankServiceImpl implements RankService {
     AgencyBookingRevenueRepository revenueRepository;
     PartnerVerificationRepository partnerVerificationRepository;
     RankHistoryRepository rankHistoryRepository;
+    NotificationService notificationService;
 
     public enum RankPeriodType {
         RANK_PERIOD_1_START,
@@ -206,6 +208,13 @@ public class RankServiceImpl implements RankService {
 
         systemConfigRepository.save(config);
 
+        List<Users> admins = userRepository.findByIsAdminTrue();
+        for (Users admin : admins) {
+            notificationService.sendNotification(admin.getId(), "SYSTEM",
+                    "Cập nhật chu kỳ xếp hạng",
+                    "Chu kỳ xếp hạng " + periodType.name() + " đã được cập nhật thành " + request.getValue() + ".",
+                    "CONFIG", periodType.name(), "/admin/system-config");
+        }
         return "Update " + periodType.name() + " successfully";
     }
 
@@ -506,6 +515,14 @@ public class RankServiceImpl implements RankService {
 
         rankHistoryRepository.save(history);
 
+        List<Users> agencyUsers = userRepository.findByAgency_AgencyId(request.getAgencyId());
+        String action = "APPROVE".equalsIgnoreCase(request.getStatus()) ? "được cập nhật" : "được giữ nguyên";
+        for (Users u : agencyUsers) {
+            notificationService.sendNotification(u.getId(), "RANK",
+                    "Cập nhật hạng đại lý",
+                    "Hạng của đại lý bạn " + action + " thành " + targetRank.getRankCode() + ".",
+                    "RANK", String.valueOf(request.getAgencyId()), "agency/agency-dashboard");
+        }
         return "Change rank successfully";
     }
 }

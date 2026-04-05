@@ -42,7 +42,8 @@ public class SecurityConfig {
             "/users/register",
             "/email/welcome",
             "/storage/**",
-            "/sepay/**"
+            "/sepay/**",
+            "/support"
     };
 
     private final String[] PUBLIC_GET_ENPOINTS = {
@@ -68,6 +69,7 @@ public class SecurityConfig {
                         request
 //                                .requestMatchers("/booking/**").permitAll()
                                 .requestMatchers("/room-types/**").permitAll()
+                                .requestMatchers("/ws/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENPOINTS).permitAll()

@@ -43,16 +43,20 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
     const handleSubmit = async () => {
         setError('');
         if (!form.roomTypeId || !form.startDate || !form.endDate || form.allotment === '') {
-            setError('Please fill in all required fields.');
+            setError('Vui lòng nhập đầy đủ thông tin.');
             return;
         }
         if (new Date(form.endDate) < new Date(form.startDate)) {
-            setError('End date must be after start date.');
+            setError('Ngày kết thúc phải sau ngày bắt đầu.');
             return;
         }
         const allotment = parseInt(form.allotment, 10);
         if (isNaN(allotment) || allotment < 0) {
-            setError('Allotment must be a non-negative number.');
+            setError('Số phòng phải là số không âm.');
+            return;
+        }
+        if (selectedRoom && allotment > (selectedRoom.totalPhysicalRooms || selectedRoom.totalRooms)) {
+            setError('Số phòng vượt quá số phòng thực tế.');
             return;
         }
 
@@ -67,7 +71,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
             onClose();
             setForm({ roomTypeId: '', startDate: '', endDate: '', allotment: '', daysOfWeek: [] });
         } catch (err) {
-            const msg = err?.response?.data?.message || err.message || 'Failed to update allotment.';
+            const msg = err?.response?.data?.message || err.message || 'Không thể cập nhật số phòng.';
             setError(msg);
         }
     };
@@ -82,7 +86,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-0 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 className="text-[15px] font-bold text-gray-900">Bulk Update Allotment</h3>
+                    <h3 className="text-[15px] font-bold text-gray-900">Cập nhật số phòng hàng loạt</h3>
                     <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors">
                         <X size={18} className="text-gray-500" />
                     </button>
@@ -93,19 +97,21 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                     {/* Room Type */}
                     <div>
                         <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                            Room Type
+                            Loại phòng
                         </label>
                         <select
                             value={form.roomTypeId}
                             onChange={(e) => setForm(prev => ({ ...prev, roomTypeId: e.target.value }))}
                             className="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none font-medium"
                         >
-                            <option value="">-- Select Room Type --</option>
-                            {roomTypes.map(rt => (
-                                <option key={rt.roomTypeId} value={rt.roomTypeId}>
-                                    {rt.roomTypeName || rt.roomTitle} (Max: {rt.totalPhysicalRooms || rt.totalRooms})
-                                </option>
-                            ))}
+                            <option value="">-- Chọn loại phòng --</option>
+                            {roomTypes
+                                .filter(rt => rt.roomStatus === 'ACTIVE')
+                                .map(rt => (
+                                    <option key={rt.roomTypeId} value={rt.roomTypeId}>
+                                        {rt.roomTypeName || rt.roomTitle} (Tối đa: {rt.totalPhysicalRooms || rt.totalRooms})
+                                    </option>
+                                ))}
                         </select>
                     </div>
 
@@ -113,7 +119,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                                Start Date
+                                Ngày bắt đầu
                             </label>
                             <input
                                 type="date"
@@ -124,7 +130,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                                End Date
+                                Ngày kết thúc
                             </label>
                             <input
                                 type="date"
@@ -138,19 +144,18 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                     {/* Days of Week */}
                     <div>
                         <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                            Apply on Days
+                            Áp dụng theo thứ trong tuần
                         </label>
                         <div className="flex items-center gap-2 flex-wrap">
                             <button
                                 type="button"
                                 onClick={selectAllDays}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                                    allDaysSelected
-                                        ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                                }`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${allDaysSelected
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                    }`}
                             >
-                                All
+                                Tất cả
                             </button>
                             {DAYS.map(day => {
                                 const selected = form.daysOfWeek.includes(day.key);
@@ -159,11 +164,10 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                                         key={day.key}
                                         type="button"
                                         onClick={() => toggleDay(day.key)}
-                                        className={`w-9 h-9 rounded-lg text-xs font-bold border transition-colors ${
-                                            selected
-                                                ? 'bg-blue-600 text-white border-blue-600'
-                                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                                        }`}
+                                        className={`w-9 h-9 rounded-lg text-xs font-bold border transition-colors ${selected
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                            }`}
                                     >
                                         {day.label}
                                     </button>
@@ -175,7 +179,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                     {/* Allotment */}
                     <div>
                         <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-                            Allotment (rooms)
+                            Số phòng bán (rooms)
                         </label>
                         <input
                             type="number"
@@ -183,12 +187,12 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                             max={selectedRoom?.totalPhysicalRooms || selectedRoom?.totalRooms || 999}
                             value={form.allotment}
                             onChange={(e) => setForm(prev => ({ ...prev, allotment: e.target.value }))}
-                            placeholder="Number of rooms to open for sale"
+                            placeholder="Nhập số phòng mở bán"
                             className="w-full bg-gray-50 border border-gray-200 text-sm rounded-lg p-2.5 outline-none focus:ring-blue-500 focus:border-blue-500 font-medium"
                         />
                         {selectedRoom && (
                             <p className="mt-1 text-[11px] text-gray-400">
-                                Max physical rooms: {selectedRoom.totalPhysicalRooms || selectedRoom.totalRooms}
+                                Tổng số phòng thực tế: {selectedRoom.totalPhysicalRooms || selectedRoom.totalRooms}
                             </p>
                         )}
                     </div>
@@ -207,7 +211,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-100 transition-colors"
                     >
-                        Cancel
+                        Huỷ
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -219,7 +223,7 @@ const BulkUpdateModal = ({ isOpen, onClose, roomTypes, onSubmit, loading }) => {
                         ) : (
                             <Save size={14} />
                         )}
-                        Save
+                        Lưu
                     </button>
                 </div>
             </div>

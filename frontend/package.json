@@ -19,6 +19,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@react-google-maps/api": "^2.20.7",
     "@reduxjs/toolkit": "^2.9.2",
+    "@stomp/stompjs": "^7.3.0",
     "axios": "^1.13.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
@@ -48,6 +49,7 @@
     "react-router-dom": "^7.9.5",
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.0",
+    "sockjs-client": "^1.6.1",
     "sweetalert2": "^11.26.24",
     "use-debounce": "^10.0.6",
     "yup": "^1.7.1"

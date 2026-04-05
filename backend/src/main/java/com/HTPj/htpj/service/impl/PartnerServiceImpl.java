@@ -10,6 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.PartnerMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.EmailService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.PartnerService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -43,6 +44,7 @@ public class PartnerServiceImpl implements PartnerService {
     EmailService emailService;
     PasswordEncoder passwordEncoder;
     PartnerMapper partnerMapper;
+    NotificationService notificationService;
 
     @Override
     public void banPartner(String partnerType, Long partnerId,BanPartnerRequest request,String adminId) {
@@ -105,6 +107,19 @@ public class PartnerServiceImpl implements PartnerService {
                 .build();
 
         blacklistRepository.save(blacklist);
+
+        List<Users> partnerUsers;
+        if (partnerType.equalsIgnoreCase("AGENCY")) {
+            partnerUsers = userRepository.findByAgency_AgencyId(partnerId);
+        } else {
+            partnerUsers = userRepository.findByHotel_HotelId(partnerId.intValue());
+        }
+        for (Users u : partnerUsers) {
+            notificationService.sendNotification(u.getId(), "PARTNER",
+                    "Tài khoản đối tác đã bị tạm khóa",
+                    "Tài khoản đối tác của bạn đã bị tạm khóa. Lý do: " + request.getReason(),
+                    "PARTNER", String.valueOf(partnerId), null);
+        }
     }
 
     private String generateRandomPassword(int length) {
@@ -339,6 +354,10 @@ public class PartnerServiceImpl implements PartnerService {
 
         if ("ROLE_ADMIN".equals(scope)) {
             userRepository.save(user);
+            notificationService.sendNotification(request.getUserId(), "PARTNER",
+                    "Thông tin tài khoản đã được cập nhật",
+                    "Thông tin tài khoản của bạn đã được cập nhật.",
+                    "USER", request.getUserId(), null);
             return;
         }
 
@@ -354,5 +373,10 @@ public class PartnerServiceImpl implements PartnerService {
         }
 
         userRepository.save(user);
+
+        notificationService.sendNotification(request.getUserId(), "PARTNER",
+                "Thông tin tài khoản đã được cập nhật",
+                "Thông tin tài khoản của bạn đã được cập nhật.",
+                "USER", request.getUserId(), null);
     }
 }

@@ -16,4 +16,6 @@ public interface EmailService {
                                          BigDecimal netPayout, Integer totalBookings);
     void sendPaymentSentNotification(String to, String hotelName, String statementCode,
                                      BigDecimal netPayout, String bankReference);
+    void sendSupportFormEmail(String toSupportEmail, String guestName, String guestEmail,
+                              String guestPhone, String subject, String messageContent);
 }

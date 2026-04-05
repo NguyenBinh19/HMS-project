@@ -10,12 +10,15 @@ import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
 import com.HTPj.htpj.entity.Commission;
 import com.HTPj.htpj.entity.CommissionHotel;
 import com.HTPj.htpj.entity.Hotel;
+import com.HTPj.htpj.entity.Users;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.CommissionHotelRepository;
 import com.HTPj.htpj.repository.CommissionRepository;
 import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.CommissionService;
+import com.HTPj.htpj.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -36,6 +39,8 @@ public class CommissionServiceImpl implements CommissionService {
     CommissionRepository commissionRepository;
     CommissionHotelRepository commissionHotelRepository;
     HotelRepository hotelRepository;
+    UserRepository userRepository;
+    NotificationService notificationService;
 
     private String getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -124,6 +129,20 @@ public class CommissionServiceImpl implements CommissionService {
                 hotel.setCommissionType("HOTEL");
 
                 hotelRepository.save(hotel);
+            }
+
+            // Notify hotels about new commission
+            for (Integer hotelId : request.getHotelIds()) {
+                List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+                for (Users hotelUser : hotelUsers) {
+                    notificationService.sendNotification(
+                            hotelUser.getId(), "COMMISSION",
+                            "Cập nhật hoa hồng",
+                            "Hoa hồng cho khách sạn của bạn đã được thiết lập.",
+                            "COMMISSION", String.valueOf(commission.getCommissionId()),
+                            "/hotel/profile"
+                    );
+                }
             }
         }
 
@@ -301,6 +320,25 @@ public class CommissionServiceImpl implements CommissionService {
         commission.setUpdatedBy(userId);
 
         commissionRepository.save(commission);
+
+        // Notify hotels about commission update (HOTEL type only)
+        if ("HOTEL".equals(commission.getCommissionType())) {
+            List<CommissionHotel> hotelLinks = commissionHotelRepository.findByCommissionId(commission.getCommissionId());
+            if (hotelLinks != null) {
+                for (CommissionHotel ch : hotelLinks) {
+                    List<Users> hotelUsers = userRepository.findByHotel_HotelId(ch.getHotelId());
+                    for (Users hotelUser : hotelUsers) {
+                        notificationService.sendNotification(
+                                hotelUser.getId(), "COMMISSION",
+                                "Cập nhật hoa hồng",
+                                "Hoa hồng của khách sạn bạn đã được cập nhật.",
+                                "COMMISSION", String.valueOf(commission.getCommissionId()),
+                                "/hotel/profile"
+                        );
+                    }
+                }
+            }
+        }
 
         return "Update successfully";
     }

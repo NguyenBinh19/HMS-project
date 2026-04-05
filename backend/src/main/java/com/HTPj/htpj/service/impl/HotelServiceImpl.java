@@ -9,6 +9,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.HotelMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.HotelService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ public class HotelServiceImpl implements HotelService {
     PartnerVerificationRepository partnerVerificationRepository;
     S3Service s3Service;
     UserRepository userRepository;
+    NotificationService notificationService;
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -455,6 +457,14 @@ public class HotelServiceImpl implements HotelService {
             }
 
             hotelImageRepository.saveAll(images);
+        }
+
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+        for (Users u : hotelUsers) {
+            notificationService.sendNotification(u.getId(), "HOTEL",
+                    "Thông tin khách sạn đã được cập nhật",
+                    "Thông tin khách sạn của bạn đã được cập nhật.",
+                    "HOTEL", String.valueOf(hotelId), "/hotel/profile");
         }
 
         return getHotelDetail(hotelId);

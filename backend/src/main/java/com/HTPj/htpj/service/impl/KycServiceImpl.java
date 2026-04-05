@@ -13,6 +13,7 @@ import com.HTPj.htpj.mapper.KycDocumentMapper;
 import com.HTPj.htpj.mapper.KycMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.KycService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class KycServiceImpl implements KycService {
     private final UserRepository userRepository;
     private final CommissionRepository commissionRepository;
     private final RankRepository rankRepository;
+    private final NotificationService notificationService;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -125,6 +127,14 @@ public class KycServiceImpl implements KycService {
                     .build();
 
             kycDocumentRepository.save(document);
+        }
+
+        List<Users> admins = userRepository.findByIsAdminTrue();
+        for (Users admin : admins) {
+            notificationService.sendNotification(admin.getId(), "KYC",
+                    "New KYC Submission",
+                    "A new KYC verification has been submitted for review.",
+                    "KYC", String.valueOf(verification.getId()), "/admin/kyc-queue");
         }
 
         return new KycUploadResponse(
@@ -289,5 +299,11 @@ public class KycServiceImpl implements KycService {
         }
 
         verificationRepository.save(verification);
+
+        String statusLabel = request.getStatus().equalsIgnoreCase("VERIFIED") ? "approved" : "rejected";
+        notificationService.sendNotification(verification.getSubmittedBy(), "KYC",
+                "KYC Verification " + statusLabel.substring(0, 1).toUpperCase() + statusLabel.substring(1),
+                "Your KYC verification has been " + statusLabel + ".",
+                "KYC", String.valueOf(verification.getId()), "/partner/kyc");
     }
 }

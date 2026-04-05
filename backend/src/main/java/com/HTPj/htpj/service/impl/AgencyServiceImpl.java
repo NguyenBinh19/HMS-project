@@ -10,6 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.AgencyMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AgencyService;
+import com.HTPj.htpj.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -36,6 +37,7 @@ public class AgencyServiceImpl implements AgencyService {
     private final UserRepository userRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<AgencyResponse> getAllAgencies() {
@@ -102,6 +104,18 @@ public class AgencyServiceImpl implements AgencyService {
         agency.setUpdatedAt(LocalDateTime.now());
 
         agencyRepository.save(agency);
+
+        // Notify agency manager about update
+        List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
+        for (Users manager : managers) {
+            notificationService.sendNotification(
+                    manager.getId(), "AGENCY",
+                    "Thông tin đại lý đã được cập nhật",
+                    "Thông tin của đại lý " + agency.getAgencyName() + " vừa được cập nhật.",
+                    "AGENCY", String.valueOf(agencyId),
+                    "/agency/profile"
+            );
+        }
 
         return getAgencyDetail(agencyId);
     }
@@ -273,5 +287,17 @@ public class AgencyServiceImpl implements AgencyService {
         historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
         historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
         transactionHistoryRepository.save(historyCreditMD);
+
+        // Notify agency manager about debt payment
+        List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
+        for (Users manager : managers) {
+            notificationService.sendNotification(
+                    manager.getId(), "PAYMENT",
+                    "Thanh toán dư nợ thành công",
+                    "Đại lý đã thanh toán dư nợ " + amountPaid.toPlainString() + " VND.",
+                    "AGENCY", String.valueOf(agencyId),
+                    "/agency/financial"
+            );
+        }
     }
 }

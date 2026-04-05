@@ -68,6 +68,14 @@ import SystemConfigPage from "@/pages/Admin/SystemConfigPage.jsx";
 import SetAgencyRanking from "@/pages/Admin/SetAgencyRanking.jsx"
 import AdminBookingDetailById from "@/pages/Admin/AdminBookingDetailById.jsx";
 import AdminStaffDashboard from "@/pages/Admin/AdminStaffDashboard.jsx";
+import DemoLayout from "@/pages/Demo/DemoLayout.jsx";
+import DemoDashboard from "@/pages/Demo/hotel/DemoDashboard.jsx";
+import DemoProfile from "@/pages/Demo/hotel/DemoProfile.jsx";
+import DemoRoomTypes from "@/pages/Demo/hotel/DemoRoomTypes.jsx";
+import DemoInventory from "@/pages/Demo/hotel/DemoInventory.jsx";
+import DemoDynamicPricing from "@/pages/Demo/hotel/DemoDynamicPricing.jsx";
+import DemoRevenueReport from "@/pages/Demo/hotel/DemoRevenueReport.jsx";
+import DemoPayout from "@/pages/Demo/hotel/DemoPayout.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -177,6 +185,18 @@ const AppRoutes = () => {
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
                     <Route path="payout-list" element={<PayoutList />} />
+                </Route>
+
+                {/*Demo Mode - Hotel Owner*/}
+                <Route path="/demo/hotel" element={<DemoLayout />}>
+                    <Route path="dashboard" element={<DemoDashboard />} />
+                    <Route path="profile" element={<DemoProfile />} />
+                    <Route path="room-types" element={<DemoRoomTypes />} />
+                    <Route path="rate-allotment" element={<DemoInventory />} />
+                    <Route path="dynamic-pricing" element={<DemoDynamicPricing />} />
+                    <Route path="revenue-report" element={<DemoRevenueReport />} />
+                    <Route path="payout" element={<DemoPayout />} />
+                    <Route index element={<Navigate to="dashboard" replace />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -19,6 +19,7 @@ import com.HTPj.htpj.mapper.BookingMapper;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.BookingService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -62,6 +63,7 @@ public class BookingServiceImpl implements BookingService {
     private final SystemConfigRepository systemConfigRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<RoomAvailabilityResponse> checkAvailability(RoomAvailabilityRequest request) {
@@ -494,6 +496,26 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(saved);
         hold.setStatus("BOOKED");
         roomHoldRepository.save(hold);
+
+        // Notify hotel about new booking
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(saved.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "BOOKING",
+                    "Đặt phòng mới #" + saved.getBookingCode(),
+                    "Đơn đặt phòng mới #" + saved.getBookingCode() + " đã được tạo.",
+                    "BOOKING", String.valueOf(saved.getBookingId()),
+                    "/hotel/view-booking/" + saved.getBookingCode()
+            );
+        }
+        // Notify agency about booking confirmation
+        notificationService.sendNotification(
+                userId, "BOOKING",
+                "Đặt phòng thành công #" + saved.getBookingCode(),
+                "Đơn đặt phòng #" + saved.getBookingCode() + " đã được xác nhận.",
+                "BOOKING", String.valueOf(saved.getBookingId()),
+                "/agency/booking-list/detail/" + saved.getBookingCode()
+        );
 
         return bookingMapper.toResponse(saved);
     }
@@ -1041,6 +1063,26 @@ public class BookingServiceImpl implements BookingService {
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
+        // Notify hotel about cancellation
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(booking.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "BOOKING",
+                    "Hủy đặt phòng #" + booking.getBookingCode(),
+                    "Đơn đặt phòng #" + booking.getBookingCode() + " đã bị hủy.",
+                    "BOOKING", String.valueOf(booking.getBookingId()),
+                    "hotel/view-booking/" + booking.getBookingCode()
+            );
+        }
+        // Notify agency user
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Hủy đặt phòng #" + booking.getBookingCode(),
+                "Đơn đặt phòng #" + booking.getBookingCode() + " đã bị hủy. Hoàn tiền: " + refund.toPlainString() + " VND.",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
+
         return CancelBookingResponse.builder()
                 .bookingCode(booking.getBookingCode())
                 .bookingStatus("CANCELLED")
@@ -1080,6 +1122,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
+        // Notify agency about check-in
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Check-in #" + booking.getBookingCode(),
+                "Khách đã check-in cho đơn #" + booking.getBookingCode() + ".",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
+
         return bookingMapper.toBookingDetailResponse(booking);
     }
 
@@ -1102,6 +1153,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingStatus("COMPLETED");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        // Notify agency about checkout
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Check-out #" + booking.getBookingCode(),
+                "Khách đã check-out cho đơn #" + booking.getBookingCode() + ".",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
 
         return bookingMapper.toBookingDetailResponse(booking);
     }
@@ -1131,6 +1191,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingStatus("NO_SHOW");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        // Notify agency about no-show
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "No-show #" + booking.getBookingCode(),
+                "Đơn #" + booking.getBookingCode() + " đã được báo cáo không đến (No-show).",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
 
         return NoShowResponse.builder()
                 .bookingCode(booking.getBookingCode())
@@ -1224,6 +1293,24 @@ public class BookingServiceImpl implements BookingService {
             booking.setPenaltyInterest(penalty);
             booking.setUpdatedAt(LocalDateTime.now());
             agencyBookingRepository.save(booking);
+        }
+
+        // Notify agencies with debt warnings
+        Set<Long> notifiedAgencies = new HashSet<>();
+        for (AgencyBooking ab : allBookings) {
+            if (!Boolean.TRUE.equals(ab.getIsPaid()) && !notifiedAgencies.contains(ab.getAgencyId())) {
+                notifiedAgencies.add(ab.getAgencyId());
+                List<Users> agencyUsers = userRepository.findByAgency_AgencyId(ab.getAgencyId());
+                for (Users u : agencyUsers) {
+                    notificationService.sendNotification(
+                            u.getId(), "PAYMENT",
+                            "Cập nhật dư nợ",
+                            "Dư nợ của đại lý đã được tính lại. Vui lòng kiểm tra.",
+                            "AGENCY", String.valueOf(ab.getAgencyId()),
+                            "/agency/financial"
+                    );
+                }
+            }
         }
     }
 

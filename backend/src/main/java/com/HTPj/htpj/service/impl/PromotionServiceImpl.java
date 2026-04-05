@@ -16,6 +16,7 @@ import com.HTPj.htpj.mapper.PromotionMapper;
 import com.HTPj.htpj.repository.BookingRepository;
 import com.HTPj.htpj.repository.PromotionRepository;
 import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -36,6 +37,7 @@ public class PromotionServiceImpl implements PromotionService {
     private final PromotionMapper promotionMapper;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     public PromotionResponse createPromotion(CreatePromotionRequest request) {
@@ -70,6 +72,15 @@ public class PromotionServiceImpl implements PromotionService {
 
         Promotion savedPromotion = promotionRepository.save(promotion);
 
+        if (savedPromotion.getAgencyUsageLimit() != null && savedPromotion.getAgencyUsageLimit() > 0) {
+            List<Users> agencyUsers = userRepository.findAllActiveAgencyUsers();
+            for (Users u : agencyUsers) {
+                notificationService.sendNotification(u.getId(), "PROMOTION",
+                        "Khuyến mãi mới",
+                        "Khuyến mãi \"" + savedPromotion.getCode() + "\" hiện đã có sẵn để đặt booking.Thử ngay!!",
+                        "PROMOTION", String.valueOf(savedPromotion.getId()), "/agency/search-hotel");
+            }
+        }
         return promotionMapper.toPromotionResponse(savedPromotion);
     }
 

@@ -60,4 +60,7 @@ public interface UserRepository extends JpaRepository<Users, String> {
     List<Users> findByAgency_AgencyId(Long agencyId);
 
     List<Users> findByIsAdminTrue();
+
+    @Query("SELECT u FROM Users u WHERE u.agency IS NOT NULL AND u.agency.status = 'ACTIVE'")
+    List<Users> findAllActiveAgencyUsers();
 }

@@ -13,6 +13,7 @@ import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.EmailService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.PayoutStatementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,8 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     private final BookingRepository bookingRepository;
     private final EmailService emailService;
     private final AgencyRepository agencyRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private static final BigDecimal MIN_PAYOUT_THRESHOLD = new BigDecimal("50");
 
     // ---- Statement Generation ----
@@ -159,6 +162,13 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             results.add(toResponse(statement, hotel.getHotelName(), false));
             log.info("Generated statement {} for hotel {} ({}): netPayout={}",
                     statementCode, hotelId, hotel.getHotelName(), netPayout);
+            List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+            for (Users u : hotelUsers) {
+                notificationService.sendNotification(u.getId(), "FINANCIAL",
+                        "Bảng sao kê thanh toán đã được tạo",
+                        "Một bảng sao kê thanh toán mới " + statementCode + " đã được tạo cho khách sạn của bạn.",
+                        "PAYOUT", String.valueOf(statement.getStatementId()), "/hotel/payout-state");
+            }
         }
 
         log.info("Generated {} payout statements for period {} to {}", results.size(), periodStart, periodEnd);
@@ -258,6 +268,13 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
 
+        List<Users> admins = userRepository.findByIsAdminTrue();
+        for (Users admin : admins) {
+            notificationService.sendNotification(admin.getId(), "FINANCIAL",
+                    "Xác nhận thanh toán thành công",
+                    "Bảng sao kê thanh toán của khách sạn " + hotel.getHotelName() + " đã được xác nhận.",
+                    "PAYOUT", String.valueOf(stmt.getStatementId()), "/admin/payout-list");
+        }
         return toResponse(stmt, hotel.getHotelName(), false);
     }
 
@@ -279,6 +296,14 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
 
+        List<Users> admins = userRepository.findByIsAdminTrue();
+        for (Users admin : admins) {
+            notificationService.sendNotification(admin.getId(), "FINANCIAL",
+                    "Phát sinh khiếu nại thanh toán",
+                    "Bảng sao kê thanh toán của khách sạn " + hotel.getHotelName()
+                            + " đã bị khiếu nại. Lý do: " + request.getReasonCode(),
+                    "PAYOUT", String.valueOf(stmt.getStatementId()), "/admin/payout-list");
+        }
         return toResponse(stmt, hotel.getHotelName(), false);
     }
 
@@ -396,6 +421,13 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                     .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
             results.add(toResponse(stmt, hotel.getHotelName(), false));
 
+            List<Users> hotelUsers = userRepository.findByHotel_HotelId(stmt.getHotelId());
+            for (Users u : hotelUsers) {
+                notificationService.sendNotification(u.getId(), "FINANCIAL",
+                        "Thanh toán đã được chuyển",
+                        "Khoản thanh toán cho bảng sao kê " + stmt.getStatementCode() + " đã được chuyển.",
+                        "PAYOUT", String.valueOf(stmt.getStatementId()), "/hotel/payout-state");
+            }
             // UC-088.2: Send "Payment Sent" email to Hotel
             if (hotel.getEmail() != null && !hotel.getEmail().isBlank()) {
                 try {
