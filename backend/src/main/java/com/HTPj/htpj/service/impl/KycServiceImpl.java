@@ -42,6 +42,7 @@ public class KycServiceImpl implements KycService {
     private final UserRepository userRepository;
     private final CommissionRepository commissionRepository;
     private final RankRepository rankRepository;
+    private final SystemLogRepository systemLogRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -201,6 +202,7 @@ public class KycServiceImpl implements KycService {
         Users user = userRepository.findById(verification.getSubmittedBy())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+        String actionDescription="";
 
         if ("VERIFIED".equalsIgnoreCase(request.getStatus())) {
 
@@ -210,9 +212,15 @@ public class KycServiceImpl implements KycService {
 
             if (Boolean.TRUE.equals(request.getVerificationBefore())) {
                 verificationRepository.save(verification);
+
+                SystemLog log = new SystemLog();
+                log.setUserId(reviewedBy);
+                log.setAction("Duyệt cập nhật hồ sơ mã: " + request.getVerificationId());
+                log.setUpdatedAt(LocalDateTime.now());
+                systemLogRepository.save(log);
+
                 return;
             }
-
 
             String legalName = verification.getLegalInformation().getLegalName();
             String address = verification.getLegalInformation().getBusinessAddress();
@@ -260,6 +268,10 @@ public class KycServiceImpl implements KycService {
                 verification.setHotel(savedHotel);
                 user.setHotel(savedHotel);
                 userRepository.save(user);
+
+                Hotel hot = verification.getHotel();
+                actionDescription = String.format("Duyệt hồ sơ cho hotel: %d - %s",
+                        hot.getHotelId(), hot.getHotelName());
             }
 
             else if ("agency".equalsIgnoreCase(partnerType)) {
@@ -285,9 +297,24 @@ public class KycServiceImpl implements KycService {
                 verification.setAgency(savedAgency);
                 user.setAgency(savedAgency);
                 userRepository.save(user);
+
+                Agency agenc = verification.getAgency();
+                actionDescription = String.format("Duyệt hồ sơ cho agency: %d - %s",
+                        agenc.getAgencyId(), agenc.getAgencyName());
             }
+        }
+        else {
+            actionDescription = String.format("Từ chối hồ sơ mã %d với lý do %s",
+                    request.getVerificationId(), request.getRejectionReason());
         }
 
         verificationRepository.save(verification);
+
+        SystemLog log = new SystemLog();
+        log.setUserId(reviewedBy);
+        log.setAction(actionDescription);
+        log.setUpdatedAt(LocalDateTime.now());
+        systemLogRepository.save(log);
     }
+
 }
