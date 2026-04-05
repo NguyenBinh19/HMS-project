@@ -74,4 +74,13 @@ public class Hotel {
     @Column(name = "commission_type")
     private String commissionType;
 
+    @Column(name = "bank_name", columnDefinition = "NVARCHAR(255)")
+    private String bankName;
+
+    @Column(name = "bank_account_holder", columnDefinition = "NVARCHAR(255)")
+    private String bankAccountHolder;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
 }

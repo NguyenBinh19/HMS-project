@@ -1,11 +1,10 @@
 package com.HTPj.htpj.service;
 
-import com.HTPj.htpj.dto.request.financial.ConfirmPayoutRequest;
-import com.HTPj.htpj.dto.request.financial.DisputePayoutRequest;
-import com.HTPj.htpj.dto.request.financial.MarkAsPaidRequest;
-import com.HTPj.htpj.dto.request.financial.PayoutListRequest;
+import com.HTPj.htpj.dto.request.financial.*;
+import com.HTPj.htpj.dto.response.financial.DisputeDetailResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutListResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,4 +37,8 @@ public interface PayoutStatementService {
 
     // UC-088: Admin exports batch payment file — updates status to PROCESSING
     List<PayoutStatementResponse> exportBatchPayment(List<Long> statementIds);
+
+    void resolveDispute(ResolveDisputeRequest request, MultipartFile[] files);
+
+    DisputeDetailResponse getDisputeDetail(Long statementId);
 }

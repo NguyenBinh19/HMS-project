@@ -1,19 +1,14 @@
 package com.HTPj.htpj.service.impl;
 
-import com.HTPj.htpj.dto.request.financial.ConfirmPayoutRequest;
-import com.HTPj.htpj.dto.request.financial.DisputePayoutRequest;
-import com.HTPj.htpj.dto.request.financial.MarkAsPaidRequest;
-import com.HTPj.htpj.dto.request.financial.PayoutListRequest;
-import com.HTPj.htpj.dto.response.financial.PayoutLineItemResponse;
-import com.HTPj.htpj.dto.response.financial.PayoutListItemResponse;
-import com.HTPj.htpj.dto.response.financial.PayoutListResponse;
-import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
+import com.HTPj.htpj.dto.request.financial.*;
+import com.HTPj.htpj.dto.response.financial.*;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.PayoutStatementService;
+import com.HTPj.htpj.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -21,7 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -42,6 +39,9 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     private final EmailService emailService;
     private final AgencyRepository agencyRepository;
     private static final BigDecimal MIN_PAYOUT_THRESHOLD = new BigDecimal("50");
+    private final PayoutDisputeRepository disputeRepository;
+    private final S3Service s3Service;
+    private final PayoutDisputeImageRepository disputeImageRepository;
 
     // ---- Statement Generation ----
 
@@ -149,6 +149,10 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             statement.setNetPayout(netPayout);
             statement.setTotalRoomNights(totalRoomNights);
 
+            statement.setBankName(hotel.getBankName());
+            statement.setBankAccountHolder(hotel.getBankAccountHolder());
+            statement.setBankAccountNumber(hotel.getBankAccountNumber());
+
             // UC-088.E2: Below minimum threshold → ROLLOVER
             if (netPayout.compareTo(MIN_PAYOUT_THRESHOLD) < 0) {
                 statement.setStatus("ROLLOVER");
@@ -248,11 +252,21 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
         }
 
+        if (request.getBankName() == null || request.getBankName().isBlank() ||
+                request.getBankAccountHolder() == null || request.getBankAccountHolder().isBlank() ||
+                request.getBankAccountNumber() == null || request.getBankAccountNumber().isBlank()) {
+
+            throw new AppException(ErrorCode.INVALID_BANK_INFO);
+        }
+
         String userId = getCurrentUserId();
 
         stmt.setStatus("APPROVED");
         stmt.setConfirmedBy(userId);
         stmt.setConfirmedAt(LocalDateTime.now());
+        stmt.setBankName(request.getBankName());
+        stmt.setBankAccountHolder(request.getBankAccountHolder());
+        stmt.setBankAccountNumber(request.getBankAccountNumber());
         statementRepository.save(stmt);
 
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
@@ -271,9 +285,20 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             throw new AppException(ErrorCode.STATEMENT_INVALID_STATUS);
         }
 
+        disputeRepository.findByStatement_StatementId(stmt.getStatementId())
+                .ifPresent(d -> {
+                    throw new AppException(ErrorCode.DISPUTE_ALREADY_EXIST);
+                });
+
+        PayoutDispute dispute = PayoutDispute.builder()
+                .statement(stmt)
+                .reasonDetails(request.getDescription())
+                .status("PENDING")
+                .build();
+
+        disputeRepository.save(dispute);
+
         stmt.setStatus("DISPUTED");
-        stmt.setDisputeReasonCode(request.getReasonCode());
-        stmt.setDisputeReason(request.getDescription());
         statementRepository.save(stmt);
 
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
@@ -463,8 +488,11 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .status(s.getStatus())
                 .confirmedBy(s.getConfirmedBy())
                 .confirmedAt(s.getConfirmedAt())
-                .disputeReason(s.getDisputeReason())
-                .disputeReasonCode(s.getDisputeReasonCode())
+//                .disputeReason(s.getDisputeReason())
+//                .disputeReasonCode(s.getDisputeReasonCode())
+                .bankName(s.getBankName())
+                .bankAccountHolder(s.getBankAccountHolder())
+                .bankAccountNumber(s.getBankAccountNumber())
                 .bankReference(s.getBankReference())
                 .paidAt(s.getPaidAt())
                 .createdAt(s.getCreatedAt())
@@ -491,5 +519,77 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return jwt.getClaim("userId");
+    }
+
+    @Override
+    @Transactional
+    public void resolveDispute(ResolveDisputeRequest request, MultipartFile[] files) {
+
+        PayoutDispute dispute = disputeRepository.findById(request.getDisputeId())
+                .orElseThrow(() -> new AppException(ErrorCode.DISPUTE_NOT_FOUND));
+
+        if ("RESOLVED".equals(dispute.getStatus())) {
+            throw new AppException(ErrorCode.DISPUTE_ALREADY_RESOLVED);
+        }
+
+        // update dispute
+        dispute.setAdminReport(request.getAdminReport());
+        dispute.setResolvedAt(LocalDateTime.now());
+        dispute.setResolvedBy(getCurrentUserId());
+        dispute.setStatus("RESOLVED");
+
+        disputeRepository.save(dispute);
+
+        // upload images
+        if (files != null) {
+            for (MultipartFile file : files) {
+
+                if (file.isEmpty()) continue;
+
+                String key = "dispute/"
+                        + dispute.getDisputeId() + "/"
+                        + System.currentTimeMillis() + "_"
+                        + file.getOriginalFilename();
+
+                try {
+                    s3Service.uploadFile(file, key);
+                } catch (IOException e) {
+                    throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+                }
+
+                PayoutDisputeImage image = PayoutDisputeImage.builder()
+                        .dispute(dispute)
+                        .s3Key(key)
+                        .build();
+
+                disputeImageRepository.save(image);
+            }
+        }
+    }
+
+    @Override
+    public DisputeDetailResponse getDisputeDetail(Long statementId) {
+
+        PayoutDispute dispute = disputeRepository.findByStatement_StatementId(statementId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISPUTE_NOT_FOUND));
+
+        DisputeDetailResponse response = new DisputeDetailResponse();
+
+        response.setDisputeId(dispute.getDisputeId());
+        response.setReasonDetails(dispute.getReasonDetails());
+        response.setAdminReport(dispute.getAdminReport());
+        response.setStatus(dispute.getStatus());
+        response.setCreatedAt(dispute.getCreatedAt());
+        response.setResolvedAt(dispute.getResolvedAt());
+        response.setResolvedBy(dispute.getResolvedBy());
+
+        List<String> images = dispute.getImages()
+                .stream()
+                .map(img -> s3Service.getFileUrl(img.getS3Key()))
+                .toList();
+
+        response.setImageUrls(images);
+
+        return response;
     }
 }

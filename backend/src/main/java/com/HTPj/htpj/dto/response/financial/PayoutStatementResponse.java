@@ -27,8 +27,13 @@ public class PayoutStatementResponse {
     private String status;
     private String confirmedBy;
     private LocalDateTime confirmedAt;
-    private String disputeReason;
-    private String disputeReasonCode;
+//    private String disputeReason;
+//    private String disputeReasonCode;
+    //bank
+    private String bankName;
+    private String bankAccountHolder;
+    private String bankAccountNumber;
+
     private String bankReference;
     private LocalDateTime paidAt;
     private LocalDateTime createdAt;

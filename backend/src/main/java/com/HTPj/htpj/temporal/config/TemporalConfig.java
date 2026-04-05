@@ -29,7 +29,8 @@ public class TemporalConfig {
         return WorkflowServiceStubs.newInstance(
                 WorkflowServiceStubsOptions.newBuilder()
                         .setTarget(target)
-                        .setTarget("hms-temporal:7233")
+//                        .setTarget("hms-temporal:7233")
+                        .setTarget("localhost:7233")
                         .build()
         );
     }

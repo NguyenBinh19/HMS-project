@@ -3,6 +3,8 @@ package com.HTPj.htpj.controller;
 import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.financial.MarkAsPaidRequest;
 import com.HTPj.htpj.dto.request.financial.PayoutListRequest;
+import com.HTPj.htpj.dto.request.financial.ResolveDisputeRequest;
+import com.HTPj.htpj.dto.response.financial.DisputeDetailResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutListResponse;
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
 import com.HTPj.htpj.service.PayoutStatementService;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -99,6 +102,24 @@ public class PayoutAdminController {
         return ApiResponse.<List<PayoutStatementResponse>>builder()
                 .message("Đã tạo thành công " + result.size() + " bản sao kê")
                 .result(result)
+                .build();
+    }
+
+    @PostMapping(value = "/resolve", consumes = "multipart/form-data")
+    public ApiResponse<Void> resolveDispute(
+            @RequestPart("data") ResolveDisputeRequest request,
+            @RequestPart(value = "files", required = false) MultipartFile[] files
+    ) {
+        payoutStatementService.resolveDispute(request, files);
+        return ApiResponse.<Void>builder().build();
+    }
+
+    @GetMapping("/dispute-detail/{statementId}")
+    ApiResponse<DisputeDetailResponse> getDisputeDetail(
+            @PathVariable Long statementId
+    ) {
+        return ApiResponse.<DisputeDetailResponse>builder()
+                .result(payoutStatementService.getDisputeDetail(statementId))
                 .build();
     }
 }
