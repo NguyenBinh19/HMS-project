@@ -294,11 +294,23 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
 
+        // Notify hotel users: confirm success
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(stmt.getHotelId());
+        for (Users u : hotelUsers) {
+            notificationService.sendNotification(u.getId(), "FINANCIAL",
+                    "Xác nhận đối soát thành công",
+                    "Bạn đã xác nhận bảng sao kê " + stmt.getStatementCode()
+                            + " thành công. Hệ thống sẽ tiến hành xử lý thanh toán.",
+                    "PAYOUT", String.valueOf(stmt.getStatementId()), "/hotel/payout-state");
+        }
+
+        // Notify admins: a statement has been confirmed
         List<Users> admins = userRepository.findByIsAdminTrue();
         for (Users admin : admins) {
             notificationService.sendNotification(admin.getId(), "FINANCIAL",
-                    "Xác nhận thanh toán thành công",
-                    "Bảng sao kê thanh toán của khách sạn " + hotel.getHotelName() + " đã được xác nhận.",
+                    "Khách sạn đã xác nhận đối soát",
+                    "Bảng sao kê " + stmt.getStatementCode() + " của khách sạn "
+                            + hotel.getHotelName() + " đã được xác nhận. Sẵn sàng xử lý thanh toán.",
                     "PAYOUT", String.valueOf(stmt.getStatementId()), "/admin/payout-list");
         }
         return toResponse(stmt, hotel.getHotelName(), false);
@@ -335,11 +347,22 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Hotel hotel = hotelRepository.findById(stmt.getHotelId())
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
 
+        // Notify hotel users: dispute received
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(stmt.getHotelId());
+        for (Users u : hotelUsers) {
+            notificationService.sendNotification(u.getId(), "FINANCIAL",
+                    "Khiếu nại đã được ghi nhận",
+                    "Khiếu nại của bạn về bảng sao kê " + stmt.getStatementCode()
+                            + " đã được ghi nhận. Đội ngũ sẽ xem xét và phản hồi sớm nhất.",
+                    "PAYOUT", String.valueOf(stmt.getStatementId()), "/hotel/payout-state");
+        }
+
+        // Notify admins: dispute raised
         List<Users> admins = userRepository.findByIsAdminTrue();
         for (Users admin : admins) {
             notificationService.sendNotification(admin.getId(), "FINANCIAL",
                     "Phát sinh khiếu nại thanh toán",
-                    "Bảng sao kê thanh toán của khách sạn " + hotel.getHotelName()
+                    "Bảng sao kê " + stmt.getStatementCode() + " của khách sạn " + hotel.getHotelName()
                             + " đã bị khiếu nại.",
                     "PAYOUT", String.valueOf(stmt.getStatementId()), "/admin/payout-list");
         }
