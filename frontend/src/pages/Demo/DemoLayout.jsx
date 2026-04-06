@@ -5,6 +5,8 @@ import {
     TicketPercent, Wallet, Building2, ArrowRight,
     RefreshCw, UserPlus, LogOut, Repeat
 } from "lucide-react";
+import Header from "@/components/common/Homepage/Header";
+import Footer from "@/components/common/Homepage/Footer";
 import DemoRoleSelect from "./DemoRoleSelect";
 import { HOTEL_DEMO_STEPS } from "./mockData";
 
@@ -65,39 +67,21 @@ const DemoLayout = () => {
                 </div>
             </div>
 
-            {/* Header placeholder */}
+            {/* Header - matching real hotel layout */}
             <div className="sticky top-0 z-50 bg-white shadow-sm w-full">
-                <div className="h-16 flex items-center px-6 justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="text-xl font-black text-blue-600 tracking-tighter">
-                            HMS
-                        </span>
-                        <span className="text-slate-300">|</span>
-                        <span className="text-sm font-bold text-slate-500">
-                            Grand Palace Da Nang
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">
-                            HO
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">
-                            Hotel Owner (Demo)
-                        </span>
-                    </div>
-                </div>
+                <Header />
             </div>
 
             <div className="flex flex-1 relative">
-                {/* Sidebar */}
-                <aside className="w-[260px] h-[calc(100vh-104px)] sticky top-[104px] bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
-                    <div className="h-16 bg-blue-600 flex items-center px-6 shadow-md flex-shrink-0">
+                {/* Sidebar - matching real hotel sidebar */}
+                <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
+                    <div className="h-16 bg-blue-600 flex items-center px-6 shadow-md flex-shrink-0 z-10">
                         <span className="text-white font-bold text-lg uppercase tracking-wide flex items-center gap-2">
                             <Building2 className="text-white" size={24} />{" "}
                             HOTEL
                         </span>
                     </div>
-                    <div className="flex-1 overflow-y-auto py-4 space-y-1">
+                    <div className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar shadow-[inset_0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
                         {SIDEBAR_ITEMS.map((item, index) => {
                             const isActive = location.pathname === item.path;
                             return (
@@ -152,6 +136,13 @@ const DemoLayout = () => {
                             bước
                         </div>
                     </div>
+
+                    <style>{`
+                        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #cbd5e1; }
+                    `}</style>
                 </aside>
 
                 {/* Content */}
@@ -197,6 +188,11 @@ const DemoLayout = () => {
                         </div>
                     )}
                 </main>
+            </div>
+
+            {/* Footer */}
+            <div className="flex-shrink-0 bg-slate-900 text-white border-t border-slate-200">
+                <Footer />
             </div>
 
             {/* Welcome overlay */}

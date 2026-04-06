@@ -808,6 +808,9 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.getAllBookingsSummary();
     }
 
+    public List<ListAllBookingsResponse> getAllBookingsByHotelId(Integer hotelId) {
+        return bookingRepository.getAllBookingsSummaryByHotelId(hotelId);
+    }
     //UC28:
     @Override
     public BookingDetailResponse updateGuestInformation(UpdateGuestRequest request) {

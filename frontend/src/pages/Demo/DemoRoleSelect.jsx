@@ -10,6 +10,7 @@ const ROLES = [
         icon: <Building2 size={32} />,
         color: "from-orange-500 to-amber-500",
         available: true,
+        path: "/demo/hotel/dashboard",
     },
     {
         id: "agency",
@@ -17,7 +18,8 @@ const ROLES = [
         sublabel: "Quản lý đại lý",
         icon: <Users size={32} />,
         color: "from-green-500 to-emerald-500",
-        available: false,
+        available: true,
+        path: "/demo-agency/dashboard",
     },
 ];
 
@@ -30,7 +32,7 @@ const DemoRoleSelect = ({ isOpen, onClose }) => {
     const handleSelectRole = (role) => {
         if (!role.available) return;
         onClose();
-        navigate("/demo/hotel/dashboard");
+        navigate(role.path);
     };
 
     return (

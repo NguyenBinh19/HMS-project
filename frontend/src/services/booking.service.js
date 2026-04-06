@@ -91,6 +91,18 @@ const viewAllBookingByAdmin = async () => {
     }
 }
 
+const viewAllBookingByHotelId = async (hotelId) => {
+    try {
+        const response = await api.get(`/booking/listAllByHotelId`, {
+            params: { hotelId }
+        });
+        return response.data;
+    } catch (error){
+        console.error("View All Booking Error:", error);
+        throw error;
+    }
+}
+
 // Update thông tin khách của Booking
 export const updateUserInfoBooking = async (requestData) => {
     try {
@@ -284,6 +296,7 @@ export const bookingService = {
     getBookingHistory,
     getBookingDetail,
     viewAllBookingByAdmin,
+    viewAllBookingByHotelId,
     updateUserInfoBooking,
     getCheckInToday,
     getCheckInByDate,

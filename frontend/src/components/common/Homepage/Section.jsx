@@ -153,9 +153,7 @@ const HomePage = () => {
                         <button onClick={() => handleRoleNav("/hotel/dashboard")} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#F36F21] hover:bg-[#d85e17] text-white font-bold transition-all active:scale-95 shadow-lg">
                             <Building2 size={20} /> Tôi là Khách sạn
                         </button>
-                        <button onClick={() => setShowDemoModal(true)} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold transition-all active:scale-95 shadow-lg border border-white/40">
-                            <Play size={20} /> Trải nghiệm hệ thống
-                        </button>
+                        
                     </div>
 
                     {/* ================= TÍCH HỢP SEARCH FORM ================= */}

@@ -97,6 +97,27 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM Booking b
     JOIN Agency a ON b.agencyId = a.agencyId
     JOIN Hotel h ON b.hotelId = h.hotelId
+    WHERE b.hotelId = :hotelId
+    """)
+    List<ListAllBookingsResponse> getAllBookingsSummaryByHotelId(@Param("hotelId") Integer hotelId);
+
+    @Query("""
+    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+        b.bookingCode,
+        b.createdAt,
+        b.guestName,
+        a.agencyName,
+        h.hotelName,
+        b.checkInDate,
+        b.checkOutDate,
+        b.totalRooms,
+        b.finalAmount,
+        b.bookingStatus,
+        b.paymentStatus
+    )
+    FROM Booking b
+    JOIN Agency a ON b.agencyId = a.agencyId
+    JOIN Hotel h ON b.hotelId = h.hotelId
     WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
     AND b.checkInDate = :date
     """)

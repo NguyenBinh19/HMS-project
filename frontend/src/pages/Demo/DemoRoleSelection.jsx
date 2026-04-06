@@ -27,7 +27,7 @@ const DemoRoleSelection = () => {
             title: "Chủ khách sạn ",
             description: "Khám phá công cụ quản lý phòng, duyệt đơn đặt phòng và theo dõi doanh thu thực tế của khách sạn.",
             icon: <Hotel size={40} className="text-amber-600" />,
-            path: "/demo/hotel-dashboard",
+            path: "/demo/hotel/dashboard",
             color: "bg-amber-50",
             hoverBorder: "hover:border-amber-500"
         }

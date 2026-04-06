@@ -91,6 +91,15 @@ public class BookingController {
                 .build();
     }
 
+    @GetMapping("/listAllByHotelId")
+    ApiResponse<List<ListAllBookingsResponse>> getAllBookingsByHotelId(
+            @RequestParam Integer hotelId
+    ) {
+        return ApiResponse.<List<ListAllBookingsResponse>>builder()
+                .result(bookingService.getAllBookingsByHotelId(hotelId))
+                .build();
+    }
+
     // UC-029: Lịch sử đặt phòng (phân trang)
     @GetMapping("/history")
     ApiResponse<Page<BookingHistoryResponse>> getBookingHistory(
