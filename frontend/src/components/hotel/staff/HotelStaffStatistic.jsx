@@ -38,7 +38,7 @@ const StaffStats = ({ data = [] }) => {
     const totalLimit = "100.000.000";
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <StatCard
                 title="Tổng nhân viên"
                 value={totalStaff < 10 ? `0${totalStaff}` : totalStaff}
@@ -52,13 +52,6 @@ const StaffStats = ({ data = [] }) => {
                 color="text-emerald-600"
                 icon={UserCheck}
                 description="Tài khoản sẵn sàng"
-            />
-            <StatCard
-                title="Hạn mức cấp ngày"
-                value={`${totalLimit} đ`}
-                color="text-orange-600"
-                icon={CreditCard}
-                description="Tổng quỹ đại lý cấp"
             />
         </div>
     );
