@@ -6,9 +6,11 @@ const formatCurrency = (n) => new Intl.NumberFormat("vi-VN").format(n);
 
 const formatDate = (dateStr) => {
     const d = new Date(dateStr);
-    const days = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
     return { dayName: days[d.getDay()], dayNum: d.getDate(), month: d.getMonth() + 1, isWeekend: d.getDay() === 0 || d.getDay() === 6 };
 };
+
+const ALL_ROOM_TYPES_OPTION = "__ALL__";
 
 const DemoInventory = () => {
     const [offset, setOffset] = useState(0);
@@ -16,6 +18,18 @@ const DemoInventory = () => {
     const [showBulkModal, setShowBulkModal] = useState(false);
     const [showStopSellModal, setShowStopSellModal] = useState(false);
     const [toast, setToast] = useState(null);
+
+    // Bulk Update form state
+    const [bulkRoomTypeId, setBulkRoomTypeId] = useState(ALL_ROOM_TYPES_OPTION);
+    const [bulkStartDate, setBulkStartDate] = useState("");
+    const [bulkEndDate, setBulkEndDate] = useState("");
+    const [bulkAllotment, setBulkAllotment] = useState("");
+    const [bulkRate, setBulkRate] = useState("");
+
+    // Stop-sell form state
+    const [stopRoomTypeId, setStopRoomTypeId] = useState(ALL_ROOM_TYPES_OPTION);
+    const [stopStartDate, setStopStartDate] = useState("");
+    const [stopEndDate, setStopEndDate] = useState("");
 
     const visibleDays = grid.slice(offset, offset + 7);
     const roomTypes = DEMO_ROOM_TYPES.filter((r) => r.isActive);
@@ -25,16 +39,55 @@ const DemoInventory = () => {
     const handleCellClick = (roomTypeId, day) => {
         const cell = day.roomTypes.find((r) => r.roomTypeId === roomTypeId);
         if (!cell || cell.stopSell) return;
-        
-        // Cập nhật câu hỏi trong prompt
-        const newVal = prompt(`Cập nhật số lượng phòng cho ngày ${day.date}\nHiện tại: ${cell.available}`, String(cell.available));
-        
+        const newVal = prompt(`Cập nhật allotment cho ${day.date}\nHiện tại: ${cell.available} phòng`, String(cell.available));
         if (newVal === null) return;
         const parsed = parseInt(newVal, 10);
         if (isNaN(parsed) || parsed < 0) return;
-        
-        setGrid((prev) => prev.map((d) => d.date === day.date ? { ...d, roomTypes: d.roomTypes.map((r) => r.roomTypeId === roomTypeId ? { ...r, available: parsed } : r) } : d));
-        showToast("Đã cập nhật tồn kho thành công");
+        setGrid((prev) => prev.map((d) => d.date === day.date
+            ? { ...d, roomTypes: d.roomTypes.map((r) => r.roomTypeId === roomTypeId ? { ...r, available: parsed } : r) }
+            : d));
+        showToast("Đã cập nhật tồn kho (Bản Demo)");
+    };
+
+    const applyBulkUpdate = () => {
+        if (!bulkStartDate || !bulkEndDate) { showToast("Vui lòng chọn khoảng ngày"); return; }
+        const newAllot = bulkAllotment !== "" ? parseInt(bulkAllotment, 10) : null;
+        const newRate = bulkRate !== "" ? parseInt(bulkRate, 10) : null;
+        if (newAllot === null && newRate === null) { showToast("Nhập số lượng hoặc giá cần cập nhật"); return; }
+
+        setGrid((prev) => prev.map((d) => {
+            if (d.date < bulkStartDate || d.date > bulkEndDate) return d;
+            return {
+                ...d,
+                roomTypes: d.roomTypes.map((r) => {
+                    if (bulkRoomTypeId !== ALL_ROOM_TYPES_OPTION && r.roomTypeId !== parseInt(bulkRoomTypeId)) return r;
+                    return {
+                        ...r,
+                        ...(newAllot !== null ? { available: newAllot } : {}),
+                        ...(newRate !== null ? { rate: newRate } : {}),
+                    };
+                }),
+            };
+        }));
+        setShowBulkModal(false);
+        setBulkAllotment(""); setBulkRate("");
+        showToast("Đã cập nhật hàng loạt (Bản Demo)");
+    };
+
+    const applyStopSell = () => {
+        if (!stopStartDate || !stopEndDate) { showToast("Vui lòng chọn khoảng ngày"); return; }
+        setGrid((prev) => prev.map((d) => {
+            if (d.date < stopStartDate || d.date > stopEndDate) return d;
+            return {
+                ...d,
+                roomTypes: d.roomTypes.map((r) => {
+                    if (stopRoomTypeId !== ALL_ROOM_TYPES_OPTION && r.roomTypeId !== parseInt(stopRoomTypeId)) return r;
+                    return { ...r, stopSell: true };
+                }),
+            };
+        }));
+        setShowStopSellModal(false);
+        showToast("Đã đóng bán (Bản Demo)");
     };
 
     return (
@@ -107,7 +160,7 @@ const DemoInventory = () => {
                                                 {cell.stopSell ? (
                                                     <div className="flex flex-col items-center gap-1">
                                                         <Ban size={16} className="text-red-500" />
-                                                        <span className="text-[10px] font-black text-red-500 uppercase">Đóng bán</span>
+                                                        <span className="text-[10px] font-black text-red-500 uppercase">Stop-sell</span>
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-1">
@@ -135,31 +188,40 @@ const DemoInventory = () => {
             {/* Bulk Update Modal */}
             {showBulkModal && (
                 <SimpleModal title="Cập nhật hàng loạt" onClose={() => setShowBulkModal(false)}>
-                    <p className="text-sm text-slate-500 mb-4">Chọn loại phòng, khoảng ngày và số lượng phòng trống mới.</p>
-                    <select className="w-full mb-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
-                        {roomTypes.map((rt) => <option key={rt.id}>{rt.title}</option>)}
+                    <p className="text-sm text-slate-500 mb-4">Chọn loại phòng, khoảng ngày và giá trị cần cập nhật.</p>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Loại phòng</label>
+                    <select value={bulkRoomTypeId} onChange={(e) => setBulkRoomTypeId(e.target.value)} className="w-full mb-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
+                        <option value={ALL_ROOM_TYPES_OPTION}>Tất cả loại phòng</option>
+                        {roomTypes.map((rt) => <option key={rt.id} value={rt.id}>{rt.title}</option>)}
                     </select>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Khoảng ngày</label>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                        <input type="date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
-                        <input type="date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                        <input type="date" value={bulkStartDate} onChange={(e) => setBulkStartDate(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                        <input type="date" value={bulkEndDate} onChange={(e) => setBulkEndDate(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
                     </div>
-                    <input type="number" placeholder="Số lượng phòng trống" className="w-full mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
-                    <button onClick={() => { setShowBulkModal(false); showToast("Đã cập nhật hàng loạt thành công"); }} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700">Áp dụng thay đổi</button>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Số lượng phòng trống (để trống = không đổi)</label>
+                    <input type="number" min="0" value={bulkAllotment} onChange={(e) => setBulkAllotment(e.target.value)} placeholder="Ví dụ: 10" className="w-full mb-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Giá phòng (VND, để trống = không đổi)</label>
+                    <input type="number" min="0" value={bulkRate} onChange={(e) => setBulkRate(e.target.value)} placeholder="Ví dụ: 1500000" className="w-full mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                    <button onClick={applyBulkUpdate} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700">Áp dụng</button>
                 </SimpleModal>
             )}
 
             {/* Stop Sell Modal */}
             {showStopSellModal && (
                 <SimpleModal title="Đóng bán phòng" onClose={() => setShowStopSellModal(false)}>
-                    <p className="text-sm text-slate-500 mb-4">Chọn loại phòng và khoảng ngày cần tạm dừng bán phòng.</p>
-                    <select className="w-full mb-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
-                        {roomTypes.map((rt) => <option key={rt.id}>{rt.title}</option>)}
+                    <p className="text-sm text-slate-500 mb-4">Chọn loại phòng và khoảng ngày cần đóng bán.</p>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Loại phòng</label>
+                    <select value={stopRoomTypeId} onChange={(e) => setStopRoomTypeId(e.target.value)} className="w-full mb-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none">
+                        <option value={ALL_ROOM_TYPES_OPTION}>Tất cả loại phòng</option>
+                        {roomTypes.map((rt) => <option key={rt.id} value={rt.id}>{rt.title}</option>)}
                     </select>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Khoảng ngày</label>
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                        <input type="date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
-                        <input type="date" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                        <input type="date" value={stopStartDate} onChange={(e) => setStopStartDate(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
+                        <input type="date" value={stopEndDate} onChange={(e) => setStopEndDate(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none" />
                     </div>
-                    <button onClick={() => { setShowStopSellModal(false); showToast("Đã đóng bán thành công"); }} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700">Xác nhận đóng bán</button>
+                    <button onClick={applyStopSell} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700">Đóng bán</button>
                 </SimpleModal>
             )}
         </div>
