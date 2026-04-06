@@ -52,9 +52,8 @@ const AgencyDashboard = () => {
             const agencyData = agencyProfileRes.result;
             const currentRankId = agencyData.rankId;
 
-            // Bước 2: Gọi đồng thời các API còn lại (bao gồm chi tiết Rank)
             const results = await Promise.allSettled([
-                rankService.getRankDetail(currentRankId),         // 0. Chi tiết Rank (Màu sắc, icon...)
+                rankService.getRankDetail(currentRankId),         // 0. Chi tiết Rank
                 api.get(`/agencies/${agencyId}/credit-summary`), // 1. Tín dụng
                 bookingService.getBookingHistory(),              // 2. Đơn hàng
                 api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // 3. Giao dịch
@@ -78,7 +77,6 @@ const AgencyDashboard = () => {
                 const credit = results[2].value.data.result;
                 // JSON: { remainingCredit, debt, creditLimit, dueDate }
                 setFinanceData({ wallet, credit });
-                // Logic trạng thái nợ (Giả định Stage1 nếu có nợ, Stage2 nếu nợ > 0 và quá hạn)
                 if (credit?.debt > 0) {
                     const isOverdue = new Date(credit.dueDate) < new Date();
                     setAccountStatus(isOverdue ? 'STAGE2' : 'STAGE1');
@@ -86,7 +84,7 @@ const AgencyDashboard = () => {
                     setAccountStatus('NORMAL');
                 }
             }
-            // 3. Xử lý Booking (Dữ liệu nằm trong result.content)
+            // 3. Xử lý Booking
             if (results[3].status === 'fulfilled') {
                 const bookingData = results[3].value.result?.content || [];
                 const todayStr = new Date().toDateString();

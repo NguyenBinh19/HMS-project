@@ -13,6 +13,7 @@ import NotificationBell from "@/components/common/Notification/NotificationBell"
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+    const [isPartnerDropdownOpen, setIsPartnerDropdownOpen] = useState(false);
     const [user, setUser] = useState(null);
     const [userRoles, setUserRoles] = useState([]);
     const [hotelIdFromToken, setHotelIdFromToken] = useState(null);
@@ -37,6 +38,7 @@ const Header = () => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsAdminDropdownOpen(false);
+                setIsPartnerDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -106,10 +108,6 @@ const Header = () => {
 
     const currentHotelId = user?.hotelId || hotelIdFromToken;
     const currentAgencyId = user?.agencyId || agencyIdFromToken;
-    // const needsKyc = user &&
-    //     !isAdmin &&
-    //     !currentHotelId &&
-    //     !currentAgencyId;
 
     // Hàm render Button KYC
     const renderKycStatus = () => {
@@ -227,6 +225,33 @@ const Header = () => {
         }
     }, [agencyIdFromToken]);
 
+    const renderPartnerDropdownMenu = () => {
+        // Kiểm tra xem user có phải là Agency (Manager hoặc Staff) hay không
+        const isAgencyUser = userRoles.some(role => role.includes("AGENCY"));
+
+        return (
+            <div className="absolute right-0 mt-3 w-60 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-150">
+                <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tài khoản đối tác</p>
+                </div>
+                <button onClick={() => { navigate("/profile"); setIsPartnerDropdownOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                    <User size={18} className="text-slate-400" /> Hồ sơ cá nhân
+                </button>
+                <button onClick={() => {
+                    // Nếu là Agency User (Manager/Staff) thì về dashboard agency, ngược lại về hotel
+                    navigate(isAgencyUser ? "/agency/agency-dashboard" : "/hotel/dashboard");
+                    setIsPartnerDropdownOpen(false);
+                }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                    <LayoutDashboard size={18} className="text-slate-400" />
+                    Dashboard {isAgencyUser ? "Đại lý" : "Khách sạn"}
+                </button>
+                <div className="h-px bg-slate-100 my-1"></div>
+
+            </div>
+        );
+    };
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -359,18 +384,35 @@ const Header = () => {
                                     </span>
                                 </div>
 
-                                <Link to="/profile"
-                                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">
-                                    <div
-                                        className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                        <UserCircle size={20}/></div>
-                                    <div className="flex flex-col">
-                                        <span
-                                            className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
-                                        <span
-                                            className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>
+                                {/*<Link to="/profile"*/}
+                                {/*      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-colors">*/}
+                                {/*    <div*/}
+                                {/*        className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">*/}
+                                {/*        <UserCircle size={20}/></div>*/}
+                                {/*    <div className="flex flex-col">*/}
+                                {/*        <span*/}
+                                {/*            className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>*/}
+                                {/*        <span*/}
+                                {/*            className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>*/}
+                                {/*    </div>*/}
+                                {/*</Link>*/}
+
+                                {/* PHẦN DROPDOWN CHO AGENCY */}
+                                <div className="relative" ref={dropdownRef}>
+                                    <div onClick={() => setIsPartnerDropdownOpen(!isPartnerDropdownOpen)}
+                                         className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white shadow-sm border border-slate-100 hover:border-blue-600 transition-all cursor-pointer group">
+                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                            <UserCircle size={20}/>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
+                                            <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mt-1">Đối tác Đại lý</span>
+                                        </div>
+                                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPartnerDropdownOpen ? 'rotate-180' : ''}`} />
                                     </div>
-                                </Link>
+                                    {isPartnerDropdownOpen && renderPartnerDropdownMenu()}
+                                </div>
+
                                 <button onClick={handleLogout}
                                         className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><LogOut
                                     size={20}/></button>
@@ -380,19 +422,50 @@ const Header = () => {
                                 className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                                 <NotificationBell />
                                 {renderKycStatus()}
-                                <button onClick={() => navigate("/profile")}
-                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>
-                                    <User size={18}/><span>Hồ sơ</span>
-                                </button>
-                                <div className="flex items-center gap-3 px-4 py-1.5">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20} /></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>
-                                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
-                                            {userRoles.some(r => r.includes("HOTEL")) ? "Đối tác Khách sạn" : "Đại lý"}
+                                {/*<button onClick={() => navigate("/profile")}*/}
+                                {/*        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${location.pathname === "/profile" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 hover:text-blue-600 border border-slate-100 shadow-sm"}`}>*/}
+                                {/*    <User size={18}/><span>Hồ sơ</span>*/}
+                                {/*</button>*/}
+
+                                {/* PHẦN DROPDOWN CHO HOTEL / AGENCY STAFF / OTHERS */}
+                                <div className="relative" ref={dropdownRef}>
+                                    <div
+                                        onClick={() => setIsPartnerDropdownOpen(!isPartnerDropdownOpen)}
+                                        className="flex items-center gap-3 px-4 py-1.5 cursor-pointer group hover:bg-white rounded-xl transition-all"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                            <UserCircle size={20} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                        <span className="text-sm font-black text-slate-800 leading-none">
+                                            {user?.lastName} {user?.firstName}
                                         </span>
+                                            {/* Logic hiển thị nhãn động dựa trên Role */}
+                                            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
+                                            {userRoles.some(r => r.includes("HOTEL"))
+                                                ? "Đối tác Khách sạn"
+                                                : userRoles.some(r => r.includes("AGENCY"))
+                                                    ? "Nhân viên Đại lý"
+                                                    : "Đối tác"}
+                                            </span>
+                                        </div>
+                                        <ChevronDown
+                                            size={14}
+                                            className={`text-slate-400 transition-transform duration-200 ${isPartnerDropdownOpen ? 'rotate-180' : ''}`}
+                                        />
                                     </div>
+                                    {isPartnerDropdownOpen && renderPartnerDropdownMenu()}
                                 </div>
+
+                                {/*<div className="flex items-center gap-3 px-4 py-1.5">*/}
+                                {/*    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><UserCircle size={20} /></div>*/}
+                                {/*    <div className="flex flex-col">*/}
+                                {/*        <span className="text-sm font-black text-slate-800 leading-none">{user?.lastName} {user?.firstName}</span>*/}
+                                {/*        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">*/}
+                                {/*            {userRoles.some(r => r.includes("HOTEL")) ? "Đối tác Khách sạn" : "Đại lý"}*/}
+                                {/*        </span>*/}
+                                {/*    </div>*/}
+                                {/*</div>*/}
                                 <div className="w-px h-8 bg-slate-200 mx-2"></div>
                                 <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-600 transition-colors" title="Đăng xuất"><LogOut size={20} /></button>
                             </div>

@@ -212,6 +212,51 @@ export const MOCK_ROOM_TYPES = [
         total_rooms: 5,
         created_at: "2026-03-10 09:00:00",
         updated_at: "2026-03-10 09:00:00"
+    },
+    {
+        room_type_id: 201,
+        hotel_id: 2,
+        room_title: "Deluxe Garden View",
+        room_code: "DGV-02",
+        description: "Phòng tiêu chuẩn với tầm nhìn ra khu vườn nhiệt đới xanh mướt.",
+        base_price: 3200000.00,
+        bed_type: "2 Giường Đơn",
+        max_adults: 2,
+        max_children: 2,
+        room_area: 42.0,
+        amenities: "['Wifi', 'AC', 'Balcony', 'TV']",
+        room_status: "ACTIVE",
+        total_rooms: 20
+    },
+    {
+        room_type_id: 401,
+        hotel_id: 4,
+        room_title: "Superior Ocean View",
+        room_code: "SOV-04",
+        description: "Phòng hướng biển Mỹ Khê với thiết kế hiện đại, ấm cúng.",
+        base_price: 1800000.00,
+        bed_type: "1 Giường King",
+        max_adults: 2,
+        max_children: 1,
+        room_area: 32.0,
+        amenities: "['Wifi', 'Work Desk', 'Minibar']",
+        room_status: "ACTIVE",
+        total_rooms: 50
+    },
+    {
+        room_type_id: 501,
+        hotel_id: 5,
+        room_title: "Classic Terrace Mountain View",
+        room_code: "CTM-05",
+        description: "Phòng có ban công riêng nhìn ra dãy Hoàng Liên Sơn hùng vĩ.",
+        base_price: 4500000.00,
+        bed_type: "1 Giường King",
+        max_adults: 2,
+        max_children: 1,
+        room_area: 40.0,
+        amenities: "['Wifi', 'Heater', 'Bathtub', 'Balcony']",
+        room_status: "ACTIVE",
+        total_rooms: 15
     }
 ];
 
@@ -219,8 +264,11 @@ export const MOCK_ROOM_TYPES = [
 export const MOCK_ROOM_IMAGES = [
     { image_id: 1, room_type_id: 101, s3_key: "https://images.unsplash.com/photo-1590490360182-c33d57733427", created_at: "2026-03-20" },
     { image_id: 2, room_type_id: 101, s3_key: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b", created_at: "2026-03-20" },
-    { image_id: 3, room_type_id: 102, s3_key: "https://images.unsplash.com/photo-1591088398332-8a77d399c843", created_at: "2026-03-20" },
-    { image_id: 4, room_type_id: 301, s3_key: "https://images.unsplash.com/photo-1618773928121-c32242e63f39", created_at: "2026-03-20" }
+    { image_id: 3, room_type_id: 102, s3_key: "https://plus.unsplash.com/premium_photo-1661879252375-7c1db1932572?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", created_at: "2026-03-20" },
+    { image_id: 4, room_type_id: 301, s3_key: "https://images.unsplash.com/photo-1618773928121-c32242e63f39", created_at: "2026-03-20" },
+    { image_id: 5, room_type_id: 201, s3_key: "https://images.unsplash.com/photo-1611892440504-42a792e24d32", created_at: "2026-03-25" },
+    { image_id: 6, room_type_id: 401, s3_key: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304", created_at: "2026-04-01" },
+    { image_id: 7, room_type_id: 501, s3_key: "https://images.unsplash.com/photo-1566665797739-1674de7a421a", created_at: "2026-03-30" }
 ];
 
 // ================= ROOM HOLDS (Bảng room_holds) =================

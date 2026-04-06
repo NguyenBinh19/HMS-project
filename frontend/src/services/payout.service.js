@@ -64,6 +64,50 @@ const disputePayout = async (statementId, reasonCode, description) => {
     return response.data;
 };
 
+//Resolve dispute
+const resolveDispute = async (resolveRequest, files) => {
+    try {
+        const formData = new FormData();
+        const jsonBlob = new Blob([JSON.stringify(resolveRequest)], {
+            type: "application/json",
+        });
+        formData.append("data", jsonBlob);
+        if (files && files.length > 0) {
+            files.forEach((file) => {
+                formData.append("files", file);
+            });
+        }
+        const response = await api.post(`/admin/payout/resolve`, formData);
+        return response.data;
+    } catch (error) {
+        console.error("Resolve Dispute Error:", error);
+        throw error;
+    }
+};
+
+// Lấy chi tiết Dispute
+const getDisputeDetail = async (statementId) => {
+    try {
+        const response = await api.get(
+            `/admin/payout/dispute-detail/${statementId}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Get Dispute Detail Error:", error);
+        throw error;
+    }
+};
+
+// List Statement Dispute
+const getDisputedStatements = async () => {
+    try {
+        const response = await api.get(`/admin/payout/disputed`);
+        return response.data;
+    } catch (error) {
+        console.error("Get Disputed Statements Error:", error);
+        throw error;
+    }
+};
 export const payoutService = {
     getPayoutList,
     getStatementDetail,
@@ -73,5 +117,8 @@ export const payoutService = {
     getHotelStatements,
     getHotelStatementDetail,
     confirmPayout,
-    disputePayout
+    disputePayout,
+    resolveDispute,
+    getDisputeDetail,
+    getDisputedStatements,
 };
