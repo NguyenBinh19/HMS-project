@@ -81,6 +81,13 @@ const HotelProfileManager = () => {
             }
         }
 
+        const descriptVar = formData.description || "";
+        if (descriptVar.trim() !== "") { // Chỉ kiểm tra khi có nhập
+            if (/^\d+$/.test(descriptVar.trim())) {
+                newErrors.description = "Mô tả không hợp lệ (không thể chỉ có số)";
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -300,14 +307,24 @@ const HotelProfileManager = () => {
                                                 onChange={v => setFormData({...formData, address: v})}
                                                 error={errors.address}/>
                                 </div>
-                                <div className="md:col-span-2">
+                                <div className="md:col-span-2 space-y-2">
                                     <label
-                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Mô
-                                        tả khách sạn</label>
+                                        className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">
+                                        Mô tả khách sạn
+                                    </label>
                                     <textarea
-                                        className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-600 outline-none text-sm font-medium transition-all"
+                                        className={`w-full h-32 p-4 bg-slate-50 border-2 rounded-2xl outline-none text-sm font-medium transition-all ${
+                                            errors.description ? 'border-rose-500 focus:border-rose-600' : 'border-slate-100 focus:border-blue-600'
+                                        }`}
                                         value={formData.description}
-                                        onChange={e => setFormData({...formData, description: e.target.value})}/>
+                                        onChange={e => setFormData({...formData, description: e.target.value})}
+                                        placeholder="Nhập mô tả chi tiết về khách sạn của bạn..."
+                                    />
+                                    {errors.description && (
+                                        <p className="text-[10px] text-rose-500 font-bold italic ml-2 tracking-tight">
+                                            {errors.description}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
