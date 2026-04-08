@@ -314,15 +314,49 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="p-6 border-t bg-slate-50 flex justify-between items-center shrink-0 px-8">
-                        <div className="flex items-center gap-3 text-slate-500">
-                            <Info size={20} className="text-blue-500" />
-                            <span className="text-sm font-bold italic">Chế độ xem hồ sơ {actualData?.status}</span>
+                // Giao diện khi hồ sơ đã có kết quả
+                <div className="p-6 bg-slate-50 border-t flex flex-col gap-4 px-10">
+                    <div className="flex items-center gap-6">
+                        {/* Phần bên trái: Chứa Reason Box */}
+                        <div className="flex-1 min-w-0">
+                            {actualData?.status !== KYC_STATUS.VERIFIED && actualData?.rejectionReason ? (
+                                <div className={`relative p-4 rounded-2xl border-2 transition-all ${
+                                    actualData?.status === KYC_STATUS.REJECTED
+                                        ? 'bg-red-50/50 border-red-100'
+                                        : 'bg-amber-50/50 border-amber-100'
+                                }`}>
+                                    <h5 className={`text-[10px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2 ${
+                                        actualData?.status === KYC_STATUS.REJECTED ? 'text-red-600' : 'text-amber-600'
+                                    }`}>
+                                        Lý do từ chối / bổ sung:
+                                    </h5>
+                                    {/* Giới hạn chiều cao và cho phép cuộn nếu lý do quá dài */}
+                                    <div className="max-h-24 overflow-y-auto pr-2 custom-scrollbar">
+                                        <p className="text-[13px] text-slate-700 font-bold italic leading-relaxed">
+                                            "{actualData.rejectionReason}"
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3 text-green-600 py-2">
+                                    <div className="bg-green-100 p-1.5 rounded-full">
+                                        <Check size={16} strokeWidth={4}/>
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-widest">Hồ sơ này đã được phê duyệt thành công</span>
+                                </div>
+                            )}
                         </div>
-                        <button onClick={onClose} className="px-8 py-3 bg-slate-800 text-white rounded-2xl text-[11px] font-black uppercase hover:bg-slate-900 transition-all">
-                            Đóng cửa sổ
-                        </button>
+                        {/* Phần bên phải: Nút Đóng */}
+                        <div className="shrink-0">
+                            <button
+                                onClick={onClose}
+                                className="px-10 py-3.5 bg-slate-800 text-white rounded-2xl text-[11px] font-black uppercase hover:bg-black transition-all shadow-lg active:scale-95"
+                            >
+                                Đóng cửa sổ
+                            </button>
+                        </div>
                     </div>
+                </div>
             )}
             </div>
         )}
@@ -332,16 +366,17 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
 };
 
 // Component hiển thị thông tin con
-const InfoBox = ({ label, value, isTextArea }) => (
+const InfoBox = ({label, value, isTextArea}) => (
     <div className="space-y-1.5">
         <label className="text-[10px] font-black text-slate-400 block ml-1 uppercase tracking-widest">{label}</label>
-        <div className={`w-full px-4 py-3 border-2 border-slate-50 rounded-2xl bg-slate-50/50 text-[12px] font-bold text-slate-700 shadow-sm transition-all hover:border-slate-100 ${isTextArea ? 'min-h-[60px] leading-relaxed' : ''}`}>
+        <div
+            className={`w-full px-4 py-3 border-2 border-slate-50 rounded-2xl bg-slate-50/50 text-[12px] font-bold text-slate-700 shadow-sm transition-all hover:border-slate-100 ${isTextArea ? 'min-h-[60px] leading-relaxed' : ''}`}>
             {value || <span className="text-slate-300 italic font-normal">Chưa cập nhật</span>}
         </div>
     </div>
 );
 
-const ToolbarButton = ({ onClick, icon, label }) => (
+const ToolbarButton = ({onClick, icon, label}) => (
     <button
         type="button" // Thêm type để tránh submit form ngoài ý muốn
         onClick={onClick}
@@ -350,7 +385,8 @@ const ToolbarButton = ({ onClick, icon, label }) => (
     >
         {icon}
         {/* Tooltip hiện tên khi hover */}
-        <span className="absolute -bottom-10 scale-0 group-hover:scale-100 transition-all bg-slate-800 text-[10px] text-white px-2 py-1 rounded-md whitespace-nowrap z-50">
+        <span
+            className="absolute -bottom-10 scale-0 group-hover:scale-100 transition-all bg-slate-800 text-[10px] text-white px-2 py-1 rounded-md whitespace-nowrap z-50">
             {label}
         </span>
     </button>

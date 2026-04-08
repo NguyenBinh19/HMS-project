@@ -3,6 +3,7 @@ import {
     Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
     Car, Utensils, Sparkles, Building2, Package
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { addonServiceApi } from "@/services/addonService.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 import { jwtDecode } from "jwt-decode";
@@ -67,6 +68,15 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
     );
     const [saving, setSaving] = useState(false);
 
+    useEffect(() => {
+        // Khi modal mở: chặn cuộn
+        document.body.style.overflow = "hidden";
+        // Khi modal đóng cuộn lại
+        return () => {
+            document.body.style.overflow = "unset";
+        };
+    }, []);
+
     const handleChange = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
     const handleSubmit = async () => {
@@ -119,15 +129,17 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
             setSaving(false);
         }
     };
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+    const modalContent = (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div
+                className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
                     <h2 className="text-base font-bold text-slate-800">
                         {mode === "create" ? "Thêm Dịch Vụ Mới" : "Sửa thông tin dịch vụ"}
                     </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-2xl leading-none">×
+                    </button>
                 </div>
 
                 {/* Body: Có scroll nếu nội dung quá dài */}
@@ -178,7 +190,8 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
                             <div>
                                 <label className="text-xs text-slate-500 mb-1 block">Giá công bố (Tuỳ chọn)</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">đ</span>
+                                    <span
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">đ</span>
                                     <input
                                         type="number"
                                         min="0"
@@ -219,7 +232,8 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
                                     onChange={(e) => handleChange("requireServiceDate", e.target.checked)}
                                     className="w-4 h-4 accent-blue-600 rounded"
                                 />
-                                <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Yêu cầu Ngày sử dụng (Service Date)</span>
+                                <span
+                                    className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Yêu cầu Ngày sử dụng (Service Date)</span>
                             </label>
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
@@ -228,7 +242,8 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
                                     onChange={(e) => handleChange("requireFlightInfo", e.target.checked)}
                                     className="w-4 h-4 accent-blue-600 rounded"
                                 />
-                                <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">
+                                <span
+                                    className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">
                                     Thông tin Chuyến bay (Số hiệu, Giờ hạ cánh)
                                     <span className="ml-1 text-[10px] text-slate-400">(*) Vận chuyển</span>
                                 </span>
@@ -240,7 +255,8 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
                                     onChange={(e) => handleChange("requireSpecialNote", e.target.checked)}
                                     className="w-4 h-4 accent-blue-600 rounded"
                                 />
-                                <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Ghi chú đặc biệt (Dị ứng, Ăn chay...)</span>
+                                <span
+                                    className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors font-medium">Ghi chú đặc biệt (Dị ứng, Ăn chay...)</span>
                             </label>
                         </div>
                     </div>
@@ -265,6 +281,7 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
             </div>
         </div>
     );
+    return createPortal(modalContent, document.body);
 };
 
 /* ========== MAIN PAGE ========== */
