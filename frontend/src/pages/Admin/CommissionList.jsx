@@ -1,11 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-    Plus,
-    Edit2,
-    Archive,
-    AlertCircle,
-    Loader2,
-    Info, PlayCircle
+    Plus, Edit2, Archive, AlertCircle, Loader2,
+    Info, PlayCircle, Search, Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { commissionService } from '@/services/commission.service.js';
 import AddCommissionModal from '@/components/admin/commission/AddCommissionModal';
@@ -19,6 +15,10 @@ const CommissionList = () => {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [activeTab, setActiveTab] = useState('ALL');
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("ALL");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     // confirmModal lưu ID và số lượng hotel
     const [confirmModal, setConfirmModal] = useState({ show: false, id: null, hotelCount: 0 });
@@ -87,10 +87,25 @@ const CommissionList = () => {
     };
 
     const filteredCommissions = useMemo(() => {
-        if (activeTab === 'ALL') return commissions;
-        return commissions.filter(item => item.commissionType === activeTab);
-    }, [commissions, activeTab]);
-    // Định nghĩa danh sách các Tab
+        return commissions.filter(item => {
+            const matchesTab = activeTab === 'ALL' || item.commissionType === activeTab;
+            const matchesSearch = item.commissionId.toString().includes(searchTerm) ||
+                (item.hotelName || "").toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = filterStatus === 'ALL' ||
+                (filterStatus === 'ACTIVE' ? item.isActive : !item.isActive);
+            return matchesTab && matchesSearch && matchesStatus;
+        });
+    }, [commissions, activeTab, searchTerm, filterStatus]);
+
+    const currentTableData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredCommissions.slice(start, start + itemsPerPage);
+    }, [filteredCommissions, currentPage]);
+
+    const totalPages = Math.ceil(filteredCommissions.length / itemsPerPage);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterStatus, activeTab]);
     const tabs = [
         { id: 'ALL', label: 'Tất cả' },
         { id: 'DEFAULT', label: 'Mặc định' },
@@ -115,24 +130,40 @@ const CommissionList = () => {
                         <Plus size={18} /> Thêm mới
                     </button>
                 </div>
-                {/* THANH TAB */}
-                <div className="px-6 py-2 bg-white border-b border-gray-50 flex gap-6">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`pb-3 pt-2 text-xs font-black uppercase tracking-widest transition-all relative ${
-                                activeTab === tab.id
-                                    ? 'text-blue-600'
-                                    : 'text-gray-400 hover:text-gray-600'
-                            }`}
+                {/* THANH TAB & FILTER */}
+                <div className="px-6 py-2 bg-white border-b border-gray-50 flex items-center justify-between gap-6">
+                    {/* NHÓM TAB */}
+                    <div className="flex gap-6">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`pb-3 pt-2 text-xs font-black uppercase tracking-widest transition-all relative ${
+                                    activeTab === tab.id
+                                        ? 'text-blue-600'
+                                        : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                            >
+                                {tab.label}
+                                {activeTab === tab.id && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"/>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                    {/* NHÓM FILTER */}
+                    <div className="flex items-center gap-2">
+                        <Filter size={14} className="text-slate-400"/>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-tight outline-none focus:ring-2 focus:ring-blue-500/10 cursor-pointer hover:bg-slate-100 transition-colors"
                         >
-                            {tab.label}
-                            {activeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-                            )}
-                        </button>
-                    ))}
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="ACTIVE"> Đang hoạt động</option>
+                            <option value="ARCHIVED"> Đã lưu trữ</option>
+                        </select>
+                    </div>
                 </div>
                 {/* Table */}
                 <div className="overflow-x-auto">
@@ -155,12 +186,12 @@ const CommissionList = () => {
                                     <span className="text-xs font-bold text-gray-400 uppercase">Đang tải dữ liệu...</span>
                                 </td>
                             </tr>
-                        ) : filteredCommissions.length === 0 ? (
+                        ) : currentTableData.length === 0 ? (
                             <tr>
                                 <td colSpan="6" className="px-6 py-20 text-center text-gray-400 font-bold uppercase text-xs">Trống</td>
                             </tr>
                         ) : (
-                            filteredCommissions.map((item, index) => (
+                            currentTableData.map((item, index) => (
                                 <tr key={item.commissionId}
                                     className={`hover:bg-gray-50/50 transition-colors ${!item.isActive ? 'opacity-60 bg-gray-50/30' : ''}`}>
                                     <td className="px-6 py-4 font-black text-xs text-gray-400">{index + 1}</td>
@@ -237,6 +268,39 @@ const CommissionList = () => {
                         </tbody>
                     </table>
                 </div>
+                {/* Phân trang UI */}
+                {totalPages > 1 && (
+                    <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-white">
+                        <p className="text-xs font-bold text-gray-400 uppercase">
+                            Trang {currentPage} / {totalPages}
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(p => p - 1)}
+                                className="p-2 border border-gray-200 rounded-lg disabled:opacity-30 hover:bg-gray-50 transition-all"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i + 1}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${currentPage === i + 1 ? 'bg-gray-900 text-white' : 'hover:bg-gray-100 text-gray-400'}`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(p => p + 1)}
+                                className="p-2 border border-gray-200 rounded-lg disabled:opacity-30 hover:bg-gray-50 transition-all"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal Confirm Archive */}

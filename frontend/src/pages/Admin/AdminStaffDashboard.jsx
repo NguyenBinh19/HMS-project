@@ -1,4 +1,4 @@
-import { Plus, ChevronLeft, ChevronRight, Loader2, CreditCard } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Loader2, Search, Filter } from 'lucide-react';
 import StaffStats from '@/components/admin/staff/AdminStaffStatistic.jsx';
 import StaffActionMenu from '@/components/admin/staff/AdminStaffActionMenu.jsx';
 import StaffFormModal from '@/components/admin/staff/AdminStaffModal.jsx';
@@ -11,13 +11,16 @@ const StaffDashboard = () => {
     const [staffs, setStaffs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterRole, setFilterRole] = useState('ALL');
+    const [filterStatus, setFilterStatus] = useState('ALL');
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
         data: null,
         isViewOnly: false
     });
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 9;
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const userRole = currentUser?.roles || "";
     // Chỉ ADMIN TỔNG (ROLE_ADMIN) mới có quyền CRUD
@@ -31,7 +34,6 @@ const StaffDashboard = () => {
             setLoading(true);
             const response = await staffService.getStaffAdminList();
             const data = response.result || [];
-            // SỬA TẠI ĐÂY: Kiểm tra đúng giá trị trả về từ API (ADMIN_STAFF và ADMIN)
             const adminStaff = data.filter(s =>
                 s.permission?.includes("ADMIN")
             );
@@ -45,6 +47,27 @@ const StaffDashboard = () => {
 
     useEffect(() => { fetchStaffList(); }, []);
 
+    // --- Logic Lọc Dữ Liệu ---
+    const filteredStaffs = useMemo(() => {
+        return staffs.filter(staff => {
+            const fullName = `${staff.lastName || ''} ${staff.firstName || ''}`.toLowerCase();
+            const email = (staff.email || '').toLowerCase();
+            const username = (staff.username || '').toLowerCase();
+            const search = searchTerm.toLowerCase();
+            const matchesSearch = fullName.includes(search) || email.includes(search) || username.includes(search);
+            let matchesRole = true;
+            if (filterRole !== 'ALL') {
+                if (filterRole === 'ADMIN') {
+                    matchesRole = staff.permission === 'ADMIN' || staff.permission === 'ROLE_ADMIN';
+                } else if (filterRole === 'ADMIN_STAFF') {
+                    matchesRole = staff.permission === 'ADMIN_STAFF' || staff.permission === 'ROLE_ADMIN_STAFF';
+                }
+            }
+            const matchesStatus = filterStatus === 'ALL' || staff.status === filterStatus;
+            return matchesSearch && matchesRole && matchesStatus;
+        });
+    }, [staffs, searchTerm, filterRole, filterStatus]);
+
     const handleAddStaff = () => {
         if (!isFullAdmin) return alert("Chỉ Admin tổng mới có quyền thêm mới!");
         setIsCreateOpen(true);
@@ -57,21 +80,6 @@ const StaffDashboard = () => {
     const handleViewDetails = (staff) => {
         setModalConfig({ isOpen: true, data: staff, isViewOnly: true });
     };
-
-    // const handleToggleStatus = async (staff) => {
-    //     const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
-    //     if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
-    //     try {
-    //         if (staff.status === 'ACTIVE') {
-    //             await staffService.lockStaff(staff.id);
-    //         } else {
-    //             await staffService.unLockStaff(staff.id);
-    //         }
-    //         fetchStaffList();
-    //     } catch (error) {
-    //         alert(`Lỗi khi ${actionText} tài khoản`);
-    //     }
-    // };
 
     const handleToggleStatus = async (staff) => {
         // 1. Chặn tự khóa mình
@@ -100,10 +108,13 @@ const StaffDashboard = () => {
 
     const currentTableData = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
-        return staffs.slice(start, start + itemsPerPage);
-    }, [currentPage, staffs]);
+        return filteredStaffs.slice(start, start + itemsPerPage);
+    }, [currentPage, filteredStaffs]);
 
-    const totalPages = Math.max(1, Math.ceil(staffs.length / itemsPerPage));
+    const totalPages = Math.max(1, Math.ceil(filteredStaffs.length / itemsPerPage));
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterRole, filterStatus]);
 
     return (
         <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10">
@@ -124,6 +135,35 @@ const StaffDashboard = () => {
 
                 <StaffStats data={staffs}/>
 
+                {/* Search & Filter Bar */}
+                <div className="mt-8 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Tìm theo tên, email hoặc username..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                            <select
+                                className="bg-transparent text-sm font-semibold text-slate-600 focus:outline-none cursor-pointer"
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả trạng thái</option>
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Bị khóa</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Table */}
                 <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 mt-8">
                     <div className="overflow-visible rounded-[24px">
@@ -143,10 +183,13 @@ const StaffDashboard = () => {
                                     <td colSpan="5" className="text-center py-20"><Loader2
                                         className="animate-spin mx-auto text-blue-500"/></td>
                                 </tr>
-                            ) : staffs.length === 0 ? (
+                            ) : filteredStaffs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="text-center py-20 text-slate-400">Chưa có nhân viên đại
-                                        lý nào.
+                                    <td colSpan="5" className="text-center py-20">
+                                        <div className="flex flex-col items-center justify-center text-slate-400">
+                                            <Search size={40} className="mb-2 opacity-20" />
+                                            <p>{searchTerm ? "Không tìm thấy nhân viên phù hợp" : "Chưa có nhân viên nào"}</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : currentTableData.map((staff) => (
@@ -209,36 +252,37 @@ const StaffDashboard = () => {
                     </div>
 
                     {/* Phân Trang */}
-                    <div
-                        className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => prev - 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                        <ChevronLeft size={18}/>
-                        </button>
-                        {[...Array(totalPages)].map((_, index) => (
+                    {filteredStaffs.length > itemsPerPage && (
+                        <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
                             <button
-                                key={index + 1}
-                                onClick={() => setCurrentPage(index + 1)}
-                                className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-                                    currentPage === index + 1
-                                        ? 'bg-[#006AFF] text-white shadow-md'
-                                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                                }`}
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => prev - 1)}
+                                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50"
                             >
-                                {index + 1}
+                                <ChevronLeft size={18} />
                             </button>
-                        ))}
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => prev + 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                            <ChevronRight size={18}/>
-                        </button>
-                    </div>
+                            {[...Array(totalPages)].map((_, index) => (
+                                <button
+                                    key={index + 1}
+                                    onClick={() => setCurrentPage(index + 1)}
+                                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                                        currentPage === index + 1
+                                            ? 'bg-[#006AFF] text-white shadow-md'
+                                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {index + 1}
+                                </button>
+                            ))}
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

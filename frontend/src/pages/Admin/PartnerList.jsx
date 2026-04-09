@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Search, Eye, Building2, Hotel, Users,
-    Loader2, Info
+    Loader2, Info, Filter, ChevronRight
 } from "lucide-react";
 import { partnerService } from "@/services/partner.service.js";
 
 const PartnerList = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("ALL");
+    const [sortBy, setSortBy] = useState("NAME_ASC");
     const [activeTab, setActiveTab] = useState("Agency");
     const [partners, setPartners] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const getStatusStyle = (status) => {
         switch (status?.toUpperCase()) {
@@ -60,18 +64,41 @@ const PartnerList = () => {
         fetchData();
     }, [activeTab]);
 
-    const filteredPartners = partners.filter(p => {
-        // 1. Kiểm tra trạng thái: Nếu là PENDING thì loại bỏ ngay
-        const status = (p.status || "").toUpperCase();
-        if (status === "PENDING") return false;
+    const filteredPartners = useMemo(() => {
+        let result = partners.filter(p => {
+            const status = (p.status || "").toUpperCase();
+            if (status === "PENDING") return false;
+            // Lọc theo Search Term
+            const name = (p.agencyName || p.hotelName || "").toLowerCase();
+            const email = (p.email || "").toLowerCase();
+            const search = searchTerm.toLowerCase();
+            const matchesSearch = name.includes(search) || email.includes(search);
+            // Lọc theo Status Tab
+            const matchesStatus = filterStatus === "ALL" || status === filterStatus;
+            return matchesSearch && matchesStatus;
+        });
+        // Logic Sắp xếp
+        return result.sort((a, b) => {
+            const nameA = (a.agencyName || a.hotelName || "").toLowerCase();
+            const nameB = (b.agencyName || b.hotelName || "").toLowerCase();
 
-        // 2. Logic tìm kiếm (Search)
-        const name = (p.agencyName || p.hotelName || "").toLowerCase();
-        const email = (p.email || "").toLowerCase();
-        const search = searchTerm.toLowerCase();
+            switch (sortBy) {
+                case "NAME_ASC": return nameA.localeCompare(nameB);
+                case "NAME_DESC": return nameB.localeCompare(nameA);
+                case "CREDIT_DESC": return (b.currentCredit || 0) - (a.currentCredit || 0);
+                default: return 0;
+            }
+        });
+    }, [partners, searchTerm, filterStatus, sortBy]);
 
-        return name.includes(search) || email.includes(search);
-    });
+    const currentTableData = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredPartners.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredPartners, currentPage]);
+    const totalPages = Math.ceil(filteredPartners.length / itemsPerPage);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterStatus, sortBy, activeTab]);
 
     return (
         <div className="p-8 bg-[#F8FAFC] min-h-screen font-sans">
@@ -125,17 +152,66 @@ const PartnerList = () => {
                     </div>
                 </div>
 
-                {/* SEARCH BAR */}
-                <div className="bg-white p-2 rounded-3xl shadow-sm border border-slate-200 flex items-center pr-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                {/* SEARCH & FILTER CONTAINER */}
+                <div className="bg-white p-3 rounded-[32px] shadow-sm border border-slate-200 flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+                    {/* Search Box  */}
+                    <div className="relative flex-1 group">
+                        <Search
+                            className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
+                            size={20}
+                        />
                         <input
                             type="text"
                             placeholder={`Tìm theo tên hoặc email của ${activeTab === 'Agency' ? 'đại lý' : 'khách sạn'}...`}
-                            className="w-full pl-16 pr-4 py-5 bg-transparent border-none focus:ring-0 outline-none font-bold text-slate-700 placeholder:text-slate-300"
+                            className="w-full pl-16 pr-4 py-4 bg-slate-50/50 group-hover:bg-slate-50 border-none rounded-[24px] focus:ring-2 focus:ring-blue-500/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                    </div>
+                    {/* Right Actions - Các bộ lọc */}
+                    <div className="flex flex-wrap items-center gap-3 px-2">
+                        <div className="h-8 w-[1px] bg-slate-200 hidden lg:block mx-2" />
+                        <div className="flex items-center gap-3 w-full lg:w-auto">
+                            {/* Filter Status */}
+                            <div className="relative flex-1 lg:flex-none">
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="w-full lg:w-auto appearance-none bg-slate-50 border border-slate-100 text-[11px] font-black text-slate-600 py-3 pl-4 pr-10 rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer uppercase tracking-tight hover:bg-slate-100 transition-all"
+                                >
+                                    <option value="ALL">Tất cả trạng thái</option>
+                                    <option value="ACTIVE"> Đang hoạt động</option>
+                                    <option value="LOCK"> Tạm khóa</option>
+                                    <option value="SUSPENDED"> Đã cấm</option>
+                                    <option value="INACTIVE"> Không hoạt động</option>
+                                </select>
+                                <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                            </div>
+                            {/* Sort Order */}
+                            <div className="relative flex-1 lg:flex-none">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="w-full lg:w-auto appearance-none bg-slate-50 border border-slate-100 text-[11px] font-black text-slate-600 py-3 pl-4 pr-10 rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer uppercase tracking-tight hover:bg-slate-100 transition-all"
+                                >
+                                    <option value="NAME_ASC">Tên: A → Z</option>
+                                    <option value="NAME_DESC">Tên: Z → A</option>
+                                    {activeTab === "Agency" && <option value="CREDIT_DESC">Tín dụng cao nhất</option>}
+                                </select>
+                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={14} />
+                            </div>
+                            {/* Clear Button */}
+                            {(searchTerm || filterStatus !== "ALL") && (
+                                <button
+                                    onClick={() => {setSearchTerm(""); setFilterStatus("ALL");}}
+                                    className="p-3 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all flex items-center justify-center"
+                                    title="Xóa bộ lọc"
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:inline mr-2">Xóa lọc</span>
+                                    <Info size={18} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -175,11 +251,11 @@ const PartnerList = () => {
                                     <p className="font-black text-slate-400 uppercase text-xs tracking-widest">Đang tải dữ liệu hệ thống...</p>
                                 </td>
                             </tr>
-                        ) : filteredPartners.length > 0 ? (
-                            filteredPartners.map((p) => (
+                        ) : currentTableData.length > 0 ? (
+                            currentTableData.map((p, index) => (
                                 <tr key={p.agencyId || p.hotelId} className="hover:bg-slate-50/80 transition-all group">
                                     <td className="p-6 text-center font-bold text-slate-400 text-xs">
-                                        {p.agencyId || p.hotelId}
+                                        {(currentPage - 1) * itemsPerPage + index + 1}
                                     </td>
                                     <td className="p-6">
                                         <div className="flex items-center gap-4">
@@ -268,6 +344,55 @@ const PartnerList = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* PAGINATION */}
+                {filteredPartners.length > 0 && (
+                    <div className="p-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                            Hiển thị {currentTableData.length}/{filteredPartners.length} đối tác
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronRight size={18} className="rotate-180" />
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {[...Array(totalPages)].map((_, i) => {
+                                    const pageNum = i + 1;
+                                    // Logic chỉ hiển thị một số trang nếu tổng số trang quá lớn
+                                    if (totalPages > 5 && Math.abs(pageNum - currentPage) > 2 && pageNum !== 1 && pageNum !== totalPages) {
+                                        if (pageNum === currentPage - 3 || pageNum === currentPage + 3) return <span key={pageNum}>...</span>;
+                                        return null;
+                                    }
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${
+                                                currentPage === pageNum
+                                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
+                                                    : "bg-white border border-slate-200 text-slate-400 hover:border-blue-300"
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all shadow-sm"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

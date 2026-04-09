@@ -35,7 +35,7 @@ export default function SessionExpiredHandler() {
     if (!isOpen) return null;
 
     return (
-        // ✅ Giao diện Custom (Giống hệt trang Login bạn gửi)
+        // Giao diện Custom
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-zoom-in relative">
 
