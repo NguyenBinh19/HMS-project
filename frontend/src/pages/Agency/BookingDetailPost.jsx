@@ -294,18 +294,13 @@ const BookingDetailPost = () => {
                                     className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all ${
                                         booking.hasFeedback
                                             ? "bg-slate-100 text-slate-400 border border-transparent cursor-not-allowed"
-                                            : "bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                            : "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
                                     }`}
                                 >
                                     <Star size={18} fill={booking.hasFeedback ? "none" : "currentColor"}/>
                                     {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá ngay"}
                                 </button>
                             )}
-
-                            {/*<button*/}
-                            {/*    className="flex items-center justify-center gap-2 bg-[#f0f2f5] text-slate-700 py-2.5 rounded-md text-xs font-bold hover:bg-slate-200">*/}
-                            {/*    <FileText size={14}/> Hóa đơn*/}
-                            {/*</button>*/}
 
                             {/* Nút Hủy phòng */}
                             <button
@@ -476,7 +471,7 @@ const BookingDetailPost = () => {
                     </button>
                 </div>
             </div>
-            {/* MODAL CHỈNH SỬA */}
+
             {/* Modals */}
             <EditGuestModal
                 isOpen={isEditModalOpen}

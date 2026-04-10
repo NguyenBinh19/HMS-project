@@ -14,6 +14,7 @@ import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import RoomDetailModal from "@/components/agency/booking/RoomDetailModal.jsx"
 import { ROLES, ROLE_GROUP } from "../../constant/roles.js";
+const DEFAULT_HOTEL_IMAGE = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb";
 // --- 1. SUB-COMPONENT: TIMER MODAL ---
 const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
     const [timeLeft, setTimeLeft] = useState(0);
@@ -274,7 +275,7 @@ export default function HotelDetailPage() {
 
                             {/* HERO IMAGE */}
                             <img
-                                src={hotel.images?.[0]}
+                                src={hotel.images?.[0] || DEFAULT_HOTEL_IMAGE}
                                 className="w-full h-full object-cover cursor-pointer"
                                 alt="Hotel"
                                 onClick={() => setOpenGallery(true)}
