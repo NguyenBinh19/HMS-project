@@ -189,7 +189,7 @@ toast.error("Không thể đánh dấu đọc tất cả");        }
 
             {/* Dropdown */}
             {open && (
-                <div className="absolute right-0 mt-2 w-[380px] max-h-[480px] bg-white border border-slate-100 rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
+                <div className="absolute right-0 mt-3 w-[380px] max-h-[480px] bg-white border border-slate-100 rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                         <h3 className="text-sm font-black text-slate-800">
