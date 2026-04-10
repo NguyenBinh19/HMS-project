@@ -1,8 +1,8 @@
 import {
     Plus, Loader2, Pencil, Trash2,
-    User, Baby, Building2
+    User, Baby, Building2, Search, X, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import RoomTypeModal from "@/components/hotel/roomTypes/RoomTypeModal.jsx";
 import RoomTypeDetailModal from "@/components/hotel/roomTypes/RoomTypeModalDetail.jsx";
 import { roomTypeService } from "@/services/roomtypes.service.js";
@@ -17,6 +17,9 @@ const ManageRoomTypes = () => {
     const [selectedRoomId, setSelectedRoomId] = useState(null);
 
     const toastRef = useRef(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     // --- FETCH DATA ---
     const fetchRoomTypes = async () => {
@@ -55,6 +58,24 @@ const ManageRoomTypes = () => {
     useEffect(() => {
         fetchRoomTypes();
     }, []);
+
+    const filteredData = useMemo(() => {
+        return roomTypes.filter(item =>
+            item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
+        );
+    }, [roomTypes, searchTerm]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredData.slice(start, start + itemsPerPage);
+    }, [filteredData, currentPage]);
+
+    // Reset về trang 1 khi tìm kiếm
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     // --- HANDLERS ---
 
@@ -135,6 +156,29 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                     </p>
                 </div>
 
+                {/* SEARCH BAR  */}
+                <div className="relative w-full mb-6">
+                    <Search
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={20}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm nhanh tên hạng phòng (VD: Deluxe, Suite...)"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-12 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors p-1"
+                        >
+                            <X size={18}/>
+                        </button>
+                    )}
+                </div>
+
                 {/* MAIN CARD */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
 
@@ -148,7 +192,7 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                             onClick={handleAddNew}
                             className="flex items-center gap-1 text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer"
                         >
-                            <Plus size={16} strokeWidth={3} />
+                            <Plus size={16} strokeWidth={3}/>
                             Thêm hạng phòng mới
                         </button>
                     </div>
@@ -157,10 +201,10 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                     <div className="overflow-x-auto">
                         {loading ? (
                             <div className="p-12 text-center text-slate-500 flex flex-col items-center">
-                                <Loader2 className="animate-spin mb-2" size={24} />
+                                <Loader2 className="animate-spin mb-2" size={24}/>
                                 Đang tải dữ liệu...
                             </div>
-                        ) : roomTypes.length === 0 ? (
+                        ) : filteredData.length === 0 ? (
                             <div className="p-12 text-center text-slate-500">
                                 Chưa có dữ liệu loại phòng nào.
                             </div>
@@ -176,13 +220,15 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                                 </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                {roomTypes.map((item) => (
-                                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
+                                {paginatedData.map((item) => (
+                                    <tr key={item.id}
+                                        className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0">
                                         {/* CỘT 1 */}
                                         <td className="px-6 py-5">
                                             <div className="flex items-start gap-4">
-                                                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-900 flex-shrink-0 mt-1">
-                                                    <Building2 size={24} strokeWidth={2} />
+                                                <div
+                                                    className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-900 flex-shrink-0 mt-1">
+                                                    <Building2 size={24} strokeWidth={2}/>
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-slate-900 text-[15px] mb-1">
@@ -198,12 +244,14 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-6 text-slate-700">
                                                 <div className="flex items-center gap-1.5">
-                                                    <User size={15} fill="currentColor" className="text-slate-900" />
-                                                    <span className="font-medium text-[14px]">x{item.adults} Người lớn</span>
+                                                    <User size={15} fill="currentColor" className="text-slate-900"/>
+                                                    <span
+                                                        className="font-medium text-[14px]">x{item.adults} Người lớn</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
-                                                    <Baby size={16} className="text-slate-900" strokeWidth={2.5} />
-                                                    <span className="font-medium text-[14px]">x{item.children} Trẻ em</span>
+                                                    <Baby size={16} className="text-slate-900" strokeWidth={2.5}/>
+                                                    <span
+                                                        className="font-medium text-[14px]">x{item.children} Trẻ em</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -223,7 +271,7 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                                                     <div className={`
                                                         absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300
                                                         ${item.isActive ? 'left-[22px]' : 'left-0.5'}
-                                                    `} />
+                                                    `}/>
                                                 </div>
                                                 <span className="text-xs font-medium text-slate-500">
                                                     {item.isActive ? 'Đang rao' : 'Tạm ẩn'}
@@ -238,14 +286,14 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                                                     className="w-8 h-8 flex items-center justify-center rounded bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
                                                     title="Chỉnh sửa / Chi tiết"
                                                 >
-                                                    <Pencil size={14} strokeWidth={2.5} />
+                                                    <Pencil size={14} strokeWidth={2.5}/>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(item.id)}
                                                     className="w-8 h-8 flex items-center justify-center rounded bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
                                                     title="Chuyển vào thùng rác"
                                                 >
-                                                    <Trash2 size={14} strokeWidth={2.5} />
+                                                    <Trash2 size={14} strokeWidth={2.5}/>
                                                 </button>
                                             </div>
                                         </td>
@@ -255,6 +303,44 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                             </table>
                         )}
                     </div>
+                    {/* PHÂN TRANG (PAGINATION) FOOTER */}
+                    {!loading && totalPages > 1 && (
+                        <div
+                            className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-xs font-medium text-slate-500">
+                                Hiển thị <span
+                                className="text-slate-900 font-bold">{paginatedData.length}</span> trên <span
+                                className="text-slate-900 font-bold">{filteredData.length}</span> hạng phòng
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => prev - 1)}
+                                    className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
+                                >
+                                    <ChevronLeft size={18}/>
+                                </button>
+                                <div className="flex items-center gap-1">
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <button
+                                            key={i + 1}
+                                            onClick={() => setCurrentPage(i + 1)}
+                                            className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-white border border-transparent hover:border-slate-200'}`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                    className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 disabled:opacity-30 transition-all"
+                                >
+                                    <ChevronRight size={18}/>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* MODAL 1 */}

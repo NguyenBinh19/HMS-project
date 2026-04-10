@@ -481,120 +481,89 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* MOBILE MENU */}
+            {/* MOBILE MENU - Đã tối ưu & sạch sẽ */}
             {isMenuOpen && (
                 <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
                     <nav className="flex flex-col space-y-2">
-                        {!user && navLinks.map((link) => {
+                        {/* 1. Nav Links (Dành cho khách hoặc chế độ Demo) */}
+                        {(!user || isDemoActive) && navLinks.map((link) => {
                             const isActive = link.isDemo ? isDemoActive : location.pathname === link.href;
+                            // Nếu đã login thật (không phải demo) thì không hiện các link ngoài demo
+                            if (user && !link.isDemo) return null;
+
                             return (
                                 <Link
                                     key={link.name}
                                     to={link.href}
                                     onClick={() => setIsMenuOpen(false)}
-                                    className={`px-4 py-3 text-lg font-bold rounded-xl ${
+                                    className={`px-4 py-3 text-lg font-bold rounded-xl flex items-center justify-between ${
                                         isActive ? "text-blue-600 bg-blue-50" : "text-slate-700 hover:bg-slate-50"
                                     }`}
                                 >
                                     {link.name}
+                                    {link.isDemo && isActive && (
+                                        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                                    )}
                                 </Link>
                             );
                         })}
 
-                        {/* 2. Menu dành riêng cho Admin */}
-                        {user && isAdmin && (
+                        {/* 2. Menu dành riêng cho Admin (Khi không ở chế độ Demo) */}
+                        {user && isAdmin && !isDemoActive && (
                             <>
-                                <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-blue-600 bg-blue-50">Dashboard Admin</Link>
-                                <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ cá nhân</Link>
+                                <Link
+                                    to="/admin/dashboard"
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="px-4 py-3 text-lg font-bold rounded-xl text-blue-600 bg-blue-50"
+                                >
+                                    Dashboard Admin
+                                </Link>
+                                <Link
+                                    to="/profile"
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700"
+                                >
+                                    Hồ sơ cá nhân
+                                </Link>
                             </>
                         )}
 
-                        {/* 3. Menu dành cho Agency/Hotel (Non-admin) */}
+                        {/* 3. Menu cho User thực tế / Agency (Khi không là Admin) */}
                         {user && !isAdmin && (
-                            <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ của tôi</Link>
+                            <Link
+                                to="/profile"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700"
+                            >
+                                {isDemoActive ? "Hồ sơ của tôi" : "Hồ sơ đối tác"}
+                            </Link>
                         )}
                     </nav>
 
                     {/* 4. Khu vực Action Buttons */}
                     <div className="pt-4 border-t border-slate-100">
                         {user ? (
-                            // Chỉ hiện Logout khi đã đăng nhập
                             <button
                                 onClick={handleLogout}
-                                className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100"
+                                className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100 transition-active active:scale-95"
                             >
-                                <LogOut size={22} /> Đăng xuất tài khoản
+                                <LogOut size={22} />
+                                {isDemoActive ? "Thoát trải nghiệm" : "Đăng xuất tài khoản"}
                             </button>
                         ) : (
-                            // Hiện Đăng nhập/Đăng ký khi chưa đăng nhập trên Mobile
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => { navigate("/login"); setIsMenuOpen(false); }}
-                                    className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold"
+                                    className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold active:scale-95 transition-all"
                                 >
                                     Đăng nhập
                                 </button>
                                 <button
                                     onClick={() => { navigate("/register"); setIsMenuOpen(false); }}
-                                    className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold"
+                                    className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all"
                                 >
                                     Đăng ký đối tác
                                 </button>
-                            </div>
-                        )}
-                        {/* MOBILE MENU */}
-                        {isMenuOpen && (
-                            <div className="lg:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl animate-in slide-in-from-top-2">
-                                <nav className="flex flex-col space-y-2">
-                                    {(!user || isDemoActive) && navLinks.map((link) => {
-                                        const isActive = link.isDemo ? isDemoActive : location.pathname === link.href;
-                                        if (user && !link.isDemo) return null;
-
-                                        return (
-                                            <Link
-                                                key={link.name}
-                                                to={link.href}
-                                                onClick={() => setIsMenuOpen(false)}
-                                                className={`px-4 py-3 text-lg font-bold rounded-xl flex items-center justify-between ${
-                                                    isActive ? "text-blue-600 bg-blue-50" : "text-slate-700 hover:bg-slate-50"
-                                                }`}
-                                            >
-                                                {link.name}
-                                                {link.isDemo && isActive && <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
-                                            </Link>
-                                        );
-                                    })}
-
-                                    {/* 2. Menu dành riêng cho Admin */}
-                                    {user && isAdmin && !isDemoActive && (
-                                        <>
-                                            <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-blue-600 bg-blue-50">Dashboard Admin</Link>
-                                            <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ cá nhân</Link>
-                                        </>
-                                    )}
-
-                                    {/* 3. Menu cho User thực tế / Demo User */}
-                                    {user && !isAdmin && (
-                                        <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 text-lg font-bold rounded-xl text-slate-700">Hồ sơ của tôi</Link>
-                                    )}
-                                </nav>
-
-                                {/* 4. Khu vực Action Buttons */}
-                                <div className="pt-4 border-t border-slate-100">
-                                    {user ? (
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full py-4 rounded-2xl bg-rose-50 text-rose-600 font-black flex justify-center items-center gap-2 border border-rose-100"
-                                        >
-                                            <LogOut size={22} /> {isDemoActive ? "Thoát trải nghiệm" : "Đăng xuất"}
-                                        </button>
-                                    ) : (
-                                        <div className="flex flex-col gap-3">
-                                            <button onClick={() => { navigate("/login"); setIsMenuOpen(false); }} className="w-full py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold">Đăng nhập</button>
-                                            <button onClick={() => { navigate("/register"); setIsMenuOpen(false); }} className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold">Đăng ký đối tác</button>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         )}
                     </div>

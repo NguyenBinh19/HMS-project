@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     AlertCircle, Eye, Loader2, Calendar,
-    LayoutList, Ticket, TrendingUp, Percent
+    LayoutList, Ticket, TrendingUp, Search, X,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { payoutService } from "@/services/payout.service";
 import DisputeDetailModal from '@/components/admin/financial/DisputeModal.jsx';
@@ -11,10 +12,17 @@ const DisputeManagement = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStatement, setSelectedStatement] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     useEffect(() => {
         fetchDisputedStatements();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const fetchDisputedStatements = async () => {
         setLoading(true);
@@ -27,6 +35,22 @@ const DisputeManagement = () => {
             setLoading(false);
         }
     };
+
+    const filteredDisputes = useMemo(() => {
+        const search = searchTerm.toLowerCase().trim();
+        if (!search) return disputes;
+
+        return disputes.filter(item =>
+            (item.hotelName || "").toLowerCase().includes(search) ||
+            (item.statementCode || "").toLowerCase().includes(search)
+        );
+    }, [disputes, searchTerm]);
+
+    const totalPages = Math.ceil(filteredDisputes.length / itemsPerPage);
+    const paginatedDisputes = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredDisputes.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredDisputes, currentPage]);
 
     const handleViewDetail = (item) => {
         setSelectedStatement(item);
@@ -59,6 +83,27 @@ const DisputeManagement = () => {
                     </div>
                 </div>
             </div>
+            {/* 3. Search Bar Section */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Tìm theo tên khách sạn hoặc mã đối soát ..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-10 py-4 bg-white border border-slate-200 rounded-[20px] text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:font-medium placeholder:text-slate-300"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-100 hover:bg-slate-200 p-1 rounded-full transition-colors"
+                        >
+                            <X size={14} className="text-slate-500" />
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {/* Table Section */}
             <div className="bg-white rounded-[40px] border border-slate-200 overflow-hidden shadow-sm">
@@ -73,7 +118,7 @@ const DisputeManagement = () => {
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                    {disputes.length === 0 ? (
+                    {paginatedDisputes.length === 0 ? (
                         <tr>
                             <td colSpan="5" className="p-20 text-center">
                                 <div className="flex flex-col items-center justify-center space-y-3">
@@ -83,7 +128,7 @@ const DisputeManagement = () => {
                             </td>
                         </tr>
                     ) : (
-                        disputes.map((item) => (
+                        paginatedDisputes.map((item) => (
                             <tr key={item.statementId} className="hover:bg-blue-50/30 transition-all group">
                                 {/* Cột 1: Khách sạn */}
                                 <td className="p-6">
@@ -170,6 +215,48 @@ const DisputeManagement = () => {
                     </tbody>
                 </table>
             </div>
+            {/* --- Pagination Footer --- */}
+            {totalPages > 1 && (
+                <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                            Trang {currentPage} / {totalPages}
+                        </span>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronLeft size={18} className="text-slate-600" />
+                        </button>
+
+                        <div className="flex gap-1">
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i + 1}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
+                                        currentPage === i + 1
+                                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
+                                            : 'bg-white border border-slate-200 text-slate-400 hover:border-slate-400'
+                                    }`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronRight size={18} className="text-slate-600" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <DisputeDetailModal
                 isOpen={isModalOpen}
