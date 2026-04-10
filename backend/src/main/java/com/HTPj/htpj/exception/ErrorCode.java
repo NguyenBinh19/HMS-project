@@ -132,6 +132,9 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(4002, "Email already exists", HttpStatus.BAD_REQUEST),
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
+    BANNED_BUSINESS_LICENSE(4005, "SỐ GPKD ĐÃ BỊ CẤM", HttpStatus.NOT_FOUND),
+    BANNED_CIC_NUMBER(4006, "SỐ CCCD ĐÃ BỊ CẤM", HttpStatus.NOT_FOUND),
+
 
     //rank
     RANK_NOT_FOUND(4101, "Rank not found", HttpStatus.NOT_FOUND),

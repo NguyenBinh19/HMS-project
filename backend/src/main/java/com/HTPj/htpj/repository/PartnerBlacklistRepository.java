@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PartnerBlacklistRepository extends JpaRepository<PartnerBlacklist, Long> {
+    boolean existsByBusinessLicenseNumber(String businessLicenseNumber);
+    boolean existsByRepresentativeCicNumber(String representativeCicNumber);
 }
