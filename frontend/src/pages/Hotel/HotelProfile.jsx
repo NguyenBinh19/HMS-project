@@ -208,11 +208,17 @@ const HotelProfileManager = () => {
             const response = await partnerService.updateHotelProfile(updateRequest, newImages);
 
             if (response.code === 1000) {
-                toast.success("Cập nhật thành công!");
+                // toast.success("Cập nhật thành công!");
+                // setShowSuccessBanner(true);
+                // setTimeout(() => setShowSuccessBanner(false), 5000);
+                // setNewImages([]);
+                // fetchDetail();
+
+                await fetchDetail();
                 setShowSuccessBanner(true);
-                setTimeout(() => setShowSuccessBanner(false), 5000);
                 setNewImages([]);
-                fetchDetail();
+                toast.current?.addMessage({ mode: 'success', message: "Cập nhật thành công!" });
+                setTimeout(() => setShowSuccessBanner(false), 5000);
             }
         } catch (error) {
             toast.error("Lỗi cập nhật");

@@ -23,6 +23,15 @@ const VerificationStatusPage = () => {
         try {
             const token = localStorage.getItem("accessToken");
             const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+            const isApproved = !!(storedUser.agencyId || storedUser.hotelId);
+
+            if (!isApproved) {
+                console.warn("Tài khoản chưa có agencyId/hotelId. Điều hướng về trang chủ.");
+                navigate("/");
+                return;
+            }
+
             let isAgency = false;
             if (token) {
                 try {

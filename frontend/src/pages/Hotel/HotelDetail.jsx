@@ -70,6 +70,8 @@ export default function HotelDetailPage() {
     const [roomTypes, setRoomTypes] = useState([]);
     const [loadingRooms, setLoadingRooms] = useState(true);
     const [selectedDetailRoom, setSelectedDetailRoom] = useState(null);
+    // Lấy ngày hiện tại theo định dạng YYYY-MM-DD
+    const todayStr = new Date().toISOString().split("T")[0];
 
     const [dates, setDates] = useState({
         checkIn: format(new Date(), 'yyyy-MM-dd'),
@@ -344,11 +346,11 @@ export default function HotelDetailPage() {
                     {isAgency && (<div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                         <div className="flex-1 space-y-2">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
-                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
+                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} min={todayStr} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
                         </div>
                         <div className="flex-1 space-y-2">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
-                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
+                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} min={tempDates.checkIn || todayStr} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                         </div>
                         <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">Cập nhật ngày</button>
                     </div>)}

@@ -11,6 +11,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
     const [addressError, setAddressError] = useState("");
     const [placeError, setPlaceError] = useState("");
     const [dateError, setDateError] = useState("");
+    const [licenseError, setLicenseError] = useState("");
     const today = new Date().toLocaleDateString('en-CA');
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
@@ -138,8 +139,13 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
         }
 
         // Nếu có bất kỳ thông báo lỗi nào đang tồn tại, không cho phép submit
-        if (dateError || addressError || placeError) {
+        if (dateError || addressError || placeError || licenseError) {
             alert("Thông tin nhập vào không hợp lệ. Vui lòng kiểm tra lại các trường báo đỏ!");
+            return;
+        }
+
+        if (formData.businessLicenseNumber.length !== 10) {
+            alert("Số giấy phép kinh doanh phải chính xác 10 chữ số!");
             return;
         }
 
@@ -281,8 +287,23 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                         <OCRInput
                             label="Số GPKD"
                             value={formData.businessLicenseNumber}
-                            onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
+                            // onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
+                            onChange={(e) => {
+                                const val = onlyNumbers(e.target.value).slice(0, 10);
+                                setFormData(p => ({ ...p, businessLicenseNumber: val }));
+
+                                if (val.length > 0 && val.length < 10) {
+                                    setLicenseError("Số GPKD phải bao gồm 10 chữ số");
+                                } else {
+                                    setLicenseError("");
+                                }
+                            }}
                         />
+                        {licenseError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
+                                {licenseError}
+                            </p>
+                        )}
                     </div>
                     <OCRInput
                         label="Địa chỉ trụ sở"
