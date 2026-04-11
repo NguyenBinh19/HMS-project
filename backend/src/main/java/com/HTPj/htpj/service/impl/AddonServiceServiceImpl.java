@@ -45,7 +45,7 @@ public class AddonServiceServiceImpl implements AddonServiceService {
                 .serviceName(request.getServiceName())
                 .category(request.getCategory())
                 .description(request.getDescription())
-                .netPrice(request.getNetPrice())
+                .netPrice(request.getPublicPrice())
                 .publicPrice(request.getPublicPrice())
                 .unit(request.getUnit())
                 .imageUrl(request.getImageUrl())
@@ -68,7 +68,7 @@ public class AddonServiceServiceImpl implements AddonServiceService {
         if (request.getServiceName() != null) service.setServiceName(request.getServiceName());
         if (request.getCategory() != null) service.setCategory(request.getCategory());
         if (request.getDescription() != null) service.setDescription(request.getDescription());
-        if (request.getNetPrice() != null) service.setNetPrice(request.getNetPrice());
+        if (request.getNetPrice() != null) service.setNetPrice(request.getPublicPrice());
         if (request.getPublicPrice() != null) service.setPublicPrice(request.getPublicPrice());
         if (request.getUnit() != null) service.setUnit(request.getUnit());
         if (request.getImageUrl() != null) service.setImageUrl(request.getImageUrl());
