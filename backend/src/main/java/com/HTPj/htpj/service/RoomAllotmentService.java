@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface RoomAllotmentService {
 
-    List<InventoryGridResponse> getInventoryGrid(Integer hotelId, LocalDate startDate, LocalDate endDate);
+    List<InventoryGridResponse> getInventoryGrid(LocalDate startDate, LocalDate endDate);
 
     List<RoomAllotmentResponse> bulkUpdateAllotment(BulkAllotmentUpdateRequest request);
 

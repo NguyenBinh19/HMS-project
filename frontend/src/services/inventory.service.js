@@ -1,7 +1,7 @@
 import api from "./axios.config.js";
 
-const getInventoryGrid = async (hotelId, startDate, endDate) => {
-    const response = await api.get(`/inventory/grid/${hotelId}`, {
+const getInventoryGrid = async (startDate, endDate) => {
+    const response = await api.get(`/inventory/grid`, {
         params: { startDate, endDate },
     });
     return response.data;

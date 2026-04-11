@@ -1310,7 +1310,7 @@ public class BookingServiceImpl implements BookingService {
                             "Cập nhật dư nợ",
                             "Dư nợ của đại lý đã được tính lại. Vui lòng kiểm tra.",
                             "AGENCY", String.valueOf(ab.getAgencyId()),
-                            "/agency/financial"
+                            "/agency/credit-wallet"
                     );
                 }
             }

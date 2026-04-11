@@ -14,6 +14,9 @@ import com.HTPj.htpj.repository.RoomAllotmentRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.RoomAllotmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,14 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
     private final BookingDetailRepository bookingDetailRepository;
 
     @Override
-    public List<InventoryGridResponse> getInventoryGrid(Integer hotelId, LocalDate startDate, LocalDate endDate) {
+    public List<InventoryGridResponse> getInventoryGrid(LocalDate startDate, LocalDate endDate) {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
         List<RoomType> roomTypes = roomTypeRepository.findByHotel_HotelId(hotelId);
         if (roomTypes.isEmpty()) return Collections.emptyList();
 

@@ -132,10 +132,15 @@ public class KycServiceImpl implements KycService {
 
         List<Users> admins = userRepository.findByIsAdminTrue();
         for (Users admin : admins) {
-            notificationService.sendNotification(admin.getId(), "KYC",
-                    "New KYC Submission",
-                    "A new KYC verification has been submitted for review.",
-                    "KYC", String.valueOf(verification.getId()), "/admin/kyc-queue");
+            notificationService.sendNotification(
+                    admin.getId(),
+                    "KYC",
+                    "Có yêu cầu xác minh KYC mới",
+                    "Có một hồ sơ KYC mới được gửi lên, vui lòng kiểm tra và duyệt.",
+                    "KYC",
+                    String.valueOf(verification.getId()),
+                    "/admin/kyc-queue"
+            );
         }
 
         return new KycUploadResponse(
@@ -208,12 +213,20 @@ public class KycServiceImpl implements KycService {
         verification.setReviewedAt(LocalDateTime.now());
         verification.setStatus(request.getStatus());
         verification.setRejectionReason(request.getRejectionReason());
-
+        String navigateUrl = "/"; // default trước
         Users user = userRepository.findById(verification.getSubmittedBy())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
         String actionDescription="";
-
+        boolean isApproved = "VERIFIED".equalsIgnoreCase(request.getStatus());
+        String message;
+        String title = isApproved
+                ? "KYC đã được duyệt"
+                : "KYC bị từ chối";
+        if (isApproved) {
+            message = "Xác minh KYC của bạn đã được chấp thuận";
+        } else {
+            message = "KYC của bạn đã bị từ chối";
+        }
         if ("VERIFIED".equalsIgnoreCase(request.getStatus())) {
 
             if (verification.getLegalInformation() == null) {
@@ -278,7 +291,7 @@ public class KycServiceImpl implements KycService {
                 verification.setHotel(savedHotel);
                 user.setHotel(savedHotel);
                 userRepository.save(user);
-
+                navigateUrl = "/hotel/dashboard";
                 Hotel hot = verification.getHotel();
                 actionDescription = String.format("Duyệt hồ sơ cho hotel: %d - %s",
                         hot.getHotelId(), hot.getHotelName());
@@ -307,7 +320,7 @@ public class KycServiceImpl implements KycService {
                 verification.setAgency(savedAgency);
                 user.setAgency(savedAgency);
                 userRepository.save(user);
-
+                navigateUrl = "/agency/dashboard";
                 Agency agenc = verification.getAgency();
                 actionDescription = String.format("Duyệt hồ sơ cho agency: %d - %s",
                         agenc.getAgencyId(), agenc.getAgencyName());
@@ -316,6 +329,7 @@ public class KycServiceImpl implements KycService {
         else {
             actionDescription = String.format("Từ chối hồ sơ mã %d với lý do %s",
                     request.getVerificationId(), request.getRejectionReason());
+            navigateUrl = "/kyc/status";
         }
 
         verificationRepository.save(verification);
@@ -326,11 +340,10 @@ public class KycServiceImpl implements KycService {
         log.setUpdatedAt(LocalDateTime.now());
         systemLogRepository.save(log);
 
-        String statusLabel = request.getStatus().equalsIgnoreCase("VERIFIED") ? "approved" : "rejected";
         notificationService.sendNotification(verification.getSubmittedBy(), "KYC",
-                "KYC Verification " + statusLabel.substring(0, 1).toUpperCase() + statusLabel.substring(1),
-                "Your KYC verification has been " + statusLabel + ".",
-                "KYC", String.valueOf(verification.getId()), "/partner/kyc");
+                title,
+                message,
+                "KYC", String.valueOf(verification.getId()), navigateUrl);
     }
 
 }

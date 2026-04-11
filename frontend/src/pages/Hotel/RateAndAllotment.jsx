@@ -7,20 +7,7 @@ import { inventoryService } from '@/services/inventory.service.js';
 import { roomTypeService } from '@/services/roomtypes.service.js';
 import { jwtDecode } from "jwt-decode";
 
-const getHotelIdFromToken = () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) return null;
-    try {
-        const decoded = jwtDecode(token);
-        // Lấy hotelId từ các trường phổ biến trong JWT của bạn
-        return decoded.hotelId || decoded.hotel_id || JSON.parse(localStorage.getItem("user"))?.hotelId;
-    } catch (error) {
-        console.error("Lỗi giải mã token:", error);
-        return null;
-    }
-};
-const HOTEL_ID = getHotelIdFromToken();
-console.log(HOTEL_ID)
+
 const GRID_DAYS = 14;
 
 const formatDateParam = (date) => {
@@ -76,7 +63,6 @@ const RateAndAllotment = () => {
         setLoading(true);
         try {
             const res = await inventoryService.getInventoryGrid(
-                HOTEL_ID,
                 formatDateParam(startDate),
                 formatDateParam(endDate)
             );

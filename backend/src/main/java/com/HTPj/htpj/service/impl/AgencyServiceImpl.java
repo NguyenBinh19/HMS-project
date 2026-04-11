@@ -115,7 +115,7 @@ public class AgencyServiceImpl implements AgencyService {
                     "Thông tin đại lý đã được cập nhật",
                     "Thông tin của đại lý " + agency.getAgencyName() + " vừa được cập nhật.",
                     "AGENCY", String.valueOf(agencyId),
-                    "/agency/profile"
+                    "/agency-profile"
             );
         }
 
@@ -298,7 +298,7 @@ public class AgencyServiceImpl implements AgencyService {
                     "Thanh toán dư nợ thành công",
                     "Đại lý đã thanh toán dư nợ " + amountPaid.toPlainString() + " VND.",
                     "AGENCY", String.valueOf(agencyId),
-                    "/agency/financial"
+                    "/agency/credit-wallet"
             );
         }
     }
