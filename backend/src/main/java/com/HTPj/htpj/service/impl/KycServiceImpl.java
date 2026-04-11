@@ -45,9 +45,19 @@ public class KycServiceImpl implements KycService {
     private final RankRepository rankRepository;
     private final NotificationService notificationService;
     private final SystemLogRepository systemLogRepository;
+    private final PartnerBlacklistRepository partnerBlacklistRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
+        if (request.getBusinessLicenseNumber() != null &&
+                partnerBlacklistRepository.existsByBusinessLicenseNumber(request.getBusinessLicenseNumber())) {
+            throw new AppException(ErrorCode.BANNED_BUSINESS_LICENSE);
+        }
+
+        if (request.getRepresentativeCICNumber() != null &&
+                partnerBlacklistRepository.existsByRepresentativeCicNumber(request.getRepresentativeCICNumber())) {
+            throw new AppException(ErrorCode.BANNED_CIC_NUMBER);
+        }
         Optional<PartnerVerification> latest =
                 verificationRepository
                         .findTopBySubmittedByOrderByVersionDesc(userId);
@@ -213,9 +223,11 @@ public class KycServiceImpl implements KycService {
         verification.setReviewedAt(LocalDateTime.now());
         verification.setStatus(request.getStatus());
         verification.setRejectionReason(request.getRejectionReason());
+
+//
+
         String navigateUrl = "/"; // default trước
-        Users user = userRepository.findById(verification.getSubmittedBy())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         String actionDescription="";
         boolean isApproved = "VERIFIED".equalsIgnoreCase(request.getStatus());
         String message;
@@ -228,6 +240,9 @@ public class KycServiceImpl implements KycService {
             message = "KYC của bạn đã bị từ chối";
         }
         if ("VERIFIED".equalsIgnoreCase(request.getStatus())) {
+            Users user = userRepository.findById(verification.getSubmittedBy())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
 
             if (verification.getLegalInformation() == null) {
                 throw new AppException(ErrorCode.KYC_VERIFICATION_NOT_FOUND);
