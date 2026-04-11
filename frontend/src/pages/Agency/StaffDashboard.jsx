@@ -71,8 +71,8 @@ const StaffDashboard = () => {
             alert("Bạn không thể tự khóa tài khoản của chính mình!");
             return;
         }
-        console.log("ID người dùng đang đăng nhập:", currentUserId);
-        console.log("ID của nhân viên trong hàng này:", staff.id);
+        // console.log("ID người dùng đang đăng nhập:", currentUserId);
+        // console.log("ID của nhân viên trong hàng này:", staff.id);
         const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
         if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
         try {

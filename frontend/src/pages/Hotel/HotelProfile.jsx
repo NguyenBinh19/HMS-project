@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Save, Hotel, MapPin, Upload, X, Loader2,
@@ -10,6 +10,18 @@ import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
 const HotelProfileManager = () => {
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        try {
+            return JSON.parse(localStorage.getItem('user'));
+        } catch (e) {
+            return null;
+        }
+    }, []);
+
+    const isManager = currentUser?.roles === 'ROLE_HOTEL_MANAGER';
+    const isStaff = currentUser?.roles === 'ROLE_HOTEL_STAFF';
+    const canEdit = isManager;
+
     const toast = useRef();
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
@@ -43,6 +55,10 @@ const HotelProfileManager = () => {
 
     // 3. Hàm điều hướng sang KYC
     const handleGoToKYC = () => {
+        if (!canEdit) {
+            toast.current.addMessage({ mode: 'error', message: "Bạn không có quyền chỉnh sửa hồ sơ này!" });
+            return;
+        }
         navigate('/kyc/status', {
             state: {
                 oldKycId: originalData?.verification?.id,
@@ -175,6 +191,10 @@ const HotelProfileManager = () => {
     };
 
     const handleSave = async () => {
+        if (!canEdit) {
+            toast.current.addMessage({ mode: 'error', message: "Bạn không có quyền chỉnh sửa hồ sơ này!" });
+            return;
+        }
         if (!validateForm()) {
             toast.error("Vui lòng kiểm tra lại các trường thông tin!");
             return;
@@ -200,6 +220,10 @@ const HotelProfileManager = () => {
     };
 
     const handleUpdateBank = async () => {
+        if (!canEdit) {
+            toast.current.addMessage({ mode: 'error', message: "Chỉ quản lý mới được cập nhật thông tin ngân hàng!" });
+            return;
+        }
         if (!validateBankForm()) {
             toast.current.addMessage({ mode: 'warning', message: "Thông tin ngân hàng không hợp lệ!" });
             return;
@@ -266,9 +290,11 @@ const HotelProfileManager = () => {
                             </p>
                         </div>
                     </div>
+                    {canEdit && (
                     <button onClick={handleSave} disabled={saving} className="w-full md:w-auto bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 transition-all active:scale-95">
                         {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Cập nhật thông tin
                     </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -283,29 +309,33 @@ const HotelProfileManager = () => {
                                     value={formData.hotelName}
                                     onChange={v => setFormData({...formData, hotelName: v})}
                                     error={errors.hotelName}
+                                    disabled={!canEdit}
                                 />
                                 <InputField
                                     label="Số điện thoại"
                                     value={formData.phone}
                                     onChange={v => setFormData({...formData, phone: v})}
                                     error={errors.phone}
+                                    disabled={!canEdit}
                                 />
                                 <InputField
                                     label="Email"
                                     value={formData.email}
                                     onChange={v => setFormData({...formData, email: v})}
                                     error={errors.email}
+                                    disabled={!canEdit}
                                 />
                                 <InputField
                                     label="Thành phố"
                                     value={formData.city}
                                     onChange={v => setFormData({...formData, city: v})}
                                     error={errors.city}
+                                    disabled={!canEdit}
                                 />
                                 <div className="md:col-span-2">
                                     <InputField label="Địa chỉ chi tiết" value={formData.address}
                                                 onChange={v => setFormData({...formData, address: v})}
-                                                error={errors.address}/>
+                                                error={errors.address} disabled={!canEdit}/>
                                 </div>
                                 <div className="md:col-span-2 space-y-2">
                                     <label
@@ -313,8 +343,9 @@ const HotelProfileManager = () => {
                                         Mô tả khách sạn
                                     </label>
                                     <textarea
-                                        className={`w-full h-32 p-4 bg-slate-50 border-2 rounded-2xl outline-none text-sm font-medium transition-all ${
-                                            errors.description ? 'border-rose-500 focus:border-rose-600' : 'border-slate-100 focus:border-blue-600'
+                                        disabled={!canEdit}
+                                        className={`w-full h-32 p-4 border-2 rounded-2xl outline-none text-sm font-medium transition-all ${
+                                            !canEdit ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-slate-50 border-slate-100 focus:border-blue-600'
                                         }`}
                                         value={formData.description}
                                         onChange={e => setFormData({...formData, description: e.target.value})}
@@ -332,20 +363,24 @@ const HotelProfileManager = () => {
                         <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm">
                             <h3 className="text-blue-600 font-black uppercase text-[11px] tracking-[0.2em] mb-6">Tiện
                                 ích</h3>
-                            <div className="flex gap-2 mb-6">
-                                <input type="text" placeholder="Thêm tiện ích..."
-                                       className="flex-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-blue-600"
-                                       value={customAmenity} onChange={(e) => setCustomAmenity(e.target.value)}
-                                       onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}/>
-                                <button onClick={addCustomAmenity}
-                                        className="bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700 transition-all">
-                                    <Plus size={20}/></button>
-                            </div>
+                            {canEdit && (
+                                <div className="flex gap-2 mb-6">
+                                    <input type="text" placeholder="Thêm tiện ích..."
+                                           className="flex-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-blue-600"
+                                           value={customAmenity} onChange={(e) => setCustomAmenity(e.target.value)}
+                                           onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}/>
+                                    <button onClick={addCustomAmenity}
+                                            className="bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700 transition-all">
+                                        <Plus size={20}/></button>
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-2">
                                 {formData.amenitiesList.map(item => (
-                                    <button key={item} onClick={() => toggleAmenity(item)}
-                                            className="px-4 py-2 bg-blue-50 text-blue-600 border-2 border-blue-100 rounded-xl text-[11px] font-black uppercase flex items-center gap-2">
-                                        {item} <X size={14}/>
+                                    <button key={item} onClick={() => canEdit && toggleAmenity(item)}
+                                            className={`px-4 py-2 border-2 rounded-xl text-[11px] font-black uppercase flex items-center gap-2 ${
+                                                !canEdit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-blue-50 text-blue-600 border-blue-100'
+                                            }`}>
+                                        {item} {canEdit && <X size={14}/>}
                                     </button>
                                 ))}
                             </div>
@@ -371,6 +406,7 @@ const HotelProfileManager = () => {
                                         value={bankData.bankName}
                                         onChange={e => setBankData({...bankData, bankName: e.target.value})}
                                         placeholder="VD: VIETCOMBANK"
+                                        disabled={!canEdit}
                                     />
                                     {bankErrors.bankName && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankName}</p>}
                                 </div>
@@ -390,6 +426,7 @@ const HotelProfileManager = () => {
                                             setBankData({...bankData, bankAccountNumber: val});
                                         }}
                                         placeholder="123XXXXXXXXX"
+                                        disabled={!canEdit}
                                     />
                                     {bankErrors.bankAccountNumber && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankAccountNumber}</p>}
                                 </div>
@@ -413,12 +450,14 @@ const HotelProfileManager = () => {
                                             setBankData({...bankData, bankAccountHolder: val});
                                         }}
                                         placeholder="NGUYEN VAN A"
+                                        disabled={!canEdit}
                                     />
                                     {bankErrors.bankAccountHolder && <p className="text-[9px] text-rose-500 font-bold ml-2">{bankErrors.bankAccountHolder}</p>}
                                 </div>
                             </div>
 
                             <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+                                {canEdit && (
                                 <button
                                     onClick={handleUpdateBank}
                                     disabled={bankLoading}
@@ -427,6 +466,7 @@ const HotelProfileManager = () => {
                                     {bankLoading ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
                                     Lưu tài khoản ngân hàng
                                 </button>
+                                )}
                             </div>
                         </div>
 
@@ -439,12 +479,14 @@ const HotelProfileManager = () => {
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-800">Album
                                     ảnh ({existingImages.length})</h3>
+                                {canEdit && (
                                 <label
                                     className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 hover:text-white transition-all">
                                     <input type="file" multiple className="hidden"
                                            onChange={(e) => setNewImages([...newImages, ...Array.from(e.target.files)])}/>
                                     <Upload size={18}/>
                                 </label>
+                                )}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {existingImages.map(img => (
@@ -486,12 +528,14 @@ const HotelProfileManager = () => {
                                     <CheckCircle2 size={16}/> Xác thực pháp lý
                                 </h3>
                                 {/* NÚT ĐIỀU HƯỚNG KYC */}
+                                {canEdit && (
                                 <button
                                     onClick={handleGoToKYC}
                                     className="flex items-center gap-1.5 text-[9px] font-black text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all uppercase"
                                 >
                                     <Edit3 size={12} /> Sửa KYC
                                 </button>
+                                )}
                             </div>
                             <div className="space-y-4 relative z-10">
                                 <ReadOnlyItem label="Mã số thuế" value={originalData?.verification?.taxCode} />
@@ -508,7 +552,7 @@ const HotelProfileManager = () => {
 };
 
 // Sub-components
-const InputField = ({ label, value, onChange, error }) => (
+const InputField = ({ label, value, onChange, error, disabled }) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
             {label}
@@ -516,6 +560,7 @@ const InputField = ({ label, value, onChange, error }) => (
         <input
             type="text"
             value={value}
+            disabled={disabled}
             onChange={e => onChange(e.target.value)}
             className={`w-full px-5 py-3.5 bg-slate-50 border-2 rounded-2xl outline-none transition-all font-bold text-sm text-slate-700 ${
                 error ? 'border-rose-500 focus:border-rose-600' : 'border-slate-100 focus:border-blue-600'

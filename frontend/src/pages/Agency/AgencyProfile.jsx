@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Building2, Info, Phone, Mail, MapPin,
@@ -12,6 +12,19 @@ import { toast } from "react-hot-toast";
 
 const AgencyProfile = () => {
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user'));
+            // console.log("Current User Data:", user);
+            return user;
+        } catch (e) {
+            return null;
+        }
+    }, []);
+    const isManager = currentUser?.roles === 'ROLE_AGENCY_MANAGER';
+    const isStaff = currentUser?.roles === 'ROLE_AGENCY_STAFF';
+    // Quyền chỉnh sửa: Chỉ Manager mới có quyền sửa hồ sơ
+    const canEdit = isManager;
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -98,6 +111,10 @@ const AgencyProfile = () => {
     useEffect(() => { fetchAgencyDetail(); }, []);
 
     const handleGoToKYC = () => {
+        if (!canEdit) {
+            toast.error("Chỉ quản lý mới có quyền cập nhật thông tin pháp lý");
+            return;
+        }
         // Gửi kèm agencyId và kycId sang màn hình KYC
         navigate('/kyc/status', {
             state: {
@@ -108,6 +125,10 @@ const AgencyProfile = () => {
     };
 
     const handleSave = async () => {
+        if (!canEdit) {
+            toast.error("Bạn không có quyền chỉnh sửa hồ sơ này!");
+            return;
+        }
         if (!validateForm()) {
             toast.error("Vui lòng kiểm tra lại các thông tin nhập liệu!");
             return;
@@ -152,10 +173,12 @@ const AgencyProfile = () => {
 
                 <div className="flex justify-between items-center mb-10">
                     <h1 className="text-3xl font-black text-slate-900 uppercase">Hồ sơ đại lý</h1>
-                    <button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2">
-                        {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                        LƯU THAY ĐỔI
-                    </button>
+                    {canEdit && (
+                        <button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2">
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                            LƯU THAY ĐỔI
+                        </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -167,9 +190,11 @@ const AgencyProfile = () => {
                                 <h2 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase flex items-center gap-2">
                                     <ShieldCheck size={18} className="text-emerald-500" /> Xác minh pháp lý
                                 </h2>
+                                {canEdit && (
                                 <button onClick={handleGoToKYC} className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase">
                                     <Edit3 size={14} /> Cập nhật KYC
                                 </button>
+                                )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                                 <ReadOnlyField label="Tên pháp nhân" value={profile.legalName} />
@@ -188,6 +213,7 @@ const AgencyProfile = () => {
                                     value={profile.agencyName}
                                     onChange={(v) => setProfile({...profile, agencyName: v})}
                                     error={errors.agencyName}
+                                    disabled={!canEdit}
                                 />
                                 <EditableField
                                     label="Email"
@@ -195,6 +221,7 @@ const AgencyProfile = () => {
                                     icon={<Mail size={16} />}
                                     onChange={(v) => setProfile({...profile, email: v})}
                                     error={errors.email}
+                                    disabled={!canEdit}
                                 />
                                 <EditableField
                                     label="Hotline"
@@ -202,6 +229,7 @@ const AgencyProfile = () => {
                                     icon={<Phone size={16} />}
                                     onChange={(v) => setProfile({...profile, hotline: v})}
                                     error={errors.hotline}
+                                    disabled={!canEdit}
                                 />
                                 <EditableField
                                     label="SĐT Liên hệ"
@@ -209,6 +237,7 @@ const AgencyProfile = () => {
                                     icon={<Smartphone size={16} />}
                                     onChange={(v) => setProfile({...profile, contactPhone: v})}
                                     error={errors.contactPhone}
+                                    disabled={!canEdit}
                                 />
                             </div>
                         </section>
@@ -250,7 +279,7 @@ const ReadOnlyField = ({ label, value }) => (
     </div>
 );
 
-const EditableField = ({ label, value, onChange, icon, error }) => (
+const EditableField = ({ label, value, onChange, icon, error, disabled}) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{label}</label>
         <div className="relative">
@@ -263,6 +292,7 @@ const EditableField = ({ label, value, onChange, icon, error }) => (
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
                 className={`w-full ${icon ? 'pl-12' : 'pl-4'} pr-4 py-4 bg-white border-2 rounded-2xl outline-none transition-all text-sm font-bold shadow-sm ${
                     error ? 'border-rose-500 text-rose-700 bg-rose-50/30' : 'border-slate-100 focus:border-blue-600 text-slate-700'
                 }`}

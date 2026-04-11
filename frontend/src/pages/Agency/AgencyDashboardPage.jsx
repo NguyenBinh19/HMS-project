@@ -47,88 +47,98 @@ const AgencyDashboard = () => {
         setLoading(true);
 
         try {
-            // Bước 1: Lấy thông tin cơ bản của Agency để có rankId
+            // Lấy Profile để lấy rankId và Wallet
             const agencyProfileRes = await agencyService.getAgencyProfileDetail();
-            const agencyData = agencyProfileRes.result;
-            const currentRankId = agencyData.rankId;
+            const agencyData = agencyProfileRes?.result;
+            const currentRankId = agencyData?.rankId;
 
+            // Gọi đồng thời các API
             const results = await Promise.allSettled([
-                rankService.getRankDetail(currentRankId),         // 0. Chi tiết Rank
-                api.get(`/agencies/${agencyId}/credit-summary`), // 1. Tín dụng
-                bookingService.getBookingHistory(),              // 2. Đơn hàng
-                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // 3. Giao dịch
-                staffService.getStaffList()                      // 4. Nhân sự
+                rankService.getRankDetail(currentRankId),                            // Index 0
+                api.get(`/agencies/${agencyId}/credit-summary`),                    // Index 1
+                bookingService.getBookingHistory(),                                 // Index 2
+                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // Index 3
+                staffService.getStaffList()                                         // Index 4
             ]);
 
-            // --- XỬ LÝ LOGIC RANK ---
-            if (results[0].status === 'fulfilled') {
-                const rankDetail = results[0].value.result;
+            // Hàm helper để lấy giá trị value từ Promise.allSettled
+            const getResValue = (idx) => results[idx].status === 'fulfilled' ? results[idx].value : null;
+
+            // --- 0. XỬ LÝ RANK ---
+            const rankRes = getResValue(0);
+            if (rankRes?.result) {
+                const r = rankRes.result;
                 setRankData({
-                    currentRankName: rankDetail.rankName,
-                    color: rankDetail.color,
-                    description: rankDetail.description,
-                    rankCode: rankDetail.rankCode,       // "BASIC"
-                    progressPercent: rankDetail.upgradeMinTotalRevenue === 0 ? 100 : 0
+                    currentRankName: r.rankName,
+                    color: r.color,
+                    description: r.description,
+                    rankCode: r.rankCode,
+                    progressPercent: r.upgradeMinTotalRevenue === 0 ? 100 : 0
                 });
             }
-            // 2. Xử lý Tài chính
-            if (results[1].status === 'fulfilled' && results[2].status === 'fulfilled') {
-                const wallet = results[1].value.data.result.walletBalance || 0;
-                const credit = results[2].value.data.result;
-                // JSON: { remainingCredit, debt, creditLimit, dueDate }
-                setFinanceData({ wallet, credit });
-                if (credit?.debt > 0) {
-                    const isOverdue = new Date(credit.dueDate) < new Date();
-                    setAccountStatus(isOverdue ? 'STAGE2' : 'STAGE1');
-                } else {
-                    setAccountStatus('NORMAL');
+
+            // --- 1. XỬ LÝ TÀI CHÍNH ---
+            const creditRes = getResValue(1);
+            const creditData = creditRes?.data?.result;
+
+            setFinanceData({
+                wallet: agencyData?.walletBalance || 0,
+                credit: creditData || null
+            });
+
+            if (creditData?.debt > 0) {
+                const isOverdue = new Date(creditData.dueDate) < new Date();
+                setAccountStatus(isOverdue ? 'STAGE2' : 'STAGE1');
+            } else {
+                setAccountStatus('NORMAL');
+            }
+            // --- 2. XỬ LÝ BOOKING ---
+            const bookingRes = getResValue(2);
+            const bookingList = bookingRes?.result?.content || [];
+
+            const todayStr = new Date().toDateString();
+            const threeDaysLater = new Date();
+            threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+
+            let newCount = 0;
+            let checkinCount = 0;
+            const dailyRevMap = {};
+
+            bookingList.forEach(b => {
+                const createdAt = new Date(b.createdAt);
+                const checkInDate = new Date(b.checkInDate);
+                if (createdAt.toDateString() === todayStr) newCount++;
+                if (checkInDate >= new Date() && checkInDate <= threeDaysLater && b.bookingStatus !== 'CANCELLED') {
+                    checkinCount++;
                 }
-            }
-            // 3. Xử lý Booking
-            if (results[3].status === 'fulfilled') {
-                const bookingData = results[3].value.result?.content || [];
-                const todayStr = new Date().toDateString();
-                const threeDaysLater = new Date();
-                threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-
-                let newCount = 0;
-                let checkinCount = 0;
-                const dailyRevMap = {};
-
-                bookingData.forEach(b => {
-                    const createdAt = new Date(b.createdAt);
-                    const checkInDate = new Date(b.checkInDate);
-                    // Thống kê đơn mới (so sánh ngày tạo)
-                    if (createdAt.toDateString() === todayStr) newCount++;
-                    // Thống kê sắp khởi hành (trong 3 ngày tới)
-                    if (checkInDate >= new Date() && checkInDate <= threeDaysLater && b.bookingStatus !== 'CANCELLED') {
-                        checkinCount++;
-                    }
-                    // Gom dữ liệu biểu đồ (Lấy 10 ngày gần nhất có đơn)
-                    const dateLabel = `${createdAt.getDate()}/${createdAt.getMonth() + 1}`;
+                // Gom dữ liệu biểu đồ
+                const dateLabel = `${createdAt.getDate()}/${createdAt.getMonth() + 1}`;
+                if (b.bookingStatus !== 'CANCELLED') {
                     dailyRevMap[dateLabel] = (dailyRevMap[dateLabel] || 0) + (b.finalAmount || 0);
-                });
+                }
+            });
 
-                setStats(prev => ({ ...prev, newBookings: newCount, checkins: checkinCount }));
-                // Convert map sang array cho Recharts
-                const formattedChart = Object.keys(dailyRevMap).map(date => ({
-                    day: date,
-                    revenue: dailyRevMap[date]
-                })).slice(-10);
-                setChartData(formattedChart);
+            setStats(prev => ({ ...prev, newBookings: newCount, checkins: checkinCount }));
+            setChartData(Object.keys(dailyRevMap).map(date => ({
+                day: date,
+                revenue: dailyRevMap[date]
+            })).slice(-10));
+
+            // --- 3. GIAO DỊCH GẦN NHẤT ---
+            const transRes = getResValue(3);
+            const transData = transRes?.data?.result;
+            if (Array.isArray(transData)) {
+                setActivities(transData);
             }
-            // 4. Hoạt động gần đây
-            if (results[4].status === 'fulfilled') {
-                setActivities(results[4].value.data.result || []);
-            }
-            // 5. Nhân sự
-            if (results[5].status === 'fulfilled') {
-                const staffList = results[5].value.result || [];
+            // --- 4. NHÂN SỰ ---
+            const staffRes = getResValue(4);
+            const staffList = staffRes?.result || staffRes?.data?.result;
+            if (Array.isArray(staffList)) {
                 setStats(prev => ({ ...prev, staff: staffList.length }));
             }
 
         } catch (error) {
-            console.error("Dashboard Load Error:", error);
+            console.error("Dashboard logic error:", error);
         } finally {
             setLoading(false);
         }
@@ -284,7 +294,6 @@ const AgencyDashboard = () => {
                     icon={<Calendar className="text-slate-400"/>}
                     label="Sắp khởi hành"
                     value={stats.checkins}
-                    sub="3 ngày tới"
                 />
                 <StatCard
                     icon={<Users className="text-blue-500"/>}

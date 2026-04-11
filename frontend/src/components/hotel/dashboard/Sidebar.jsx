@@ -6,23 +6,33 @@ import {
 
 const Sidebar = () => {
     const location = useLocation();
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = currentUser?.roles || "";
+    // Kiểm tra xem có phải Admin tổng không
+    const isFullHotel = userRole === "ROLE_HOTEL_MANAGER";
 
     const menuItems = [
         { icon: <Home size={20} />, label: "Dashboard", path: "/hotel/dashboard" },
         { icon: <Users size={20} />, label: "HỒ SƠ KHÁCH SẠN", path: "/hotel/profile" },
         { icon: <Hotel size={20} />, label: "QUẢN LÝ PHÒNG", path: "/hotel/room-types" },
-        { icon: <Users size={20} />, label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN", path: "/hotel/staff" },
-        // { icon: <Tags size={20} />, label: "CẤU HÌNH KẾ HOẠCH GIÁ", path: "/hotel/room-types" },
+        { icon: <Users size={20} />, label: "QUẢN LÝ NHÂN VIÊN & PHÂN QUYỀN", path: "/hotel/staff", hideForStaff: true, },
         { icon: <Package size={20} />, label: "QUẢN LÝ DỊCH VỤ", path: "/hotel/addon-services" },
         { icon: <CalendarDays size={20} />, label: "LỊCH QUẢN LÝ TỒN KHO", path: "/hotel/rate-allotment" },
-        { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ TỰ ĐỘNG", path: "/hotel/dynamic-pricing" },
-        { icon: <TicketPercent size={20} />, label: "QUẢN LÝ MÃ GIẢM GIÁ", path: "/hotel/coupons" },
+        { icon: <LineChart size={20} />, label: "ĐỊNH GIÁ TỰ ĐỘNG", path: "/hotel/dynamic-pricing", hideForStaff: true, },
+        { icon: <TicketPercent size={20} />, label: "QUẢN LÝ MÃ GIẢM GIÁ", path: "/hotel/coupons", hideForStaff: true, },
         { icon: <LineChart size={20} />, label: "BÁO CÁO DOANH THU", path: "/hotel/revenue-report" },
-        { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/payout-state" },
+        { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/payout-state", hideForStaff: true, },
         { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/front-desk" },
         { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat" },
         { icon: <StarHalf size={20} />, label: "ĐÁNH GIÁ & XẾP HẠNG", path: "/hotel/reviews" },
     ];
+
+    const filteredMenuItems = menuItems.filter(item => {
+        if (!isFullHotel && item.hideForStaff) {
+            return false;
+        }
+        return true;
+    });
 
     return (
         <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
@@ -36,7 +46,7 @@ const Sidebar = () => {
 
             {/* Menu List - Vùng có thể cuộn */}
             <div className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar shadow-[inset_0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
-                {menuItems.map((item, index) => {
+                {filteredMenuItems.map((item, index) => {
                     const isActive = location.pathname === item.path;
                     return (
                         <Link

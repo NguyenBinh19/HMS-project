@@ -182,7 +182,7 @@ public class EmailServiceImpl implements EmailService {
                             + "<p>Tài khoản nhân viên của bạn đã được tạo thành công.</p>"
 
                             + "<div style='background:#f8fafc;padding:16px;border-radius:8px;margin:20px 0;'>"
-                            + "<p><b>Tên đăng nhập:</b> " + username + "</p>"
+                            + "<p><b>Tên tài khoản:</b> " + username + "</p>"
                             + "<p><b>Mật khẩu tạm thời:</b> " + password + "</p>"
                             + "</div>"
 

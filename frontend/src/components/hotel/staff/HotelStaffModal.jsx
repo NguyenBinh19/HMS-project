@@ -50,8 +50,18 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     };
 
     const handleNameChange = (field, value) => {
-        const formattedName = value.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
-        setFormData({ ...formData, [field]: formattedName });
+        // 1. Loại bỏ số và ký tự đặc biệt ngay lập tức
+        // Giữ lại chữ cái và dấu cách
+        let cleanValue = value.replace(/[0-9!@#$%^&*(),.?":{}|<>]/g, '');
+        // 2. Không cho phép nhập dấu cách ở ngay đầu dòng
+        cleanValue = cleanValue.trimStart();
+        if (cleanValue === '') {
+            setFormData(prev => ({ ...prev, [field]: '' }));
+            return;
+        }
+        // 3. Chuẩn hóa viết hoa chữ cái đầu
+        const formattedName = cleanValue.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
+        setFormData(prev => ({ ...prev, [field]: formattedName }));
     };
 
     const handleSubmit = async (e) => {
