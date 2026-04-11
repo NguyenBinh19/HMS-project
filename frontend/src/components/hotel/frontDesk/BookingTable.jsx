@@ -27,27 +27,27 @@ const BookingTable = ({ bookings, activeTab, onCheckout, onCheckin, onNoShow }) 
         <div className="overflow-x-auto">
             <table className="w-full text-left">
                 <thead>
-                <tr className="bg-slate-50/50">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách hàng
-                        / Mã đơn
+                <tr className="bg-slate-50/80 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                        Khách hàng / Mã đơn
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khách
-                        sạn
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                        Khách sạn
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lịch
-                        trình
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                        Lịch trình
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tổng
-                        số phòng
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em] text-center">
+                        Tổng số phòng
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng
-                        tiền
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                        Tổng tiền
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thanh
-                        toán
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                        Thanh toán
                     </th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao
-                        tác
+                    <th className="px-8 py-5 text-[11px] font-black text-slate-900 uppercase tracking-[0.1em] text-right">
+                        Thao tác
                     </th>
                 </tr>
                 </thead>

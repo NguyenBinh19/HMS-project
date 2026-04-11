@@ -102,49 +102,58 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<ListAllBookingsResponse> getAllBookingsSummaryByHotelId(@Param("hotelId") Integer hotelId);
 
     @Query("""
-    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
-        b.bookingCode,
-        b.createdAt,
-        b.guestName,
-        a.agencyName,
-        h.hotelName,
-        b.checkInDate,
-        b.checkOutDate,
-        b.totalRooms,
-        b.finalAmount,
-        b.bookingStatus,
-        b.paymentStatus
-    )
-    FROM Booking b
-    JOIN Agency a ON b.agencyId = a.agencyId
-    JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
-    AND b.checkInDate = :date
-    """)
-    List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);
+SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+    b.bookingCode,
+    b.createdAt,
+    b.guestName,
+    a.agencyName,
+    h.hotelName,
+    b.checkInDate,
+    b.checkOutDate,
+    b.totalRooms,
+    b.finalAmount,
+    b.bookingStatus,
+    b.paymentStatus
+)
+FROM Booking b
+JOIN Agency a ON b.agencyId = a.agencyId
+JOIN Hotel h ON b.hotelId = h.hotelId
+WHERE b.hotelId = :hotelId
+AND b.bookingStatus IN ('BOOKED', 'NO_SHOW')
+AND b.checkInDate = :date
+ORDER BY b.createdAt DESC
+""")
+    List<ListAllBookingsResponse> getBookingsByCheckinDate(
+            @Param("hotelId") Integer hotelId,
+            @Param("date") LocalDate date
+    );
 
 
     @Query("""
-    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
-        b.bookingCode,
-        b.createdAt,
-        b.guestName,
-        a.agencyName,
-        h.hotelName,
-        b.checkInDate,
-        b.checkOutDate,
-        b.totalRooms,
-        b.finalAmount,
-        b.bookingStatus,
-        b.paymentStatus
-    )
-    FROM Booking b
-    JOIN Agency a ON b.agencyId = a.agencyId
-    JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
-    AND b.checkInDate = CURRENT_DATE
-    """)
-    List<ListAllBookingsResponse> getTodayCheckinBookings();
+SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+    b.bookingCode,
+    b.createdAt,
+    b.guestName,
+    a.agencyName,
+    h.hotelName,
+    b.checkInDate,
+    b.checkOutDate,
+    b.totalRooms,
+    b.finalAmount,
+    b.bookingStatus,
+    b.paymentStatus
+)
+FROM Booking b
+JOIN Agency a ON b.agencyId = a.agencyId
+JOIN Hotel h ON b.hotelId = h.hotelId
+WHERE b.hotelId = :hotelId
+AND b.bookingStatus IN ('BOOKED', 'NO_SHOW')
+AND b.checkInDate = CURRENT_DATE
+ORDER BY b.createdAt DESC
+""")
+    List<ListAllBookingsResponse> getTodayCheckinBookings(
+            @Param("hotelId") Integer hotelId
+    );
 
     // UC-051: View Daily Departure List - bookings checking out today for a specific hotel
     @Query("""

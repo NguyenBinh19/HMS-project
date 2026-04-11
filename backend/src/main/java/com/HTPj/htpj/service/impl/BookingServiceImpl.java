@@ -840,12 +840,14 @@ public class BookingServiceImpl implements BookingService {
     //UC-050 - View Daily Arrival List
     @Override
     public List<ListAllBookingsResponse> getTodayCheckinBookings() {
-        return bookingRepository.getTodayCheckinBookings();
+        Integer hotelId = extractHotelId();
+        return bookingRepository.getTodayCheckinBookings(hotelId);
     }
 
     @Override
     public List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date) {
-        return bookingRepository.getBookingsByCheckinDate(date);
+        Integer hotelId = extractHotelId();
+        return bookingRepository.getBookingsByCheckinDate(hotelId, date);
     }
 
     // =========================================================================

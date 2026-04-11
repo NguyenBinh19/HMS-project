@@ -36,7 +36,7 @@ const AgencyProfile = () => {
     // 2. Hàm Validate logic
     const validateForm = () => {
         let newErrors = {};
-
+        const phoneRegex = /^\d{10,11}$/;
         // Validate Tên đại lý
         if (!profile.agencyName?.trim()) {
             newErrors.agencyName = "Tên hiển thị không được để trống";
@@ -44,8 +44,10 @@ const AgencyProfile = () => {
 
         // Validate Email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(profile.email)) {
-            newErrors.email = "Định dạng email không hợp lệ";
+        if (profile.email && profile.email.trim() !== "") {
+            if (!emailRegex.test(profile.email)) {
+                newErrors.email = "Định dạng email không hợp lệ";
+            }
         }
 
         // Validate Hotline (Cho phép 10-11 số)

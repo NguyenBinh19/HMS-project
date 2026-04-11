@@ -3,6 +3,7 @@ import { Eye, MapPin, Star, CheckCircle2, Plus } from "lucide-react"; // Thêm i
 import React from "react";
 import { useCompare } from '@/context/CompareContext.jsx';
 import { jwtDecode } from "jwt-decode";
+const DEFAULT_HOTEL_IMAGE = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb";
 
 const HotelCard = ({ hotel }) => {
     const navigate = useNavigate();
@@ -32,9 +33,9 @@ const HotelCard = ({ hotel }) => {
         }
     };
 
-    const coverImg = hotel.images && hotel.images.length > 0
+    const coverImg = (hotel.images && hotel.images.length > 0 && hotel.images[0])
         ? hotel.images[0]
-        : "https://images.unsplash.com/photo-1551882547-ff43c63ebeaf?q=80&w=800";
+        : DEFAULT_HOTEL_IMAGE;
 
     const starCount = hotel.starRating || 0;
     const formattedRating = (hotel.avgRating != null && hotel.avgRating > 0)

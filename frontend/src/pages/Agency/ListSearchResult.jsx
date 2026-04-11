@@ -9,6 +9,7 @@ import HotelCard from "@/components/agency/booking/HotelCardSearch.jsx";
 import { CompareProvider, useCompare } from '@/context/CompareContext.jsx';
 import CompareModal from "@/components/hotel/compareRoomPrices/CompareFloatingBar.jsx";
 
+
 const CompareBar = () => {
     const { compareItems, handleCompareNow, clearAll } = useCompare();
     if (compareItems.length === 0) return null;

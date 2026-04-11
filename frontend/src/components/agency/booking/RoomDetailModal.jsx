@@ -5,6 +5,7 @@ import {
     Coffee, Wind, Tv, Monitor
 } from "lucide-react";
 import { roomTypeService } from "@/services/roomtypes.service.js";
+const DEFAULT_ROOM_IMAGE = "https://images.unsplash.com/photo-1590490360182-c33d57733427";
 
 const RoomDetailModal = ({ roomId, onClose }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +40,10 @@ const RoomDetailModal = ({ roomId, onClose }) => {
 
     if (!roomId) return null;
 
+    const mainImageUrl = roomData?.images && roomData.images.length > 0
+        ? roomData.images[activeImage]?.imageUrl
+        : DEFAULT_ROOM_IMAGE;
+
     return (
         <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-md transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
             <div className={`bg-white w-full max-w-6xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[95vh] transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
@@ -53,17 +58,11 @@ const RoomDetailModal = ({ roomId, onClose }) => {
                         {/* TRÁI: GALLERY ẢNH */}
                         <div className="w-full md:w-[60%] bg-slate-100 flex flex-col border-r border-slate-100">
                             <div className="flex-1 relative min-h-[350px] md:min-h-[500px] overflow-hidden bg-slate-200">
-                                {roomData.images?.length > 0 ? (
-                                    <img
-                                        src={roomData.images[activeImage]?.imageUrl}
-                                        className="w-full h-full object-cover transition-all duration-700"
-                                        alt={roomData.roomTitle}
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">
-                                        <Waves size={48} />
-                                    </div>
-                                )}
+                                <img
+                                    src={mainImageUrl}
+                                    className="w-full h-full object-cover transition-all duration-700"
+                                    alt={roomData.roomTitle}
+                                />
 
                                 <button onClick={handleClose} className="absolute top-6 left-6 p-2 bg-white/90 backdrop-blur rounded-full shadow-lg md:hidden">
                                     <X size={20} />

@@ -34,8 +34,7 @@ const SubmitFeedbackModal = ({ isOpen, onClose, booking, onSuccess }) => {
         setError(null);
         console.log(booking)
         try {
-            // Giả lập gọi API (Sau này thay bằng bookingService.submitFeedback)
-            console.log("Dữ liệu gửi lên BE:", formData);
+            // console.log("Dữ liệu gửi lên BE:", formData);
             await new Promise(resolve => setTimeout(resolve, 1000));
             await bookingService.submitFeedback({
                 bookingId: formData.bookingId,

@@ -79,7 +79,7 @@ const PrepaidWallet = () => {
 
             <h2 className="text-lg font-semibold mb-4">Tổng quan ví</h2>
             <div className="bg-white shadow rounded-lg p-6 mb-8">
-                <div className="grid grid-cols-2 gap-6 text-center">
+                <div className="grid grid-cols-1 gap-6 text-center">
                     <div className="bg-blue-600 rounded-md p-4 shadow-sm flex flex-col items-center text-white">
                         <p className="text-sm opacity-80">Số dư ví khả dụng</p>
                         <p className="text-xl font-bold mb-3">{walletBalance.toLocaleString("vi-VN")} ₫</p>
@@ -94,13 +94,13 @@ const PrepaidWallet = () => {
                     {/*    <p className="text-sm text-slate-700">Đang tạm giữ (Escrow)</p>*/}
                     {/*    <p className="text-xl font-bold text-orange-600">20.000.000 ₫</p>*/}
                     {/*</div>*/}
-                    <div className="bg-slate-50 rounded-md p-4 shadow-sm">
-                        <p className="text-sm text-slate-500">Tổng tài sản ví</p>
-                        <p className="text-xl font-bold text-blue-600">100.000.000 ₫</p>
-                        <p className="text-xs text-slate-400 mt-2">
-                            (Số dư khả dụng + Tiền đang tạm giữ)
-                        </p>
-                    </div>
+                    {/*<div className="bg-slate-50 rounded-md p-4 shadow-sm">*/}
+                    {/*    <p className="text-sm text-slate-500">Tổng tài sản ví</p>*/}
+                    {/*    <p className="text-xl font-bold text-blue-600">100.000.000 ₫</p>*/}
+                    {/*    <p className="text-xs text-slate-400 mt-2">*/}
+                    {/*        (Số dư khả dụng + Tiền đang tạm giữ)*/}
+                    {/*    </p>*/}
+                    {/*</div>*/}
                 </div>
             </div>
             <h2 className="text-lg font-semibold mb-4">Nạp tiền</h2>
