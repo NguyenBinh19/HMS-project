@@ -18,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -129,7 +131,12 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     @PreAuthorize("hasAnyRole('AGENCY_MANAGER', 'AGENCY_STAFF')")
     public Page<FeedbackResponse> getMyFeedbackHistory(Pageable pageable) {
-        String userId = getCurrentUserId();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String userId = jwt.getClaim("UserId");
         return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(review -> {
                     Booking booking = review.getBookingId() != null
@@ -149,7 +156,14 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public Page<FeedbackResponse> getHotelFeedback(Pageable pageable) {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
         return reviewRepository.findByHotelId(hotelId, pageable)
                 .map(review -> {
                     Booking booking = review.getBookingId() != null
@@ -168,7 +182,14 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackStatsResponse getHotelFeedbackStats() {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
 
         return FeedbackStatsResponse.builder()
                 .averageScore(reviewRepository.getAvgRating(hotelId))
@@ -187,7 +208,14 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Transactional
     @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackResponse replyToFeedback(Integer reviewId, ReplyFeedbackRequest request) {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
 
         HotelReview review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));

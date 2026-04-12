@@ -423,7 +423,12 @@ const PayoutList = () => {
                                                             <th className="px-3 py-2">Check-out</th>
                                                             <th className="px-3 py-2 text-right">Doanh thu</th>
                                                             <th className="px-3 py-2 text-right">Hoa hồng</th>
-                                                            <th className="px-3 py-2 text-right">Hoàn trả</th>
+                                                            <th className="px-3 py-2 text-right leading-tight">
+                                                                <div>Hoàn trả</div>
+                                                                <div className="text-[10px] text-slate-400 font-normal">
+                                                                    (cancel booking)
+                                                                </div>
+                                                            </th>
                                                             <th className="px-3 py-2 text-right">Thực nhận</th>
                                                         </tr>
                                                     </thead>
@@ -436,7 +441,7 @@ const PayoutList = () => {
                                                                 <td className="px-3 py-2 text-xs">{item.checkOutDate && format(new Date(item.checkOutDate), 'dd/MM/yyyy')}</td>
                                                                 <td className="px-3 py-2 text-xs text-right font-bold">{formatMoney(item.grossAmount)}</td>
                                                                 <td className="px-3 py-2 text-xs text-right text-red-500">-{formatMoney(item.commissionAmount)}</td>
-                                                                <td className="px-3 py-2 text-xs text-right text-orange-500">-{formatMoney(item.refundAmount)} (cancel)</td>
+                                                                <td className="px-3 py-2 text-xs text-right text-orange-500">-{formatMoney(item.refundAmount)}</td>
                                                                 <td className="px-3 py-2 text-xs text-right font-black text-blue-600">{formatMoney(item.netAmount)}</td>
                                                             </tr>
                                                         ))}

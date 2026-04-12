@@ -277,7 +277,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
             <StatementHeader
                 gross={statement.grossRevenue || 0}
                 commission={statement.totalCommission || 0}
-                adjustments={statement.adjustments || 0}
+                adjustments={statement.totalRefunds || 0}
                 net={statement.netPayout || 0}
             />
 
@@ -291,7 +291,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                         <input
                             type="text"
-                            placeholder="Tim ma dat, dai ly..."
+                            placeholder="Tìm mã đặt,đại lý..."
                             className="pl-10 pr-4 py-2 bg-slate-50 rounded-full text-xs outline-none w-64 focus:bg-white border border-transparent focus:border-blue-100 transition-all"
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         />
@@ -305,9 +305,15 @@ const StatementDetailView = ({ statementId, onBack }) => {
                             <th className="px-8 py-4">Đại lý</th>
                             <th className="px-8 py-4">Check-in</th>
                             <th className="px-8 py-4">Đêm</th>
-                            <th className="px-8 py-4 text-right">Tổng (d)</th>
-                            <th className="px-8 py-4 text-right">Hoa hồng (d)</th>
-                            <th className="px-8 py-4 text-right">Thực nhận (d)</th>
+                            <th className="px-8 py-4 text-right">Tổng (đ)</th>
+                            <th className="px-8 py-4 text-right">Hoa hồng (đ)</th>
+                            <th className="px-3 py-2 text-right leading-tight">
+                                <div>Hoàn trả</div>
+                                <div className="text-[10px] text-slate-400 font-normal">
+                                    (cancel booking)
+                                </div>
+                            </th>
+                            <th className="px-8 py-4 text-right">Thực nhận (đ)</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -319,6 +325,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
                                 <td className="px-8 py-4 text-slate-600">{item.roomNights}</td>
                                 <td className="px-8 py-4 text-right font-bold text-slate-900">{formatVN(item.grossAmount)}</td>
                                 <td className="px-8 py-4 text-right font-bold text-red-500">-{formatVN(item.commissionAmount)}</td>
+                                <td className="px-8 py-4 text-right font-bold text-red-500">-{formatVN(item.refundAmount)}</td>
                                 <td className="px-8 py-4 text-right font-black text-slate-900">{formatVN(item.netAmount)}</td>
                             </tr>
                         ))}
@@ -447,7 +454,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
                                 className="w-full p-3 border rounded-xl"
                                 value={bankInfo.bankAccountNumber}
                                 onChange={(e) => {
-                                    const value = e.target.value.replace(/\D/g, ""); 
+                                    const value = e.target.value.replace(/\D/g, "");
                                     setBankInfo(prev => ({ ...prev, bankAccountNumber: value }));
                                 }}
                             />

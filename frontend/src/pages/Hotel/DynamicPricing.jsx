@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save } from 'lucide-react';
 import WeeklyStrategy from '@/components/hotel/dynamicPricing/WeeklyStrategy.jsx';
 import SpecialEvents from '@/components/hotel/dynamicPricing/SpecialEvents.jsx';
-import OccupancyRules from '@/components/hotel/dynamicPricing/OccupancyRules.jsx';
+// import OccupancyRules from '@/components/hotel/dynamicPricing/OccupancyRules.jsx';
 import { roomTypeService } from '@/services/roomtypes.service.js';
 
 const HOTEL_ID = 2;

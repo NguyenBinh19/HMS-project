@@ -220,7 +220,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
         if ("PERCENT".equalsIgnoreCase(rateType)) {
             return grossAmount.multiply(commissionValue)
-                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    .divide(new BigDecimal("100"), 0, RoundingMode.HALF_UP);
         } else {
             // FIXED amount per booking
             return commissionValue;
