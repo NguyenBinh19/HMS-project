@@ -84,9 +84,9 @@ const DemoAgencyDashboard = () => {
                         </div>
                         <p className="text-sm font-bold">Bạn đang trải nghiệm giao diện Đại lý với dữ liệu đã đồng bộ.</p>
                     </div>
-                    <button onClick={() => navigate('/demo')} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all">
-                        Đổi vai trò
-                    </button>
+                    {/*<button onClick={() => navigate('/demo')} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all">*/}
+                    {/*    Đổi vai trò*/}
+                    {/*</button>*/}
                 </div>
 
 

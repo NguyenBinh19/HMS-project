@@ -19,7 +19,7 @@ const RevenueReport = ({ hotelId = 2016 }) => {
     const [startDate, setStartDate] = useState("2026-03-01");
     const [endDate, setEndDate] = useState("2026-03-31");
     const [granularity, setGranularity] = useState("DAILY"); // DAILY | WEEKLY | MONTHLY
-    const [source, setSource] = useState("");
+    const [source, setSource] = useState(null);
 
     const fetchRevenue = async () => {
         setLoading(true);
@@ -28,7 +28,7 @@ const RevenueReport = ({ hotelId = 2016 }) => {
                 startDate,
                 endDate,
                 granularity,
-                source: source || null
+                // source: source || null
             };
             const res = await revenueService.getRevenueReport(hotelId, params);
 
@@ -100,7 +100,7 @@ const RevenueReport = ({ hotelId = 2016 }) => {
 
     useEffect(() => {
         fetchRevenue();
-    }, [startDate, endDate, granularity, source]);
+    }, [startDate, endDate, granularity]);
 
     const summary = reportData?.summary || {};
     const trendData = reportData?.trend || [];

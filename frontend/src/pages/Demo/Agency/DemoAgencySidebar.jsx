@@ -126,18 +126,18 @@ const DemoSidebar = () => {
             </div>
 
             {/* Nút thoát Demo */}
-            <div className="p-4 border-t border-slate-100">
-                <button
-                    onClick={() => {
-                        localStorage.removeItem("isDemoMode");
-                        localStorage.removeItem("demoRole");
-                        window.location.href = "/demo";
-                    }}
-                    className="w-full py-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all"
-                >
-                    Thoát trải nghiệm
-                </button>
-            </div>
+            {/*<div className="p-4 border-t border-slate-100">*/}
+            {/*    <button*/}
+            {/*        onClick={() => {*/}
+            {/*            localStorage.removeItem("isDemoMode");*/}
+            {/*            localStorage.removeItem("demoRole");*/}
+            {/*            window.location.href = "/demo";*/}
+            {/*        }}*/}
+            {/*        className="w-full py-3 rounded-xl bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all"*/}
+            {/*    >*/}
+            {/*        Thoát trải nghiệm*/}
+            {/*    </button>*/}
+            {/*</div>*/}
         </aside>
     );
 };

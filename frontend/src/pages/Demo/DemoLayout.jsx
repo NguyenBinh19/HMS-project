@@ -34,54 +34,60 @@ const DemoLayout = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 font-sans text-slate-900">
-            {/* Demo Banner */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 px-6 flex items-center justify-between text-sm font-bold z-[60] relative">
+
+            {/* --- HEADER CHÍNH --- */}
+            <div className="sticky top-0 z-50 bg-white shadow-sm w-full">
+                <Header/>
+            </div>
+
+            {/* --- BANNER DEMO: Chỉnh màu sắc và thêm khoảng cách dưới --- */}
+            <div
+                className="sticky top-[/* chiều cao header của bạn, thường là 64px hoặc 72px */] z-[49]
+               bg-[#2d3fe0] text-white py-2.5 px-6
+               flex items-center justify-between text-sm font-bold
+               shadow-[0_4px_10px_-2px_rgba(0,0,0,0.1)]
+               mb-6"> {/* Thêm mb-6 để tạo khoảng cách với Content bên dưới */}
+
                 <div className="flex items-center gap-3">
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-widest">
-                        Demo
-                    </span>
-                    <span>
-                        Bạn đang trải nghiệm hệ thống với vai trò{" "}
-                        <strong>Hotel Owner</strong>
-                    </span>
+        <span className="bg-white/20 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-widest border border-white/10">
+            Demo Mode
+        </span>
+                    <span className="tracking-tight">
+            Bạn đang trải nghiệm hệ thống với vai trò{" "}
+                        <strong className="text-blue-100 underline decoration-blue-400 underline-offset-4">
+                Hotel Owner
+            </strong>
+        </span>
                 </div>
-                <div className="flex items-center gap-3">
+
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => setShowRoleSelect(true)}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-xs"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-xs border border-white/5"
                     >
-                        <Repeat size={14} /> Đổi vai trò
-                    </button>
-                    <button
-                        onClick={() => navigate("/register")}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-white text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-xs font-black"
-                    >
-                        <UserPlus size={14} /> Đăng ký ngay
+                        <Repeat size={14}/> Đổi vai trò
                     </button>
                     <button
                         onClick={() => navigate("/")}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-xs"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-100 rounded-lg transition-all text-xs border border-red-500/20"
                     >
-                        <LogOut size={14} /> Thoát demo
+                        <LogOut size={14}/> Thoát
                     </button>
                 </div>
             </div>
 
-            {/* Header - matching real hotel layout */}
-            <div className="sticky top-0 z-50 bg-white shadow-sm w-full">
-                <Header />
-            </div>
-
-            <div className="flex flex-1 relative">
+            <div className="flex flex-1 relative ">
                 {/* Sidebar - matching real hotel sidebar */}
-                <aside className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
+                <aside
+                    className="w-[260px] h-screen sticky top-0 bg-white flex flex-col border-r border-slate-200 flex-shrink-0">
                     <div className="h-16 bg-blue-600 flex items-center px-6 shadow-md flex-shrink-0 z-10">
                         <span className="text-white font-bold text-lg uppercase tracking-wide flex items-center gap-2">
-                            <Building2 className="text-white" size={24} />{" "}
+                            <Building2 className="text-white" size={24}/>{" "}
                             HOTEL
                         </span>
                     </div>
-                    <div className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar shadow-[inset_0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
+                    <div
+                        className="flex-1 overflow-y-auto py-4 space-y-1 custom-scrollbar shadow-[inset_0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
                         {SIDEBAR_ITEMS.map((item, index) => {
                             const isActive = location.pathname === item.path;
                             return (
@@ -95,7 +101,7 @@ const DemoLayout = () => {
                                     }`}
                                 >
                                     {isActive && (
-                                        <div className="absolute right-0 top-0 h-full w-1 bg-blue-600 rounded-l-md" />
+                                        <div className="absolute right-0 top-0 h-full w-1 bg-blue-600 rounded-l-md"/>
                                     )}
                                     <span
                                         className={`${
@@ -148,7 +154,7 @@ const DemoLayout = () => {
                 {/* Content */}
                 <main className="flex-1 bg-slate-50">
                     <div className="p-6 md:p-8">
-                        <Outlet />
+                        <Outlet/>
                     </div>
 
                     {/* Step navigation */}
@@ -166,7 +172,7 @@ const DemoLayout = () => {
                                     {prevStep.label}
                                 </button>
                             ) : (
-                                <div />
+                                <div/>
                             )}
                             {nextStep ? (
                                 <button
@@ -174,14 +180,14 @@ const DemoLayout = () => {
                                     className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-black hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 active:scale-95"
                                 >
                                     Bước tiếp: {nextStep.label}{" "}
-                                    <ArrowRight size={16} />
+                                    <ArrowRight size={16}/>
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => navigate("/register")}
                                     className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-black hover:shadow-xl transition-all shadow-lg active:scale-95"
                                 >
-                                    <UserPlus size={16} /> Đăng ký ngay để sử
+                                    <UserPlus size={16}/> Đăng ký ngay để sử
                                     dụng thật!
                                 </button>
                             )}
@@ -192,16 +198,18 @@ const DemoLayout = () => {
 
             {/* Footer */}
             <div className="flex-shrink-0 bg-slate-900 text-white border-t border-slate-200">
-                <Footer />
+                <Footer/>
             </div>
 
             {/* Welcome overlay */}
             {showWelcome && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                    <div className="relative bg-white rounded-3xl p-12 max-w-lg text-center shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <Building2 size={40} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"/>
+                    <div
+                        className="relative bg-white rounded-3xl p-12 max-w-lg text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div
+                            className="w-20 h-20 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <Building2 size={40}/>
                         </div>
                         <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tighter">
                             Chào mừng đến chế độ Demo!
