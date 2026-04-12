@@ -51,7 +51,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // ======================================================================
     @Override
     @Transactional
-    @PreAuthorize("hasRole('AGENCY_MANAGER')")
+    @PreAuthorize("hasAnyRole('AGENCY_MANAGER', 'AGENCY_STAFF')")
     public FeedbackResponse submitFeedback(SubmitFeedbackRequest request) {
         String userId = getCurrentUserId();
 
@@ -127,7 +127,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-033: Agency feedback history
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('AGENCY_MANAGER')")
+    @PreAuthorize("hasAnyRole('AGENCY_MANAGER', 'AGENCY_STAFF')")
     public Page<FeedbackResponse> getMyFeedbackHistory(Pageable pageable) {
         String userId = getCurrentUserId();
         return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
@@ -147,7 +147,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-055: Hotel's received feedback
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public Page<FeedbackResponse> getHotelFeedback(Pageable pageable) {
         Integer hotelId = getCurrentUserHotelId();
         return reviewRepository.findByHotelId(hotelId, pageable)
@@ -166,7 +166,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-055: Hotel feedback stats
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackStatsResponse getHotelFeedbackStats() {
         Integer hotelId = getCurrentUserHotelId();
 
@@ -185,7 +185,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // ======================================================================
     @Override
     @Transactional
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackResponse replyToFeedback(Integer reviewId, ReplyFeedbackRequest request) {
         Integer hotelId = getCurrentUserHotelId();
 

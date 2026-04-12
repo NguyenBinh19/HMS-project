@@ -281,8 +281,7 @@ const Login = () => {
 
                                 <div className="flex justify-between items-center">
                                     <label className="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                                        <span className="text-sm font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">Ghi nhớ</span>
+                                        
                                     </label>
                                     <Link to="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline decoration-2 underline-offset-4 transition-colors">
                                         Quên mật khẩu?

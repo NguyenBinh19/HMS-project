@@ -58,8 +58,12 @@ const ResetPassword = () => {
     }, [confirm, password]);
 
     const showToastOnce = (msg, type = "error") => {
-        setToast({ show: true, message: msg, type });
-    };
+    setToast({ show: true, message: msg, type });
+
+    setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+};
 
     const onSubmit = async (e) => {
         e.preventDefault();
@@ -84,7 +88,23 @@ const ResetPassword = () => {
             await authService.resetPassword(token, password);
             setIsSuccess(true); // Chuyển sang giao diện thành công
         } catch (err) {
-            const msg = err.response?.data?.message || "Liên kết không hợp lệ hoặc đã hết hạn.";
+            console.log("FULL ERROR:", err.response?.data);
+
+            const errorCode = Number(err.response?.data?.code);
+
+            // 👉 Bắt riêng lỗi password trùng
+            if (errorCode === 1018) {
+                showToastOnce("Mật khẩu mới không được trùng với mật khẩu cũ.", "error");
+                return;
+            }
+
+            // 👉 fallback message
+            const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.response?.data?.result?.message ||
+                "Liên kết không hợp lệ hoặc đã hết hạn.";
+
             showToastOnce(msg, "error");
         } finally {
             setLoading(false);
@@ -283,9 +303,8 @@ const ResetPassword = () => {
             </div>
 
             {/* TOAST */}
-            <ToastPortal>
                 {toast.show && (
-                    <div className="fixed top-6 right-6">
+                    <div className="fixed top-6 right-6 z-[9999]">
                         <Toast
                             message={toast.message}
                             type={toast.type}
@@ -293,7 +312,6 @@ const ResetPassword = () => {
                         />
                     </div>
                 )}
-            </ToastPortal>
         </div>
     );
 };
