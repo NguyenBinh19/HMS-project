@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Trophy, Wallet, AlertTriangle, Users,
-    Calendar, Lock, CheckCircle2, AlertCircle, TrendingUp, Loader2
+    Wallet, AlertTriangle, Calendar, Lock,
+    CheckCircle2, XCircle, Clock, TrendingUp, Loader2,
+    ChevronRight, ExternalLink, ArrowDownRight, ArrowUpRight
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -10,10 +11,8 @@ import {
 } from 'recharts';
 import { jwtDecode } from "jwt-decode";
 
-// Import các services
-import { rankService } from '@/services/rank.service';
+// Services
 import { bookingService } from '@/services/booking.service';
-import { staffService } from '@/services/staff.service';
 import { agencyService } from '@/services/agency.service';
 import api from "@/services/axios.config";
 
@@ -21,12 +20,13 @@ const AgencyDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [agencyId, setAgencyId] = useState(null);
     const navigate = useNavigate();
-    // States dữ liệu
-    const [rankData, setRankData] = useState(null);
-    const [financeData, setFinanceData] = useState({ wallet: 0, credit: null });
-    const [stats, setStats] = useState({ newBookings: 0, checkins: 0, complaints: 0, staff: 0 });
+
+    // Data states
+    const [finance, setFinance] = useState({ wallet: 0, credit: null });
+    const [monthlyStats, setMonthlyStats] = useState({ total: 0, completed: 0, cancelled: 0, others: 0 });
+    const [upcoming, setUpcoming] = useState({ day0: [], day1: [], day2: [] });
     const [chartData, setChartData] = useState([]);
-    const [activities, setActivities] = useState([]);
+    const [activities, setActivities] = useState([]); // State cho giao dịch
     const [accountStatus, setAccountStatus] = useState('NORMAL');
 
     useEffect(() => {
@@ -34,291 +34,199 @@ const AgencyDashboard = () => {
         if (token) {
             try {
                 const decoded = jwtDecode(token);
-                const id = decoded.agencyId || decoded.agency_id;
-                setAgencyId(id);
-            } catch (error) {
-                console.error("Token decode error:", error);
-            }
+                setAgencyId(decoded.agencyId || decoded.agency_id);
+            } catch (error) { console.error("Token error", error); }
         }
     }, []);
 
     const fetchData = async () => {
         if (!agencyId) return;
         setLoading(true);
-
         try {
-            // Lấy Profile để lấy rankId và Wallet
-            const agencyProfileRes = await agencyService.getAgencyProfileDetail();
-            const agencyData = agencyProfileRes?.result;
-            const currentRankId = agencyData?.rankId;
+            const profileRes = await agencyService.getAgencyProfileDetail();
+            const agency = profileRes?.result;
 
-            // Gọi đồng thời các API
-            const results = await Promise.allSettled([
-                rankService.getRankDetail(currentRankId),                            // Index 0
-                api.get(`/agencies/${agencyId}/credit-summary`),                    // Index 1
-                bookingService.getBookingHistory(),                                 // Index 2
-                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=4`), // Index 3
-                staffService.getStaffList()                                         // Index 4
+            const [creditRes, bookingRes, transRes] = await Promise.allSettled([
+                api.get(`/agencies/${agencyId}/credit-summary`),
+                bookingService.getBookingHistory(),
+                api.get(`/transaction-history/${agencyId}/transactions/recent?limit=5`)
             ]);
 
-            // Hàm helper để lấy giá trị value từ Promise.allSettled
-            const getResValue = (idx) => results[idx].status === 'fulfilled' ? results[idx].value : null;
+            const getRes = (res) => res.status === 'fulfilled' ? res.value : null;
 
-            // --- 0. XỬ LÝ RANK ---
-            const rankRes = getResValue(0);
-            if (rankRes?.result) {
-                const r = rankRes.result;
-                setRankData({
-                    currentRankName: r.rankName,
-                    color: r.color,
-                    description: r.description,
-                    rankCode: r.rankCode,
-                    progressPercent: r.upgradeMinTotalRevenue === 0 ? 100 : 0
-                });
-            }
+            // 1. Xử lý Tài chính
+            const credit = getRes(creditRes)?.data?.result;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-            // --- 1. XỬ LÝ TÀI CHÍNH ---
-            const creditRes = getResValue(1);
-            const creditData = creditRes?.data?.result;
+            const dueDate = credit?.dueDate ? new Date(credit.dueDate) : null;
+            const isOverdue = credit?.debt > 0 && dueDate && dueDate < today;
 
-            setFinanceData({
-                wallet: agencyData?.walletBalance || 0,
-                credit: creditData || null
-            });
+            setFinance({ wallet: agency?.walletBalance || 0, credit });
+            setAccountStatus(isOverdue ? 'STAGE2' : (credit?.debt > 0 ? 'STAGE1' : 'NORMAL'));
 
-            if (creditData?.debt > 0) {
-                const isOverdue = new Date(creditData.dueDate) < new Date();
-                setAccountStatus(isOverdue ? 'STAGE2' : 'STAGE1');
-            } else {
-                setAccountStatus('NORMAL');
-            }
-            // --- 2. XỬ LÝ BOOKING ---
-            const bookingRes = getResValue(2);
-            const bookingList = bookingRes?.result?.content || [];
+            // 2. Thống kê & Lịch trình
+            const bookings = getRes(bookingRes)?.result?.content || [];
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-            const todayStr = new Date().toDateString();
-            const threeDaysLater = new Date();
-            threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+            let stats = { total: 0, completed: 0, cancelled: 0, others: 0 };
+            let d0 = [], d1 = [], d2 = [];
+            const revMap = {};
 
-            let newCount = 0;
-            let checkinCount = 0;
-            const dailyRevMap = {};
-
-            bookingList.forEach(b => {
+            bookings.forEach(b => {
                 const createdAt = new Date(b.createdAt);
-                const checkInDate = new Date(b.checkInDate);
-                if (createdAt.toDateString() === todayStr) newCount++;
-                if (checkInDate >= new Date() && checkInDate <= threeDaysLater && b.bookingStatus !== 'CANCELLED') {
-                    checkinCount++;
+                const checkInClean = new Date(b.checkInDate).setHours(0,0,0,0);
+
+                if (createdAt >= startOfMonth) {
+                    stats.total++;
+                    if (b.bookingStatus === 'COMPLETED' ) stats.completed++;
+                    else if (b.bookingStatus === 'CANCELLED') stats.cancelled++;
+                    else stats.others++;
                 }
-                // Gom dữ liệu biểu đồ
-                const dateLabel = `${createdAt.getDate()}/${createdAt.getMonth() + 1}`;
+
+                const diffDays = Math.round((checkInClean - today.getTime()) / (1000 * 60 * 60 * 24));
                 if (b.bookingStatus !== 'CANCELLED') {
-                    dailyRevMap[dateLabel] = (dailyRevMap[dateLabel] || 0) + (b.finalAmount || 0);
+                    if (diffDays === 0) d0.push(b);
+                    else if (diffDays === 1) d1.push(b);
+                    else if (diffDays === 2) d2.push(b);
+                    const dayLabel = `${createdAt.getDate()}/${createdAt.getMonth() + 1}`;
+                    revMap[dayLabel] = (revMap[dayLabel] || 0) + b.finalAmount;
                 }
             });
 
-            setStats(prev => ({ ...prev, newBookings: newCount, checkins: checkinCount }));
-            setChartData(Object.keys(dailyRevMap).map(date => ({
-                day: date,
-                revenue: dailyRevMap[date]
-            })).slice(-10));
+            setMonthlyStats(stats);
+            setUpcoming({ day0: d0, day1: d1, day2: d2 });
+            setChartData(Object.keys(revMap).map(k => ({ day: k, revenue: revMap[k] })).slice(-7));
 
-            // --- 3. GIAO DỊCH GẦN NHẤT ---
-            const transRes = getResValue(3);
-            const transData = transRes?.data?.result;
-            if (Array.isArray(transData)) {
-                setActivities(transData);
-            }
-            // --- 4. NHÂN SỰ ---
-            const staffRes = getResValue(4);
-            const staffList = staffRes?.result || staffRes?.data?.result;
-            if (Array.isArray(staffList)) {
-                setStats(prev => ({ ...prev, staff: staffList.length }));
-            }
+            // 3. Giao dịch gần nhất
+            setActivities(getRes(transRes)?.data?.result || []);
 
         } catch (error) {
-            console.error("Dashboard logic error:", error);
+            console.error("Fetch error:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [agencyId]);
+    useEffect(() => { fetchData(); }, [agencyId]);
 
-    const getStatusConfig = () => {
-        switch (accountStatus) {
-            case 'STAGE1':
-                return {
-                    banner: "bg-amber-50 border-amber-200 text-amber-800",
-                    bannerIcon: <AlertTriangle className="text-amber-500" />,
-                    bannerMsg: "Bạn đang có dư nợ chưa thanh toán. Vui lòng tất toán trước ngày hạn.",
-                    isLocked: false
-                };
-            case 'STAGE2':
-                return {
-                    banner: "bg-red-600 border-red-700 text-white",
-                    bannerIcon: <Lock className="text-white" />,
-                    bannerMsg: "TÀI KHOẢN BỊ KHÓA GIAO DỊCH do nợ quá hạn. Vui lòng thanh toán để tiếp tục.",
-                    isLocked: true
-                };
-            default:
-                return { banner: null, isLocked: false };
-        }
-    };
-
-    const config = getStatusConfig();
     const formatVND = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-                <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
-                <p className="font-bold text-slate-600 tracking-tight">Đang tải dữ liệu đại lý...</p>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center bg-slate-50 text-indigo-600">
+            <Loader2 className="animate-spin" size={40}/>
+        </div>
+    );
 
     return (
-        <div className={`p-6 bg-slate-50 min-h-screen space-y-6 ${config.isLocked ? 'grayscale-[0.5]' : ''}`}>
-
-            {/* 1. Alert Banner */}
-            {config.banner && (
-                <div
-                    className={`flex items-center gap-3 p-4 rounded-2xl border shadow-sm animate-pulse ${config.banner}`}>
-                    {config.bannerIcon}
-                    <p className="font-bold text-sm tracking-tight">{config.bannerMsg}</p>
+        <div className="p-8 bg-[#FBFBFE] min-h-screen space-y-8">
+            {/* Banner Cảnh báo nợ (Giữ nguyên) */}
+            {accountStatus !== 'NORMAL' && (
+                <div className={`p-4 rounded-[24px] border-2 flex items-center justify-between animate-pulse ${
+                    accountStatus === 'STAGE2' ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'
+                }`}>
+                    <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-xl ${accountStatus === 'STAGE2' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'}`}>
+                            {accountStatus === 'STAGE2' ? <Lock size={20}/> : <AlertTriangle size={20}/>}
+                        </div>
+                        <div>
+                            <p className={`font-black text-xs uppercase ${accountStatus === 'STAGE2' ? 'text-red-600' : 'text-amber-700'}`}>
+                                {accountStatus === 'STAGE2' ? "Tài khoản bị khóa" : "Nhắc nhở công nợ"}
+                            </p>
+                            <p className="text-sm font-bold text-slate-600">
+                                {accountStatus === 'STAGE2' ? "Vui lòng thanh toán nợ quá hạn." : `Vui lòng thanh toán trước ngày: ${finance.credit?.dueDate}`}
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={() => navigate('/agency/credit-wallet')} className="px-6 py-2 bg-white rounded-xl shadow-sm text-xs font-black uppercase tracking-tighter">Thanh toán</button>
                 </div>
             )}
 
-            {/* 2. Tài chính Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Hạng */}
-                <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-4">
+            {/* Tài chính Section (Giữ nguyên) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Sức mua khả dụng</p>
+                        <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+                            {formatVND(finance.wallet + (finance.credit?.remainingCredit || 0))}
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-slate-50">
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                Hạng đại lý
-                            </p>
-                            <div
-                                style={{
-                                    backgroundColor: rankData?.color || '#94a3b8',
-                                    boxShadow: `0 4px 12px ${rankData?.color}40`
-                                }}
-                                className="text-white px-4 py-1 rounded-lg font-black text-sm inline-block italic"
-                            >
-                                {rankData?.currentRankName || 'BASIC'}
-                            </div>
+                            <p className="text-[10px] font-black text-emerald-500 uppercase">Ví trả trước</p>
+                            <p className="text-lg font-black text-slate-800">{formatVND(finance.wallet)}</p>
                         </div>
-                        <div className="p-2 rounded-full bg-slate-50">
-                            {/* Có thể thay đổi Icon dựa trên rankData.icon nếu cần */}
-                            <Trophy style={{ color: rankData?.color || '#94a3b8' }} size={28} />
+                        <div>
+                            <p className="text-[10px] font-black text-indigo-500 uppercase">Tín dụng trống</p>
+                            <p className="text-lg font-black text-slate-800">{formatVND(finance.credit?.remainingCredit)}</p>
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        {/* Hiển thị mô tả từ description trong JSON */}
-                        <p className="text-[11px] font-bold text-slate-500 leading-tight italic">
-                            {rankData?.description || 'Hạng thành viên cơ bản'}
-                        </p>
-
-                        {/* Thanh tiến trình */}
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                                className="h-full transition-all duration-1000 ease-out"
-                                style={{
-                                    width: `${rankData?.progressPercent || 0}%`,
-                                    backgroundColor: rankData?.color || '#94a3b8'
-                                }}
-                            />
-                        </div>
-                        {rankData?.rankCode === 'BASIC'}
                     </div>
                 </div>
 
-                {/* Sức mua / Ví trả trước */}
-                <div className={`bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 transition-all ${accountStatus === 'STAGE2' ? 'ring-2 ring-red-500' : ''}`}>
-                    <div className="flex justify-between items-start mb-2">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sức mua (Ví + Tín dụng)</p>
-                        <Wallet className="text-emerald-500" size={20} />
-                    </div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-4">
-                        {formatVND((financeData.wallet || 0) + (financeData.credit?.remainingCredit || 0))}
-                    </h2>
-                    <div className="space-y-2 text-[11px] mb-4">
-                        <div className="flex justify-between">
-                            <span className="font-bold text-slate-500 tracking-tight">Số dư ví:</span>
-                            <span className="font-black text-slate-800">{formatVND(financeData.wallet)}</span>
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 grid grid-cols-2 gap-6 relative overflow-hidden">
+                    <div className="border-r border-slate-50 pr-4 flex flex-col justify-between">
+                        <div>
+                            <p className="text-[11px] font-black text-amber-500 uppercase mb-1">Dư nợ còn hạn</p>
+                            <h2 className="text-2xl font-black text-slate-800">
+                                {accountStatus === 'STAGE1' ? formatVND(finance.credit?.debt) : '0 ₫'}
+                            </h2>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="font-bold text-slate-500 tracking-tight">Tín dụng khả dụng:</span>
-                            <span className="font-black text-slate-800">{formatVND(financeData.credit?.remainingCredit)}</span>
-                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold tracking-tighter italic">Hạn: {finance.credit?.dueDate || '---'}</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/agency/prepaid')} // Điều hướng sang trang nạp ví
-                        disabled={config.isLocked}
-                        className="w-full bg-blue-600 text-white py-2 rounded-xl text-[10px] font-black uppercase disabled:bg-slate-300 hover:bg-blue-700 transition-colors"
-                    >
-                        Nạp tiền vào ví
-                    </button>
-                </div>
-
-                {/* Dư nợ / Tín dụng */}
-                <div className={`p-6 rounded-[32px] shadow-sm border transition-all ${accountStatus === 'NORMAL' ? 'bg-white border-slate-100' : 'bg-red-50 border-red-100'}`}>
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Dư nợ hiện tại</p>
-                    <h2 className="text-2xl font-black text-red-600 mb-1">{formatVND(financeData.credit?.debt)}</h2>
-                    <p className="text-[10px] font-bold text-slate-500 mb-6 italic tracking-tighter">
-                        Hạn thanh toán: {financeData.credit?.dueDate || 'N/A'}
-                    </p>
-                    <button
-                        onClick={() => navigate('/agency/credit-wallet')} // Điều hướng sang trang thanh toán nợ tín dụng
-                        className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-black transition-all"
-                    >
-                        Thanh toán nợ
-                    </button>
+                    <div className="flex flex-col justify-between">
+                        <div>
+                            <p className="text-[11px] font-black text-red-500 uppercase mb-1">Dư nợ quá hạn</p>
+                            <h2 className="text-2xl font-black text-red-600">
+                                {accountStatus === 'STAGE2' ? formatVND(finance.credit?.debt) : '0 ₫'}
+                            </h2>
+                        </div>
+                        <button onClick={() => navigate('/agency/credit-wallet')} className="w-full py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-indigo-600 transition-all">
+                            Thanh toán
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* 3. Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <StatCard
-                    icon={<CheckCircle2 className="text-emerald-500"/>}
-                    label="Đơn mới"
-                    value={stats.newBookings}
-                    sub="Hôm nay"
-                />
-                <StatCard
-                    icon={<Calendar className="text-slate-400"/>}
-                    label="Sắp khởi hành"
-                    value={stats.checkins}
-                />
-                <StatCard
-                    icon={<Users className="text-blue-500"/>}
-                    label="Nhân sự"
-                    value={stats.staff}
-                    sub="Thành viên"
-                />
+            {/* Chỉ số nhanh (Giữ nguyên) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <MetricCard label="Đơn trong tháng" value={monthlyStats.total} icon={<Calendar size={18}/>} color="text-indigo-600" bg="bg-indigo-50" />
+                <MetricCard label="Thành công" value={monthlyStats.completed} icon={<CheckCircle2 size={18}/>} color="text-emerald-600" bg="bg-emerald-50" />
+                <MetricCard label="Đã hủy" value={monthlyStats.cancelled} icon={<XCircle size={18}/>} color="text-rose-600" bg="bg-rose-50" />
+                <MetricCard label="Trạng thái khác" value={monthlyStats.others} icon={<Clock size={18}/>} color="text-slate-600" bg="bg-slate-100" />
             </div>
-            {/* 4. Chart & Activity Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
-                    <h3 className="font-black text-slate-800 uppercase tracking-tighter mb-8">Doanh số đặt phòng gần
-                        đây</h3>
-                    <div className="h-[300px] w-full">
+
+            {/* Phần 3 Cột: Lịch trình - Doanh số - Giao dịch */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* 1. Lịch khởi hành (Giữ nguyên) */}
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest flex items-center gap-2">
+                            <Clock size={16} className="text-indigo-600"/> Lịch trình sắp tới
+                        </h3>
+                        <button onClick={() => navigate('/agency/booking-list')} className="text-[10px] font-black text-indigo-600 hover:underline flex items-center gap-1">
+                            Tất cả <ExternalLink size={12}/>
+                        </button>
+                    </div>
+                    <div className="space-y-8 flex-1">
+                        <UpcomingSection title="Hôm nay" list={upcoming.day0} navigate={navigate} />
+                        <UpcomingSection title="Ngày mai" list={upcoming.day1} navigate={navigate} />
+                        <UpcomingSection title="Ngày kia" list={upcoming.day2} navigate={navigate} />
+                    </div>
+                </div>
+
+                {/* 2. Biểu đồ Doanh số (Đã thu gọn để nhường chỗ) */}
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+                    <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest mb-8">Doanh số 7 ngày</h3>
+                    <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
+                            <BarChart data={chartData} margin={{ left: -35 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                                <XAxis dataKey="day" axisLine={false} tickLine={false}
-                                       tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}}/>
+                                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} dy={10}/>
                                 <YAxis hide/>
-                                <Tooltip cursor={{fill: '#f8fafc'}} content={<CustomTooltip/>}/>
-                                <Bar dataKey="revenue" radius={[6, 6, 0, 0]} barSize={32}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`}
-                                              fill={index === chartData.length - 1 ? '#3b82f6' : '#93c5fd'}/>
+                                <Tooltip cursor={{fill: '#F8FAFC'}} content={<CustomTooltip/>}/>
+                                <Bar dataKey="revenue" radius={[6, 6, 6, 6]} barSize={25}>
+                                    {chartData.map((entry, i) => (
+                                        <Cell key={i} fill={i === chartData.length - 1 ? '#4F46E5' : '#E2E8F0'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -326,28 +234,41 @@ const AgencyDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
-                    <h3 className="font-black text-slate-800 uppercase tracking-tighter mb-6 flex items-center gap-2">
-                        <TrendingUp size={18} className="text-blue-600"/> Giao dịch gần nhất
-                    </h3>
-                    <div className="space-y-6">
+                {/* 3. Giao dịch gần nhất (Thêm mới) */}
+                <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest flex items-center gap-2">
+                            <TrendingUp size={16} className="text-emerald-600"/> Giao dịch mới
+                        </h3>
+                        <button onClick={() => navigate('/agency/transaction-history')} className="text-[10px] font-black text-indigo-600 hover:underline">
+                            Xem tất cả
+                        </button>
+                    </div>
+                    <div className="space-y-5 flex-1">
                         {activities.length > 0 ? activities.map((act, idx) => (
-                            <ActivityItem
-                                key={idx}
-                                time={new Date(act.transactionDate).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
-                                desc={act.description}
-                                amount={`${act.direction === 'IN' ? '+' : '-'}${formatVND(act.amount)}`}
-                                type={act.direction === 'IN' ? 'success' : 'debt'}
-                            />
-                        )) : (
-                            <div className="flex flex-col items-center py-10 opacity-40">
-                                <TrendingUp size={40} className="mb-2"/>
-                                <p className="text-xs font-bold italic">Chưa có giao dịch nào</p>
+                            <div key={idx} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl ${act.direction === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                        {act.direction === 'IN' ? <ArrowUpRight size={14}/> : <ArrowDownRight size={14}/>}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[11px] font-black text-slate-700 line-clamp-1">{act.description}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                                            {new Date(act.transactionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span className={`text-[11px] font-black whitespace-nowrap ${act.direction === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    {act.direction === 'IN' ? '+' : '-'}{formatVND(act.amount).replace('₫', '')}
+                                </span>
                             </div>
+                        )) : (
+                            <div className="flex flex-col items-center justify-center h-full opacity-30 italic text-[10px]">Chưa có giao dịch</div>
                         )}
+                    </div>
+                    <div className="mt-6 p-4 bg-slate-50 rounded-2xl">
+                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Ghi chú</p>
+                        <p className="text-[10px] text-slate-500 leading-relaxed font-medium">Giao dịch được cập nhật thời gian thực từ ví và hạn mức tín dụng.</p>
                     </div>
                 </div>
             </div>
@@ -355,39 +276,52 @@ const AgencyDashboard = () => {
     );
 };
 
-// --- Sub-components ---
-const StatCard = ({icon, label, value, sub, highlight}) => (
-    <div
-        className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-2">
-        <div className="p-3 bg-slate-50 rounded-2xl">{icon}</div>
-        <div className="text-2xl font-black text-slate-900">{value}</div>
+// Sub-components giữ nguyên như cũ
+const MetricCard = ({ label, value, icon, color, bg }) => (
+    <div className="bg-white p-6 rounded-[28px] border border-slate-50 shadow-sm flex items-center gap-5">
+        <div className={`p-3 rounded-2xl ${bg} ${color}`}>{icon}</div>
         <div>
-            <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{label}</p>
-            <p className={`text-[9px] font-bold ${highlight ? 'text-red-500' : 'text-slate-400'}`}>{sub}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+            <p className="text-xl font-black text-slate-900">{value}</p>
         </div>
     </div>
 );
 
-const ActivityItem = ({ time, desc, amount, type }) => (
-    <div className="flex gap-4 items-start">
-        <span className="text-[10px] font-black text-slate-400 mt-1 whitespace-nowrap">{time}</span>
-        <div className="space-y-1 overflow-hidden">
-            <p className="text-xs font-bold text-slate-700 leading-tight truncate">{desc}</p>
-            <p className={`text-[10px] font-black ${type === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
-                {amount}
-            </p>
+const UpcomingSection = ({ title, list, navigate }) => {
+    const LIMIT = 2; // Giảm limit xuống 2 để cân đối giao diện 3 cột
+    const displayedItems = list.slice(0, LIMIT);
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
+                <div className="h-px bg-slate-50 flex-1"></div>
+            </div>
+            <div className="space-y-2">
+                {list.length > 0 ? (
+                    <>
+                        {displayedItems.map(item => (
+                            <div key={item.bookingId} onClick={() => navigate(`/agency/booking-list/detail/${item.bookingCode}`)}
+                                 className="group flex items-center justify-between p-3 bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl cursor-pointer transition-all">
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-black text-slate-700 group-hover:text-indigo-600">{item.bookingCode}</span>
+                                    <span className="text-[9px] font-bold text-slate-400 truncate w-24">{item.guestName || "Khách lẻ"}</span>
+                                </div>
+                                <ChevronRight size={12} className="text-slate-300 group-hover:translate-x-1 transition-transform"/>
+                            </div>
+                        ))}
+                    </>
+                ) : <p className="text-[10px] text-slate-300 italic pl-2">Trống</p>}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
         return (
-            <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-800">
-                <p className="text-[10px] font-black uppercase mb-1">Ngày {payload[0].payload.day}</p>
-                <p className="text-sm font-black text-blue-400">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(payload[0].value)}
-                </p>
+            <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl">
+                <p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Ngày {payload[0].payload.day}</p>
+                <p className="text-sm font-black">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(payload[0].value)}</p>
             </div>
         );
     }
