@@ -11,5 +11,4 @@ public class RevenueReportRequest {
     private LocalDate endDate;
     private String granularity; // DAILY, WEEKLY, MONTHLY
     private Long agencyId;      // optional filter
-    private String source;      // optional filter: B2B, DIRECT
 }

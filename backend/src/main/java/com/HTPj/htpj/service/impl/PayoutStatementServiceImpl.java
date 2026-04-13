@@ -405,7 +405,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
         List<PayoutListItemResponse> payoutItems = new ArrayList<>();
         BigDecimal totalLiability = BigDecimal.ZERO;
-        int pendingCount = 0,readyCount = 0, processingCount = 0, paidCount = 0, blockedCount = 0;
+        int pendingCount = 0,readyCount = 0, paidCount = 0, blockedCount = 0;
 
         for (PayoutStatement s : statements) {
             Hotel hotel = hotelMap.get(s.getHotelId());
@@ -434,7 +434,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             payoutItems.add(item);
 
             // Aggregate summary
-            if ("APPROVED".equals(s.getStatus()) || "PROCESSING".equals(s.getStatus())) {
+            if ("APPROVED".equals(s.getStatus())) {
                 totalLiability = totalLiability.add(
                         s.getNetPayout() != null ? s.getNetPayout() : BigDecimal.ZERO);
             }
@@ -442,7 +442,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             switch (s.getStatus()) {
                 case "PENDING_CONFIRMATION" -> pendingCount++;
                 case "APPROVED" -> readyCount++;
-                case "PROCESSING" -> processingCount++;
+//                case "PROCESSING" -> processingCount++;
                 case "PAID" -> paidCount++;
                 case "ROLLOVER" -> blockedCount++;
                 default -> {}
@@ -455,7 +455,6 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .totalRecords(statements.size())
                 .pendingCount(pendingCount)
                 .readyCount(readyCount)
-                .processingCount(processingCount)
                 .paidCount(paidCount)
                 .blockedCount(blockedCount)
                 .build();

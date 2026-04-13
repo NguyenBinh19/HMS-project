@@ -258,4 +258,37 @@ ORDER BY b.createdAt DESC
     WHERE b.agencyId = :agencyId
     """)
     List<Booking> findByAgencyId(@Param("agencyId") Long agencyId);
+
+
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus IN :statuses
+      AND b.checkOutDate >= :startDate
+      AND b.checkInDate <= :endDate
+    """)
+    List<Booking> findRevenueBookings(
+            @Param("hotelId") Integer hotelId,
+            @Param("statuses") List<String> statuses,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus IN :statuses
+      AND b.checkOutDate >= :startDate
+      AND b.checkInDate <= :endDate
+      AND b.agencyId = :agencyId
+    """)
+    List<Booking> findRevenueBookingsByAgency(
+            @Param("hotelId") Integer hotelId,
+            @Param("statuses") List<String> statuses,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("agencyId") Long agencyId
+    );
 }

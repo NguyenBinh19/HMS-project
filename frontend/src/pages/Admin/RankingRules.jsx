@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Plus, RefreshCw, Trash2, CheckCircle2,
-    BarChart3, Calendar, Clock, ArrowRight, Star, Trophy, Crown, Medal, Gem, Award, Zap,
+    BarChart3, Calendar, Clock, ArrowRight, Star, Trophy, Crown, Medal, Gem, Award, Zap,HelpCircle
 } from 'lucide-react';
 import { rankService } from '@/services/rank.service.js';
 import AddRankingModal from '@/components/admin/ranking/AddRankingModal';

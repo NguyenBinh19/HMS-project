@@ -158,6 +158,10 @@ public enum ErrorCode {
     //config
     CONFIG_NOT_FOUND(5005, "config not found", HttpStatus.BAD_REQUEST),
 
+    //pdf document
+    PDF_DOCUMENT_NOT_FOUND(5101, "Tài liệu PDF không tồn tại", HttpStatus.NOT_FOUND),
+    PDF_UPLOAD_FAILED(5102, "Tải lên tệp PDF thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    PDF_INVALID_FILE_TYPE(5103, "Chỉ chấp nhận tệp định dạng PDF", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

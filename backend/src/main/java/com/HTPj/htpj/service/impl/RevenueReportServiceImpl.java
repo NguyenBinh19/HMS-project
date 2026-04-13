@@ -32,7 +32,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     private final RoomTypeRepository roomTypeRepository;
 
     private static final List<String> REVENUE_STATUSES = List.of(
-            "BOOKED", "CHECKED_IN", "COMPLETED", "CANCELLED", "NO_SHOW"
+            "BOOKED", "CHECKED-IN", "COMPLETED", "CANCELLED", "NO_SHOW"
     );
     private static final int MAX_DAILY_RANGE_DAYS = 365;
 
@@ -68,7 +68,6 @@ public class RevenueReportServiceImpl implements RevenueReportService {
         prevRequest.setStartDate(prevStart);
         prevRequest.setEndDate(prevEnd);
         prevRequest.setAgencyId(request.getAgencyId());
-        prevRequest.setSource(request.getSource());
 
         List<Booking> prevBookings = fetchRevenueBookings(prevRequest);
         int prevRoomNightsAvailable = (int) (totalPhysicalRooms * periodLength);
@@ -110,22 +109,22 @@ public class RevenueReportServiceImpl implements RevenueReportService {
         }
     }
 
-    /**
-     * Fetch bookings based on consumption date (accrual basis: checkout dates overlap the range).
-     * Excludes CANCELLED/NO_SHOW unless there's a penalty fee.
-     */
     private List<Booking> fetchRevenueBookings(RevenueReportRequest request) {
-        List<Booking> all = bookingRepository.findAll();
-
-        return all.stream()
-                .filter(b -> b.getHotelId().equals(request.getHotelId()))
-                .filter(b -> REVENUE_STATUSES.contains(b.getBookingStatus()))
-                // Consumption date overlap: booking stay overlaps [start, end]
-                .filter(b -> !b.getCheckOutDate().isBefore(request.getStartDate())
-                        && !b.getCheckInDate().isAfter(request.getEndDate()))
-                .filter(b -> request.getAgencyId() == null
-                        || b.getAgencyId().equals(request.getAgencyId()))
-                .collect(Collectors.toList());
+        if (request.getAgencyId() != null) {
+            return bookingRepository.findRevenueBookingsByAgency(
+                    request.getHotelId(),
+                    REVENUE_STATUSES,
+                    request.getStartDate(),
+                    request.getEndDate(),
+                    request.getAgencyId()
+            );
+        }
+        return bookingRepository.findRevenueBookings(
+                request.getHotelId(),
+                REVENUE_STATUSES,
+                request.getStartDate(),
+                request.getEndDate()
+        );
     }
 
     /**
@@ -181,8 +180,8 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     }
 
     private List<RevenueTrendItem> buildTrend(List<Booking> bookings, LocalDate start,
-                                               LocalDate end, String granularity,
-                                               int totalPhysicalRooms) {
+                                              LocalDate end, String granularity,
+                                              int totalPhysicalRooms) {
         Map<String, List<Booking>> grouped = new LinkedHashMap<>();
 
         // Pre-populate buckets to show zero-data periods
@@ -247,7 +246,7 @@ public class RevenueReportServiceImpl implements RevenueReportService {
     }
 
     private List<RevenueByRoomType> buildByRoomType(List<Booking> bookings,
-                                                     List<RoomType> roomTypes) {
+                                                    List<RoomType> roomTypes) {
         BigDecimal totalRevenue = bookings.stream()
                 .map(this::getEarnedAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

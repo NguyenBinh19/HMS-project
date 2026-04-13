@@ -30,8 +30,7 @@ public class RevenueReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "DAILY") String granularity,
-            @RequestParam(required = false) Long agencyId,
-            @RequestParam(required = false) String source
+            @RequestParam(required = false) Long agencyId
     ) {
         RevenueReportRequest request = new RevenueReportRequest();
         request.setHotelId(hotelId);
@@ -39,7 +38,6 @@ public class RevenueReportController {
         request.setEndDate(endDate);
         request.setGranularity(granularity);
         request.setAgencyId(agencyId);
-        request.setSource(source);
 
         return ApiResponse.<RevenueReportResponse>builder()
                 .result(revenueReportService.generateReport(request))
