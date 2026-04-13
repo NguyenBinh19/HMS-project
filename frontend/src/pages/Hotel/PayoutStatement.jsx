@@ -2,10 +2,11 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     FileText, CheckCircle, AlertCircle, Download,
     ArrowLeft, History, Search, ExternalLink, Printer,
-    ChevronLeft, ChevronRight, Loader2
+    ChevronLeft, ChevronRight, Loader2, X
 } from "lucide-react";
 import StatementHeader from '@/components/hotel/finance/StatementHeader';
 import { payoutService } from '@/services/payout.service';
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import { toast } from 'react-hot-toast';
 const BANK_LIST = [
     { code: "VCB", name: "Vietcombank" },
@@ -33,6 +34,31 @@ const formatVN = (val) => val != null ? new Intl.NumberFormat('vi-VN').format(va
 const StatementListView = ({ hotelId, onSelectStatement }) => {
     const [statements, setStatements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
+
+    useEffect(() => {
+        const fetchPolicy = async () => {
+            try {
+                const pdfRes = await pdfDocumentService.getAllPdfs();
+                if (pdfRes?.result) {
+                    const policyDoc = pdfRes.result.find(doc => {
+                        const title = (doc.title || "").toLowerCase();
+                        return title.includes("phụ lục") && title.includes("thanh toán");
+                    });
+                    setPolicyUrl(policyDoc?.fileUrl || "");
+                }
+            } catch (error) {
+                console.error("Lỗi tải chính sách thanh toán:", error);
+            }
+        };
+        fetchPolicy();
+    }, []);
+
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     useEffect(() => {
         const fetchStatements = async () => {
@@ -71,18 +97,31 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
 
     return (
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-            <div className="p-6 border-b border-slate-50">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
                 <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-[10px] tracking-widest">
-                    <History size={16} className="text-blue-600" /> Tất cả các kỳ đối soát ({statements.length})
+                    <History size={16} className="text-blue-600"/> Tất cả các kỳ đối soát ({statements.length})
                 </h3>
+                {/* NÚT XEM CHÍNH SÁCH MỚI */}
+                <button
+                    onClick={() => {
+                        if (!policyUrl) {
+                            toast.error("Đang tải hoặc không tìm thấy file PDF!");
+                            return;
+                        }
+                        setShowPdfModal(true);
+                    }}
+                    className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase"
+                >
+                    <FileText size={14}/> Phụ lục thanh toán
+                </button>
             </div>
             <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                    <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        <th className="px-8 py-4">Mã</th>
-                        <th className="px-8 py-4">Kỳ</th>
-                        <th className="px-8 py-4">Bookings</th>
-                        <th className="px-8 py-4 text-right">Thực nhận</th>
+                <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th className="px-8 py-4">Mã</th>
+                    <th className="px-8 py-4">Kỳ</th>
+                    <th className="px-8 py-4">Bookings</th>
+                    <th className="px-8 py-4 text-right">Thực nhận</th>
                         <th className="px-8 py-4">Trạng thái</th>
                         <th className="px-8 py-4"></th>
                     </tr>
@@ -118,6 +157,42 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                     })}
                 </tbody>
             </table>
+            {/* MODAL PDF CHÍNH SÁCH */}
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => setShowPdfModal(false)}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+                        <div className="flex-1 bg-slate-50 relative">
+                            <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
+                                className="w-full h-full border-none relative z-10"
+                                title="Chính sách thanh toán"
+                            />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+                                <Loader2 size={32} className="animate-spin text-blue-600/20 mb-2"/>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                                    Đang tải tài liệu...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

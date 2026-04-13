@@ -33,6 +33,7 @@ public class SecurityConfig {
             "/auth/reset-password",
             "/oauth2/**",
             "/login/oauth2/**"
+
     };
 
     private final String[] PUBLIC_POST_ENPOINTS = {
@@ -49,7 +50,9 @@ public class SecurityConfig {
     private final String[] PUBLIC_GET_ENPOINTS = {
             "/auth/vault",
             "/storage/**",
-            "/transaction-history/**"
+            "/transaction-history/**",
+            "/pdf-documents",
+            "/pdf-documents/**",
     };
 
     @Value("${app.frontend-url:http://localhost:5173}")

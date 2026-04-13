@@ -226,21 +226,22 @@ const CancelPolicyTab = () => {
             className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 p-4 xl:p-8 bg-white/50 rounded-[40px]">
             <ToastPortal ref={toastRef} autoClose={true} autoCloseTime={2800}/>
             {/* Header Section */}
-            <div className="bg-slate-900 rounded-[24px] py-5 px-7 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            <div className="bg-slate-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-12 -mt-12"></div>
                 <div className="flex items-center gap-4 z-10">
-                    <div className="p-3 bg-blue-500/20 rounded-xl border border-blue-500/20 shadow-inner">
-                        <ShieldAlert size={24} className="text-blue-400"/>
+                    <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/20 shadow-inner">
+                        <ShieldAlert size={22} className="text-blue-400"/>
                     </div>
                     <div>
-                        <h2 className="text-lg font-black uppercase tracking-tight italic">
+                        <h2 className="text-base font-bold tracking-tight uppercase">
                             Thiết lập Chính sách Phạt hủy
                         </h2>
                     </div>
                 </div>
                 <button
+                    type="button"
                     onClick={fetchConfigs}
-                    className="mt-4 sm:mt-0 p-2.5 hover:bg-white/10 rounded-xl transition-all text-slate-400 group border border-white/5 shadow-lg active:scale-90"
+                    className="mt-4 sm:mt-0 p-2 hover:bg-white/10 rounded-full transition-all text-slate-400 group border border-white/5 active:scale-90"
                 >
                     <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700"/>
                 </button>

@@ -2,9 +2,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
     Search, Loader2, CheckCircle2, Clock, AlertCircle,
     ChevronLeft, ChevronRight, Download,
-    Landmark, RefreshCw, FileText, X, Eye
+    Landmark, RefreshCw, FileText, X, Eye, ExternalLink
 } from "lucide-react";
 import { payoutService } from '@/services/payout.service.js';
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import { format } from 'date-fns';
 
 const STATUS_CONFIG = {
@@ -31,6 +32,31 @@ const PayoutList = () => {
     const [markingPaid, setMarkingPaid] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
+
+    useEffect(() => {
+        const fetchPolicy = async () => {
+            try {
+                const pdfRes = await pdfDocumentService.getAllPdfs();
+                if (pdfRes?.result) {
+                    const policyDoc = pdfRes.result.find(doc => {
+                        const title = (doc.title || "").toLowerCase();
+                        return title.includes("phụ lục") && title.includes("thanh toán");
+                    });
+                    setPolicyUrl(policyDoc?.fileUrl || "");
+                }
+            } catch (error) {
+                console.error("Lỗi tải chính sách thanh toán:", error);
+            }
+        };
+        fetchPolicy();
+    }, []);
+
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     const fetchPayouts = async () => {
         setLoading(true);
@@ -171,21 +197,36 @@ const PayoutList = () => {
                         <h1 className="text-2xl font-black text-slate-800 uppercase">Quản lý thanh toán (Payout)</h1>
                         <p className="text-slate-500 text-sm font-medium">Sao kê & thanh toán cho khách sạn dối tác</p>
                     </div>
-                    <button
-                        onClick={handleGenerate}
-                        disabled={generating}
-                        className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50"
-                    >
-                        {generating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        {generating ? "Dang tao..." : "Tạo sao kê cho kỳ hiện tại"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => {
+                                if (!policyUrl) {
+                                    alert("Đang tải hoặc không tìm thấy file PDF!");
+                                    return;
+                                }
+                                setShowPdfModal(true);
+                            }}
+                            className="flex items-center gap-2 text-[11px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-5 py-2.5 rounded-xl hover:bg-blue-100 transition-all uppercase tracking-tight"
+                        >
+                            <FileText size={16}/> Phụ lục thanh toán
+                        </button>
+                        <button
+                            onClick={handleGenerate}
+                            disabled={generating}
+                            className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50"
+                        >
+                            {generating ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}
+                            {generating ? "Dang tao..." : "Tạo sao kê cho kỳ hiện tại"}
+                        </button>
+                    </div>
                 </header>
 
                 {/* Stats */}
                 {payoutData && (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         {stats.map((s, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-5">
+                            <div key={idx}
+                                 className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-5">
                                 <div className={`p-4 ${s.bg} ${s.color} rounded-2xl`}>{s.icon}</div>
                                 <div>
                                     <p className="text-slate-500 text-xs font-bold mb-1">{s.label}</p>
@@ -486,6 +527,46 @@ const PayoutList = () => {
                                 {markingPaid ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                                 Xác nhận
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL PDF PHỤ LỤC  */}
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300 border border-white/20">
+                        {/* Control Bar */}
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => setShowPdfModal(false)}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+                        {/* PDF Viewer */}
+                        <div className="flex-1 bg-slate-50 relative">
+                            <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
+                                className="w-full h-full border-none relative z-10"
+                                title="Phụ lục thanh toán"
+                            />
+                            {/* Loading State đằng sau iframe */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+                                <Loader2 size={32} className="animate-spin text-blue-600/20 mb-2"/>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                                    Đang tải tài liệu...
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

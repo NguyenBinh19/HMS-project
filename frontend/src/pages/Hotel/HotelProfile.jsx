@@ -4,8 +4,9 @@ import {
     Save, Hotel, MapPin, Upload, X, Loader2,
     CheckCircle2, Info, Plus, Check, Edit3, ShieldCheck
 } from 'lucide-react';
-import { Landmark, CreditCard, UserCheck } from 'lucide-react';
+import { ExternalLink, FileText, ArrowRight } from 'lucide-react';
 import { partnerService } from "@/services/partner.service.js";
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
 
 const HotelProfileManager = () => {
@@ -29,6 +30,8 @@ const HotelProfileManager = () => {
     const [originalData, setOriginalData] = useState(null);
     const [showSuccessBanner, setShowSuccessBanner] = useState(false);
     const [bankErrors, setBankErrors] = useState({});
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
 
     const [formData, setFormData] = useState({
         hotelName: "", address: "", city: "", country: "",
@@ -185,10 +188,23 @@ const HotelProfileManager = () => {
 
             setExistingImages(mappedImages);
             setDeleteImageIds([]);
+
+            const pdfRes = await pdfDocumentService.getAllPdfs();
+            if (pdfRes?.result) {
+                const hotelPolicy = pdfRes.result.find(doc =>
+                    doc.title.includes("Điều khoản hợp tác với Khách sạn")
+                );
+                setPolicyUrl(hotelPolicy?.fileUrl || "");
+            }
         } catch (error) {
             toast.error("Lỗi tải dữ liệu");
         } finally { setLoading(false); }
     };
+
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     const handleSave = async () => {
         if (!canEdit) {
@@ -208,12 +224,6 @@ const HotelProfileManager = () => {
             const response = await partnerService.updateHotelProfile(updateRequest, newImages);
 
             if (response.code === 1000) {
-                // toast.success("Cập nhật thành công!");
-                // setShowSuccessBanner(true);
-                // setTimeout(() => setShowSuccessBanner(false), 5000);
-                // setNewImages([]);
-                // fetchDetail();
-
                 await fetchDetail();
                 setShowSuccessBanner(true);
                 setNewImages([]);
@@ -526,7 +536,7 @@ const HotelProfileManager = () => {
                             </div>
                         </div>
 
-                        {/* PHẦN XÁC THỰC PHÁP LÝ (ĐÃ CẬP NHẬT) */}
+                        {/* PHẦN XÁC THỰC PHÁP LÝ */}
                         <div className="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute -right-4 -bottom-4 text-slate-800/30"><ShieldCheck size={100}/></div>
                             <div className="flex justify-between items-center mb-6 relative z-10">
@@ -549,10 +559,78 @@ const HotelProfileManager = () => {
                                 <ReadOnlyItem label="Người đại diện" value={originalData?.verification?.representativeName} />
                             </div>
                         </div>
+
+                        {/* PHẦN TÀI LIỆU HỢP ĐỒNG */}
+                        <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden transition-all hover:border-blue-200 group">
+                            <div className="flex items-center gap-3.5 mb-5">
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                    <FileText size={18} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-blue-600/80 mb-0.5">
+                                        Chính sách
+                                    </h3>
+                                    <h2 className="text-[12px] font-bold text-slate-800 leading-tight truncate">
+                                        Điều khoản hợp tác HMS-B2B
+                                    </h2>
+                                </div>
+                            </div>
+
+                            {/* Nút bấm thiết kế tinh gọn */}
+                            <button
+                                onClick={() => {
+                                    if(policyUrl) setShowPdfModal(true);
+                                    else toast.current.addMessage({ mode: 'warning', message: "Tài liệu đang được cập nhật!" });
+                                }}
+                                className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-slate-200"
+                            >
+                                Xem chính sách
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>
             <ToastPortal ref={toast} autoClose={true} autoCloseTime={3000} />
+            {/* MODAL PDF  */}
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18} />
+                            </a>
+                            <button
+                                onClick={() => setShowPdfModal(false)}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        {/* Content View */}
+                        <div className="flex-1 bg-slate-50 relative">
+                            <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
+                                className="w-full h-full border-none relative z-10"
+                                title="PDF Preview"
+                            />
+                            {/* Background Loading */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+                                <Loader2 size={32} className="animate-spin text-blue-600/20 mb-2"/>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                        Đang tải tài liệu...
+                    </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

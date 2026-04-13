@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Wallet, CreditCard, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Wallet, CreditCard, ArrowDownCircle, ArrowUpCircle, ExternalLink, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../services/axios.config";
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import Swal from "sweetalert2";
 
 const CreditWallet = () => {
@@ -16,6 +17,34 @@ const CreditWallet = () => {
     usedCredit: 0,
     remainingCredit: 0,
   });
+
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [policyUrl, setPolicyUrl] = useState("");
+
+// Tải link PDF chính sách tín dụng
+  useEffect(() => {
+    const fetchPolicy = async () => {
+      try {
+        const pdfRes = await api.get("/pdf-documents");
+        if (pdfRes?.data?.result) {
+          const policyDoc = pdfRes.data.result.find(doc =>
+              doc.title.includes("Phụ lục tín dụng") ||
+              doc.title.includes("thanh toán công nợ")
+          );
+          setPolicyUrl(policyDoc?.fileUrl || "");
+        }
+      } catch (error) {
+        console.error("Không thể tải chính sách tín dụng:", error);
+      }
+    };
+    fetchPolicy();
+  }, []);
+
+// Khóa cuộn trang khi mở modal
+  useEffect(() => {
+    document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showPdfModal]);
 
   const handlePayDebt = async () => {
     const { value: amount } = await Swal.fire({
@@ -105,7 +134,18 @@ const CreditWallet = () => {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Tổng quan tín dụng</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-slate-800">Tổng quan tín dụng</h2>
+          {/* Nút Xem chính sách */}
+          {policyUrl && (
+              <button
+                  onClick={() => setShowPdfModal(true)}
+                  className="flex items-center gap-2 text-[11px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-wider"
+              >
+                <ExternalLink size={14}/> Phụ lục công nợ
+              </button>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-6 text-center">
           <div className="bg-green-50 rounded-md p-4 shadow-sm flex flex-col items-center">
             <p className="text-sm text-slate-600">Sức mua tín dụng còn lại</p>
@@ -165,6 +205,42 @@ const CreditWallet = () => {
           Xem tất cả lịch sử &gt;
         </button>
       </div>
+      {/* MODAL PDF CHÍNH SÁCH TÍN DỤNG */}
+      {showPdfModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+              {/* Header Modal */}
+              <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                <a
+                    href={policyUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                >
+                  <ArrowUpCircle size={18} className="rotate-45" />
+                </a>
+                <button
+                    onClick={() => setShowPdfModal(false)}
+                    className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              {/* Iframe content */}
+              <div className="flex-1 bg-slate-100 relative">
+                <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
+                    className="w-full h-full border-none relative z-10"
+                    title="Credit Policy Preview"
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">
+                  <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đang tải tài liệu...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+      )}
     </div>
   );
 };
