@@ -193,7 +193,7 @@ public class FinancialExportServiceImpl implements FinancialExportService {
                     .contentType("application/pdf")
                     .data(out.toByteArray())
                     .build();
-        } catch (DocumentException e) {
+        } catch (Exception e) {
             throw new AppException(ErrorCode.EXPORT_GENERATION_FAILED);
         }
     }

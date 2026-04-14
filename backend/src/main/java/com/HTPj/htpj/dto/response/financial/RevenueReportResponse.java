@@ -1,18 +1,24 @@
 package com.HTPj.htpj.dto.response.financial;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RevenueReportResponse {
     private RevenueSummary summary;
     private List<RevenueTrendItem> trend;
     private List<RevenueByRoomType> byRoomType;
 
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Data
     @Builder
     public static class RevenueSummary {
@@ -30,7 +36,8 @@ public class RevenueReportResponse {
         private Double adrGrowthPercent;
         private Double revParGrowthPercent;
     }
-
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Data
     @Builder
     public static class RevenueTrendItem {

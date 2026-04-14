@@ -248,6 +248,11 @@ public class UserServiceImpl implements UserService {
         var context = SecurityContextHolder.getContext();
         var authentication = context.getAuthentication();
 
+        // KIỂM TRA NULL Ở ĐÂY
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {

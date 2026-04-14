@@ -309,7 +309,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setReplyTo(guestEmail);
             helper.setSubject("[Support Form] " + subject);
 
-            String phone = (guestPhone != null && !guestPhone.isBlank()) ? guestPhone : "Khong cung cap";
+            String phone = (guestPhone != null && !guestPhone.isBlank()) ? guestPhone : "Không cung cấp";
 
             String htmlContent = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>"
                     + "<div style='background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;'>"
