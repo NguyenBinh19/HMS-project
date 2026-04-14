@@ -195,7 +195,7 @@ const HomePage = () => {
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
                         >
-                            <label className="text-[12px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Bạn muốn đi đâu?</label>
+                            <label className="text-[12px] font-bold text-slate-700 uppercase ml-1 mb-1 block">Bạn muốn đi đâu?</label>
 
                             {showTooltip && (
                                 <div
@@ -250,7 +250,7 @@ const HomePage = () => {
 
                         {/* Ngày nhận phòng */}
                         <div className="w-full md:w-[170px] text-left">
-                            <label className="text-[12px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Nhận
+                            <label className="text-[12px] font-bold text-slate-700 uppercase ml-1 mb-1 block">Nhận
                                 phòng</label>
                             <div
                                 className="flex items-center bg-slate-50 rounded-lg px-3 py-3 border border-slate-200 focus-within:border-blue-500 transition-all">
@@ -267,7 +267,7 @@ const HomePage = () => {
 
                         {/* Ngày trả phòng */}
                         <div className="w-full md:w-[170px] text-left">
-                            <label className="text-[12px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Trả
+                            <label className="text-[12px] font-bold text-slate-700 uppercase ml-1 mb-1 block">Trả
                                 phòng</label>
                             <div
                                 className="flex items-center bg-slate-50 rounded-lg px-3 py-3 border border-slate-200 focus-within:border-blue-500 transition-all">
@@ -284,7 +284,7 @@ const HomePage = () => {
 
                         {/* Khách & Phòng */}
                         <div className="w-full md:w-[240px] text-left relative" ref={guestRef}>
-                            <label className="text-[12px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Khách &
+                            <label className="text-[12px] font-bold text-slate-700 uppercase ml-1 mb-1 block">Khách &
                                 Phòng</label>
                             <div
                                 onClick={() => setShowGuestPicker(!showGuestPicker)}

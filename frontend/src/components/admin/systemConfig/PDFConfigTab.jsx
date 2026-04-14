@@ -175,9 +175,6 @@ const PdfConfigTab = () => {
                         {/* Sidebar */}
                         <div className="w-full md:w-80 p-8 border-r border-slate-100 flex flex-col bg-white">
                             <div className="flex justify-between items-start mb-6">
-                                <div className="p-4 bg-red-50 rounded-2xl text-red-500">
-                                    <FileDown size={32}/>
-                                </div>
                                 <button onClick={() => setSelectedDoc(null)}
                                         className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                                     <X size={24} className="text-slate-400"/>
@@ -274,17 +271,19 @@ const PdfConfigTab = () => {
                     <div
                         className={`bg-white p-6 rounded-[28px] border sticky top-8 transition-all ${editingId ? 'border-amber-400 ring-4 ring-amber-500/5' : 'border-slate-200'}`}>
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xs font-black uppercase text-slate-400 flex items-center gap-2">
+                            <h3 className="text-xs font-black uppercase text-slate-600 flex items-center gap-2">
                                 {editingId ? <Edit3 size={14} className="text-amber-500"/> :
                                     <Plus size={14} className="text-blue-500"/>}
                                 {editingId ? 'Cập nhật' : 'Thêm mới'}
                             </h3>
                             {editingId && <button onClick={resetForm}
-                                                  className="text-[10px] font-black text-red-500 bg-red-50 px-3 py-1 rounded-full">HỦY
-                                SỬA</button>}
+                                                  className="text-[10px] font-black text-red-500 bg-red-50 px-3 py-1 rounded-full">HỦY </button>}
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="flex items-center gap-1.5 px-1 text-[10px] font-medium text-amber-600">
+                                <span>Tiêu đề cần chuẩn xác để không ảnh hưởng hiển thị phía người dùng</span>
+                            </div>
                             <input
                                 type="text"
                                 value={title}

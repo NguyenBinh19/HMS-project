@@ -16,7 +16,7 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
     return (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
-                <Plus size={20} className="text-blue-700"/> Dịch vụ bổ sung
+                 Dịch vụ bổ sung
             </h2>
             <div className="p-4 bg-blue-50/50 border border-dashed border-blue-200 rounded-lg flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -227,7 +227,7 @@ export default function BookingCheckoutDemo() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Tên khách hàng</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Tên khách hàng</label>
                                 <input
                                     name="name"
                                     className={`w-full border ${errors.name ? 'border-red-500' : 'border-slate-200'} p-2.5 rounded-lg text-sm focus:ring-1 outline-none font-bold`}
@@ -238,7 +238,7 @@ export default function BookingCheckoutDemo() {
                                 {errors.name && <p className="text-[10px] text-red-500 font-medium italic mt-1">{errors.name}</p>}
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Email nhận vé</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Địa chỉ Email</label>
                                 <input
                                     name="email"
                                     className={`w-full border ${errors.email ? 'border-red-500' : 'border-slate-200'} p-2.5 rounded-lg text-sm focus:ring-1 outline-none font-bold`}
@@ -249,7 +249,7 @@ export default function BookingCheckoutDemo() {
                                 {errors.email && <p className="text-[10px] text-red-500 font-medium italic mt-1">{errors.email}</p>}
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Số điện thoại</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Số điện thoại</label>
                                 <input
                                     name="phone"
                                     className={`w-full border ${errors.phone ? 'border-red-500' : 'border-slate-200'} p-2.5 rounded-lg text-sm focus:ring-1 outline-none font-bold`}
@@ -295,7 +295,7 @@ export default function BookingCheckoutDemo() {
                     {/* 4. Nguồn tiền thanh toán */}
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
+                             Chọn nguồn tiền thanh toán
                         </h2>
 
                         <div className="space-y-4">

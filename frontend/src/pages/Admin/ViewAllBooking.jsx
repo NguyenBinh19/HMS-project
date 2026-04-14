@@ -233,7 +233,7 @@ const AdminBookingList = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[1000px]">
                         <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest font-black">
+                        <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-900 text-[10px] uppercase tracking-widest font-black">
                             <th className="px-8 py-6">Thông tin đơn hàng</th>
                             <th className="px-8 py-6">Khách hàng & Đối tác</th>
                             <th className="px-4 py-6 text-center">Thời gian lưu trú</th>

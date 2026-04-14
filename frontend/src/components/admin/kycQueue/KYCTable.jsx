@@ -91,7 +91,7 @@ const KYCTable = ({ data, onReview, loading, pagination }) => {
         <div className="bg-white rounded-b-xl shadow-sm border border-slate-200 overflow-hidden">
             <table className="w-full text-left border-collapse">
                 <thead>
-                <tr className="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50/80 text-slate-600 text-[11px] uppercase tracking-wider border-b border-slate-200">
                     <th className="px-6 py-4 font-bold">Ngày nộp</th>
                     <th className="px-6 py-4 font-bold">Đối tượng</th>
                     <th className="px-6 py-4 font-bold">Tên đơn vị</th>

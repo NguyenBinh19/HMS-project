@@ -26,7 +26,7 @@ const SystemConfigPage = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`pb-4 text-sm font-bold transition-all relative ${
-                                activeTab === tab.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                                activeTab === tab.id ? 'text-blue-700' : 'text-slate-500 hover:text-slate-600'
                             }`}
                         >
                             {tab.label}

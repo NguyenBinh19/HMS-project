@@ -27,15 +27,15 @@ const RenderInputBox = ({
                 <div className="p-1.5 bg-slate-100 rounded-lg group-hover:bg-blue-50 transition-colors">
                     {Icon && <Icon size={14} className="text-slate-500 group-hover:text-blue-500" />}
                 </div>
-                <label className="text-[10px] xl:text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] xl:text-[11px] font-black text-slate-600 uppercase tracking-widest">
                     {label}
                 </label>
             </div>
 
             <div className="relative flex items-center">
                 <input
-                    type="text" // Dùng text để kiểm soát hoàn toàn đầu vào
-                    inputMode="numeric" // Hiển thị bàn phím số trên mobile
+                    type="text"
+                    inputMode="numeric"
                     value={value || ''}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -48,7 +48,7 @@ const RenderInputBox = ({
                     </span>
                 )}
             </div>
-            {helperText && <p className="mt-2 text-[10px] text-slate-400 italic leading-relaxed line-clamp-1">{helperText}</p>}
+            {helperText && <p className="mt-2 text-[11px] text-slate-600 italic leading-relaxed line-clamp-1">{helperText}</p>}
         </div>
     );
 };
@@ -301,7 +301,7 @@ const CancelPolicyTab = () => {
                 <div className="space-y-4">
                     <div
                         className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Clock size={16} className="text-blue-500"/> Mốc thời gian áp dụng (Số ngày trước Check-in)
+                        <Clock size={16} className="text-blue-700"/> Mốc thời gian áp dụng (Số ngày trước Check-in)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                         <RenderInputBox
@@ -331,7 +331,7 @@ const CancelPolicyTab = () => {
                 <div className="space-y-4">
                     <div
                         className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Percent size={16} className="text-blue-500"/> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
+                        <Percent size={16} className="text-blue-700"/> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                         <RenderInputBox label="Phí Level 1 (Sớm)" suffix="%" value={form.level1Percent}

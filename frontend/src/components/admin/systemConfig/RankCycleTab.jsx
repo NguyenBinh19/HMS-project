@@ -13,7 +13,7 @@ const RenderInputBox = ({
                             isGlobalLoading
                         }) => (
     <div className="flex-1 min-w-0 p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1 group-hover:text-blue-500 transition-colors">
+        <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest mb-2 block ml-1 group-hover:text-blue-500 transition-colors">
             {label}
         </label>
         <div className="flex gap-2">

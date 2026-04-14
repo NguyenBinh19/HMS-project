@@ -18,7 +18,7 @@ const PrepaidWallet = () => {
             api
                 .get(`/transaction-history/${agencyId}/transactions/recent?limit=5`)
                 .then((res) => {
-                    console.log("Fetched transactions:", res);
+                    // console.log("Fetched transactions:", res);
                     setTransactions(res.data.result || []);
                 })
                 .catch((err) => console.error("Error fetching transactions:", err));

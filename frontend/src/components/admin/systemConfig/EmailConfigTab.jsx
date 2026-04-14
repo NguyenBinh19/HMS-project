@@ -124,7 +124,7 @@ const EmailConfigTab = () => {
                         className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Thông
+                                <h3 className="text-xs font-black uppercase text-slate-700 tracking-widest">Thông
                                     tin Email</h3>
                             </div>
                             {validateEmail(emailValue) && (
@@ -138,7 +138,7 @@ const EmailConfigTab = () => {
                         <form onSubmit={handleUpdate} className="space-y-8">
                             <div className="space-y-3">
                                 <label
-                                    className="text-[11px] font-black text-slate-500 uppercase tracking-wider ml-1">
+                                    className="text-[11px] font-black text-slate-700 uppercase tracking-wider ml-1">
                                     Địa chỉ Email tiếp nhận <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative group">

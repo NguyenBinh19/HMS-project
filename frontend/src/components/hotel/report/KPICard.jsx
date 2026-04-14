@@ -14,7 +14,7 @@ const KPICard = ({ title, value, unit, trend, isUp }) => {
     return (
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
             <div className="flex justify-between items-start mb-4">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest group-hover:text-blue-600 transition-colors">
                     {title}
                 </p>
 

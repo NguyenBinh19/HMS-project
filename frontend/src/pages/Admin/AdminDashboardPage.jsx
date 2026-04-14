@@ -192,7 +192,7 @@ const AdminDashboard = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-separate border-spacing-y-3">
                                 <thead>
-                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
                                     <th className="pb-4 pl-4">Mã đơn</th>
                                     <th className="pb-4">Khách hàng</th>
                                     <th className="pb-4">Khách sạn</th>
@@ -274,26 +274,6 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* 4. System Health Section */}
-                {/*<div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">*/}
-                {/*    <div className="flex justify-between items-center mb-8">*/}
-                {/*        <div className="flex items-center gap-2">*/}
-                {/*            <Server size={20} className="text-slate-400" />*/}
-                {/*            <h3 className="font-black uppercase tracking-tighter">Sức khỏe hệ thống (Realtime)</h3>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">*/}
-                {/*        <div className="space-y-6">*/}
-                {/*            <HealthBar label="Database Latency" percent={24} color="bg-emerald-500" />*/}
-                {/*            <HealthBar label="API Response Time" percent={35} color="bg-blue-500" />*/}
-                {/*            <HealthBar label="Cloud Storage" percent={58} color="bg-indigo-500" />*/}
-                {/*        </div>*/}
-                {/*        <div className="grid grid-cols-2 gap-4">*/}
-                {/*            <LatencyItem icon={<Globe size={16}/>} label="Booking Svc" time="120ms" status="Mượt" sColor="text-emerald-500" />*/}
-                {/*            <LatencyItem icon={<CheckCircle2 size={16}/>} label="Auth Svc" time="45ms" status="Tốt" sColor="text-emerald-500" />*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*</div>*/}
             </div>
         </div>
     );
@@ -329,9 +309,9 @@ const StatCard = ({ label, value, trend, sub, icon, color, live }) => {
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-50"/> Live
                 </span>}
             </div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1">{label}</p>
+            <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.15em] mb-1">{label}</p>
             <h2 className="text-2xl font-black text-[#1B2559] mb-2">{value}</h2>
-            <p className="text-[10px] font-bold text-slate-400 italic">{sub}</p>
+            <p className="text-[10px] font-bold text-slate-500 italic">{sub}</p>
         </div>
     );
 };

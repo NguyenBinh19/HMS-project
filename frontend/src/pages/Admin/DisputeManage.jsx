@@ -78,7 +78,7 @@ const DisputeManagement = () => {
 
                 <div className="flex gap-4">
                     <div className="bg-white border border-slate-200 px-6 py-3 rounded-3xl shadow-sm text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng khiếu nại</p>
+                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Tổng khiếu nại</p>
                         <p className="text-2xl font-black text-slate-800">{disputes.length}</p>
                     </div>
                 </div>
@@ -110,11 +110,11 @@ const DisputeManagement = () => {
                 <table className="w-full text-left border-collapse">
                     <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-100">
-                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Đối tác & Mã</th>
-                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Thời gian kỳ này</th>
-                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Thống kê đơn</th>
-                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Chi tiết dòng tiền</th>
-                        <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Thao tác</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-600 tracking-widest">Đối tác & Mã</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-600 tracking-widest">Thời gian kỳ này</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-600 tracking-widest">Thống kê đơn</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-600 tracking-widest text-right">Chi tiết dòng tiền</th>
+                        <th className="p-6 text-[10px] font-black uppercase text-slate-600 tracking-widest text-center">Thao tác</th>
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">

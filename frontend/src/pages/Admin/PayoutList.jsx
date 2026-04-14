@@ -276,7 +276,7 @@ const PayoutList = () => {
                         {/* Filters */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Trạng thái</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Trạng thái</label>
                                 <select
                                     value={statusFilter}
                                     onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
@@ -291,7 +291,7 @@ const PayoutList = () => {
                                 </select>
                             </div>
                             <div className="md:col-span-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Tìm kiếm</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block tracking-widest">Tìm kiếm</label>
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -308,7 +308,7 @@ const PayoutList = () => {
                         {/* Table */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <thead className="bg-slate-50/50 text-[10px] font-black text-slate-600 uppercase tracking-widest">
                                     <tr>
                                         <th className="px-4 py-3 w-10">
                                             <input type="checkbox" onChange={toggleSelectAll}

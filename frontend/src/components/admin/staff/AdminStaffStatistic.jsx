@@ -21,7 +21,7 @@ const StatCard = ({ title, value, icon: Icon, color, description }) => (
     <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm flex items-center gap-5">
         <div className={`p-4 rounded-2xl ${color.replace('text-', 'bg-').replace('600', '50')} ${color}`}><Icon size={24} /></div>
         <div>
-            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{title}</h3>
+            <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{title}</h3>
             <p className="text-xl font-black text-slate-800">{value}</p>
             {description && <p className="text-[10px] text-slate-400 font-medium">{description}</p>}
         </div>

@@ -303,12 +303,12 @@ export default function BookingCheckoutPage() {
             const errorCode = errorData?.code;
             const errorMessage = errorData?.message;
 
-            // Xử lý riêng cho lỗi thiếu tiền (Code 2206)
+            // Xử lý lỗi thiếu tiền
             if (errorCode === 2206) {
                 alert("Số dư tài khoản của bạn không đủ để thực hiện thanh toán này. Vui lòng kiểm tra lại Ví hoặc Hạn mức tín dụng!");
             }
             // Xử lý lỗi phiên giữ chỗ hết hạn (Nếu có)
-            else if (errorCode === 1402) { // Ví dụ code 1402 là hết hạn hold
+            else if (errorCode === 1402) { // code 1402 là hết hạn hold
                 alert("Phiên giữ chỗ đã hết hạn. Vui lòng thực hiện tìm kiếm lại.");
                 navigate("/agency/search-hotel");
             }
@@ -362,7 +362,7 @@ export default function BookingCheckoutPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Tên khách hàng</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Tên khách hàng</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.name} placeholder="Nguyễn Văn A"
@@ -370,7 +370,7 @@ export default function BookingCheckoutPage() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Email nhận vé</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Địa chỉ Email</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.email} placeholder="example@gmail.com"
@@ -378,7 +378,7 @@ export default function BookingCheckoutPage() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Số điện thoại</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Số điện thoại</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.phone} placeholder="09xx xxx xxx"
@@ -418,7 +418,7 @@ export default function BookingCheckoutPage() {
 
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
+                             Chọn nguồn tiền thanh toán
                         </h2>
 
                         <div className="space-y-4">

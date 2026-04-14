@@ -140,7 +140,7 @@ const CreditWallet = () => {
           {policyUrl && (
               <button
                   onClick={() => setShowPdfModal(true)}
-                  className="flex items-center gap-2 text-[11px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-wider"
+                  className="flex items-center gap-2 text-[11px] font-black text-black-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-wider"
               >
                 <ExternalLink size={14}/> Phụ lục công nợ
               </button>

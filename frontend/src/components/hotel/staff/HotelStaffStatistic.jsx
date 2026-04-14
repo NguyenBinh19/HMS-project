@@ -11,14 +11,14 @@ const StatCard = ({ title, value, color, icon: Icon, description }) => (
                 <Icon size={24} />
             </div>
             <div>
-                <h3 className="text-[12px] font-bold text-slate-400 mb-0.5 uppercase tracking-widest">
+                <h3 className="text-[12px] font-bold text-slate-600 mb-0.5 uppercase tracking-widest">
                     {title}
                 </h3>
                 <p className="text-2xl font-black text-slate-800 leading-none">
                     {value}
                 </p>
                 {description && (
-                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium italic">
                         {description}
                     </p>
                 )}

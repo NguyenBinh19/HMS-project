@@ -374,7 +374,7 @@ const PartnerDetail = () => {
 // Sub-components giữ nguyên
 const LegalRow = ({ label, value, bold = false }) => (
     <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
         <p className={`${bold ? 'font-black text-slate-900 text-base' : 'font-bold text-slate-700 text-sm'} uppercase`}>
             {value || "---"}
         </p>
@@ -387,7 +387,7 @@ const InfoItem = ({ icon, label, value }) => (
             {React.cloneElement(icon, { size: 18 })}
         </div>
         <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{label}</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{label}</p>
             <p className="font-black text-slate-700 text-sm">{value || "---"}</p>
         </div>
     </div>

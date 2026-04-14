@@ -137,7 +137,7 @@ const TransactionHistoryPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="flex flex-col">
-                        <label className="text-xs font-medium text-slate-500 mb-1">Từ ngày</label>
+                        <label className="text-xs font-medium text-slate-600 mb-1">Từ ngày</label>
                         <input
                             type="date"
                             value={filters.dateFrom}
@@ -147,7 +147,7 @@ const TransactionHistoryPage = () => {
                     </div>
 
                     <div className="flex flex-col">
-                        <label className="text-xs font-medium text-slate-500 mb-1">Đến ngày</label>
+                        <label className="text-xs font-medium text-slate-600 mb-1">Đến ngày</label>
                         <input
                             type="date"
                             value={filters.dateTo}
@@ -157,7 +157,7 @@ const TransactionHistoryPage = () => {
                     </div>
 
                     <div className="flex flex-col">
-                        <label className="text-xs font-medium text-slate-500 mb-1">Loại giao dịch</label>
+                        <label className="text-xs font-medium text-slate-600 mb-1">Loại giao dịch</label>
                         <select
                             value={filters.type}
                             onChange={e => setFilters({ ...filters, type: e.target.value })}
@@ -172,7 +172,7 @@ const TransactionHistoryPage = () => {
                     </div>
 
                     <div className="flex flex-col">
-                        <label className="text-xs font-medium text-slate-500 mb-1">Nguồn tiền</label>
+                        <label className="text-xs font-medium text-slate-600 mb-1">Nguồn tiền</label>
                         <select
                             value={filters.source}
                             onChange={e => setFilters({ ...filters, source: e.target.value })}

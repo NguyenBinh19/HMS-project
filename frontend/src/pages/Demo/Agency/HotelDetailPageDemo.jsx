@@ -204,11 +204,11 @@ export default function HotelDetailPageDemo() {
                     {isAgency && (
                         <div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                             <div className="flex-1 space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-700" /> Nhận phòng</label>
                                 <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
                             </div>
                             <div className="flex-1 space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-700" /> Trả phòng</label>
                                 <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                             </div>
                             <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95 transition-all">Cập nhật ngày</button>
@@ -259,16 +259,6 @@ export default function HotelDetailPageDemo() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center"><Check size={12} strokeWidth={3} /></div>
-                                                Xác nhận ngay
-                                            </div>
-                                            <div className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center"><Check size={12} strokeWidth={3} /></div>
-                                                Miễn phí hủy phòng
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <div className="md:w-[260px] flex flex-col justify-between items-end bg-slate-50/50 rounded-2xl p-5 border border-slate-100/50">

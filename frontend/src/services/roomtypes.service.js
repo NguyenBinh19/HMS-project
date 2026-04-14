@@ -95,8 +95,6 @@ const getRoomTypesDetailByHotelId = async (hotelId) => {
         const response = await api.get(`/room-types/details`, {
             params: { hotelId: hotelId }
         });
-        // Thử log ở đây để xem cấu trúc thật
-        console.log("Dữ liệu từ BE:", response.data);
         return response.data;
     } catch (error) {
         console.error("Get Room Types Detail Error:", error);

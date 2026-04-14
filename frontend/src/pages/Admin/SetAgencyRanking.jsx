@@ -273,7 +273,7 @@ const AgencyRankingManager = () => {
 
                                                 <div
                                                     className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Doanh
+                                                    <p className="text-[10px] font-black text-slate-600 uppercase mb-1">Doanh
                                                         thu kỳ này</p>
                                                     <div className="flex items-baseline gap-1">
                                                         <span className="text-2xl font-black text-slate-900">
@@ -290,7 +290,7 @@ const AgencyRankingManager = () => {
                                                 <div className="space-y-4">
                                                     <div
                                                         className="flex justify-between items-center border-l-2 border-blue-600 pl-2">
-                                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hồ
+                                                        <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Hồ
                                                             sơ pháp lý</h4>
                                                         <span
                                                             className={`text-[9px] px-2 py-0.5 rounded-full font-black ${kycDetail?.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
@@ -311,7 +311,7 @@ const AgencyRankingManager = () => {
                                                             <div key={idx}
                                                                  className="flex justify-between items-start bg-white/50 p-3 rounded-xl border border-slate-100">
                                                                 <span
-                                                                    className="text-[9px] font-bold text-slate-400 uppercase w-20">{item.label}</span>
+                                                                    className="text-[9px] font-bold text-slate-600 uppercase w-20">{item.label}</span>
                                                                 <span
                                                                     className="text-[11px] font-black text-slate-700 text-right">{item.value || "---"}</span>
                                                             </div>
@@ -323,7 +323,7 @@ const AgencyRankingManager = () => {
                                                 <div className="space-y-4">
                                                     <div
                                                         className="flex items-center justify-between border-l-2 border-slate-900 pl-3">
-                                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn
+                                                        <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Đơn
                                                             hàng đóng góp</h4>
                                                         <span
                                                             className="text-[9px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">
@@ -368,10 +368,10 @@ const AgencyRankingManager = () => {
                                             <div className="space-y-8">
                                                 {/* Header Modal */}
                                                 <div className="flex justify-between items-center">
-                                                    <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                    <h3 className="text-[12px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
                                                         Lộ trình {activeTab === 'UPGRADE' ? "Nâng hạng" : "Hạ hạng"} đối tác
                                                     </h3>
-                                                    <button onClick={() => setSelectedAgency(null)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                                                    <button onClick={() => setSelectedAgency(null)} className="text-slate-500 hover:text-rose-500 transition-colors">
                                                         <XCircle size={24}/>
                                                     </button>
                                                 </div>
@@ -379,7 +379,7 @@ const AgencyRankingManager = () => {
                                                 {/* So sánh Rank (Visual) */}
                                                 <div className={`flex items-center gap-4 p-3 rounded-[2.2rem] ${activeTab === 'UPGRADE' ? 'bg-blue-50/50' : 'bg-rose-50/50'}`}>
                                                     <div className="flex-1 bg-white p-5 rounded-[1.8rem] text-center shadow-sm">
-                                                        <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Hiện tại</p>
+                                                        <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Hiện tại</p>
                                                         <p className="text-lg font-black uppercase" style={{color: agencyDetail?.currentRank?.color}}>
                                                             {agencyDetail?.currentRank?.rankName}
                                                         </p>
@@ -399,12 +399,12 @@ const AgencyRankingManager = () => {
 
                                                 {/* Bảng so sánh chi tiết đặc quyền */}
                                                 <div className="space-y-4">
-                                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">So sánh thay đổi đặc quyền</h4>
+                                                    <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">So sánh thay đổi đặc quyền</h4>
                                                     <div className="grid grid-cols-1 gap-3">
                                                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                                             <div className="flex items-center gap-3">
                                                                 <div>
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase">Hạn mức thấu chi</p>
+                                                                    <p className="text-[9px] font-black text-slate-600 uppercase">Hạn mức thấu chi</p>
                                                                     <p className="text-[11px] font-bold text-slate-500">
                                                                         {agencyDetail?.currentRank?.creditLimit?.toLocaleString()}đ
                                                                         <ArrowRight size={10} className="inline mx-2 text-slate-300"/>
@@ -417,7 +417,7 @@ const AgencyRankingManager = () => {
                                                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                                             <div className="flex items-center gap-3">
                                                                 <div>
-                                                                    <p className="text-[9px] font-black text-slate-400 uppercase">Doanh thu duy trì tối thiểu</p>
+                                                                    <p className="text-[9px] font-black text-slate-600 uppercase">Doanh thu duy trì tối thiểu</p>
                                                                     <p className="text-[11px] font-bold text-slate-500">
                                                                         {agencyDetail?.currentRank?.maintainMinRevenue?.toLocaleString()}đ
                                                                         <ArrowRight size={10} className="inline mx-2 text-slate-300"/>
@@ -439,8 +439,8 @@ const AgencyRankingManager = () => {
                                                 {/* Lý do phê duyệt */}
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between items-center ml-2">
-                                                        <label className="text-[9px] font-black text-slate-400 uppercase">Ghi chú phê duyệt <span className="text-rose-500">*</span></label>
-                                                        <span className="text-[9px] font-bold text-slate-300 uppercase italic">Tối thiểu 5 ký tự</span>
+                                                        <label className="text-[9px] font-black text-slate-700 uppercase">Ghi chú phê duyệt <span className="text-rose-500">*</span></label>
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase italic">Tối thiểu 5 ký tự</span>
                                                     </div>
                                                     <textarea
                                                         className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.8rem] outline-none transition-all text-sm min-h-[100px] focus:bg-white focus:border-blue-500 shadow-inner"
