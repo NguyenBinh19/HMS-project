@@ -12,6 +12,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
     const [placeError, setPlaceError] = useState("");
     const [dateError, setDateError] = useState("");
     const [licenseError, setLicenseError] = useState("");
+    const [taxCodeError, setTaxCodeError] = useState("");
     const today = new Date().toLocaleDateString('en-CA');
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
@@ -119,39 +120,36 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
 
     // 1. Chỉ cho phép nhập số
     const onlyNumbers = (val) => val.replace(/[^0-9]/g, "");
-
-    // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
-    const formatTaxCode = (val) => {
-        const digits = onlyNumbers(val).slice(0, 13);
-        if (digits.length > 10) {
-            return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
-        }
-        return digits;
-    };
+    //
+    // // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
+    // const formatTaxCode = (val) => {
+    //     const digits = onlyNumbers(val).slice(0, 13);
+    //     if (digits.length > 10) {
+    //         return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
+    //     }
+    //     return digits;
+    // };
 
     // 3. Format CCCD (Max 12 số)
     const formatCIC = (val) => onlyNumbers(val).slice(0, 12);
 
     const handleFinalSubmit = async () => {
-        if (!formData.legalName || !formData.taxCode) {
-            alert("Vui lòng điền các thông tin bắt buộc!");
+        const isMissingInfo =
+            !formData.legalName?.trim() ||
+            !formData.taxCode?.trim() ||
+            !formData.businessLicenseNumber?.trim() ||
+            !formData.businessAddress?.trim() ||
+            !formData.representativeName?.trim() ||
+            !formData.representativeCICNumber?.trim();
+
+        if (isMissingInfo) {
+            alert("Vui lòng điền đầy đủ các thông tin bắt buộc!");
             return;
         }
 
         // Nếu có bất kỳ thông báo lỗi nào đang tồn tại, không cho phép submit
-        if (dateError || addressError || placeError || licenseError) {
+        if (dateError || addressError || placeError || licenseError || taxCodeError) {
             alert("Thông tin nhập vào không hợp lệ. Vui lòng kiểm tra lại các trường báo đỏ!");
-            return;
-        }
-
-        if (formData.businessLicenseNumber.length !== 10) {
-            alert("Số giấy phép kinh doanh phải chính xác 10 chữ số!");
-            return;
-        }
-
-        const rawTaxCode = formData.taxCode.replace("-", "");
-        if (rawTaxCode.length !== 10 && rawTaxCode.length !== 13) {
-            alert("Mã số thuế phải có 10 hoặc 13 số!");
             return;
         }
 
@@ -282,27 +280,26 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                         <OCRInput
                             label="Mã số thuế"
                             value={formData.taxCode}
-                            onChange={(e) => setFormData(p => ({ ...p, taxCode: formatTaxCode(e.target.value) }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, taxCode: val }));
+                                setTaxCodeError(!val.trim() ? "Vui lòng nhập mã số thuế" : "");
+                            }}
                         />
+                        {taxCodeError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1 animate-pulse"> {taxCodeError}</p>
+                        )}
                         <OCRInput
                             label="Số GPKD"
                             value={formData.businessLicenseNumber}
-                            // onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
                             onChange={(e) => {
-                                const val = onlyNumbers(e.target.value).slice(0, 10);
+                                const val = e.target.value;
                                 setFormData(p => ({ ...p, businessLicenseNumber: val }));
-
-                                if (val.length > 0 && val.length < 10) {
-                                    setLicenseError("Số GPKD phải bao gồm 10 chữ số");
-                                } else {
-                                    setLicenseError("");
-                                }
+                                setLicenseError(!val.trim() ? "Vui lòng nhập số GPKD" : "");
                             }}
                         />
                         {licenseError && (
-                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1">
-                                {licenseError}
-                            </p>
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1 animate-pulse"> {licenseError}</p>
                         )}
                     </div>
                     <OCRInput

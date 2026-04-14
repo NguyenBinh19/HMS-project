@@ -98,7 +98,7 @@ const SystemLogList = () => {
                         <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
                             NHẬT KÝ HỆ THỐNG
                         </h2>
-                        <p className="mt-1 text-slate-500 text-sm font-medium italic">
+                        <p className="mt-1 text-slate-500 text-sm font-medium ">
                             Lịch sử chi tiết các thao tác thay đổi thông số trên hệ thống
                         </p>
                     </div>
@@ -132,10 +132,10 @@ const SystemLogList = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                             <tr className="bg-slate-50 border-b border-slate-100">
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center w-16">STT</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Người thực hiện</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Nội dung hành động</th>
-                                <th className="px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Thời gian</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center w-16">STT</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Người thực hiện</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Nội dung hành động</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Thời gian</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -156,7 +156,7 @@ const SystemLogList = () => {
                                         <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-5 text-center">
                                                     <span
-                                                        className="text-xs font-mono font-bold text-slate-300 group-hover:text-slate-900 transition-colors">
+                                                        className="text-xs font-mono font-bold text-slate-600 group-hover:text-slate-900 transition-colors">
                                                         {String(stt).padStart(2, '0')}
                                                     </span>
                                             </td>

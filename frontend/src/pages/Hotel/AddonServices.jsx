@@ -440,7 +440,7 @@ const AddonServiceManager = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                     <thead>
-                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
+                    <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-600">
                         <th className="px-6 py-3 text-left">Dịch vụ</th>
                         <th className="px-4 py-3 text-left">Loại</th>
                         {/*<th className="px-4 py-3 text-left">Giá Net B2B</th>*/}

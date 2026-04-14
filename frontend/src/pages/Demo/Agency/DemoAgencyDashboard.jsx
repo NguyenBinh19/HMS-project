@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Trophy, Wallet, AlertTriangle, Users,
-    Calendar, Lock, CheckCircle2, TrendingUp, Loader2, Star,
-    ArrowUpRight, ArrowDownLeft
+    Wallet, Calendar, CheckCircle2, XCircle, Clock,
+    Loader2, ChevronRight, Plus, FileText,
+    Star, AlertCircle, CreditCard, ArrowUpRight, ArrowDownLeft
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
 
-// Import dữ liệu Mock chuẩn SQL
+// Sử dụng dữ liệu Mock
 import {
     MOCK_AGENCY_DATA,
-    MOCK_CHART_DATA,
     MOCK_TRANSACTIONS
 } from '@/constant/agency_mockData.js';
 
@@ -21,239 +16,216 @@ const DemoAgencyDashboard = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // Sử dụng dữ liệu Mock làm State
+    // Dữ liệu Mock từ hằng số
     const agency = MOCK_AGENCY_DATA;
-    const chartData = MOCK_CHART_DATA;
     const transactions = MOCK_TRANSACTIONS;
 
-    // Giả lập trạng thái tài khoản dựa trên dữ liệu nợ (STAGE1: có nợ, STAGE2: nợ quá hạn)
-    // Ở đây demo trạng thái NORMAL hoặc STAGE1 dựa trên currentCredit
-    const accountStatus = agency.finance.currentCredit > 0 ? 'STAGE1' : 'NORMAL';
+    // Giả lập logic lịch trình sắp tới
+    const upcomingDemo = {
+        day1: [
+            { bookingCode: "DEMO01", hotelName: "Vinpearl Luxury Resort", checkInDate: new Date(), paymentStatus: 'PAID' },
+            { bookingCode: "DEMO02", hotelName: "InterContinental Danang", checkInDate: new Date(), paymentStatus: 'PENDING' }
+        ],
+        day2: [
+            { bookingCode: "DEMO03", hotelName: "JW Marriott Phu Quoc", checkInDate: new Date(Date.now() + 172800000), paymentStatus: 'PAID' }
+        ]
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 800);
         return () => clearTimeout(timer);
     }, []);
 
-    const getStatusConfig = () => {
-        switch (accountStatus) {
-            case 'STAGE1':
-                return {
-                    banner: "bg-amber-50 border-amber-200 text-amber-800",
-                    bannerIcon: <AlertTriangle className="text-amber-500" />,
-                    bannerMsg: "Bạn đang có dư nợ công nợ chưa thanh toán. Vui lòng tất toán đúng hạn.",
-                    isLocked: false
-                };
-            case 'STAGE2':
-                return {
-                    banner: "bg-red-600 border-red-700 text-white",
-                    bannerIcon: <Lock className="text-white" />,
-                    bannerMsg: "TÀI KHOẢN BỊ KHÓA GIAO DỊCH do nợ quá hạn. Vui lòng thanh toán để tiếp tục.",
-                    isLocked: true
-                };
-            default:
-                return { banner: null, isLocked: false };
-        }
-    };
-
-    const config = getStatusConfig();
     const formatVND = (val) => new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
         maximumFractionDigits: 0
     }).format(val || 0);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
-                <p className="font-bold text-slate-600 uppercase tracking-widest text-[10px]">Đang đồng bộ dữ liệu HMS v2...</p>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center bg-white">
+            <Loader2 className="animate-spin text-blue-500" size={40}/>
+        </div>
+    );
 
     return (
-        <div className={`space-y-6 text-left transition-all duration-500 ${config.isLocked ? 'grayscale-[0.5] pointer-events-none select-none' : ''}`}>
-
-            {/* 1. Alert Banner - Giống code chính */}
-
-                <div className="bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-xl">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-600 p-2 rounded-xl">
-                            <Star size={18} className="animate-pulse" />
-                        </div>
-                        <p className="text-sm font-bold">Bạn đang trải nghiệm giao diện Đại lý với dữ liệu đã đồng bộ.</p>
-                    </div>
-                    {/*<button onClick={() => navigate('/demo')} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all">*/}
-                    {/*    Đổi vai trò*/}
-                    {/*</button>*/}
+        <div className="p-6 bg-[#F8FAFC] min-h-screen max-w-[1440px] mx-auto space-y-8 font-sans text-slate-900">
+            {/* HEADER SECTION  */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                        Chào mừng, {agency.agencyName} (Demo)!
+                        <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase border border-blue-200 shadow-sm shadow-blue-100/50">
+                            <Star size={11} fill="currentColor" className="text-blue-500 mb-0.5" />
+                            <span className="tracking-wider">{agency.rank.name}</span>
+                        </span>
+                    </h1>
+                    <p className="text-slate-500 text-sm font-bold">Chế độ trải nghiệm dữ liệu mẫu. Mọi thao tác sẽ không lưu lại.</p>
                 </div>
+            </div>
 
-
-            {/* 2. Tài chính Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Hạng Đại lý */}
-                <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hạng đại lý</p>
-                            <div
-                                className="text-white px-4 py-1 rounded-lg font-black text-sm inline-block italic shadow-lg"
-                                style={{ backgroundColor: agency.rank.color, boxShadow: `0 4px 12px ${agency.rank.color}40` }}
-                            >
-                                {agency.rank.name}
-                            </div>
-                        </div>
-                        <Trophy style={{ color: agency.rank.color }} className="group-hover:scale-110 transition-transform" size={28} />
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-500 leading-tight italic mb-3">
-                        {agency.rank.description}
-                    </p>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                            className="h-full transition-all duration-1000 ease-out"
-                            style={{ width: `${agency.rank.progress}%`, backgroundColor: agency.rank.color }}
+            <div className="grid grid-cols-12 gap-6">
+                {/* CỘT TRÁI - 8 COL */}
+                <div className="col-span-12 lg:col-span-8 space-y-8">
+                    {/* STATS SECTION  */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <StatSummaryCard
+                            label="ĐƠN THÀNH CÔNG" count={agency.stats.newBookings} revenue={125000000}
+                            icon={<CheckCircle2 size={16} className="text-emerald-500"/>}
+                            border="border-emerald-100"
+                            onDetail={() => navigate('/demo-agency/booking-list')}
+                        />
+                        <StatSummaryCard
+                            label="ĐƠN ĐÃ HỦY" count={2} revenue={15000000}
+                            icon={<XCircle size={16} className="text-rose-500"/>}
+                            border="border-rose-100"
+                            onDetail={() => navigate('/demo-agency/booking-list')}
+                        />
+                        <StatSummaryCard
+                            label="ĐƠN KHÁC" count={5} revenue={25000000}
+                            icon={<Clock size={16} className="text-blue-500"/>}
+                            border="border-blue-100"
+                            onDetail={() => navigate('/demo-agency/booking-list')}
                         />
                     </div>
-                    <p className="text-[9px] text-right mt-1 font-bold text-slate-400 uppercase tracking-tighter">
-                        {agency.rank.progress}% đến hạng PLATINUM
-                    </p>
-                </div>
 
-                {/* Sức mua khả dụng */}
-                <div className={`bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 transition-all ${accountStatus === 'STAGE2' ? 'ring-2 ring-red-500' : ''}`}>
-                    <div className="flex justify-between items-start mb-2">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sức mua (Ví + Tín dụng)</p>
-                        <Wallet className="text-emerald-500" size={20} />
-                    </div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-4 tracking-tighter">
-                        {formatVND(agency.finance.walletBalance + agency.finance.availableCredit)}
-                    </h2>
-                    <div className="space-y-2 text-[11px] mb-4">
-                        <div className="flex justify-between">
-                            <span className="font-bold text-slate-500 tracking-tight italic">Số dư ví:</span>
-                            <span className="font-black text-slate-800">{formatVND(agency.finance.walletBalance)}</span>
+                    {/* SCHEDULE SECTION */}
+                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-200">
+                        <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight">Sắp khởi hành
+                                    (Demo)</h3>
+                                <p className="text-slate-500 text-sm font-bold mt-1 tracking-wider">Lịch trình giả
+                                    lập</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/demo-agency/booking-list')}
+                                className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-600"
+                            >
+                                Xem tất cả
+                            </button>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="font-bold text-slate-500 tracking-tight italic">Tín dụng khả dụng:</span>
-                            <span className="font-black text-emerald-600">{formatVND(agency.finance.availableCredit)}</span>
+                        <div className="space-y-10 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar text-left">
+                            <ScheduleSection title="HÔM NAY / TRONG 24H" list={upcomingDemo.day1} navigate={navigate}/>
+                            <ScheduleSection title="TRONG 48H TỚI" list={upcomingDemo.day2} navigate={navigate} />
                         </div>
                     </div>
-                    <button className="w-full bg-blue-600 text-white py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100">
-                        Nạp tiền vào ví
-                    </button>
                 </div>
 
-                {/* Dư nợ công nợ */}
-                <div className={`p-6 rounded-[32px] shadow-sm border transition-all ${accountStatus === 'NORMAL' ? 'bg-white border-slate-100' : 'bg-red-50 border-red-100'}`}>
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Dư nợ hiện tại</p>
-                    <h2 className="text-2xl font-black text-red-600 mb-1 tracking-tighter">
-                        {formatVND(agency.finance.currentCredit)}
-                    </h2>
-                    <p className="text-[10px] font-bold text-slate-500 mb-6 italic tracking-tighter">
-                        Hạn thanh toán: {agency.finance.dueDate}
-                    </p>
-                    <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-black transition-all active:scale-95">
-                        Thanh toán nợ
-                    </button>
-                </div>
-            </div>
+                {/* CỘT PHẢI - 4 COL */}
+                <div className="col-span-12 lg:col-span-4 space-y-6 text-left">
 
-            {/* 3. Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <StatCard icon={<CheckCircle2 className="text-emerald-500"/>} label="Đơn mới" value={agency.stats.newBookings} sub="Hôm nay" />
-                <StatCard icon={<Calendar className="text-blue-500"/>} label="Sắp khởi hành" value={agency.stats.checkins} sub="Check-in tới" />
-                <StatCard icon={<Users className="text-slate-400"/>} label="Nhân sự" value={agency.stats.staff} sub="Thành viên" />
-            </div>
-
-            {/* 4. Chart & Activity Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Biểu đồ doanh thu */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
-                    <h3 className="font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center justify-between">
-                        Doanh số đặt phòng gần đây
-                        <span className="text-[10px] text-blue-600 bg-blue-50 px-3 py-1 rounded-full tracking-widest uppercase">VNĐ</span>
-                    </h3>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}}/>
-                                <YAxis hide/>
-                                <Tooltip cursor={{fill: '#f8fafc'}} content={<CustomTooltip/>}/>
-                                <Bar dataKey="revenue" radius={[6, 6, 0, 0]} barSize={32}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#3b82f6' : '#93c5fd'}/>
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    {/* VÍ TRẢ TRƯỚC CARD */}
+                    <div className="p-6 rounded-[32px] border border-blue-100 bg-white shadow-sm flex items-center gap-5">
+                        <div className="p-4 bg-blue-50 rounded-[22px] text-blue-500 border border-blue-100">
+                            <Wallet size={24}/>
+                        </div>
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Ví trả trước</p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tight">
+                                {formatVND(agency.finance.walletBalance)}
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                {/* Giao dịch gần nhất */}
-                <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
-                    <h3 className="font-black text-slate-800 uppercase tracking-tighter mb-6 flex items-center gap-2">
-                        <TrendingUp size={18} className="text-blue-600"/> Giao dịch gần nhất
-                    </h3>
-                    <div className="space-y-6">
-                        {transactions.map((trans) => (
-                            <ActivityItem
-                                key={trans.id}
-                                time={trans.createdAt.split(' ')[1]}
-                                desc={trans.description}
-                                amount={`${trans.direction === 'IN' ? '+' : '-'}${formatVND(trans.amount)}`}
-                                type={trans.direction === 'IN' ? 'success' : 'danger'}
-                                icon={trans.direction === 'IN' ? <ArrowUpRight size={12}/> : <ArrowDownLeft size={12}/>}
-                            />
-                        ))}
+                    {/* QUẢN LÝ DƯ NỢ  */}
+                    <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-200 space-y-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <CreditCard size={18} className="text-blue-500"/>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Thông tin tín dụng</h3>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Dư nợ hiện tại</span>
+                                <span className="text-sm font-black text-slate-900">{formatVND(agency.finance.currentCredit)}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Hạn thanh toán</span>
+                                <span className="text-sm font-black text-blue-500">{agency.finance.dueDate}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Sức mua còn lại</span>
+                                <span className="text-sm font-black text-emerald-500">{formatVND(agency.finance.availableCredit)}</span>
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('/demo-agency/credit')} className="w-full py-4 bg-blue-500 text-white rounded-[20px] font-black text-[13px] uppercase tracking-widest hover:bg-blue-600 shadow-md">
+                            Chi tiết
+                        </button>
                     </div>
-                    <button className="w-full mt-8 py-2 text-[10px] font-black text-slate-400 uppercase hover:text-blue-600 transition-colors border-t border-slate-50 pt-4 tracking-widest">
-                        Xem tất cả lịch sử
-                    </button>
+
+                    {/* QUICK ACTIONS  */}
+                    <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-200">
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Thao tác nhanh</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <QuickBtn icon={<Plus size={20}/>} label="Tạo đơn mới" bg="bg-blue-50 text-blue-600 border-blue-100" onClick={() => navigate('/demo-agency/search-hotel')}/>
+                            <QuickBtn icon={<FileText size={20}/>} label="Lịch sử" bg="bg-indigo-50 text-indigo-600 border-indigo-100" onClick={() => navigate('/demo-agency/transaction-history')}/>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-// --- Sub-components (Giữ style code chính) ---
-const StatCard = ({icon, label, value, sub}) => (
-    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-2 hover:translate-y-[-4px] transition-all cursor-default group">
-        <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors">{icon}</div>
-        <div className="text-2xl font-black text-slate-900 tracking-tighter">{value}</div>
-        <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest">{label}</p>
-        <p className="text-[9px] font-bold text-slate-400 uppercase italic">{sub}</p>
+// --- SUB-COMPONENTS  ---
+
+const StatSummaryCard = ({label, count, revenue, icon, border, onDetail}) => (
+    <div className={`p-6 rounded-[32px] border ${border} bg-white shadow-sm group relative text-left`}>
+        <div className="flex justify-between items-start mb-6">
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 group-hover:bg-blue-500 group-hover:text-white transition-colors">{icon}</div>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Tháng này</span>
+        </div>
+        <div className="space-y-1">
+            <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-slate-900 leading-none">{count}</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase leading-none">{label}</span>
+            </div>
+            <p className="text-lg font-black text-blue-500 tracking-tight leading-none pt-1">{new Intl.NumberFormat('vi-VN').format(revenue)}₫</p>
+        </div>
+        <button onClick={onDetail} className="mt-6 flex items-center gap-1 text-[10px] font-black text-slate-900 hover:text-blue-500 transition-colors uppercase tracking-widest">
+            Chi tiết <ChevronRight size={12}/>
+        </button>
     </div>
 );
 
-const ActivityItem = ({ time, desc, amount, type, icon }) => (
-    <div className="flex gap-4 items-start group">
-        <div className={`mt-1 p-1.5 rounded-lg shrink-0 ${type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-            {icon}
+const ScheduleSection = ({ title, list, navigate }) => (
+    <div className="space-y-6">
+        <div className="flex items-center gap-3 sticky top-0 bg-white py-2 z-10">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]"></div>
+            <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">{title}</h4>
         </div>
-        <div className="space-y-0.5 flex-1 overflow-hidden text-left">
-            <p className="text-[11px] font-black text-slate-700 leading-tight truncate">{desc}</p>
-            <div className="flex justify-between items-center">
-                <span className={`text-[10px] font-black ${type === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>{amount}</span>
-                <span className="text-[9px] font-bold text-slate-300">{time}</span>
-            </div>
+        <div className="space-y-4">
+            {list.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between p-5 bg-white hover:bg-blue-50/30 rounded-[24px] border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group shadow-sm">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 bg-slate-900 rounded-2xl flex flex-col items-center justify-center border border-slate-800 shadow-sm">
+                            <span className="text-[9px] font-black text-slate-500 uppercase">TH{item.checkInDate.getMonth() + 1}</span>
+                            <span className="text-xl font-black text-white">{item.checkInDate.getDate()}</span>
+                        </div>
+                        <div className="space-y-1">
+                            <h5 className="text-sm font-black text-slate-900 group-hover:text-blue-500 transition-colors uppercase truncate max-w-[180px] tracking-tight">{item.hotelName}</h5>
+                            <div className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase">
+                                <span>Code: <span className="text-blue-500">#{item.bookingCode}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className={`px-3 py-1 ${item.paymentStatus === 'PAID' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'} text-[9px] font-black rounded-full uppercase border`}>
+                            {item.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chờ thanh toán'}
+                        </span>
+                        <p className="text-[10px] font-black text-slate-500 uppercase ">Xem chi tiết</p>
+                    </div>
+                </div>
+            ))}
         </div>
     </div>
 );
 
-const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-800">
-                <p className="text-[10px] font-black uppercase mb-1 opacity-60 tracking-widest">Ngày {payload[0].payload.day}</p>
-                <p className="text-sm font-black text-blue-400 leading-none">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(payload[0].value)}
-                </p>
-            </div>
-        );
-    }
-    return null;
-};
+const QuickBtn = ({ icon, label, bg, onClick }) => (
+    <button onClick={onClick} className={`${bg} p-5 rounded-[24px] border flex flex-col items-center gap-3 hover:shadow-md hover:translate-y-[-2px] transition-all active:scale-95 group w-full`}>
+        <div className="group-hover:scale-110 transition-transform">{icon}</div>
+        <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">{label}</span>
+    </button>
+);
 
 export default DemoAgencyDashboard;

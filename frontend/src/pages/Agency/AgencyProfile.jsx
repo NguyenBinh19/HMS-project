@@ -4,9 +4,11 @@ import {
     Building2, Info, Phone, Mail, MapPin,
     Globe, CheckCircle2, Loader2, Smartphone,
     CreditCard, Wallet, ArrowUpRight, Check,
-    ShieldCheck, Edit3, AlertCircle
+    ShieldCheck, Edit3, AlertCircle, X
 } from 'lucide-react';
+import { ExternalLink, FileText, ArrowRight } from 'lucide-react';
 import { agencyService } from "@/services/agency.service.js";
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import { partnerService } from "@/services/partner.service.js";
 import { toast } from "react-hot-toast";
 
@@ -31,6 +33,8 @@ const AgencyProfile = () => {
     const [showSuccessBanner, setShowSuccessBanner] = useState(false);
     const [originalData, setOriginalData] = useState(null);
     const [errors, setErrors] = useState({});
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
 
     const [profile, setProfile] = useState({
         agencyName: "",
@@ -101,6 +105,13 @@ const AgencyProfile = () => {
                 creditLimit: res.creditLimit || 0,
                 currentCredit: res.currentCredit || 0
             });
+            const pdfRes = await pdfDocumentService.getAllPdfs();
+            if (pdfRes?.result) {
+                const agencyPolicy = pdfRes.result.find(doc =>
+                    doc.title.includes("Điều khoản hợp tác với Đại lý")
+                );
+                setPolicyUrl(agencyPolicy?.fileUrl || "");
+            }
         } catch (error) {
             toast.error("Không thể tải thông tin đại lý");
         } finally {
@@ -109,6 +120,10 @@ const AgencyProfile = () => {
     };
 
     useEffect(() => { fetchAgencyDetail(); }, []);
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     const handleGoToKYC = () => {
         if (!canEdit) {
@@ -184,29 +199,32 @@ const AgencyProfile = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         {/* THÔNG TIN PHÁP LÝ */}
-                        <section className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+                        <section
+                            className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-5"><Building2 size={100}/></div>
                             <div className="flex justify-between items-center mb-8 relative z-10">
                                 <h2 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase flex items-center gap-2">
-                                    <ShieldCheck size={18} className="text-emerald-500" /> Xác minh pháp lý
+                                    <ShieldCheck size={18} className="text-emerald-500"/> Xác minh pháp lý
                                 </h2>
                                 {canEdit && (
-                                <button onClick={handleGoToKYC} className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase">
-                                    <Edit3 size={14} /> Cập nhật KYC
-                                </button>
+                                    <button onClick={handleGoToKYC}
+                                            className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase">
+                                        <Edit3 size={14}/> Cập nhật KYC
+                                    </button>
                                 )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                                <ReadOnlyField label="Tên pháp nhân" value={profile.legalName} />
-                                <ReadOnlyField label="Mã số thuế" value={profile.taxCode} />
-                                <ReadOnlyField label="Số GPKD" value={profile.businessLicenseNumber} />
-                                <ReadOnlyField label="Người đại diện" value={profile.representativeName} />
+                                <ReadOnlyField label="Tên pháp nhân" value={profile.legalName}/>
+                                <ReadOnlyField label="Mã số thuế" value={profile.taxCode}/>
+                                <ReadOnlyField label="Số GPKD" value={profile.businessLicenseNumber}/>
+                                <ReadOnlyField label="Người đại diện" value={profile.representativeName}/>
                             </div>
                         </section>
 
                         {/* THÔNG TIN LIÊN HỆ */}
                         <section className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm">
-                            <h2 className="text-xs font-black text-blue-600 tracking-[0.2em] uppercase mb-8 flex items-center gap-2"><Globe size={18} /> Liên hệ & Thương hiệu</h2>
+                            <h2 className="text-xs font-black text-blue-600 tracking-[0.2em] uppercase mb-8 flex items-center gap-2">
+                                <Globe size={18}/> Liên hệ & Thương hiệu</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <EditableField
                                     label="Tên hiển thị"
@@ -218,7 +236,7 @@ const AgencyProfile = () => {
                                 <EditableField
                                     label="Email"
                                     value={profile.email}
-                                    icon={<Mail size={16} />}
+                                    icon={<Mail size={16}/>}
                                     onChange={(v) => setProfile({...profile, email: v})}
                                     error={errors.email}
                                     disabled={!canEdit}
@@ -226,7 +244,7 @@ const AgencyProfile = () => {
                                 <EditableField
                                     label="Hotline"
                                     value={profile.hotline}
-                                    icon={<Phone size={16} />}
+                                    icon={<Phone size={16}/>}
                                     onChange={(v) => setProfile({...profile, hotline: v})}
                                     error={errors.hotline}
                                     disabled={!canEdit}
@@ -234,7 +252,7 @@ const AgencyProfile = () => {
                                 <EditableField
                                     label="SĐT Liên hệ"
                                     value={profile.contactPhone}
-                                    icon={<Smartphone size={16} />}
+                                    icon={<Smartphone size={16}/>}
                                     onChange={(v) => setProfile({...profile, contactPhone: v})}
                                     error={errors.contactPhone}
                                     disabled={!canEdit}
@@ -245,46 +263,126 @@ const AgencyProfile = () => {
 
                     {/* TÀI CHÍNH */}
                     <div className="space-y-6">
-                        <section className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <section
+                            className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute -bottom-4 -right-4 opacity-10"><Wallet size={120}/></div>
-                            <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-8 flex items-center gap-2"><CreditCard size={18} /> Tài chính</h2>
+                            <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                                <CreditCard size={18}/> Tài chính</h2>
                             <div className="space-y-8">
                                 <div>
                                     <p className="text-slate-400 text-[10px] font-black uppercase mb-1">Hạn mức</p>
-                                    <p className="text-2xl font-black italic">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profile.creditLimit)}</p>
+                                    <p className="text-2xl font-black italic">{new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(profile.creditLimit)}</p>
                                 </div>
                                 <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện tại</p>
-                                        <ArrowUpRight size={14} className="text-red-400" />
+                                        <p className="text-slate-400 text-[10px] font-black uppercase">Tín dụng hiện
+                                            tại</p>
+                                        <ArrowUpRight size={14} className="text-red-400"/>
                                     </div>
-                                    <p className="text-xl font-black text-red-400">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(profile.currentCredit)}</p>
+                                    <p className="text-xl font-black text-red-400">{new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(profile.currentCredit)}</p>
                                 </div>
                             </div>
                         </section>
+                        <div
+                            className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden transition-all hover:border-blue-200 group">
+                            <div className="flex items-center gap-3.5 mb-5">
+                                <div
+                                    className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                    <FileText size={18}/>
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-blue-600/80 mb-0.5">
+                                        Chính sách
+                                    </h3>
+                                    <h2 className="text-[12px] font-bold text-slate-800 leading-tight truncate">
+                                        Điều khoản hợp tác HMS-B2B
+                                    </h2>
+                                </div>
+                            </div>
+
+                            {/* Nút bấm thiết kế tinh gọn */}
+                            <button
+                                onClick={() => {
+                                    if (policyUrl) setShowPdfModal(true);
+                                    else alert("Tài liệu đang được cập nhật!"); // Dùng trực tiếp hàm toast
+                                }}
+                                className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-slate-200"
+                            >
+                                Xem chính sách
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+            {/* MODAL PDF  */}
+            {showPdfModal && (
+                <div
+                    className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div
+                        className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => setShowPdfModal(false)}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+                        {/* Content View */}
+                        <div className="flex-1 bg-slate-50 relative">
+                            <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
+                                className="w-full h-full border-none relative z-10"
+                                title="PDF Preview"
+                            />
+                            {/* Background Loading */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+                                <Loader2 size={32} className="animate-spin text-blue-600/20 mb-2"/>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                        Đang tải tài liệu...
+                    </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 // Components con
-const ReadOnlyField = ({ label, value }) => (
+const ReadOnlyField = ({label, value}) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
-        <div className="bg-slate-50 border border-slate-100 px-4 py-3.5 rounded-2xl text-slate-600 font-bold text-sm truncate">
+        <div
+            className="bg-slate-50 border border-slate-100 px-4 py-3.5 rounded-2xl text-slate-600 font-bold text-sm truncate">
             {value}
         </div>
     </div>
 );
 
-const EditableField = ({ label, value, onChange, icon, error, disabled}) => (
+const EditableField = ({label, value, onChange, icon, error, disabled}) => (
     <div className="space-y-2">
         <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{label}</label>
         <div className="relative">
             {icon && (
-                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-rose-500' : 'text-slate-400'}`}>
+                <div
+                    className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-rose-500' : 'text-slate-400'}`}>
                     {icon}
                 </div>
             )}
@@ -300,7 +398,7 @@ const EditableField = ({ label, value, onChange, icon, error, disabled}) => (
         </div>
         {error && (
             <div className="flex items-center gap-1 mt-1 ml-1 text-rose-500">
-                <AlertCircle size={12} />
+                <AlertCircle size={12}/>
                 <span className="text-[10px] font-black italic uppercase tracking-tighter">{error}</span>
             </div>
         )}

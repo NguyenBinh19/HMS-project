@@ -140,20 +140,20 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                             <div className="col-span-12 md:col-span-8 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Mã hạng (English code)</label>
+                                        <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Mã hạng (English code)</label>
                                         <input required name="rankCode" value={formData.rankCode} onChange={handleChange}
                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono font-bold text-blue-600 focus:ring-2 ring-blue-500/10 outline-none"
                                                placeholder="VD: DIAMOND_MEMBER"/>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tên hiển thị (Tiếng Việt)</label>
+                                        <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Tên hiển thị </label>
                                         <input required name="rankName" value={formData.rankName} onChange={handleChange}
                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 focus:ring-2 ring-blue-500/10 outline-none"
                                                placeholder="VD: Thành viên Kim Cương"/>
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Mô tả quyền lợi</label>
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Mô tả quyền lợi</label>
                                     <textarea name="description" value={formData.description} onChange={handleChange}
                                               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl h-20 outline-none focus:ring-2 ring-blue-500/10 text-sm"
                                               placeholder="Nhập các đặc quyền của hạng này..."/>
@@ -162,7 +162,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
 
                             <div className="col-span-12 md:col-span-4 space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Độ ưu tiên & Màu</label>
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Độ ưu tiên & Màu</label>
                                     <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                                         <div className="flex items-center gap-3">
                                             <input name="color" type="color" value={formData.color} onChange={handleChange}
@@ -182,7 +182,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
 
                         {/* Chọn Icon */}
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Chọn biểu tượng đại diện</label>
+                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Chọn biểu tượng đại diện</label>
                             <div className="flex flex-wrap gap-3 p-4 bg-slate-50 border border-slate-200 rounded-[24px]">
                                 {iconOptions.map((item) => {
                                     const IconComp = item.component;
@@ -201,7 +201,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                     {/* 2. Điều kiện tài chính */}
                     <section className="space-y-4">
                         <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <TrendingUp size={14} /> 2. Chỉ số thăng hạng & Duy trì
+                             2. Chỉ số thăng hạng & Duy trì
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="bg-emerald-50/50 p-6 rounded-[24px] border border-emerald-100 space-y-4">
@@ -233,7 +233,7 @@ const AddRankingModal = ({ isOpen, onClose, onSuccess }) => {
                     {/* 3. Đặc quyền tài chính */}
                     <section className="space-y-4">
                         <h4 className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <Wallet size={14} /> 3. Đặc quyền tài chính
+                            3. Đặc quyền tài chính
                         </h4>
                         <div className="bg-slate-900 p-6 rounded-[24px] flex flex-col md:flex-row items-center gap-6">
                             <div className="flex-1 space-y-1">

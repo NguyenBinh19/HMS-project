@@ -18,10 +18,11 @@ import {
     Phone,
     Building2,
     Briefcase,
-    AlertCircle
+    AlertCircle, ExternalLink
 } from "lucide-react";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
 import LegalModal from "../../components/auth/LegalModal.jsx";
+import { pdfDocumentService } from '@/services/pdf.service.js';
 
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL =
@@ -153,6 +154,37 @@ const Register = () => {
     const [errors, setErrors] = useState({});
     const [error, setError] = useState("");
     const [focusedField, setFocusedField] = useState(null);
+
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [pdfLinks, setPdfLinks] = useState({
+        HOTEL_MANAGER: null,
+        AGENCY_MANAGER: null
+    });
+    useEffect(() => {
+        const fetchLegalPdfs = async () => {
+            try {
+                const res = await pdfDocumentService.getAllPdfs();
+                if (res?.result) {
+                    // File 1: Chứa từ khóa "Khách sạn"
+                    const hotelFile = res.result.find(doc =>
+                        doc.title.includes("Điều khoản hợp tác với Khách sạn")
+                    );
+                    // File 2: Chứa từ khóa "Đại lý" (Khớp với title bạn vừa nêu)
+                    const agencyFile = res.result.find(doc =>
+                        doc.title.includes("Điều khoản hợp tác với Đại lý")
+                    );
+
+                    setPdfLinks({
+                        HOTEL_MANAGER: hotelFile?.fileUrl || null,
+                        AGENCY_MANAGER: agencyFile?.fileUrl || null
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi khi đồng bộ file PDF pháp lý:", err);
+            }
+        };
+        fetchLegalPdfs();
+    }, []);
 
     const [touched, setTouched] = useState({ password: false });
 
@@ -490,9 +522,9 @@ const Register = () => {
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "username"
                                                     ? "text-emerald-600"
                                                     : "text-slate-400"
-                                                    }`}
+                                                }`}
                                             >
-                                                <User size={20} />
+                                                <User size={20}/>
                                             </div>
                                             <input
                                                 type="text"
@@ -504,12 +536,12 @@ const Register = () => {
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "username"
                                                     ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                    }`}
+                                                }`}
                                                 placeholder="Họ và tên đầy đủ"
                                             />
                                             {errors.username && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12} /> {errors.username}
+                                                    <AlertCircle size={12}/> {errors.username}
                                                 </p>
                                             )}
                                         </div>
@@ -520,9 +552,9 @@ const Register = () => {
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "email"
                                                     ? "text-emerald-600"
                                                     : "text-slate-400"
-                                                    }`}
+                                                }`}
                                             >
-                                                <Mail size={20} />
+                                                <Mail size={20}/>
                                             </div>
                                             <input
                                                 type="email"
@@ -534,12 +566,12 @@ const Register = () => {
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "email"
                                                     ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                    }`}
+                                                }`}
                                                 placeholder="Email"
                                             />
                                             {errors.email && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12} /> {errors.email}
+                                                    <AlertCircle size={12}/> {errors.email}
                                                 </p>
                                             )}
                                         </div>
@@ -550,9 +582,9 @@ const Register = () => {
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "phone"
                                                     ? "text-emerald-600"
                                                     : "text-slate-400"
-                                                    }`}
+                                                }`}
                                             >
-                                                <Phone size={20} />
+                                                <Phone size={20}/>
                                             </div>
                                             <input
                                                 type="tel"
@@ -564,12 +596,12 @@ const Register = () => {
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "phone"
                                                     ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                    }`}
+                                                }`}
                                                 placeholder="Số điện thoại"
                                             />
                                             {errors.phone && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12} /> {errors.phone}
+                                                    <AlertCircle size={12}/> {errors.phone}
                                                 </p>
                                             )}
                                         </div>
@@ -580,9 +612,9 @@ const Register = () => {
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "password"
                                                     ? "text-emerald-600"
                                                     : "text-slate-400"
-                                                    }`}
+                                                }`}
                                             >
-                                                <Lock size={20} />
+                                                <Lock size={20}/>
                                             </div>
 
                                             <input
@@ -591,14 +623,14 @@ const Register = () => {
                                                 onFocus={() => setFocusedField("password")}
                                                 onBlur={() => {
                                                     setFocusedField(null);
-                                                    setTouched((prev) => ({ ...prev, password: true }));
+                                                    setTouched((prev) => ({...prev, password: true}));
                                                 }}
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "password"
                                                     ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                    }`}
+                                                }`}
                                                 placeholder="Mật khẩu"
                                             />
 
@@ -607,14 +639,14 @@ const Register = () => {
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2"
                                             >
-                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                                {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
                                             </button>
                                         </div>
 
                                         {/* Password Check */}
                                         <div
                                             className={`overflow-hidden transition-all duration-500 ease-in-out ${formData.password ? "max-h-72 opacity-100" : "max-h-0 opacity-0"
-                                                }`}
+                                            }`}
                                         >
                                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-1">
                                                 <div className="flex justify-between items-center mb-2">
@@ -629,23 +661,24 @@ const Register = () => {
                                                                 : passwordScore === 3
                                                                     ? "text-blue-500"
                                                                     : "text-green-500"
-                                                            }`}
+                                                        }`}
                                                     >
                                                         {getStrengthText()}
                                                     </span>
                                                 </div>
 
-                                                <div className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
+                                                <div
+                                                    className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
                                                     <div
                                                         className={`h-full rounded-full transition-all duration-500 ${getStrengthColor()}`}
-                                                        style={{ width: `${(passwordScore / 4) * 100}%` }}
+                                                        style={{width: `${(passwordScore / 4) * 100}%`}}
                                                     />
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <Badge active={passwordCriteria.length} text="Ít nhất 6 ký tự" />
-                                                    <Badge active={passwordCriteria.hasNumber} text="Có chứa số" />
-                                                    <Badge active={passwordCriteria.hasUpper} text="Chữ in hoa" />
+                                                    <Badge active={passwordCriteria.length} text="Ít nhất 6 ký tự"/>
+                                                    <Badge active={passwordCriteria.hasNumber} text="Có chứa số"/>
+                                                    <Badge active={passwordCriteria.hasUpper} text="Chữ in hoa"/>
                                                     <Badge
                                                         active={passwordCriteria.hasSpecial}
                                                         text="Ký tự đặc biệt"
@@ -655,7 +688,7 @@ const Register = () => {
                                                 {/* ✅ Fix hiển thị inline đỏ (không vỡ chữ / không bị tách) */}
                                                 {formData.password && touched.password && passwordScore < 4 && (
                                                     <div className="mt-3 flex items-start gap-2 text-rose-600">
-                                                        <X size={16} className="mt-0.5 shrink-0" />
+                                                        <X size={16} className="mt-0.5 shrink-0"/>
                                                         <p className="text-sm font-semibold leading-relaxed whitespace-normal break-words">
                                                             Mật khẩu chưa đủ mạnh. Hãy thêm{" "}
                                                             <span className="font-black">số</span>,{" "}
@@ -679,13 +712,14 @@ const Register = () => {
                                                 className={`w-full pl-4 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "confirmPassword"
                                                     ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                    }`}
+                                                }`}
                                                 placeholder="Nhập lại mật khẩu"
                                             />
 
                                             {formData.confirmPassword &&
                                                 formData.password === formData.confirmPassword && (
-                                                    <div className="absolute right-12 top-1/2 -translate-y-1/2 text-green-500">
+                                                    <div
+                                                        className="absolute right-12 top-1/2 -translate-y-1/2 text-green-500">
                                                         <Check
                                                             size={18}
                                                             fill="currentColor"
@@ -700,14 +734,54 @@ const Register = () => {
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2"
                                             >
                                                 {showConfirmPassword ? (
-                                                    <EyeOff size={20} />
+                                                    <EyeOff size={20}/>
                                                 ) : (
-                                                    <Eye size={20} />
+                                                    <Eye size={20}/>
                                                 )}
                                             </button>
                                         </div>
 
                                         {/* Checkbox Terms */}
+                                        {/*<div className="flex items-start gap-3 mt-4 group">*/}
+                                        {/*    <div className="relative flex items-center pt-0.5">*/}
+                                        {/*        <input*/}
+                                        {/*            type="checkbox"*/}
+                                        {/*            id="terms"*/}
+                                        {/*            checked={agreed}*/}
+                                        {/*            onChange={(e) => setAgreed(e.target.checked)}*/}
+                                        {/*            className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"*/}
+                                        {/*        />*/}
+                                        {/*        <Check*/}
+                                        {/*            size={14}*/}
+                                        {/*            strokeWidth={3}*/}
+                                        {/*            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"*/}
+                                        {/*        />*/}
+                                        {/*    </div>*/}
+                                        {/*    <label*/}
+                                        {/*        htmlFor="terms"*/}
+                                        {/*        className="text-sm text-slate-500 leading-snug cursor-pointer select-none"*/}
+                                        {/*    >*/}
+                                        {/*        Tôi đồng ý với{" "}*/}
+                                        {/*        <button*/}
+                                        {/*            type="button"*/}
+                                        {/*            onClick={() => setModalType("terms")}*/}
+                                        {/*            className="text-emerald-600 font-bold hover:underline"*/}
+                                        {/*        >*/}
+                                        {/*            Điều khoản*/}
+                                        {/*        </button>{" "}*/}
+                                        {/*        và{" "}*/}
+                                        {/*        <button*/}
+                                        {/*            type="button"*/}
+                                        {/*            onClick={() => setModalType("privacy")}*/}
+                                        {/*            className="text-emerald-600 font-bold hover:underline"*/}
+                                        {/*        >*/}
+                                        {/*            Chính sách bảo mật*/}
+                                        {/*        </button>*/}
+                                        {/*        .*/}
+                                        {/*    </label>*/}
+                                        {/*</div>*/}
+
+                                        {/* Checkbox Đồng ý điều khoản */}
                                         <div className="flex items-start gap-3 mt-4 group">
                                             <div className="relative flex items-center pt-0.5">
                                                 <input
@@ -730,20 +804,18 @@ const Register = () => {
                                                 Tôi đồng ý với{" "}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setModalType("terms")}
+                                                    onClick={() => {
+                                                        if (pdfLinks[selectedRole]) {
+                                                            setShowPdfModal(true);
+                                                        } else {
+                                                            alert("Tài liệu đang được cập nhật, vui lòng thử lại sau.");
+                                                        }
+                                                    }}
                                                     className="text-emerald-600 font-bold hover:underline"
                                                 >
-                                                    Điều khoản
-                                                </button>{" "}
-                                                và{" "}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setModalType("privacy")}
-                                                    className="text-emerald-600 font-bold hover:underline"
-                                                >
-                                                    Chính sách bảo mật
+                                                    Điều khoản & Chính sách dành
+                                                    cho {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"}
                                                 </button>
-                                                .
                                             </label>
                                         </div>
 
@@ -753,13 +825,13 @@ const Register = () => {
                                             className={`group w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] mt-4 ${isFormValid
                                                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/30 cursor-pointer"
                                                 : "bg-slate-200 text-slate-400 cursor-not-allowed opacity-80"
-                                                }`}
+                                            }`}
                                         >
                                             {loading ? (
-                                                <Loader2 className="animate-spin" />
+                                                <Loader2 className="animate-spin"/>
                                             ) : (
                                                 <>
-                                                    Tạo tài khoản <ShieldCheck size={20} />
+                                                    Tạo tài khoản <ShieldCheck size={20}/>
                                                 </>
                                             )}
                                         </button>
@@ -830,18 +902,55 @@ const Register = () => {
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.3s ease-out; }
       `}</style>
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div
+                        className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={pdfLinks[selectedRole]}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => setShowPdfModal(false)}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+
+                        {/* Iframe content */}
+                        <div className="flex-1 bg-slate-100 relative">
+                            <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfLinks[selectedRole])}&embedded=true`}
+                                className="w-full h-full border-none relative z-10"
+                                title="PDF Preview"
+                            />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">
+                                <Loader2 size={40} className="animate-spin text-slate-200 mb-3"/>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Đang tải tài liệu...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 // Badge component
-const Badge = ({ active, text }) => (
+const Badge = ({active, text}) => (
     <div
         className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md transition-all duration-300 ${active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
-            }`}
+        }`}
     >
         {active ? (
-            <Check size={12} strokeWidth={4} />
+            <Check size={12} strokeWidth={4}/>
         ) : (
             <div className="w-3 h-3 rounded-full bg-slate-300"></div>
         )}

@@ -25,10 +25,10 @@ public class PdfDocument {
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column(name = "file_url", nullable = false, length = 1000)
+    @Column(name = "file_url", nullable = false, columnDefinition = "NVARCHAR(1000)")
     private String fileUrl;
 
-    @Column(name = "file_name", nullable = false, length = 500)
+    @Column(name = "file_name", nullable = false, columnDefinition = "NVARCHAR(500)")
     private String fileName;
 
     @Column(name = "file_size")

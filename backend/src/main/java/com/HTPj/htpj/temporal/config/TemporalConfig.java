@@ -19,6 +19,7 @@ public class TemporalConfig {
 
     private final RoomHoldRepository roomHoldRepository;
 
+
     @Bean
     public WorkflowServiceStubs workflowServiceStubs() {
         return WorkflowServiceStubs.newInstance(
@@ -48,7 +49,7 @@ public class TemporalConfig {
 
         factory.start();
 
-        System.out.println("Temporal Worker started");
+        System.out.println("✅ Temporal Worker started");
 
         return factory;
     }

@@ -26,7 +26,7 @@ const ContactPage = () => {
 
     const contactInfo = {
         hotline: "024 7300 5588",
-        email: "hmsb2b.fpt@gmail.com",
+        email: "bookingsphere@gmail.com",
         address: "Khu Công nghệ cao Hòa Lạc, Thạch Thất, Hà Nội",
         workingHours: "Thứ 2 - Thứ 6: 08:30 - 17:30"
     };

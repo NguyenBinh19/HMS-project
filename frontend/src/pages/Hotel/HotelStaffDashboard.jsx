@@ -161,7 +161,7 @@ const StaffDashboard = () => {
                     <div className="overflow-visible rounded-[24px">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/30 border-b border-slate-50">
-                            <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                            <tr className="text-[12px] font-bold text-slate-700 uppercase tracking-wider">
                                 <th className="px-8 py-5">Nhân viên</th>
                                 <th className="px-8 py-5">Chức vụ</th>
                                 <th className="px-8 py-5">Thông tin cá nhân</th>

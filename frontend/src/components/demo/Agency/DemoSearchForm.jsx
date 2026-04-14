@@ -85,13 +85,12 @@ export default function DemoHotelSearchForm({ variant = "hero" }) {
         }`}>
             {/* Điểm đến */}
             <div className="flex-1 min-w-0 relative" ref={searchRef}>
-                {!isHero && <label className="text-[10px] font-bold text-slate-500 ml-1 mb-0.5 block uppercase">ĐIỂM ĐẾN</label>}
-                {isHero && <label className="text-[13px] font-bold text-slate-700 mb-1 block text-left">ĐIỂM ĐẾN</label>}
+                {!isHero && <label className="text-[10px] font-bold text-slate-500 ml-1 mb-0.5 block uppercase">Bạn muốn đi đâu?</label>}
+                {isHero && <label className="text-[13px] font-bold text-slate-700 mb-1 block text-left uppercase">Bạn muốn đi đâu?</label>}
                 <div className="flex items-center bg-white rounded-lg px-3 py-2 border border-slate-200 focus-within:border-blue-500 transition-all h-[42px]">
-                    <MapPin className="text-slate-400 mr-2 flex-shrink-0" size={18} />
                     <input
                         type="text"
-                        placeholder="Điểm đến, khách sạn..."
+                        placeholder="Tên TP/ Khách sạn, Địa chỉ chi tiết..."
                         className="bg-transparent outline-none text-slate-700 text-sm w-full truncate"
                         value={keyword}
                         onChange={handleKeywordChange}

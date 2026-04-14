@@ -133,7 +133,7 @@ export default function CouponManagement() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                <tr className="bg-slate-50/50 text-slate-400 text-[11px] uppercase font-bold tracking-wider border-b border-slate-100">
+                                <tr className="bg-slate-50/50 text-slate-600 text-[11px] uppercase font-bold tracking-wider border-b border-slate-100">
                                     <th className="p-4">Mã Code</th>
                                     <th className="p-4">Mức giảm</th>
                                     <th className="p-4">Thời hạn</th>

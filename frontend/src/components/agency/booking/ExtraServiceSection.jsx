@@ -100,7 +100,7 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
     return (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold mb-1 text-slate-800">Dịch vụ thêm</h2>
-            <p className="text-xs text-slate-400 mb-5">Chọn dịch vụ bổ trợ kèm theo cho chuyến lưu trú này</p>
+            <p className="text-xs text-slate-500 mb-5">Chọn dịch vụ bổ trợ kèm theo cho chuyến lưu trú này</p>
 
             <div className="space-y-3">
                 {services.map((svc) => {

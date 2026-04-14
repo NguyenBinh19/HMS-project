@@ -107,8 +107,8 @@ const PartnerList = () => {
                 {/* HEADER & STATISTICS */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 uppercase">QUẢN LÝ ĐỐI TÁC</h1>
-                        <p className="text-slate-500 font-medium text-sm italic">
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2 uppercase">QUẢN LÝ ĐỐI TÁC</h1>
+                        <p className="text-slate-500 font-medium text-sm ">
                             Danh sách {activeTab === "Agency" ? "Đại lý lữ hành" : "Cơ sở lưu trú"} chính thức trên hệ thống
                         </p>
                     </div>
@@ -118,7 +118,7 @@ const PartnerList = () => {
                                 <Users size={20}/>
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Đang hiển thị</p>
+                                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tighter">Đang hiển thị</p>
                                 <p className="text-lg font-black text-slate-800">{filteredPartners.length}</p>
                             </div>
                         </div>
@@ -220,25 +220,25 @@ const PartnerList = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">STT
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">STT
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên đối
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Tên đối
                                 tác
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Liên
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Liên
                                 hệ
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Địa
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Địa
                                 chỉ
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">Trạng
                                 thái
                             </th>
                             {activeTab === "Agency" && (
-                                <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Tài
+                                <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Tài
                                     chính</th>
                             )}
-                            <th className="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Thao
+                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Thao
                                 tác
                             </th>
                         </tr>

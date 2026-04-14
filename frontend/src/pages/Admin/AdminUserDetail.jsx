@@ -152,7 +152,7 @@ const AdminUserDetail = () => {
             {/* Back Button */}
             <button
                 onClick={() => navigate("/admin/users")}
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 font-medium text-sm"
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-700 mb-6 font-medium text-sm"
             >
                 <ArrowLeft size={16}/> Quay lại danh sách người dùng
             </button>
@@ -228,14 +228,6 @@ const AdminUserDetail = () => {
                             Thông tin cơ bản
                         </button>
 
-                        {/*{isAgency && (*/}
-                        {/*    <button*/}
-                        {/*        onClick={() => setActiveTab("ranking")}*/}
-                        {/*        className={`py-2 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${activeTab === 'ranking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}*/}
-                        {/*    >*/}
-                        {/*        <Award size={16}/> Phân hạng đại lý*/}
-                        {/*    </button>*/}
-                        {/*)}*/}
                     </div>
                 </div>
                 {/* Content Area */}
@@ -358,7 +350,7 @@ const InfoRow = ({ icon, label, value }) => (
     <div className="flex items-start gap-3">
         <span className="text-slate-400 mt-0.5 flex-shrink-0">{icon}</span>
         <div className="flex-1">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</p>
             <div className="text-sm font-medium text-slate-700 mt-0.5">
                 {typeof value === "string" ? value : value}
             </div>

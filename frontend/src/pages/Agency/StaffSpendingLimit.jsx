@@ -82,7 +82,7 @@ const StaffBookingAnalytics = () => {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-[24px] shadow-sm border border-slate-100">
                     <div>
                         <h1 className="text-2xl font-black tracking-tighter ">Thống kê doanh số nhân viên</h1>
-                        <p className="text-xs font-bold text-slate-400 tracking-[0.2em] mt-1">Theo dõi hiệu suất đặt phòng thời gian thực</p>
+                        <p className="text-xs font-bold text-slate-600  mt-1">Theo dõi hiệu suất đặt phòng thời gian thực</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -205,7 +205,7 @@ const StatBox = ({label, value, icon, color}) => (
     <div className="bg-white p-6 rounded-[28px] border border-slate-100 shadow-sm flex items-center gap-5">
         <div className={`${color} p-4 rounded-2xl text-white shadow-lg`}>{icon}</div>
         <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{label}</p>
             <p className="text-xl font-black text-slate-800 tracking-tight">{value}</p>
         </div>
     </div>
@@ -237,7 +237,7 @@ const StaffCompactCard = ({ staff, name, isSelected, onSelect, formatVND }) => (
         </div>
 
         <div className="space-y-1">
-            <p className={`text-[9px] font-black uppercase tracking-[0.1em] ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
+            <p className={`text-[9px] font-black uppercase tracking-[0.1em] ${isSelected ? 'text-blue-100' : 'text-slate-600'}`}>
                 Tổng doanh số
             </p>
             <p className={`text-lg font-black tracking-tighter ${isSelected ? 'text-white' : 'text-slate-800'}`}>

@@ -51,7 +51,7 @@ public class SecurityConfig {
             "/storage/**",
             "/transaction-history/**",
             "/pdf-documents",
-            "/pdf-documents/**"
+            "/pdf-documents/**",
     };
 
     @Value("${app.frontend-url:http://localhost:5173}")

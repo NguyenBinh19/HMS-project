@@ -368,7 +368,7 @@ const KYCReviewModal = ({ data, onClose, onRefresh }) => {
 // Component hiển thị thông tin con
 const InfoBox = ({label, value, isTextArea}) => (
     <div className="space-y-1.5">
-        <label className="text-[10px] font-black text-slate-400 block ml-1 uppercase tracking-widest">{label}</label>
+        <label className="text-[10px] font-black text-slate-500 block ml-1 uppercase tracking-widest">{label}</label>
         <div
             className={`w-full px-4 py-3 border-2 border-slate-50 rounded-2xl bg-slate-50/50 text-[12px] font-bold text-slate-700 shadow-sm transition-all hover:border-slate-100 ${isTextArea ? 'min-h-[60px] leading-relaxed' : ''}`}>
             {value || <span className="text-slate-300 italic font-normal">Chưa cập nhật</span>}
