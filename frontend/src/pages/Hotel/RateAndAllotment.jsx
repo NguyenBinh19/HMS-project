@@ -44,7 +44,7 @@ const RateAndAllotment = () => {
     useEffect(() => {
         const loadRoomTypes = async () => {
             try {
-                const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
+                const res = await roomTypeService.getRoomTypesByHotelId();
                 const list = res.result || res || [];
                 setRoomTypes(list.map(rt => ({
                     ...rt,

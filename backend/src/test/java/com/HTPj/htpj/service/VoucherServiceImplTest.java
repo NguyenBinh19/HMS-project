@@ -7,6 +7,7 @@
 //import com.HTPj.htpj.repository.HotelRepository;
 //import com.HTPj.htpj.repository.UserRepository;
 //import com.HTPj.htpj.service.impl.EmailServiceImpl;
+//import com.HTPj.htpj.service.impl.VoucherServiceImpl;
 //import org.junit.jupiter.api.BeforeEach;
 //import org.junit.jupiter.api.Test;
 //import org.junit.jupiter.api.extension.ExtendWith;
@@ -104,7 +105,25 @@
 //        // THEN
 //        assertThat(result).isNotEmpty();
 //    }
+//    @Test
+//    void generateVoucherPdf_UserNotFound_Fail() {
+//        // GIVEN
+//        String bookingCode = "BK123";
+//        String username = "unknown_user";
 //
+//        // Sử dụng doReturn vì voucherService là @Spy
+//        doReturn(username).when(voucherService).extractUserId();
+//
+//        // Giả lập DB không tìm thấy user
+//        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+//
+//        // WHEN & THEN
+//        AppException ex = org.junit.jupiter.api.Assertions.assertThrows(
+//                AppException.class,
+//                () -> voucherService.generateVoucherPdf(bookingCode)
+//        );
+//        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.UNAUTHENTICATED);
+//    }
 //    @Test
 //    void generateVoucherPdf_Fail_AgencyNotFound() {
 //        // GIVEN

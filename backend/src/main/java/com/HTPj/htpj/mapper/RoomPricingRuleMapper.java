@@ -56,7 +56,7 @@ public class RoomPricingRuleMapper {
         e.setAction(req.getAction());
         e.setAdjustmentType(req.getAdjustmentType());
         e.setAdjustmentValue(req.getAdjustmentValue());
-        e.setPriority(req.getPriority());
+        e.setPriority(0);
         e.setIsActive(req.getIsActive());
     }
 }

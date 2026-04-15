@@ -107,12 +107,12 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
                         </div>
                     </div>
 
-                    <button
+                    {/* <button
                         onClick={onVerifyNow}
                         className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                         Xác thực OTP ngay <ArrowRight size={18} />
-                    </button>
+                    </button> */}
                 </div>
             </div>
         </div>

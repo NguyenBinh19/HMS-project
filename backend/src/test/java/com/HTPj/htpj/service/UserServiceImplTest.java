@@ -1,6 +1,7 @@
 //package com.HTPj.htpj.service;
 //
 //import static org.assertj.core.api.Assertions.assertThat;
+//import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 //import static org.junit.jupiter.api.Assertions.assertThrows;
 //import static org.mockito.ArgumentMatchers.any;
 //import static org.mockito.ArgumentMatchers.anyString;
@@ -53,7 +54,7 @@
 //    private UserCreationRequest creationRequest;
 //    private UserResponse userResponse;
 //    private Users mockUser;
-//
+//    private MockMultipartFile validFile;
 //    @BeforeEach
 //    void setUp() {
 //        creationRequest = UserCreationRequest.builder()
@@ -76,6 +77,13 @@
 //                .email("nguyenbinh@gmail.com")
 //                .username("binh123")
 //                .build();
+//
+//        validFile = new MockMultipartFile(
+//                "file",
+//                "test-image.jpg",
+//                "image/jpeg",
+//                "some-image-data".getBytes()
+//        );
 //    }
 //
 //    // --- TEST CREATE USER ---
@@ -165,6 +173,15 @@
 //
 //        // THEN
 //        verify(userRepository, times(1)).deleteById(userId);
+//    }
+//    @Test
+//    void deleteUser_UserNotFound_Fail() {
+//        // GIVEN
+//        when(userRepository.existsById(anyString())).thenReturn(false);
+//
+//        // WHEN & THEN
+//        assertThrows(AppException.class, () -> userService.deleteUser("invalid-id"));
+//        verify(userRepository, never()).deleteById(anyString());
 //    }
 //    @Test
 //    void getUsers_Success() {
@@ -282,6 +299,24 @@
 //        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_IMAGE_FORMAT);
 //    }
 //    @Test
+//    void updateMyAvatar_NoExtension_Fail() {
+//        MockMultipartFile file = new MockMultipartFile("file", "no-extension-file", "image/jpeg", "data".getBytes());
+//        // Giả sử getFileExtension sẽ throw lỗi hoặc return empty dẫn đến lỗi upload
+//        assertThrows(AppException.class, () -> userService.updateMyAvatar(file));
+//    }
+//
+//    @Test
+//    void updateMyAvatar_NoOldAvatar_Success() throws IOException {
+//        Users user = Users.builder().id("user-1").avatarUrl(null).build();
+//        mockJwtContext("user-1");
+//        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+//
+//        userService.updateMyAvatar(validFile);
+//
+//        verify(s3Service, never()).deleteFile(anyString()); // Quan trọng: không delete file cũ
+//        verify(s3Service).uploadFile(any(), anyString());
+//    }
+//    @Test
 //    void removeMyAvatar_Success() {
 //        // GIVEN
 //        mockJwtContext("user-123");
@@ -298,23 +333,6 @@
 //        verify(s3Service).deleteFile(anyString());
 //        assertThat(mockUser.getAvatarUrl()).isNull();
 //    }
-//
-//    // --- TEST ROLE SELECTION ---
-//
-//    @Test
-//    void selectRoleForCurrentUser_AlreadyHasRole_Fail() {
-//        // GIVEN
-//        mockJwtContext("user-123");
-//        // Giả lập user đã có role rồi
-//        mockUser.setRoles(new HashSet<>(Collections.singleton(com.HTPj.htpj.entity.Role.builder().name("EXISTING").build())));
-//        when(userRepository.findById("user-123")).thenReturn(Optional.of(mockUser));
-//
-//        // WHEN & THEN
-//        AppException ex = assertThrows(AppException.class, () ->
-//                userService.selectRoleForCurrentUser(PredefinedRole.HOTEL_MANAGER_ROLE));
-//        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_ROLE_SELECTION);
-//    }
-//
 //
 //
 //    @Test
@@ -387,6 +405,58 @@
 //        // THEN
 //        assertThat(response.getStatus()).isEqualTo("ACTIVE");
 //        verify(userRepository).save(argThat(u -> u.getStatus().equals("ACTIVE")));
+//    }
+//
+//    @Test
+//    void banUser_UserNotFound_Fail() {
+//        // GIVEN
+//        String userId = "non-existent-id";
+//        BanUserRequest request = new BanUserRequest(true, "Reason");
+//
+//        // Giả lập không tìm thấy user trong Database
+//        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+//
+//        // WHEN & THEN
+//        AppException ex = assertThrows(AppException.class, () -> userService.banUser(userId, request));
+//
+//        // Kiểm tra ErrorCode có đúng là USER_NOT_EXISTED không
+//        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_EXISTED);
+//
+//        // Đảm bảo không có lệnh save nào được gọi sau đó
+//        verify(userRepository, never()).save(any());
+//        verifyNoInteractions(userMapper);
+//    }
+//
+//    // --- TEST GET USER BY ID ---
+//
+//    @Test
+//    void getUser_Success() {
+//        // GIVEN
+//        String userId = "user-123";
+//        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+//        when(userMapper.toUserResponse(mockUser)).thenReturn(userResponse);
+//
+//        // WHEN
+//        var response = userService.getUser(userId);
+//
+//        // THEN
+//        assertThat(response.getId()).isEqualTo(userId);
+//        assertThat(response.getEmail()).isEqualTo("nguyenbinh@gmail.com");
+//        verify(userRepository).findById(userId);
+//    }
+//
+//    @Test
+//    void getUser_UserNotFound_Fail() {
+//        // GIVEN
+//        String userId = "non-existent-id";
+//        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+//
+//        // WHEN & THEN
+//        AppException ex = assertThrows(AppException.class, () -> userService.getUser(userId));
+//
+//        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_EXISTED);
+//        verify(userRepository).findById(userId);
+//        verifyNoInteractions(userMapper); // Đảm bảo mapper không được gọi nếu không có data
 //    }
 //    // --- HELPER ---
 //
