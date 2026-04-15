@@ -6,24 +6,20 @@ import com.HTPj.htpj.dto.request.addonservice.CreateAddonServiceRequest;
 import com.HTPj.htpj.dto.request.addonservice.UpdateAddonServiceRequest;
 import com.HTPj.htpj.dto.response.addonservice.AddonServiceResponse;
 import com.HTPj.htpj.dto.response.addonservice.BookingAddonServiceResponse;
-import com.HTPj.htpj.entity.AddonService;
-import com.HTPj.htpj.entity.Booking;
-import com.HTPj.htpj.entity.BookingAddonService;
-import com.HTPj.htpj.entity.Hotel;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.AddonServiceMapper;
-import com.HTPj.htpj.repository.AddonServiceRepository;
-import com.HTPj.htpj.repository.BookingAddonServiceRepository;
-import com.HTPj.htpj.repository.BookingRepository;
-import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AddonServiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +30,9 @@ public class AddonServiceServiceImpl implements AddonServiceService {
     private final BookingAddonServiceRepository bookingAddonServiceRepository;
     private final HotelRepository hotelRepository;
     private final BookingRepository bookingRepository;
+    private final AgencyCreditHistoryRepository agencyCreditHistoryRepository;
+    private final AgencyRepository agencyRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
     public AddonServiceResponse createService(CreateAddonServiceRequest request) {
@@ -117,16 +116,23 @@ public class AddonServiceServiceImpl implements AddonServiceService {
                 .stream().map(AddonServiceMapper::toResponse).collect(Collectors.toList());
     }
 
+    @Transactional
     @Override
     public List<BookingAddonServiceResponse> addServicesToBooking(AddBookingAddonsRequest request) {
+
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-        List<BookingAddonService> saved = request.getServices().stream().map(req -> {
+        Agency agency = agencyRepository.findById(booking.getAgencyId())
+                .orElseThrow(() -> new AppException(ErrorCode.AGENCY_NOT_FOUND));
+
+        List<BookingAddonService> addonServices = request.getServices().stream().map(req -> {
+
             AddonService addonService = addonServiceRepository.findById(req.getServiceId())
                     .orElseThrow(() -> new AppException(ErrorCode.ADDON_SERVICE_NOT_FOUND));
 
-            int qty = req.getQuantity() != null && req.getQuantity() > 0 ? req.getQuantity() : 1;
+            int qty = (req.getQuantity() != null && req.getQuantity() > 0) ? req.getQuantity() : 1;
+
             BigDecimal unitPrice = addonService.getNetPrice();
             BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(qty));
 
@@ -142,19 +148,108 @@ public class AddonServiceServiceImpl implements AddonServiceService {
                     .specialNote(req.getSpecialNote())
                     .createdAt(LocalDateTime.now())
                     .build();
+
         }).collect(Collectors.toList());
 
-        List<BookingAddonService> savedList = bookingAddonServiceRepository.saveAll(saved);
+        List<BookingAddonService> savedList = bookingAddonServiceRepository.saveAll(addonServices);
 
-        // Cập nhật finalAmount: cộng thêm tổng tiền dịch vụ vào booking
         BigDecimal totalAddonCost = savedList.stream()
                 .map(BookingAddonService::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        booking.setFinalAmount(booking.getFinalAmount().add(totalAddonCost));
+
+        String paymentMethod = booking.getPaymentMethod();
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
+        if ("CREDIT".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal before = agency.getCurrentCredit();
+            if (before == null || before.compareTo(totalAddonCost) < 0) {
+                throw new AppException(ErrorCode.INSUFFICIENT_BALANCE);
+            }
+
+            BigDecimal after = before.subtract(totalAddonCost);
+
+            AgencyCreditHistory creditHistory = AgencyCreditHistory.builder()
+                    .agency(agency)
+                    .booking(booking)
+                    .creditBefore(before)
+                    .amount(totalAddonCost)
+                    .creditAfter(after)
+                    .type("PAID_ADDON")
+                    .description("Thanh toán addon booking " + booking.getBookingCode())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            agencyCreditHistoryRepository.save(creditHistory);
+
+            TransactionHistory tx = TransactionHistory.builder()
+                    .transactionDate(LocalDateTime.now())
+                    .transactionType("Payment")
+                    .description("Thanh toán addon booking (" + booking.getBookingCode() + ")")
+                    .sourceType("Credit")
+                    .amount(totalAddonCost)
+                    .balanceAfter(after)
+                    .status("Success")
+                    .direction("OUT")
+                    .transactionCode("PENDING-" + UUID.randomUUID().toString().substring(0, 8))
+                    .agency(agency)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            tx = transactionHistoryRepository.save(tx);
+            tx.setTransactionCode(String.format("TRK-%06d", tx.getId()));
+            transactionHistoryRepository.save(tx);
+
+            agency.setCurrentCredit(after);
+            agencyRepository.save(agency);
+
+        } else if ("WALLET".equalsIgnoreCase(paymentMethod)) {
+
+            BigDecimal before = agency.getWalletBalance();
+            if (before == null || before.compareTo(totalAddonCost) < 0) {
+                throw new AppException(ErrorCode.INSUFFICIENT_BALANCE);
+            }
+
+            BigDecimal after = before.subtract(totalAddonCost);
+
+            agency.setWalletBalance(after);
+            agencyRepository.save(agency);
+
+            TransactionHistory tx = TransactionHistory.builder()
+                    .transactionDate(LocalDateTime.now())
+                    .transactionType("Payment")
+                    .description("Thanh toán addon booking (" + booking.getBookingCode() + ")")
+                    .sourceType("Wallet")
+                    .amount(totalAddonCost)
+                    .balanceAfter(after)
+                    .status("Success")
+                    .direction("OUT")
+                    .transactionCode("PENDING-" + UUID.randomUUID().toString().substring(0, 8))
+                    .agency(agency)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            tx = transactionHistoryRepository.save(tx);
+            tx.setTransactionCode(String.format("TRK-%06d", tx.getId()));
+            transactionHistoryRepository.save(tx);
+
+        } else {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
+        BigDecimal oldTotalAmount = booking.getTotalAmount() == null ? BigDecimal.ZERO : booking.getTotalAmount();
+        BigDecimal oldFinalAmount = booking.getFinalAmount() == null ? BigDecimal.ZERO : booking.getFinalAmount();
+
+        booking.setTotalAmount(oldTotalAmount.add(totalAddonCost));
+        booking.setFinalAmount(oldFinalAmount.add(totalAddonCost));
         booking.setUpdatedAt(LocalDateTime.now());
+
         bookingRepository.save(booking);
 
-        return savedList.stream().map(AddonServiceMapper::toBookingAddonResponse).collect(Collectors.toList());
+        return savedList.stream()
+                .map(AddonServiceMapper::toBookingAddonResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
