@@ -135,16 +135,13 @@ const Header = () => {
         // Trường hợp bị từ chối
         if (kycData?.status === "REJECTED") {
             return (
-                <button
-                    onClick={() => navigate("/kyc-intro")}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all"
-                >
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed">
                     <AlertCircle size={18} />
                     <div className="flex flex-col items-start leading-none">
-                        <span className="text-[12px] font-bold">Làm lại hồ sơ</span>
-                        <span className="text-[10px] opacity-80">Hồ sơ bị từ chối</span>
+                        <span className="text-[12px] font-bold">Hồ sơ bị từ chối</span>
+                        <span className="text-[10px] opacity-80">Vui lòng liên hệ hệ thống.</span>
                     </div>
-                </button>
+                </div>
             );
         }
         // Trường hợp chưa gửi hồ sơ (null hoặc status khác)

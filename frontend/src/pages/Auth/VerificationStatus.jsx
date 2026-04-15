@@ -145,7 +145,7 @@ const VerificationStatusPage = () => {
 
     // ĐIỀU KIỆN: Chỉ bản ghi mới nhất VÀ có trạng thái cho phép mới được hiện nút Cập nhật
     const isLatest = kycDetail?.id === kycList[0]?.id;
-    const statusAllowsUpdate = ["VERIFIED", "REJECTED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase());
+    const statusAllowsUpdate = ["VERIFIED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase());
     const canUpdate = isLatest && statusAllowsUpdate;
 
     return (
@@ -355,7 +355,7 @@ const getStatusTheme = (status) => {
                 icon: <AlertCircle size={48} className="text-red-500" />,
                 bg: "bg-red-50/50", border: "border-red-100",
                 text: "text-red-700", badgeBg: "bg-red-100",
-                label: "Bị từ chối", desc: "Rất tiếc, hồ sơ định danh không được thông qua. Vui lòng xem lý do và cập nhật lại thông tin."
+                label: "Bị từ chối", desc: "Hồ sơ của bạn đã bị từ chối vĩnh viễn hoặc vi phạm nghiêm trọng chính sách. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết."
             };
         case "NEED_MORE_INFORMATION":
             return {
