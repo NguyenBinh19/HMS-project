@@ -20,6 +20,7 @@ const CreditWallet = () => {
 
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [policyUrl, setPolicyUrl] = useState("");
+  const [isPdfLoading, setIsPdfLoading] = useState(true);
 
 // Tải link PDF chính sách tín dụng
   useEffect(() => {
@@ -209,34 +210,64 @@ const CreditWallet = () => {
       {showPdfModal && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
-              {/* Header Modal */}
+              {/* Header Modal - Nút điều hướng */}
               <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
                 <a
                     href={policyUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                    title="Mở trong tab mới"
                 >
-                  <ArrowUpCircle size={18} className="rotate-45" />
+                  <ExternalLink size={18} />
                 </a>
                 <button
-                    onClick={() => setShowPdfModal(false)}
+                    onClick={() => {
+                      setShowPdfModal(false);
+                      setIsPdfLoading(true);
+                    }}
                     className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                 >
                   <X size={18} />
                 </button>
               </div>
-              {/* Iframe content */}
-              <div className="flex-1 bg-slate-100 relative">
-                <iframe
-                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
-                    className="w-full h-full border-none relative z-10"
-                    title="Credit Policy Preview"
-                />
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">
-                  <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đang tải tài liệu...</span>
-                </div>
+
+              <div className="flex-1 bg-slate-100 relative overflow-hidden">
+                {policyUrl ? (
+                    <div className="w-full h-full overflow-hidden">
+                      <object
+                          data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                          type="application/pdf"
+                          style={{
+                            width: '100%',
+                            height: 'calc(100% + 40px)',
+                            marginTop: '-40px'
+                          }}
+                          className="relative z-10"
+                          onLoad={() => setIsPdfLoading(false)}
+                      >
+                        <iframe
+                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                            className="w-full h-full border-none"
+                            title="Credit Policy Preview"
+                            onLoad={() => setIsPdfLoading(false)}
+                        />
+                      </object>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white">
+                      <p className="text-sm font-medium">Tài liệu chính sách chưa khả dụng.</p>
+                    </div>
+                )}
+
+                {isPdfLoading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
+                      <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                            Đang tải phụ lục tín dụng...
+                        </span>
+                    </div>
+                )}
               </div>
             </div>
           </div>

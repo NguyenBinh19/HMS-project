@@ -34,6 +34,7 @@ const PayoutList = () => {
     const rowsPerPage = 10;
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [policyUrl, setPolicyUrl] = useState("");
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
 
     useEffect(() => {
         const fetchPolicy = async () => {
@@ -532,7 +533,7 @@ const PayoutList = () => {
                 </div>
             )}
 
-            {/* MODAL PDF PHỤ LỤC  */}
+            {/* MODAL PDF PHỤ LỤC */}
             {showPdfModal && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300 border border-white/20">
@@ -542,31 +543,57 @@ const PayoutList = () => {
                                 href={policyUrl}
                                 target="_blank"
                                 rel="noreferrer"
+                                title="Mở tab mới"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
                                 <ExternalLink size={18}/>
                             </a>
                             <button
-                                onClick={() => setShowPdfModal(false)}
+                                onClick={() => {
+                                    setShowPdfModal(false);
+                                    setIsPdfLoading(true); // Reset trạng thái loading
+                                }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
                                 <X size={18}/>
                             </button>
                         </div>
-                        {/* PDF Viewer */}
-                        <div className="flex-1 bg-slate-50 relative">
-                            <iframe
-                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(policyUrl)}&embedded=true`}
-                                className="w-full h-full border-none relative z-10"
-                                title="Phụ lục thanh toán"
-                            />
-                            {/* Loading State đằng sau iframe */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
-                                <Loader2 size={32} className="animate-spin text-blue-600/20 mb-2"/>
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-                                    Đang tải tài liệu...
-                                </span>
-                            </div>
+
+                        <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                            {policyUrl ? (
+                                <div className="w-full h-full overflow-hidden">
+                                    <object
+                                        data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                        type="application/pdf"
+                                        style={{
+                                            width: '100%',
+                                            height: 'calc(100% + 40px)',
+                                            marginTop: '-40px'
+                                        }}
+                                        className="relative z-10"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    >
+                                        <iframe
+                                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                            className="w-full h-full border-none"
+                                            title="Tài liệu phụ lục"
+                                            onLoad={() => setIsPdfLoading(false)}
+                                        />
+                                    </object>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white">
+                                    <p className="text-sm font-medium uppercase tracking-widest opacity-50">Tài liệu không tồn tại</p>
+                                </div>
+                            )}
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                            Đang chuẩn bị tài liệu...
+                        </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

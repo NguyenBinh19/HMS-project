@@ -22,6 +22,7 @@ export default function HotelSearchForm({ variant = "hero" }) {
     const [children, setChildren] = useState(Number(searchParams.get("children")) || 0);
     const [showGuestPicker, setShowGuestPicker] = useState(false);
     const guestRef = useRef(null);
+    const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
         if (checkIn) {
@@ -52,7 +53,10 @@ export default function HotelSearchForm({ variant = "hero" }) {
     }, []);
 
     const handleSearchClick = () => {
-        if (!keyword.trim()) return;
+        if (!keyword.trim()) {
+            setHasError(true);
+            return;
+        }
         // Validate cuối cùng trước khi chuyển trang
         if (new Date(checkOut) <= new Date(checkIn)) {
             alert("Ngày trả phòng phải sau ngày nhận phòng!");
@@ -99,67 +103,101 @@ export default function HotelSearchForm({ variant = "hero" }) {
                 __html: `
                 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
                 .animate-marquee { display: inline-block; animation: marquee 25s linear infinite; }
-            `
+                
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+`
             }}/>
-
             {/* Điểm đến */}
             <div
                 className="flex-[1.8] min-w-0 w-full relative group"
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
-                {isHero && <label className="text-[13px] font-bold text-slate-700 mb-1 block">Bạn muốn đi đâu?</label>}
-                {!isHero &&
-                    <label className="text-[10px] font-bold text-slate-500 ml-1 mb-0.5 block uppercase">Địa điểm / Khách
-                        sạn</label>}
+                {isHero && (
+                    <label className={`text-[13px] font-bold mb-1 block transition-colors ${hasError ? "text-red-600" : "text-slate-700"}`}>
+                        Bạn muốn đi đâu?
+                    </label>
+                )}
+                {!isHero && (
+                    <label className={`text-[10px] font-bold ml-1 mb-0.5 block uppercase transition-colors ${hasError ? "text-red-600" : "text-slate-500"}`}>
+                        Địa điểm / Khách sạn
+                    </label>
+                )}
 
-                        {showTooltip && (
-                            <div className="absolute bottom-full left-0 mb-2 w-max max-w-[400px] bg-slate-800 text-white text-[11px] p-3 rounded-lg shadow-xl z-[60] animate-in fade-in slide-in-from-bottom-2">
-                                <div className="flex gap-2 mb-2 text-blue-300 font-bold uppercase items-center">
-                                    <Info size={14}/> Gợi ý tìm kiếm
-                                </div>
-
-                                <div className="space-y-1.5 text-slate-200">
-                                    {/* Dùng whitespace-nowrap để chặn xuống dòng */}
-                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                        <span className="flex-shrink-0">-</span>
-                                        <span>Tìm theo <b>Thành phố</b> (Đà Nẵng, Hà Nội...)</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                        <span className="flex-shrink-0">-</span>
-                                        <span>Tìm theo <b>Tên khách sạn</b> (Mường Thanh, Pullman...)</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                        <span className="flex-shrink-0">-</span>
-                                        <span>Tìm theo <b>Địa chỉ</b> hoặc <b>Phường/Xã</b> cụ thể</span>
-                                    </div>
-                                </div>
-
-                                {/* Mũi tên tooltip */}
-                                <div className="absolute top-full left-6 -mt-1 border-8 border-transparent border-t-slate-800"></div>
+                {showTooltip && (
+                    <div
+                        className="absolute bottom-full left-0 mb-2 w-max max-w-[400px] bg-slate-800 text-white text-[11px] p-3 rounded-lg shadow-xl z-[60] animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex gap-2 mb-2 text-blue-300 font-bold uppercase items-center">
+                            <Info size={14}/> Gợi ý tìm kiếm
+                        </div>
+                        <div className="space-y-1.5 text-slate-200">
+                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="flex-shrink-0">-</span>
+                                <span>Tìm theo <b>Thành phố</b> (Đà Nẵng, Hà Nội...)</span>
                             </div>
-                        )}
+                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="flex-shrink-0">-</span>
+                                <span>Tìm theo <b>Tên khách sạn</b> (Mường Thanh, Pullman...)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="flex-shrink-0">-</span>
+                                <span>Tìm theo <b>Địa chỉ</b> hoặc <b>Phường/Xã</b> cụ thể</span>
+                            </div>
+                        </div>
+                        <div className="absolute top-full left-6 -mt-1 border-8 border-transparent border-t-slate-800"></div>
+                    </div>
+                )}
+
                 <div
-                    className="relative flex items-center bg-white rounded-lg px-3 py-2 border border-slate-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-50 transition-all h-[42px] overflow-hidden">
-                    <Search className="text-slate-400 mr-2 flex-shrink-0 z-10 bg-white" size={18}/>
+                    className={`relative flex items-center bg-white rounded-lg px-3 py-2 border transition-all h-[42px] overflow-hidden ${
+                        hasError
+                            ? "border-red-500 ring-2 ring-red-50"
+                            : "border-slate-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-50"
+                    }`}
+                >
+                    <Search className={`${hasError ? "text-red-500" : "text-slate-400"} mr-2 flex-shrink-0 z-10 bg-white`} size={18}/>
                     <div className="relative flex-1 h-full flex items-center overflow-hidden">
                         {!keyword && !isFocused && (
                             <div className="absolute inset-0 flex items-center pointer-events-none whitespace-nowrap">
-                                <div className="animate-marquee text-slate-400 text-sm pl-[100%]">{marqueeText}</div>
-                                <div className="animate-marquee text-slate-400 text-sm pl-4">{marqueeText}</div>
+                                <div className={`animate-marquee text-sm pl-[100%] ${hasError ? "text-red-300 font-bold" : "text-slate-400"}`}>
+                                    {marqueeText}
+                                </div>
+                                <div className={`animate-marquee text-sm pl-4 ${hasError ? "text-red-300 font-bold" : "text-slate-400"}`}>
+                                    {marqueeText}
+                                </div>
                             </div>
                         )}
+
                         <input
                             type="text"
                             className="bg-transparent outline-none text-slate-700 text-sm w-full font-medium z-10 relative"
                             value={keyword}
-                            onFocus={() => setIsFocused(true)}
+                            onFocus={() => {
+                                setIsFocused(true);
+                                setHasError(false); // Xóa lỗi khi người dùng bắt đầu nhập
+                            }}
                             onBlur={() => setIsFocused(false)}
-                            onChange={(e) => setKeyword(e.target.value)}
+                            onChange={(e) => {
+                                setKeyword(e.target.value);
+                                if (e.target.value.trim()) setHasError(false);
+                            }}
                             onKeyDown={(e) => e.key === "Enter" && handleSearchClick()}
                         />
                     </div>
                 </div>
+
+                {hasError && (
+                    <div className="absolute -bottom-5 left-1 whitespace-nowrap z-20">
+            <span className="text-[10px] font-black text-red-400 tracking-tight animate-in fade-in slide-in-from-top-1">
+                * Vui lòng nhập thông tin tìm kiếm
+            </span>
+                    </div>
+                )}
             </div>
 
             {/* Nhận phòng */}
