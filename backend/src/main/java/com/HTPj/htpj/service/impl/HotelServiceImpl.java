@@ -113,7 +113,7 @@ public class HotelServiceImpl implements HotelService {
                 .totalReviews(totalReviews)
                 .build();
     }
-    public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms) {
+    public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms, Integer adults, Integer children) {
 
         List<HotelSearchProjection> hotels =
                 hotelRepository.searchHotels(keyword);
@@ -136,11 +136,16 @@ public class HotelServiceImpl implements HotelService {
                 ));
 
         boolean filterByAvailability = checkIn != null && checkOut != null;
-        int requiredRooms = rooms != null && rooms > 0 ? rooms : 1;
+        int requiredRooms = rooms != null ? rooms : 0;
+        int requiredAdults = adults != null ? adults : 0;
+        int requiredChildren = children != null ? children : 0;
+        boolean filterByRooms = requiredRooms > 0;
+        boolean filterByGuests = requiredAdults > 0 || requiredChildren > 0;
 
         // Tính availability nếu có ngày
         Map<Integer, BigDecimal> minPriceMap = new HashMap<>();
         Map<Integer, Integer> availableRoomMap = new HashMap<>();
+        Map<Integer, Integer> maxGuestsMap = new HashMap<>();
 
         if (filterByAvailability) {
             List<RoomType> allRoomTypes = roomTypeRepository.findByHotel_HotelIdIn(hotelIds);
@@ -173,6 +178,7 @@ public class HotelServiceImpl implements HotelService {
             for (Integer hotelId : hotelIds) {
                 List<RoomType> rts = roomTypesByHotel.getOrDefault(hotelId, List.of());
                 int totalAvailable = 0;
+                int totalMaxGuests = 0;
                 BigDecimal minPrice = null;
 
                 for (RoomType rt : rts) {
@@ -182,6 +188,9 @@ public class HotelServiceImpl implements HotelService {
 
                     if (available > 0) {
                         totalAvailable += available;
+                        int maxAdultsPerRoom = rt.getMaxAdults() != null ? rt.getMaxAdults() : 2;
+                        int maxChildrenPerRoom = rt.getMaxChildren() != null ? rt.getMaxChildren() : 0;
+                        totalMaxGuests += available * (maxAdultsPerRoom + maxChildrenPerRoom);
                         if (minPrice == null || rt.getBasePrice().compareTo(minPrice) < 0) {
                             minPrice = rt.getBasePrice();
                         }
@@ -189,36 +198,62 @@ public class HotelServiceImpl implements HotelService {
                 }
 
                 availableRoomMap.put(hotelId, totalAvailable);
+                maxGuestsMap.put(hotelId, totalMaxGuests);
                 if (minPrice != null) {
                     minPriceMap.put(hotelId, minPrice);
                 }
             }
         }
 
-        return hotels.stream()
-                .filter(h -> {
-                    if (!filterByAvailability) return true;
-                    int available = availableRoomMap.getOrDefault(h.getHotelId(), 0);
-                    return available >= requiredRooms;
-                })
-                .map(h ->
-                        HotelDetailResponse.builder()
-                                .hotelId(h.getHotelId())
-                                .hotelName(h.getHotelName())
-                                .address(h.getAddress())
-                                .city(h.getCity())
-                                .country(h.getCountry())
-                                .phone(h.getPhone())
-                                .description(h.getDescription())
-                                .starRating(h.getStarRating())
-                                .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
-                                .amenities(parseAmenities(h.getAmenities()))
-                                .avgRating(h.getAvgRating())
-                                .totalReviews(h.getTotalReviews())
-                                .minPrice(minPriceMap.get(h.getHotelId()))
-                                .totalAvailableRooms(availableRoomMap.get(h.getHotelId()))
-                                .build()
-                ).toList();
+        int requiredGuests = requiredAdults + requiredChildren;
+
+        // Tách thành 2 danh sách: khách sạn phù hợp và khách sạn đề xuất
+        List<HotelDetailResponse> matchingHotels = new ArrayList<>();
+        List<HotelDetailResponse> suggestedHotels = new ArrayList<>();
+
+        for (HotelSearchProjection h : hotels) {
+            int available = availableRoomMap.getOrDefault(h.getHotelId(), 0);
+            int maxGuests = maxGuestsMap.getOrDefault(h.getHotelId(), 0);
+
+            boolean meetsRoomRequirement = !filterByAvailability || !filterByRooms || available >= requiredRooms;
+            boolean meetsGuestRequirement = !filterByAvailability || !filterByGuests || maxGuests >= requiredGuests;
+            boolean isSuggested = filterByAvailability && (filterByRooms || filterByGuests) && (!meetsRoomRequirement || !meetsGuestRequirement);
+
+            // Bỏ qua khách sạn không có phòng trống
+            if (filterByAvailability && available <= 0) {
+                continue;
+            }
+
+            HotelDetailResponse response = HotelDetailResponse.builder()
+                    .hotelId(h.getHotelId())
+                    .hotelName(h.getHotelName())
+                    .address(h.getAddress())
+                    .city(h.getCity())
+                    .country(h.getCountry())
+                    .phone(h.getPhone())
+                    .description(h.getDescription())
+                    .starRating(h.getStarRating())
+                    .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
+                    .amenities(parseAmenities(h.getAmenities()))
+                    .avgRating(h.getAvgRating())
+                    .totalReviews(h.getTotalReviews())
+                    .minPrice(minPriceMap.get(h.getHotelId()))
+                    .totalAvailableRooms(availableRoomMap.get(h.getHotelId()))
+                    .totalMaxGuests(maxGuestsMap.get(h.getHotelId()))
+                    .suggested(isSuggested)
+                    .build();
+
+            if (isSuggested) {
+                suggestedHotels.add(response);
+            } else {
+                matchingHotels.add(response);
+            }
+        }
+
+        // Trả về khách sạn phù hợp trước, sau đó khách sạn đề xuất
+        List<HotelDetailResponse> result = new ArrayList<>(matchingHotels);
+        result.addAll(suggestedHotels);
+        return result;
     }
 
     private List<String> parseAmenities(String amenitiesJson) {

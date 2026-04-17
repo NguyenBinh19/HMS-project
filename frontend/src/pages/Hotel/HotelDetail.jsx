@@ -150,9 +150,9 @@ export default function HotelDetailPage() {
                         id: staticRoom.roomTypeId,
                         name: staticRoom.roomTitle,
                         description: staticRoom.description,
-                        maxAdults: staticRoom.max_adults || 2,
-                        maxChildren: staticRoom.max_children || 0,
-                        area: staticRoom.room_area || 0,
+                        maxAdults: staticRoom.maxAdults || 2,
+                        maxChildren: staticRoom.maxChildren || 0,
+                        area: staticRoom.roomArea || 0,
                         bedType: staticRoom.bedType || "Giường đôi",
                         amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
                         price: dynamicRoom?.price || 0,
@@ -315,7 +315,7 @@ export default function HotelDetailPage() {
                                         <Star key={i} size={16} fill="currentColor" />
                                     ))}
                                 </div>
-                                <span className="text-slate-500 text-sm font-bold">4.8/5</span>
+                                <span className="text-slate-500 text-sm font-bold">{hotel.avgRating}/5</span>
                             </div>
 
                             <h1 className="text-3xl font-black text-slate-900 mb-2">

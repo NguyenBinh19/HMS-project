@@ -72,8 +72,10 @@ export default function HotelSearchEngine() {
                     </p>
 
                     {/* 3. Search Bar Widget */}
-                    <div className="w-full flex justify-center animate-in fade-in slide-in-from-bottom-5 duration-700">
-                        <HotelSearchForm variant="hero" />
+                    <div className="w-full max-w-5xl animate-in fade-in slide-in-from-bottom-5 duration-700">
+                        <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                            <HotelSearchForm variant="hero" />
+                        </div>
                     </div>
                 </div>
             </section>
