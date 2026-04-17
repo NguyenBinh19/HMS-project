@@ -38,7 +38,10 @@ export default function HotelSearchForm() {
     }, [checkIn, checkOut]);
 
     const handleSearchClick = () => {
-        if (!keyword.trim()) return;
+        if (!keyword.trim()) {
+        setError("Vui lòng nhập địa điểm, địa chỉ hoặc tên khách sạn");
+        return;
+    }
 
         // Nếu có lọc theo phòng/khách thì yêu cầu nhập ngày
         const hasRoomGuestFilter = roomCount > 0 || adults > 0 || children > 0;
