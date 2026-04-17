@@ -217,28 +217,27 @@ const PartnerList = () => {
 
                 {/* DATA TABLE */}
                 <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden min-h-[400px]">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse table-fixed">
                         <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">STT
+                            <th className="w-[60px] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">STT</th>
+                            <th className="w-[25%] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Tên
+                                đối tác
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Tên đối
-                                tác
-                            </th>
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Liên
+                            <th className="w-[20%] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Liên
                                 hệ
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Địa
+                            <th className="w-[20%] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest">Địa
                                 chỉ
                             </th>
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">Trạng
+                            <th className="w-[150px] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">Trạng
                                 thái
                             </th>
                             {activeTab === "Agency" && (
-                                <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Tài
+                                <th className="w-[15%] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Tài
                                     chính</th>
                             )}
-                            <th className="p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Thao
+                            <th className="w-[80px] p-6 text-[11px] font-black text-slate-600 uppercase tracking-widest text-right">Thao
                                 tác
                             </th>
                         </tr>
@@ -247,8 +246,9 @@ const PartnerList = () => {
                         {loading ? (
                             <tr>
                                 <td colSpan="6" className="p-20 text-center">
-                                    <Loader2 className="animate-spin inline-block text-blue-600 mb-4" size={40} />
-                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest">Đang tải dữ liệu hệ thống...</p>
+                                    <Loader2 className="animate-spin inline-block text-blue-600 mb-4" size={40}/>
+                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest">Đang tải
+                                        dữ liệu hệ thống...</p>
                                 </td>
                             </tr>
                         ) : currentTableData.length > 0 ? (
@@ -263,8 +263,9 @@ const PartnerList = () => {
                                                 className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg uppercase">
                                                 {(p.agencyName || p.hotelName || "?").charAt(0)}
                                             </div>
-                                            <div>
-                                                <p className="font-black text-slate-800 text-base leading-tight">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-black text-slate-800 text-base leading-tight truncate"
+                                                   title={p.agencyName || p.hotelName}>
                                                     {p.agencyName || p.hotelName}
                                                 </p>
                                             </div>
@@ -333,7 +334,7 @@ const PartnerList = () => {
                             <tr>
                                 <td colSpan={activeTab === "Agency" ? 6 : 5} className="p-20 text-center">
                                     <div className="flex flex-col items-center gap-2">
-                                        <Info className="text-slate-200" size={48} />
+                                        <Info className="text-slate-200" size={48}/>
                                         <p className="font-black text-slate-300 uppercase tracking-widest text-sm">
                                             Không có dữ liệu phù hợp
                                         </p>
@@ -347,7 +348,8 @@ const PartnerList = () => {
 
                 {/* PAGINATION */}
                 {filteredPartners.length > 0 && (
-                    <div className="p-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
+                    <div
+                        className="p-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/30">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                             Hiển thị {currentTableData.length}/{filteredPartners.length} đối tác
                         </p>
@@ -357,7 +359,7 @@ const PartnerList = () => {
                                 disabled={currentPage === 1}
                                 className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-all shadow-sm"
                             >
-                                <ChevronRight size={18} className="rotate-180" />
+                            <ChevronRight size={18} className="rotate-180" />
                             </button>
                             <div className="flex items-center gap-1">
                                 {[...Array(totalPages)].map((_, i) => {

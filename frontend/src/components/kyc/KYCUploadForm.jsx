@@ -424,7 +424,9 @@ const OCRInput = ({ label, value, onChange, name, isTextArea, type = "text" }) =
             ) : (
                 <input type={type} name={name} value={value} onChange={onChange} className="w-full border-2 border-slate-100 rounded-xl p-3 text-sm font-semibold focus:border-blue-400 outline-none bg-slate-50" />
             )}
-            <Edit3 size={12} className="absolute right-4 top-4 text-slate-300 group-hover:text-blue-400 pointer-events-none" />
+            {type !== "date" && (
+                <Edit3 size={12} className="absolute right-4 top-4 text-slate-300 group-hover:text-blue-400 pointer-events-none" />
+            )}
         </div>
     </div>
 );

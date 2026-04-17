@@ -29,7 +29,7 @@ public class RoomType {
     @Column(name = "room_code", nullable = false, length = 50)
     private String roomCode;
 
-    @Column(name = "room_title", nullable = false, length = 255)
+    @Column(name = "room_title", columnDefinition = "NVARCHAR(255)", nullable = false)
     private String roomTitle;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
@@ -47,7 +47,7 @@ public class RoomType {
     @Column(name = "room_area", precision = 10, scale = 2)
     private BigDecimal roomArea;
 
-    @Column(name = "bed_type", length = 100)
+    @Column(name = "bed_type", columnDefinition = "NVARCHAR(100)")
     private String bedType;
 
     @Column(name = "total_rooms")

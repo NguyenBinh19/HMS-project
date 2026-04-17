@@ -122,7 +122,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
 const Register = () => {
     const navigate = useNavigate();
     const scrollContainerRef = useRef(null);
-
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
     const [step, setStep] = useState(1); // 1: Role selection, 2: Form
     const [selectedRole, setSelectedRole] = useState(""); // HOTEL_MANAGER or AGENCY_MANAGER
 
@@ -902,10 +902,48 @@ const Register = () => {
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.3s ease-out; }
       `}</style>
+            {/*{showPdfModal && (*/}
+            {/*    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">*/}
+            {/*        <div*/}
+            {/*            className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">*/}
+            {/*            <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">*/}
+            {/*                <a*/}
+            {/*                    href={pdfLinks[selectedRole]}*/}
+            {/*                    target="_blank"*/}
+            {/*                    rel="noreferrer"*/}
+            {/*                    title="Mở tab mới"*/}
+            {/*                    className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"*/}
+            {/*                >*/}
+            {/*                    <ExternalLink size={18}/>*/}
+            {/*                </a>*/}
+            {/*                <button*/}
+            {/*                    onClick={() => setShowPdfModal(false)}*/}
+            {/*                    className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"*/}
+            {/*                >*/}
+            {/*                    <X size={18}/>*/}
+            {/*                </button>*/}
+            {/*            </div>*/}
+
+            {/*            /!* Iframe content *!/*/}
+            {/*            <div className="flex-1 bg-slate-100 relative">*/}
+            {/*                <iframe*/}
+            {/*                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfLinks[selectedRole])}&embedded=true`}*/}
+            {/*                    className="w-full h-full border-none relative z-10"*/}
+            {/*                    title="PDF Preview"*/}
+            {/*                />*/}
+            {/*                <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">*/}
+            {/*                    <Loader2 size={40} className="animate-spin text-slate-200 mb-3"/>*/}
+            {/*                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Đang tải tài liệu...</span>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*)}*/}
+
             {showPdfModal && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div
-                        className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        {/* Header Modal */}
                         <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
                             <a
                                 href={pdfLinks[selectedRole]}
@@ -917,28 +955,52 @@ const Register = () => {
                                 <ExternalLink size={18}/>
                             </a>
                             <button
-                                onClick={() => setShowPdfModal(false)}
+                                onClick={() => {
+                                    setShowPdfModal(false);
+                                    setIsPdfLoading(true);
+                                }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
                                 <X size={18}/>
                             </button>
                         </div>
 
-                        {/* Iframe content */}
+                        {/* Nội dung PDF  */}
                         <div className="flex-1 bg-slate-100 relative">
-                            <iframe
-                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfLinks[selectedRole])}&embedded=true`}
-                                className="w-full h-full border-none relative z-10"
-                                title="PDF Preview"
-                            />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">
-                                <Loader2 size={40} className="animate-spin text-slate-200 mb-3"/>
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Đang tải tài liệu...</span>
-                            </div>
+                            {pdfLinks[selectedRole] ? (
+                                <object
+                                    data={`${pdfLinks[selectedRole]}#view=FitH`}
+                                    type="application/pdf"
+                                    className="w-full h-full border-none relative z-10"
+                                    onLoad={() => setIsPdfLoading(false)}
+                                >
+                                    <iframe
+                                        src={`${pdfLinks[selectedRole]}#view=FitH`}
+                                        className="w-full h-full border-none"
+                                        title="PDF Preview"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    />
+                                </object>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500 z-20 relative bg-white">
+                                    <p className="font-medium text-lg">Không tìm thấy tài liệu liên quan.</p>
+                                    <p className="text-sm">Vui lòng kiểm tra lại đường dẫn tài liệu.</p>
+                                </div>
+                            )}
+
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[15] bg-slate-50">
+                                    <Loader2 size={40} className="animate-spin text-blue-600 mb-3" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                            Đang chuẩn bị tài liệu...
+                        </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
+
         </div>
     );
 };

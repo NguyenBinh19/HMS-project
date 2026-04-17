@@ -130,10 +130,10 @@ const HotelProfessionalDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <KpiCard label="Doanh thu" value={formatVND(stats?.totalRevenue)}
                                  trend={stats?.revenueGrowthPercent} icon={<Target size={20}/>} color="blue"/>
-                        <KpiCard label="Công suất" value={`${stats?.occupancyRate || 0}%`}
+                        <KpiCard label="Công suất phòng" value={`${stats?.occupancyRate || 0}%`}
                                  trend={stats?.occupancyGrowthPercent} icon={<BedDouble size={20}/>}
                                  progress={stats?.occupancyRate} color="purple"/>
-                        <KpiCard label="Giá ADR" value={formatVND(stats?.adr)} trend={stats?.adrGrowthPercent}
+                        <KpiCard label="Chỉ số ADR" value={formatVND(stats?.adr)} trend={stats?.adrGrowthPercent}
                                  icon={<Zap size={20}/>} color="amber"/>
                         <FeedbackCard stats={feedbackStats} navigate={navigate}/>
                     </div>
