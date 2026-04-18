@@ -196,8 +196,9 @@ const BookingDetailPost = () => {
                 `Hủy thành công!\n` +
                 `---------------------------\n` +
                 `Mã đơn: ${data.bookingCode}\n` +
-                `Phí phạt hủy: ${formatCurrency(data.cancellationPenalty)}\n` +
-                `Tiền hoàn lại: ${formatCurrency(data.refundAmount)}\n` +
+                `Số tiền booking: ${formatCurrency(data.finalAmount)}\n`+
+                `Phí hủy dịch vụ: ${formatCurrency(data.cancellationPenalty)}\n` +
+                `Tiền hoàn lại cho bạn: ${formatCurrency(data.refundAmount)}\n` +
                 `Lý do: ${data.reason}`
             );
         } catch (err) {

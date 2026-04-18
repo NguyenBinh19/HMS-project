@@ -105,7 +105,9 @@ export default function HotelSearchContainer() {
     const filteredHotels = useMemo(() => {
         return hotels.filter(hotel => {
             // Lọc Hạng Sao
-            const matchStar = filters.stars.length === 0 || filters.stars.includes(hotel.avgRating);
+            const matchStar =
+                filters.stars.length === 0 ||
+                filters.stars.includes(Math.floor(Number(hotel.avgRating || 0)));
 
             // Lọc Tiện ích
             const matchAmenities = filters.amenities.length === 0 || filters.amenities.every(a =>

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Slf4j
@@ -39,7 +40,7 @@ public class NotificationServiceImpl implements NotificationService {
                     .targetId(targetId)
                     .targetUrl(targetUrl)
                     .isRead(false)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                     .build();
 
             notification = notificationRepository.save(notification);

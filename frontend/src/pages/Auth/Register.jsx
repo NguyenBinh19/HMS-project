@@ -64,13 +64,13 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden animate-zoom-in border border-emerald-100">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl"></div>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden animate-zoom-in border border-blue-100">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-50 rounded-full blur-2xl"></div>
 
                 <div className="text-center relative z-10">
-                    <div className="mx-auto mb-6 w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce-slow">
-                        <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <div className="mx-auto mb-6 w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center animate-bounce-slow">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
                             <MailCheck size={32} className="text-white" />
                         </div>
                     </div>
@@ -82,7 +82,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
                     <p className="text-slate-600 text-sm mb-6 leading-relaxed">
                         Chúng tôi đã gửi mã xác thực OTP 6 số đến email:
                         <br />
-                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block">
+                        <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded mt-1 inline-block">
                             {email}
                         </span>
                         <br />
@@ -101,7 +101,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
                         </div>
                         <div className="h-1.5 w-32 mx-auto bg-slate-100 rounded-full mt-3 overflow-hidden">
                             <div
-                                className="h-full bg-emerald-500 transition-all duration-1000 ease-linear"
+                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-1000 ease-linear"
                                 style={{ width: `${(countdown / 5) * 100}%` }}
                             ></div>
                         </div>
@@ -109,7 +109,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
 
                     {/* <button
                         onClick={onVerifyNow}
-                        className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                         Xác thực OTP ngay <ArrowRight size={18} />
                     </button> */}
@@ -419,7 +419,7 @@ const Register = () => {
                     >
                         <div className="max-w-md mx-auto w-full mt-4 md:mt-8 pb-40">
                             <div className="mb-8">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-4 border border-emerald-100">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-100">
                                     <UserPlus size={14} /> Đăng ký đối tác
                                 </div>
                                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
@@ -494,8 +494,7 @@ const Register = () => {
                                         </span>
                                         <Link
                                             to="/login"
-                                            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline decoration-2 underline-offset-4 transition-colors"
-                                        >
+                                            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"                                        >
                                             Đăng nhập ngay
                                         </Link>
                                     </div>
@@ -508,8 +507,11 @@ const Register = () => {
                                     {/* Back to role selection */}
                                     <button
                                         type="button"
-                                        onClick={() => setStep(1)}
-                                        className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+                                        onClick={() => {
+                                            setStep(1);
+                                            setSelectedRole("");
+                                        }}
+                                        className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-500 transition-colors"
                                     >
                                         <ArrowLeft size={16} />
                                         {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"} — Thay đổi
@@ -520,11 +522,11 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "username"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
-                                                }`}
+                                                    }`}
                                             >
-                                                <User size={20}/>
+                                                <User size={20} />
                                             </div>
                                             <input
                                                 type="text"
@@ -534,14 +536,14 @@ const Register = () => {
                                                 value={formData.username}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "username"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                }`}
+                                                    }`}
                                                 placeholder="Họ và tên đầy đủ"
                                             />
                                             {errors.username && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12}/> {errors.username}
+                                                    <AlertCircle size={12} /> {errors.username}
                                                 </p>
                                             )}
                                         </div>
@@ -550,11 +552,11 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "email"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
-                                                }`}
+                                                    }`}
                                             >
-                                                <Mail size={20}/>
+                                                <Mail size={20} />
                                             </div>
                                             <input
                                                 type="email"
@@ -564,14 +566,14 @@ const Register = () => {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "email"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                }`}
+                                                    }`}
                                                 placeholder="Email"
                                             />
                                             {errors.email && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12}/> {errors.email}
+                                                    <AlertCircle size={12} /> {errors.email}
                                                 </p>
                                             )}
                                         </div>
@@ -580,11 +582,11 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "phone"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
-                                                }`}
+                                                    }`}
                                             >
-                                                <Phone size={20}/>
+                                                <Phone size={20} />
                                             </div>
                                             <input
                                                 type="tel"
@@ -594,14 +596,14 @@ const Register = () => {
                                                 value={formData.phone}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "phone"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                }`}
+                                                    }`}
                                                 placeholder="Số điện thoại"
                                             />
                                             {errors.phone && (
                                                 <p className="mt-1.5 ml-1 text-xs font-bold text-rose-500 flex items-center gap-1 animate-fade-in">
-                                                    <AlertCircle size={12}/> {errors.phone}
+                                                    <AlertCircle size={12} /> {errors.phone}
                                                 </p>
                                             )}
                                         </div>
@@ -610,11 +612,11 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "password"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
-                                                }`}
+                                                    }`}
                                             >
-                                                <Lock size={20}/>
+                                                <Lock size={20} />
                                             </div>
 
                                             <input
@@ -623,14 +625,14 @@ const Register = () => {
                                                 onFocus={() => setFocusedField("password")}
                                                 onBlur={() => {
                                                     setFocusedField(null);
-                                                    setTouched((prev) => ({...prev, password: true}));
+                                                    setTouched((prev) => ({ ...prev, password: true }));
                                                 }}
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "password"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                }`}
+                                                    }`}
                                                 placeholder="Mật khẩu"
                                             />
 
@@ -639,14 +641,14 @@ const Register = () => {
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2"
                                             >
-                                                {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
+                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                             </button>
                                         </div>
 
                                         {/* Password Check */}
                                         <div
                                             className={`overflow-hidden transition-all duration-500 ease-in-out ${formData.password ? "max-h-72 opacity-100" : "max-h-0 opacity-0"
-                                            }`}
+                                                }`}
                                         >
                                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-1">
                                                 <div className="flex justify-between items-center mb-2">
@@ -661,7 +663,7 @@ const Register = () => {
                                                                 : passwordScore === 3
                                                                     ? "text-blue-500"
                                                                     : "text-green-500"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {getStrengthText()}
                                                     </span>
@@ -671,14 +673,14 @@ const Register = () => {
                                                     className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
                                                     <div
                                                         className={`h-full rounded-full transition-all duration-500 ${getStrengthColor()}`}
-                                                        style={{width: `${(passwordScore / 4) * 100}%`}}
+                                                        style={{ width: `${(passwordScore / 4) * 100}%` }}
                                                     />
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <Badge active={passwordCriteria.length} text="Ít nhất 6 ký tự"/>
-                                                    <Badge active={passwordCriteria.hasNumber} text="Có chứa số"/>
-                                                    <Badge active={passwordCriteria.hasUpper} text="Chữ in hoa"/>
+                                                    <Badge active={passwordCriteria.length} text="Ít nhất 6 ký tự" />
+                                                    <Badge active={passwordCriteria.hasNumber} text="Có chứa số" />
+                                                    <Badge active={passwordCriteria.hasUpper} text="Chữ in hoa" />
                                                     <Badge
                                                         active={passwordCriteria.hasSpecial}
                                                         text="Ký tự đặc biệt"
@@ -688,7 +690,7 @@ const Register = () => {
                                                 {/* ✅ Fix hiển thị inline đỏ (không vỡ chữ / không bị tách) */}
                                                 {formData.password && touched.password && passwordScore < 4 && (
                                                     <div className="mt-3 flex items-start gap-2 text-rose-600">
-                                                        <X size={16} className="mt-0.5 shrink-0"/>
+                                                        <X size={16} className="mt-0.5 shrink-0" />
                                                         <p className="text-sm font-semibold leading-relaxed whitespace-normal break-words">
                                                             Mật khẩu chưa đủ mạnh. Hãy thêm{" "}
                                                             <span className="font-black">số</span>,{" "}
@@ -710,9 +712,9 @@ const Register = () => {
                                                 value={formData.confirmPassword}
                                                 onChange={handleChange}
                                                 className={`w-full pl-4 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "confirmPassword"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
-                                                }`}
+                                                    }`}
                                                 placeholder="Nhập lại mật khẩu"
                                             />
 
@@ -734,9 +736,9 @@ const Register = () => {
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2"
                                             >
                                                 {showConfirmPassword ? (
-                                                    <EyeOff size={20}/>
+                                                    <EyeOff size={20} />
                                                 ) : (
-                                                    <Eye size={20}/>
+                                                    <Eye size={20} />
                                                 )}
                                             </button>
                                         </div>
@@ -789,7 +791,7 @@ const Register = () => {
                                                     id="terms"
                                                     checked={agreed}
                                                     onChange={(e) => setAgreed(e.target.checked)}
-                                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
+                                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-blue-500 checked:bg-blue-500 hover:border-blue-400"
                                                 />
                                                 <Check
                                                     size={14}
@@ -811,7 +813,7 @@ const Register = () => {
                                                             alert("Tài liệu đang được cập nhật, vui lòng thử lại sau.");
                                                         }
                                                     }}
-                                                    className="text-emerald-600 font-bold hover:underline"
+                                                    className="font-bold text-cyan-600 hover:text-blue-600 hover:underline transition-colors"
                                                 >
                                                     Điều khoản & Chính sách dành
                                                     cho {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"}
@@ -823,15 +825,15 @@ const Register = () => {
                                             type="submit"
                                             disabled={loading || !isFormValid}
                                             className={`group w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] mt-4 ${isFormValid
-                                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/30 cursor-pointer"
+                                                ? "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-blue-500/30 cursor-pointer"
                                                 : "bg-slate-200 text-slate-400 cursor-not-allowed opacity-80"
-                                            }`}
+                                                }`}
                                         >
                                             {loading ? (
-                                                <Loader2 className="animate-spin"/>
+                                                <Loader2 className="animate-spin" />
                                             ) : (
                                                 <>
-                                                    Tạo tài khoản <ShieldCheck size={20}/>
+                                                    Tạo tài khoản <ShieldCheck size={20} />
                                                 </>
                                             )}
                                         </button>
@@ -842,7 +844,7 @@ const Register = () => {
                                         </span>
                                         <Link
                                             to="/login"
-                                            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline decoration-2 underline-offset-4 transition-colors"
+                                            className="text-sm font-bold text-cyan-600 hover:text-blue-600 hover:underline decoration-2 underline-offset-4 transition-colors"
                                         >
                                             Đăng nhập ngay
                                         </Link>
@@ -952,7 +954,7 @@ const Register = () => {
                                 title="Mở tab mới"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
-                                <ExternalLink size={18}/>
+                                <ExternalLink size={18} />
                             </a>
                             <button
                                 onClick={() => {
@@ -961,7 +963,7 @@ const Register = () => {
                                 }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
-                                <X size={18}/>
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -992,8 +994,8 @@ const Register = () => {
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-[15] bg-slate-50">
                                     <Loader2 size={40} className="animate-spin text-blue-600 mb-3" />
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
-                            Đang chuẩn bị tài liệu...
-                        </span>
+                                        Đang chuẩn bị tài liệu...
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -1006,18 +1008,35 @@ const Register = () => {
 };
 
 // Badge component
-const Badge = ({active, text}) => (
+const Badge = ({ active, text }) => (
     <div
         className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md transition-all duration-300 ${active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
-        }`}
+            }`}
     >
         {active ? (
-            <Check size={12} strokeWidth={4}/>
+            <Check size={12} strokeWidth={4} />
         ) : (
             <div className="w-3 h-3 rounded-full bg-slate-300"></div>
         )}
         {text}
     </div>
 );
+
+// const Badge = ({ active, text }) => (
+//     <div
+//         className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md transition-all duration-300 ${
+//             active
+//                 ? "bg-blue-100 text-blue-600 border border-blue-200"
+//                 : "bg-slate-100 text-slate-400"
+//         }`}
+//     >
+//         {active ? (
+//             <Check size={12} strokeWidth={4} />
+//         ) : (
+//             <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+//         )}
+//         {text}
+//     </div>
+// );
 
 export default Register;

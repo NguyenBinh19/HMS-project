@@ -45,7 +45,7 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                 if (pdfRes?.result) {
                     const policyDoc = pdfRes.result.find(doc => {
                         const title = (doc.title || "").toLowerCase();
-                        return title.includes("phụ lục") && title.includes("thanh toán");
+                        return title.includes("doanh thu") && title.includes("thanh toán");
                     });
                     setPolicyUrl(policyDoc?.fileUrl || "");
                 }
@@ -100,7 +100,7 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
             <div className="p-6 border-b border-slate-50 flex justify-between items-center">
                 <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-[10px] tracking-widest">
-                    <History size={16} className="text-blue-600"/> Tất cả các kỳ đối soát ({statements.length})
+                    <History size={16} className="text-blue-600" /> Tất cả các kỳ đối soát ({statements.length})
                 </h3>
                 {/* NÚT XEM CHÍNH SÁCH MỚI */}
                 <button
@@ -113,16 +113,16 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                     }}
                     className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase"
                 >
-                    <FileText size={14}/> Phụ lục thanh toán
+                    <FileText size={14} /> Phụ lục thanh toán
                 </button>
             </div>
             <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <th className="px-8 py-4">Mã</th>
-                    <th className="px-8 py-4">Kỳ</th>
-                    <th className="px-8 py-4">Bookings</th>
-                    <th className="px-8 py-4 text-right">Thực nhận</th>
+                    <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="px-8 py-4">Mã</th>
+                        <th className="px-8 py-4">Kỳ</th>
+                        <th className="px-8 py-4">Bookings</th>
+                        <th className="px-8 py-4 text-right">Thực nhận</th>
                         <th className="px-8 py-4">Trạng thái</th>
                         <th className="px-8 py-4"></th>
                     </tr>
@@ -148,9 +148,10 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                                 <td className="px-8 py-4 text-right">
                                     <button
                                         onClick={() => onSelectStatement(stmt.statementId)}
-                                        className="text-slate-300 hover:text-blue-600 transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all text-xs font-bold"
                                     >
                                         <ExternalLink size={14} />
+                                        <span>Chi tiết</span>
                                     </button>
                                 </td>
                             </tr>
@@ -171,7 +172,7 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                                 title="Mở tab mới"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
-                                <ExternalLink size={18}/>
+                                <ExternalLink size={18} />
                             </a>
                             <button
                                 onClick={() => {
@@ -180,7 +181,7 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                                 }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
-                                <X size={18}/>
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -216,10 +217,10 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
 
                             {isPdfLoading && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
-                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
-                            Đang tải phụ lục thanh toán...
-                        </span>
+                                        Đang tải phụ lục thanh toán...
+                                    </span>
                                 </div>
                             )}
                         </div>
