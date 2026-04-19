@@ -42,7 +42,7 @@ const HotelProfessionalDashboard = () => {
 
         try {
             const [revRes, bookingRes, feedbackRes, inRes, outRes, roomRes] = await Promise.allSettled([
-                revenueService.getRevenueReport(hotelId, { startDate: today, endDate: today, granularity: 'DAILY' }),
+                revenueService.getRevenueReport({ startDate: today, endDate: today, granularity: 'DAILY' }),
                 bookingService.viewAllBookingByHotelId(hotelId),
                 bookingService.getHotelFeedbackStats(),
                 bookingService.getCheckInToday(),

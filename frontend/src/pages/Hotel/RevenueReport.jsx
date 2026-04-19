@@ -12,7 +12,7 @@ import { revenueService } from '@/services/revenue.service';
 import { financialService } from '@/services/financial.service';
 import { toast } from 'react-hot-toast';
 
-const RevenueReport = ({ hotelId = 2016 }) => {
+const RevenueReport = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState(null);
 
@@ -58,7 +58,7 @@ const RevenueReport = ({ hotelId = 2016 }) => {
                 endDate,
                 granularity,
             };
-            const res = await revenueService.getRevenueReport(hotelId, params);
+            const res = await revenueService.getRevenueReport(params);
 
             if (res.code === 1000) {
                 setReportData(res.result);
