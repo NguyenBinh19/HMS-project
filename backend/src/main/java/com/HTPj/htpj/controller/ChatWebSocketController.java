@@ -35,9 +35,6 @@ public class ChatWebSocketController {
         ConversationDTO receiverConvo =
                 chatService.buildConversation(saved, request.getReceiverId());
 
-        String senderUsername = saved.getSender().getUsername();
-        String receiverUsername = saved.getReceiver().getUsername();
-
         System.out.println("👉 SENDER USERNAME: " + saved.getSender().getUsername());
         System.out.println("👉 RECEIVER USERNAME: " + saved.getReceiver().getUsername());
 

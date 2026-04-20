@@ -3,12 +3,15 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.chat.ChatMessageRequest;
 import com.HTPj.htpj.dto.request.chat.ConversationDTO;
 import com.HTPj.htpj.dto.response.chat.ChatMessageResponse;
+import com.HTPj.htpj.entity.Hotel;
 import com.HTPj.htpj.entity.Message;
 import com.HTPj.htpj.entity.Users;
+import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.repository.MessageRepository;
 import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.ChatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,8 @@ public class ChatServiceImpl implements ChatService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final HotelRepository hotelRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public Message save(ChatMessageRequest request) {
         Users sender = userRepository.findById(request.getSenderId())
@@ -107,5 +112,70 @@ public class ChatServiceImpl implements ChatService {
                 .lastMessage(m.getContent())
                 .time(m.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public ConversationDTO initChatWithHotel(String userId, String hotelId) {
+
+        Hotel hotel = hotelRepository.findById(Integer.valueOf(hotelId))
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        String hotelManagerID = userRepository.findHotelMangerID(hotelId);
+
+        if (hotelManagerID == null) {
+            throw new RuntimeException("Hotel manager not found");
+        }
+
+        if (userId.equals(hotelManagerID)) {
+            throw new RuntimeException("Cannot chat with yourself");
+        }
+
+        Message lastMessage = messageRepository
+                .findTopBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByCreatedAtDesc(
+                        userId, hotelManagerID,
+                        userId, hotelManagerID
+                );
+
+        if (lastMessage != null) {
+            return buildConversation(lastMessage, userId);
+        }
+
+        Message firstMessage = Message.builder()
+                .sender(userRepository.findById(userId).orElseThrow())
+                .receiver(userRepository.findById(hotelManagerID).orElseThrow())
+                .content("Xin chào, tôi cần hỗ trợ 🙏")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        messageRepository.save(firstMessage);
+
+        ConversationDTO convo = buildConversation(firstMessage, userId);
+
+        messagingTemplate.convertAndSendToUser(
+                userId,
+                "/queue/conversations",
+                convo
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                hotelManagerID,
+                "/queue/conversations",
+                buildConversation(firstMessage, hotelManagerID)
+        );
+
+        ChatMessageResponse msgRes = ChatMessageResponse.builder()
+                .senderId(userId)
+                .receiverId(hotelManagerID)
+                .content(firstMessage.getContent())
+                .createdAt(firstMessage.getCreatedAt())
+                .build();
+
+        messagingTemplate.convertAndSendToUser(
+                hotelManagerID,
+                "/queue/messages",
+                msgRes
+        );
+
+        return convo;
     }
 }

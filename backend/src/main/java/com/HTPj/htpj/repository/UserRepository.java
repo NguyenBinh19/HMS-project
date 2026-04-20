@@ -63,4 +63,12 @@ public interface UserRepository extends JpaRepository<Users, String> {
 
     @Query("SELECT u FROM Users u WHERE u.agency IS NOT NULL AND u.agency.status = 'ACTIVE'")
     List<Users> findAllActiveAgencyUsers();
+
+    @Query(value = """
+    Select u.id
+    From users u
+    Join users_roles ur on ur.users_id = u.id
+    Where u.hotel_id = :hotelId and ur.roles_name = 'HOTEL_MANAGER'
+""", nativeQuery = true)
+    String findHotelMangerID(@Param("hotelId") String hotelId);
 }

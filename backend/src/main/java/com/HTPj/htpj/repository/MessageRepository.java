@@ -35,4 +35,9 @@ public interface MessageRepository extends JpaRepository<Message, String> {
     ORDER BY m.createdAt DESC
 """)
     List<Message> findAllMessagesOfUser(@Param("userId") String userId);
+
+    Message findTopBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByCreatedAtDesc(
+            String sender1, String receiver1,
+            String sender2, String receiver2
+    );
 }

@@ -35,4 +35,10 @@ public class ChatController {
     ) {
         return chatService.getConversations(userId);
     }
+
+    @PostMapping("/init")
+    public ConversationDTO initChatWithHotel(@RequestParam String hotelId,
+                                             @RequestParam String userId) {
+        return chatService.initChatWithHotel(userId, hotelId);
+    }
 }

@@ -32,6 +32,9 @@ export default function GlobalChatWidget() {
     const [mode, setMode] = useState("user"); // "user" | "ai"
     const [aiMessages, setAiMessages] = useState([]);
     const [aiInput, setAiInput] = useState("");
+    const [unreadCounts, setUnreadCounts] = useState({});
+    const totalUnread = Object.values(unreadCounts).reduce((sum, val) => sum + val, 0);
+
     useEffect(() => {
         selectedChatRef.current = selectedChat;
     }, [selectedChat]);
@@ -62,12 +65,24 @@ export default function GlobalChatWidget() {
                     const newMsg = JSON.parse(msg.body);
                     const currentChat = selectedChatRef.current;
 
+                    const otherUserId =
+                        newMsg.senderId === currentUserId
+                            ? newMsg.receiverId
+                            : newMsg.senderId;
+
                     const isCurrentChat =
                         currentChat &&
                         (
                             (newMsg.senderId === currentUserId && newMsg.receiverId === currentChat.userId) ||
                             (newMsg.receiverId === currentUserId && newMsg.senderId === currentChat.userId)
                         );
+
+                    if (!isCurrentChat && newMsg.senderId !== currentUserId) {
+                        setUnreadCounts((prev) => ({
+                            ...prev,
+                            [otherUserId]: (prev[otherUserId] || 0) + 1,
+                        }));
+                    }
 
                     if (!isCurrentChat) return;
                     if (newMsg.senderId === currentUserId) return;
@@ -77,7 +92,10 @@ export default function GlobalChatWidget() {
                         {
                             type: "left",
                             content: newMsg.content,
-                            time: new Date(newMsg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                            time: new Date(newMsg.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            }),
                         },
                     ]);
                 });
@@ -255,9 +273,23 @@ export default function GlobalChatWidget() {
             {/* FLOAT BUTTON */}
             <div
                 onClick={() => setOpen(!open)}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-blue-500 to-blue-700 text-white flex items-center justify-center rounded-full shadow-xl cursor-pointer z-[9999] hover:scale-105 transition"
+                style={{
+                    position: "fixed",
+                    bottom: 24,
+                    right: 24,
+                    width: 56,
+                    height: 56,
+                    zIndex: 999999,
+                }}
+                className="bg-gradient-to-tr from-blue-500 to-blue-700 text-white flex items-center justify-center rounded-full shadow-xl cursor-pointer hover:scale-105 transition relative"
             >
-                <MessageOutlined />
+                <MessageOutlined style={{ fontSize: 22, color: "#fff" }} />
+
+                {totalUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[11px] min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full font-bold pointer-events-none">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                    </span>
+                )}
             </div>
 
             {open && (
@@ -276,7 +308,7 @@ export default function GlobalChatWidget() {
                                             ? "bg-white shadow text-blue-600"
                                             : "text-gray-500 hover:bg-gray-200"}`}
                                 >
-                                    💬 Chats
+                                    Chats
                                 </div>
 
                                 <div
@@ -286,7 +318,7 @@ export default function GlobalChatWidget() {
                                             ? "bg-white shadow text-blue-600"
                                             : "text-gray-500 hover:bg-gray-200"}`}
                                 >
-                                    🤖 AI
+                                    AI
                                 </div>
                             </div>
                         </div>
@@ -350,7 +382,14 @@ export default function GlobalChatWidget() {
 
                                             return (
                                                 <List.Item
-                                                    onClick={() => setSelectedChat(item)}
+                                                    onClick={() => {
+                                                        setSelectedChat(item);
+
+                                                        setUnreadCounts((prev) => ({
+                                                            ...prev,
+                                                            [item.userId]: 0,
+                                                        }));
+                                                    }}
                                                     className={`cursor-pointer rounded-xl px-3 py-3 mb-2 transition-all
                                                 ${active
                                                             ? "bg-blue-100 border border-blue-300"
@@ -358,9 +397,17 @@ export default function GlobalChatWidget() {
                                                 >
                                                     <div className="flex gap-3 w-full items-center">
 
-                                                        <Avatar className="bg-blue-500">
-                                                            {item.name?.[0]}
-                                                        </Avatar>
+                                                        <div className="relative">
+                                                            <Avatar className="bg-blue-500">
+                                                                {item.name?.[0]}
+                                                            </Avatar>
+
+                                                            {unreadCounts[item.userId] > 0 && (
+                                                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                                                    {unreadCounts[item.userId]}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
                                                         <div className="flex-1 overflow-hidden">
                                                             <div className="flex justify-between items-center">
@@ -393,7 +440,7 @@ export default function GlobalChatWidget() {
                         {/* 🔥 AI MODE */}
                         {mode === "ai" && (
                             <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-                                Ask anything 🤖
+                                Ask anything
                             </div>
                         )}
                     </div>
@@ -421,7 +468,7 @@ export default function GlobalChatWidget() {
                                     </div>
                                 )
                             ) : (
-                                <div className="font-medium text-sm">🤖 AI Assistant</div>
+                                <div className="font-medium text-sm">AI Assistant</div>
                             )}
                         </div>
 

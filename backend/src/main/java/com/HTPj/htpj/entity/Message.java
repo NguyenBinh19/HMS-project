@@ -27,8 +27,8 @@ public class Message {
     @JoinColumn(name = "receiver_id")
     Users receiver;
 
-    @Column(columnDefinition = "TEXT")
-    String content;
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String content;
 
     LocalDateTime createdAt;
 

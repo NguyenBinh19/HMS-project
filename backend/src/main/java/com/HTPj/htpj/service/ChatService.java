@@ -12,4 +12,5 @@ public interface ChatService {
     List<ChatMessageResponse> getHistory(String user1, String user2);
     List<ConversationDTO> getConversations(String userId);
     ConversationDTO buildConversation(Message m, String currentUserId);
+    ConversationDTO initChatWithHotel(String userId, String hotelId);
 }
