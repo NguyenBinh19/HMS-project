@@ -518,6 +518,7 @@ public class RankServiceImpl implements RankService {
 
             agency.setRank(targetRank);
             agency.setCreditLimit(targetRank.getCreditLimit());
+            agency.setCurrentCredit(targetRank.getCreditLimit());
 
             agencyRepository.save(agency);
 

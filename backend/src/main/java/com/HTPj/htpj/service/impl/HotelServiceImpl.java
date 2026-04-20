@@ -113,6 +113,7 @@ public class HotelServiceImpl implements HotelService {
                 .totalReviews(totalReviews)
                 .build();
     }
+
     public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms) {
 
         List<HotelSearchProjection> hotels =
@@ -343,8 +344,7 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     @Transactional
-    public HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages
-    ) {
+    public HotelDetailListResponse updateHotel(UpdateHotelRequest request, MultipartFile[] newImages) {
         Authentication authentication = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
