@@ -34,7 +34,12 @@ export default function GlobalChatWidget() {
     const [aiInput, setAiInput] = useState("");
     const [unreadCounts, setUnreadCounts] = useState({});
     const totalUnread = Object.values(unreadCounts).reduce((sum, val) => sum + val, 0);
+    const protocol = window.location.protocol === "https:" ? "https" : "http";
 
+    const socketUrl =
+        protocol === "https"
+            ? `https://www.jushotel.site/backend/hms/ws`
+            : `http://localhost:8080/hms/ws`;
     useEffect(() => {
         selectedChatRef.current = selectedChat;
     }, [selectedChat]);
@@ -45,7 +50,7 @@ export default function GlobalChatWidget() {
 
         const client = new Client({
             webSocketFactory: () =>
-                new SockJS(`http://localhost:8080/hms/ws?userId=${currentUserId}`),
+                new SockJS(`${socketUrl}?userId=${currentUserId}`),
             reconnectDelay: 5000,
             connectHeaders: {
                 username: currentUser.username,
