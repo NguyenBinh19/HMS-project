@@ -14,6 +14,8 @@ import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import RoomDetailModal from "@/components/agency/booking/RoomDetailModal.jsx"
 import { ROLES, ROLE_GROUP } from "../../constant/roles.js";
+import { MessageCircle } from "lucide-react";
+import api from "../../services/axios.config.js";
 const DEFAULT_HOTEL_IMAGE = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb";
 // --- 1. SUB-COMPONENT: TIMER MODAL ---
 const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
@@ -85,17 +87,26 @@ export default function HotelDetailPage() {
     const token = localStorage.getItem("accessToken");
     let roles = [];
 
+    let currentUser = null;
+
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            roles = decoded.scope || []; // tuỳ backend trả về
+
+            currentUser = {
+                userId: decoded.userId || decoded.sub,
+            };
+
+            console.log("Decoded token:", decoded);
+
+            roles = decoded.scope || [];
         } catch (err) {
             console.error("Invalid token");
         }
     }
     const isAgency = ROLE_GROUP.AGENCY.some(role =>
-    roles.includes(role)
-);
+        roles.includes(role)
+    );
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
     // Tính toán tổng tiền dự kiến dựa trên mảng selectedRooms
@@ -236,6 +247,29 @@ export default function HotelDetailPage() {
         }
     };
 
+    const handleOpenChat = async (hotel) => {
+        try {
+            if (!currentUser?.userId) {
+                alert("Bạn cần đăng nhập để chat");
+                return;
+            }
+
+            const res = await api.post("/chat/init", null, {
+                params: {
+                    hotelId: hotel.hotelId || hotel.id,
+                    userId: currentUser.userId
+                }
+            });
+
+            const convo = res.data;
+
+            console.log("Chat created:", convo);
+
+        } catch (err) {
+            console.error("Chat init lỗi:", err);
+        }
+    };
+
     const handleExtendHold = async () => {
         if (!bookingSession) return;
         setIsExtending(true);
@@ -322,9 +356,20 @@ export default function HotelDetailPage() {
                                 {hotel.hotelName}
                             </h1>
 
-                            <div className="flex items-center gap-2 text-blue-600 font-bold mb-6 text-sm">
-                                <MapPin size={18} />
-                                <span>{hotel.address}</span>
+                            <div className="flex items-center justify-between gap-2 mb-6">
+                                <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+                                    <MapPin size={18} />
+                                    <span>{hotel.address}</span>
+                                </div>
+
+                                {/* 👉 Nút chat */}
+                                <button
+                                    onClick={() => handleOpenChat(hotel)}
+                                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition"
+                                >
+                                    <MessageCircle size={18} />
+                                    Chat
+                                </button>
                             </div>
 
                             <div className="flex flex-wrap gap-4 pt-6 border-t border-slate-100">
@@ -371,8 +416,8 @@ export default function HotelDetailPage() {
                                 <div
                                     key={room.id}
                                     className={`bg-white border rounded-[24px] flex flex-col md:flex-row p-5 gap-6 transition-all duration-300 ${isSelected
-                                            ? "border-blue-500 shadow-[0_12px_40px_rgba(37,99,235,0.1)] ring-1 ring-blue-500"
-                                            : "border-slate-100 shadow-sm hover:border-blue-200"
+                                        ? "border-blue-500 shadow-[0_12px_40px_rgba(37,99,235,0.1)] ring-1 ring-blue-500"
+                                        : "border-slate-100 shadow-sm hover:border-blue-200"
                                         } ${room.isSoldOut ? 'opacity-75 grayscale-[0.5]' : ''}`} // Thêm độ mờ và xám nhẹ nếu hết phòng/inactive
                                 >
                                     {/* 1. KHU VỰC THÔNG TIN CHÍNH (BÊN TRÁI) */}
@@ -499,8 +544,8 @@ export default function HotelDetailPage() {
                                                 {room.quantity > 0 && (
                                                     <div
                                                         className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-500 ${room.quantity <= 3
-                                                                ? 'bg-red-50 text-red-600 animate-pulse'
-                                                                : 'bg-emerald-50 text-emerald-700'
+                                                            ? 'bg-red-50 text-red-600 animate-pulse'
+                                                            : 'bg-emerald-50 text-emerald-700'
                                                             }`}>
                                                         <span
                                                             className={`w-1.5 h-1.5 rounded-full ${room.quantity <= 3 ? 'bg-red-500' : 'bg-emerald-500'}`}></span>

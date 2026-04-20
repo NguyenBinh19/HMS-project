@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -44,6 +45,18 @@ public class AgencyBooking {
 
     @Column(name = "principal_remaining", precision = 18, scale = 2)
     private BigDecimal principalRemaining = BigDecimal.ZERO;
+
+    @Column(name = "late_days")
+    private Integer lateDays;
+
+    @Column(name = "late_working_days")
+    private Integer lateWorkingDays;
+
+    @Column(name = "last_interest_calculated_date")
+    private LocalDate lastInterestCalculatedDate;
+
+    @Column(name = "penalty_rate", precision = 10, scale = 7)
+    private BigDecimal penaltyRate;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "agency_id", referencedColumnName = "agency_id", insertable = false, updatable = false)

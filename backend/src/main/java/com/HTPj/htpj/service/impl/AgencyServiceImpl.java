@@ -175,20 +175,35 @@ public class AgencyServiceImpl implements AgencyService {
                 .build();
     }
 
+    @Override
     public CreditSummaryDto getCreditSummary(Long agencyId) {
+
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new RuntimeException("Agency not found"));
 
-        BigDecimal creditLimit = agency.getCreditLimit() != null ? agency.getCreditLimit() : BigDecimal.ZERO;
-        BigDecimal currentCredit = agency.getCurrentCredit() != null ? agency.getCurrentCredit() : BigDecimal.ZERO;
+        BigDecimal creditLimit = agency.getCreditLimit() != null
+                ? agency.getCreditLimit()
+                : BigDecimal.ZERO;
+
+        BigDecimal currentCredit = agency.getCurrentCredit() != null
+                ? agency.getCurrentCredit()
+                : BigDecimal.ZERO;
+
         BigDecimal remainingCredit = currentCredit;
 
-        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+        List<AgencyBooking> unpaidBookings =
+                agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
 
         BigDecimal debt = unpaidBookings.stream()
                 .map(b -> {
-                    BigDecimal principal = b.getPrincipalRemaining() != null ? b.getPrincipalRemaining() : BigDecimal.ZERO;
-                    BigDecimal penalty = b.getPenaltyInterest() != null ? b.getPenaltyInterest() : BigDecimal.ZERO;
+                    BigDecimal principal = b.getPrincipalRemaining() != null
+                            ? b.getPrincipalRemaining()
+                            : BigDecimal.ZERO;
+
+                    BigDecimal penalty = b.getPenaltyInterest() != null
+                            ? b.getPenaltyInterest()
+                            : BigDecimal.ZERO;
+
                     return principal.add(penalty);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -198,9 +213,50 @@ public class AgencyServiceImpl implements AgencyService {
                         .divide(creditLimit, 0, RoundingMode.HALF_UP)
                         .intValue();
 
+        AgencyBooking worstBooking = unpaidBookings.stream()
+                .max(Comparator.comparing(
+                        b -> b.getLateWorkingDays() != null ? b.getLateWorkingDays() : 0
+                ))
+                .orElse(null);
+
+        Integer lateDays = 0;
+        Integer lateWorkingDays = 0;
+        BigDecimal penaltyRate = BigDecimal.ZERO;
+        BigDecimal penaltyAmount = BigDecimal.ZERO;
+        String status = "NORMAL";
+
+        if (worstBooking != null) {
+
+            lateDays = worstBooking.getLateDays() != null ? worstBooking.getLateDays() : 0;
+            lateWorkingDays = worstBooking.getLateWorkingDays() != null ? worstBooking.getLateWorkingDays() : 0;
+            penaltyRate = worstBooking.getPenaltyRate() != null ? worstBooking.getPenaltyRate() : BigDecimal.ZERO;
+            penaltyAmount = worstBooking.getPenaltyInterest() != null ? worstBooking.getPenaltyInterest() : BigDecimal.ZERO;
+
+            if (lateDays > 30) {
+                status = "LEGAL";
+            } else if (lateWorkingDays > 15) {
+                status = "LOCKED";
+            } else if (lateWorkingDays > 0) {
+                status = "WARNING";
+            } else {
+                status = "NORMAL";
+            }
+        }
+
         LocalDate dueDate = YearMonth.now().atDay(25);
 
-        return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
+        return new CreditSummaryDto(
+                remainingCredit,
+                debt,
+                creditLimit,
+                usedPercent,
+                dueDate,
+                lateDays,
+                lateWorkingDays,
+                penaltyRate,
+                penaltyAmount,
+                status
+        );
     }
 
 
