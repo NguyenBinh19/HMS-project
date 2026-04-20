@@ -150,9 +150,9 @@ export default function HotelDetailPage() {
                         id: staticRoom.roomTypeId,
                         name: staticRoom.roomTitle,
                         description: staticRoom.description,
-                        maxAdults: staticRoom.max_adults || 2,
-                        maxChildren: staticRoom.max_children || 0,
-                        area: staticRoom.room_area || 0,
+                        maxAdults: staticRoom.maxAdults || 2,
+                        maxChildren: staticRoom.maxChildren || 0,
+                        area: staticRoom.roomArea || 0,
                         bedType: staticRoom.bedType || "Giường đôi",
                         amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
                         price: dynamicRoom?.price || 0,
@@ -315,7 +315,7 @@ export default function HotelDetailPage() {
                                         <Star key={i} size={16} fill="currentColor" />
                                     ))}
                                 </div>
-                                <span className="text-slate-500 text-sm font-bold">4.8/5</span>
+                                <span className="text-slate-500 text-sm font-bold">{hotel.avgRating}/5</span>
                             </div>
 
                             <h1 className="text-3xl font-black text-slate-900 mb-2">
@@ -345,11 +345,11 @@ export default function HotelDetailPage() {
                     )}
                     {isAgency && (<div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
+                            <label className="text-[11px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} min={todayStr} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
                         </div>
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
+                            <label className="text-[11px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
                             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} min={tempDates.checkIn || todayStr} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                         </div>
                         <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">Cập nhật ngày</button>
@@ -428,24 +428,24 @@ export default function HotelDetailPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">
-                                            <div
-                                                className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div
-                                                    className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3} />
-                                                </div>
-                                                Xác nhận ngay
-                                            </div>
-                                            <div
-                                                className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div
-                                                    className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3} />
-                                                </div>
-                                                Miễn phí hủy phòng
-                                            </div>
-                                        </div>
+                                        {/*<div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">*/}
+                                        {/*    <div*/}
+                                        {/*        className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">*/}
+                                        {/*        <div*/}
+                                        {/*            className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">*/}
+                                        {/*            <Check size={12} strokeWidth={3} />*/}
+                                        {/*        </div>*/}
+                                        {/*        Xác nhận ngay*/}
+                                        {/*    </div>*/}
+                                        {/*    <div*/}
+                                        {/*        className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">*/}
+                                        {/*        <div*/}
+                                        {/*            className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">*/}
+                                        {/*            <Check size={12} strokeWidth={3} />*/}
+                                        {/*        </div>*/}
+                                        {/*        Miễn phí hủy phòng*/}
+                                        {/*    </div>*/}
+                                        {/*</div>*/}
                                     </div>
 
                                     {/* 2. KHU VỰC GIÁ VÀ ĐẶT PHÒNG (BÊN PHẢI) */}

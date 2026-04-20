@@ -153,7 +153,7 @@ const CommissionList = () => {
                     </div>
                     {/* NHÓM FILTER */}
                     <div className="flex items-center gap-2">
-                        <Filter size={14} className="text-slate-400"/>
+                        <Filter size={14} className="text-slate-600"/>
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
@@ -168,7 +168,7 @@ const CommissionList = () => {
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50/50 text-gray-400 text-[10px] uppercase font-black tracking-widest">
+                        <thead className="bg-gray-50/50 text-black-900 text-[10px] uppercase font-black tracking-widest">
                         <tr>
                             <th className="px-6 py-4">STT</th>
                             <th className="px-6 py-4">Loại hình</th>
@@ -194,7 +194,7 @@ const CommissionList = () => {
                             currentTableData.map((item, index) => (
                                 <tr key={item.commissionId}
                                     className={`hover:bg-gray-50/50 transition-colors ${!item.isActive ? 'opacity-60 bg-gray-50/30' : ''}`}>
-                                    <td className="px-6 py-4 font-black text-xs text-gray-400">{index + 1}</td>
+                                    <td className="px-6 py-4 font-black text-xs text-gray-800">{index + 1}</td>
                                     <td className="px-6 py-4">{renderTypeTag(item.commissionType)}</td>
                                     <td className="px-6 py-4">
                                         <span

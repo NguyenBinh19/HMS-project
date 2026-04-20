@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     BarChart3, Download, Calendar, Filter,
-    RefreshCcw, ArrowRight, Home
+    RefreshCcw, ArrowRight, Home, AlertCircle
 } from "lucide-react";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -12,25 +12,53 @@ import { revenueService } from '@/services/revenue.service';
 import { financialService } from '@/services/financial.service';
 import { toast } from 'react-hot-toast';
 
-const RevenueReport = ({ hotelId = 2016 }) => {
+const RevenueReport = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState(null);
 
     const [startDate, setStartDate] = useState("2026-03-01");
     const [endDate, setEndDate] = useState("2026-03-31");
     const [granularity, setGranularity] = useState("DAILY"); // DAILY | WEEKLY | MONTHLY
-    const [source, setSource] = useState(null);
+    const [dateError, setDateError] = useState("");
+    const MAX_DAILY_RANGE_DAYS = 365;
+    const validateRevenueRequest = (start, end, granularity = "DAILY") => {
+        if (!start || !end) {
+            return "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc";
+        }
+
+        const s = new Date(start);
+        const e = new Date(end);
+
+        if (s > e) {
+            return "Ngày bắt đầu không thể lớn hơn ngày kết thúc";
+        }
+
+        const diffTime = Math.abs(e - s);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        if (granularity === "DAILY" && diffDays > MAX_DAILY_RANGE_DAYS) {
+            return `Với chế độ xem theo NGÀY, khoảng cách không được quá ${MAX_DAILY_RANGE_DAYS} ngày`;
+        }
+
+        return null;
+    };
 
     const fetchRevenue = async () => {
+        const error = validateRevenueRequest(startDate, endDate, granularity);
+        if (error) {
+            setDateError(error);
+            return; // Dừng lại không gọi API
+        }
+
         setLoading(true);
+        setDateError(""); // Xóa lỗi cũ nếu có
         try {
             const params = {
                 startDate,
                 endDate,
                 granularity,
-                // source: source || null
             };
-            const res = await revenueService.getRevenueReport(hotelId, params);
+            const res = await revenueService.getRevenueReport(params);
 
             if (res.code === 1000) {
                 setReportData(res.result);
@@ -98,8 +126,20 @@ const RevenueReport = ({ hotelId = 2016 }) => {
         }
     };
 
+    const handleGranularityChange = (mode) => {
+        setGranularity(mode);
+        const error = validateRevenueRequest(startDate, endDate, mode);
+        if (error) setDateError(error);
+        else setDateError("");
+    };
+
     useEffect(() => {
-        fetchRevenue();
+        const error = validateRevenueRequest(startDate, endDate, granularity);
+        if (!error) {
+            fetchRevenue();
+        } else {
+            setDateError(error);
+        }
     }, [startDate, endDate, granularity]);
 
     const summary = reportData?.summary || {};
@@ -140,10 +180,20 @@ const RevenueReport = ({ hotelId = 2016 }) => {
             <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex flex-wrap items-center gap-6 mb-8">
                 {/* Chọn khoảng ngày */}
                 <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                    <Calendar size={16} className="text-blue-600" />
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none" title="Ngày bắt đầu" />
+                    <Calendar size={16} className={dateError ? 'text-red-500' : 'text-blue-600'} />
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold outline-none"
+                    />
                     <ArrowRight size={14} className="text-slate-300" />
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none" title="Ngày kết thúc" />
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold outline-none"
+                    />
                 </div>
 
                 {/* Chọn độ chia biểu đồ (Ngày/Tuần/Tháng) */}
@@ -151,24 +201,21 @@ const RevenueReport = ({ hotelId = 2016 }) => {
                     {['DAILY', 'WEEKLY', 'MONTHLY'].map((mode) => (
                         <button
                             key={mode}
-                            onClick={() => setGranularity(mode)}
+                            onClick={() => handleGranularityChange(mode)}
                             className={`px-6 py-2 rounded-lg text-[10px] font-black transition-all ${granularity === mode ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             {mode === 'DAILY' ? 'NGÀY' : mode === 'WEEKLY' ? 'TUẦN' : 'THÁNG'}
                         </button>
                     ))}
                 </div>
-
-                {/* Lọc theo nguồn khách (OTA/Trực tiếp) */}
-                {/*<div className="flex items-center gap-3 ml-auto border-l pl-6 border-slate-100">*/}
-                {/*    <Filter size={18} className="text-slate-400" />*/}
-                {/*    <select value={source} onChange={(e) => setSource(e.target.value)} className="bg-transparent font-bold text-slate-600 outline-none text-sm cursor-pointer">*/}
-                {/*        <option value="">Tất cả nguồn</option>*/}
-                {/*        <option value="OTA">Kênh OTA (Agoda, Booking...)</option>*/}
-                {/*        <option value="DIRECT">Khách trực tiếp/Vãng lai</option>*/}
-                {/*    </select>*/}
-                {/*</div>*/}
             </div>
+            {/* Message báo lỗi đồng bộ với ErrorCode của BE */}
+            {dateError && (
+                <div className="flex items-center gap-2 text-red-500 text-[11px] font-bold px-4 animate-in fade-in slide-in-from-top-1">
+                    <AlertCircle size={14} />
+                    <span className="uppercase tracking-tight">{dateError}</span>
+                </div>
+            )}
 
             {/* THẺ CHỈ SỐ KPI  */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

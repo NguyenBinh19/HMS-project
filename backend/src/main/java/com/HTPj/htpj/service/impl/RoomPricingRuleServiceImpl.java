@@ -82,7 +82,7 @@ public class RoomPricingRuleServiceImpl implements RoomPricingRuleService {
                 .filter(RoomPricingRule::getIsActive)
                 .filter(r -> isMatched(r, date, dayName))
                 .sorted(Comparator.comparing(RoomPricingRule::getPriority,
-                        Comparator.nullsLast(Integer::compareTo)).reversed())
+                        Comparator.nullsFirst(Integer::compareTo)).reversed())
                 .toList();
 
         BigDecimal finalPrice = basePrice;

@@ -95,6 +95,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if ("BANNED".equals(users.getStatus())) {
             throw new AppException(ErrorCode.ACCOUNT_BANNED);
         }
+        if ("LOCKED".equals(users.getStatus())) {
+            throw new AppException(ErrorCode.ACCOUNT_BANNED);
+        }
 
         // Update last login timestamp
         users.setLastLogin(LocalDateTime.now());

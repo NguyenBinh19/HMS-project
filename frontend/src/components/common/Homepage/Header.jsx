@@ -9,6 +9,7 @@ import api from "../../../services/axios.config";
 import { kycService } from "@/services/kyc.service.js";
 import { MOCK_AGENCY_DATA } from '@/constant/agency_mockData.js';
 import NotificationBell from "@/components/common/Notification/NotificationBell";
+import Logo from "../../../../public/Logo_HMS_B2B.png"
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -135,16 +136,13 @@ const Header = () => {
         // Trường hợp bị từ chối
         if (kycData?.status === "REJECTED") {
             return (
-                <button
-                    onClick={() => navigate("/kyc-intro")}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all"
-                >
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed">
                     <AlertCircle size={18} />
                     <div className="flex flex-col items-start leading-none">
-                        <span className="text-[12px] font-bold">Làm lại hồ sơ</span>
-                        <span className="text-[10px] opacity-80">Hồ sơ bị từ chối</span>
+                        <span className="text-[12px] font-bold">Hồ sơ bị từ chối</span>
+                        <span className="text-[10px] opacity-80">Vui lòng liên hệ hệ thống.</span>
                     </div>
-                </button>
+                </div>
             );
         }
         // Trường hợp chưa gửi hồ sơ (null hoặc status khác)
@@ -255,10 +253,9 @@ const Header = () => {
     };
     return (
         <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full px-4 sm:px-8 lg:px-12 mx-auto">
                 <div className="flex justify-between items-center h-20">
 
-                    {/* LOGO */}
                     <Link to="/homepage" className="flex-shrink-0 flex items-center gap-2 group">
                         <div className="bg-blue-600 p-1.5 rounded-xl transition-transform group-hover:rotate-12">
                             <Building2 className="text-white" size={24} strokeWidth={2.5} />

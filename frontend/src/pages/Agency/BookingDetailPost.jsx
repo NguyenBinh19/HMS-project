@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft, Copy, Download, UserCircle, FileText,
-    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar, Loader2
+    MessageCircle, XCircle, CheckCircle2, QrCode, Info, Star, Calendar, Loader2, ExternalLink, X
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { bookingService } from '@/services/booking.service.js';
 import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.jsx';
 import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
 import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
+import { pdfDocumentService } from "@/services/pdf.service.js";
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -44,6 +45,7 @@ const BookingDetailPost = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const bookingCode = decodeURIComponent(id || "");
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
 
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -52,6 +54,32 @@ const BookingDetailPost = () => {
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [showPolicyModal, setShowPolicyModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
+    useEffect(() => {
+        const fetchPolicy = async () => {
+            try {
+                const pdfRes = await pdfDocumentService.getAllPdfs();
+                if (pdfRes?.result) {
+                    // Tìm tài liệu có tiêu đề phù hợp với "Hủy phòng" hoặc "Hoàn tiền"
+                    const policyDoc = pdfRes.result.find(doc =>
+                        doc.title.includes("Phụ lục hủy phòng") ||
+                        doc.title.includes("Chính sách hoàn tiền")
+                    );
+                    setPolicyUrl(policyDoc?.fileUrl || "");
+                }
+            } catch (error) {
+                console.error("Không thể tải chính sách:", error);
+            }
+        };
+        fetchPolicy();
+    }, []);
+
+// Khóa cuộn trang khi mở modal
+    useEffect(() => {
+        document.body.style.overflow = showPolicyModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPolicyModal]);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -168,8 +196,9 @@ const BookingDetailPost = () => {
                 `Hủy thành công!\n` +
                 `---------------------------\n` +
                 `Mã đơn: ${data.bookingCode}\n` +
-                `Phí phạt hủy: ${formatCurrency(data.cancellationPenalty)}\n` +
-                `Tiền hoàn lại: ${formatCurrency(data.refundAmount)}\n` +
+                `Số tiền booking: ${formatCurrency(data.finalAmount)}\n`+
+                `Phí hủy dịch vụ: ${formatCurrency(data.cancellationPenalty)}\n` +
+                `Tiền hoàn lại cho bạn: ${formatCurrency(data.refundAmount)}\n` +
                 `Lý do: ${data.reason}`
             );
         } catch (err) {
@@ -248,7 +277,7 @@ const BookingDetailPost = () => {
                     <div className="p-5 border-b border-slate-100">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-sm font-bold text-slate-800">Các tác vụ hậu mãi</h3>
-                            <span className="text-[10px] text-slate-400 font-medium">Chế độ ẩn giá (Agent Mode)</span>
+                            {/*<span className="text-[10px] text-slate-400 font-medium">Chế độ ẩn giá (Agent Mode)</span>*/}
                         </div>
                         {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -304,7 +333,17 @@ const BookingDetailPost = () => {
 
                             {/* Nút Hủy phòng */}
                             <button
-                                onClick={() => canCancel() ? setIsCancelModalOpen(true) : alert("Không thể hủy đơn lúc này.")}
+                                onClick={() => {
+                                    if (!canCancel()) {
+                                        alert("Không thể hủy đơn lúc này.");
+                                        return;
+                                    }
+                                    if (policyUrl) {
+                                        setShowPolicyModal(true); // Mở modal chính sách trước
+                                    } else {
+                                        setIsCancelModalOpen(true); // Nếu ko có PDF thì mở thẳng modal hủy như cũ
+                                    }
+                                }}
                                 className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
                                     canCancel() ? "bg-[#fef2f2] text-rose-600 hover:bg-rose-100" : "bg-slate-100 text-slate-300 cursor-not-allowed"
                                 }`}
@@ -493,6 +532,86 @@ const BookingDetailPost = () => {
                 booking={booking}
                 onConfirm={handleCancelBooking}
             />
+
+            {/* MODAL PHỤ LỤC HỦY PHÒNG & HOÀN TIỀN */}
+            {showPolicyModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        {/* Header Modal */}
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => {
+                                    setShowPolicyModal(false);
+                                    setIsPdfLoading(true);
+                                }}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+
+                        {/* Nội dung PDF */}
+                        <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                            {policyUrl ? (
+                                <div className="w-full h-full overflow-hidden">
+                                    <object
+                                        data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                        type="application/pdf"
+                                        style={{
+                                            width: '100%',
+                                            height: 'calc(100% + 40px)',
+                                            marginTop: '-40px'
+                                        }}
+                                        className="relative z-10"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    >
+                                        <iframe
+                                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                            className="w-full h-full border-none"
+                                            title="Phụ lục hủy phòng"
+                                            onLoad={() => setIsPdfLoading(false)}
+                                        />
+                                    </object>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center h-full">
+                                    <p className="text-slate-500">Tài liệu không khả dụng.</p>
+                                </div>
+                            )}
+
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[15] bg-slate-50">
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                            Đang tải chính sách hủy phòng...
+                        </span>
+                                </div>
+                            )}
+                        </div>
+                        {/* Footer Modal -*/}
+                        <div className="p-4 bg-white border-t border-slate-100 flex justify-center z-20">
+                            <button
+                                onClick={() => {
+                                    setShowPolicyModal(false);
+                                    setIsCancelModalOpen(true);
+                                    setIsPdfLoading(true);
+                                }}
+                                className="bg-rose-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg hover:bg-rose-700 transition-all active:scale-95"
+                            >
+                                Tôi đã hiểu, tiếp tục hủy đơn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

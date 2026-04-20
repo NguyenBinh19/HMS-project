@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { List, Map, Star, MapPin, ChevronLeft, ChevronRight, Search, Eye, Layers } from "lucide-react";
+import { List, Map, Star, MapPin, ChevronLeft, ChevronRight, Search, Eye, Layers, Calendar, Users, BedDouble, AlertTriangle } from "lucide-react";
 import HotelSearchForm from "@/components/agency/booking/SearchForm.jsx";
 import FilterSidebar from "@/components/agency/booking/FilterGroup.jsx";
 import homepage from "@/assets/images/homepage.jpg";
@@ -50,9 +50,9 @@ export default function HotelSearchContainer() {
     const keyword = searchParams.get("keyword") || "";
     const checkIn = searchParams.get("checkIn") || "";
     const checkOut = searchParams.get("checkOut") || "";
-    const rooms = searchParams.get("rooms") || "";
-    const adults = searchParams.get("adults") || "";
-    const children = searchParams.get("children") || "";
+    const rooms = searchParams.get("rooms") || "0";
+    const adults = searchParams.get("adults") || "0";
+    const children = searchParams.get("children") || "0";
 
     // State lưu data gốc từ API
     const [hotels, setHotels] = useState([]);
@@ -78,7 +78,9 @@ export default function HotelSearchContainer() {
                 const params = { keyword };
                 if (checkIn) params.checkIn = checkIn;
                 if (checkOut) params.checkOut = checkOut;
-                if (rooms) params.rooms = rooms;
+                params.rooms = rooms;
+                params.adults = adults;
+                params.children = children;
 
                 const response = await bookingService.searchHotel(params);
 
@@ -96,7 +98,7 @@ export default function HotelSearchContainer() {
         };
 
         fetchHotels();
-    }, [keyword, checkIn, checkOut, rooms]);
+    }, [keyword, checkIn, checkOut, rooms, adults, children]);
 
     // 2. Lọc Dữ Liệu (Chạy tự động mỗi khi `hotels` hoặc `filters` thay đổi)
     const filteredHotels = useMemo(() => {
@@ -112,6 +114,10 @@ export default function HotelSearchContainer() {
             return matchStar && matchAmenities;
         });
     }, [hotels, filters]);
+
+    // Tách khách sạn phù hợp và đề xuất
+    const matchingHotels = useMemo(() => filteredHotels.filter(h => h.suggested !== true), [filteredHotels]);
+    const suggestedHotels = useMemo(() => filteredHotels.filter(h => h.suggested === true), [filteredHotels]);
 
     // 3. Phân trang trên mảng ĐÃ LỌC
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -158,9 +164,10 @@ export default function HotelSearchContainer() {
                                 </h2>
                                 <div className="flex items-center gap-4 text-slate-400 text-[12px] font-bold mt-2 italic">
                                     <span className="flex items-center gap-1"><MapPin size={14} className="text-blue-500"/> {keyword}</span>
-                                    {checkIn && checkOut && <span>📅 {checkIn} → {checkOut}</span>}
-                                    {rooms && <span>🏨 {rooms} phòng</span>}
-                                    {adults && <span>👥 {adults} Người lớn{children && children !== "0" ? `, ${children} Trẻ em` : ""}</span>}
+                                    {checkIn && checkOut && <span className="flex items-center gap-1"><Calendar size={14} className="text-blue-500"/> {checkIn} \u2192 {checkOut}</span>}
+                                    {Number(rooms) > 0 && <span className="flex items-center gap-1"><BedDouble size={14} className="text-blue-500"/> {rooms} phòng</span>}
+                                    {Number(adults) > 0 && <span className="flex items-center gap-1"><Users size={14} className="text-blue-500"/> {adults} người lớn{Number(children) > 0 ? `, ${children} trẻ em` : ""}</span>}
+                                    {Number(adults) === 0 && Number(children) > 0 && <span className="flex items-center gap-1"><Users size={14} className="text-blue-500"/> {children} trẻ em</span>}
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -171,14 +178,11 @@ export default function HotelSearchContainer() {
                         </div>
 
                         <div className="flex items-center gap-3 mt-6 pt-6 border-t border-slate-50">
-                            {/* Cập nhật số lượng khách sạn hiển thị dựa trên mảng ĐÃ LỌC */}
                             <span className="text-[11px] font-black text-slate-400 uppercase italic">
-                            Hiển thị: <span className="text-slate-800">{filteredHotels.length} khách sạn phù hợp</span>
+                            Hiển thị: <span className="text-slate-800">{matchingHotels.length} khách sạn phù hợp</span>
+                            {suggestedHotels.length > 0 && <span className="text-amber-600"> + {suggestedHotels.length} đề xuất</span>}
                         </span>
                             <div className="h-4 w-[1px] bg-slate-200 mx-2"></div>
-                            {/*<span className="text-[11px] font-black text-slate-400 uppercase italic mr-2">Sắp xếp theo:</span>*/}
-                            {/*<button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold shadow-md">Giá thấp → cao</button>*/}
-                            {/*<button className="px-4 py-1.5 bg-white text-slate-500 rounded-lg text-[11px] font-bold border border-slate-200 hover:border-blue-400 transition-all">Đánh giá cao nhất</button>*/}
                         </div>
                     </div>
 
@@ -199,9 +203,31 @@ export default function HotelSearchContainer() {
                                     Không tìm thấy khách sạn nào khớp với tiêu chí của bạn.
                                 </div>
                             ) : (
-                                currentHotels.map((hotel) => (
-                                    <HotelCard key={hotel.hotelId} hotel={hotel} />
-                                ))
+                                <>
+                                    {/* Khách sạn phù hợp */}
+                                    {currentHotels.filter(h => !h.suggested).map((hotel) => (
+                                        <HotelCard key={hotel.hotelId} hotel={hotel} />
+                                    ))}
+
+                                    {/* Phần đề xuất */}
+                                    {currentHotels.some(h => h.suggested) && (
+                                        <>
+                                            <div className="flex items-center gap-3 my-6">
+                                                <div className="flex-1 h-px bg-amber-200"></div>
+                                                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-5 py-2.5">
+                                                    <AlertTriangle size={16} className="text-amber-500" />
+                                                    <span className="text-[12px] font-bold text-amber-700">
+                                                        Các khách sạn dưới đây không đủ số phòng hoặc sức chứa theo yêu cầu, nhưng cùng khu vực bạn tìm kiếm
+                                                    </span>
+                                                </div>
+                                                <div className="flex-1 h-px bg-amber-200"></div>
+                                            </div>
+                                            {currentHotels.filter(h => h.suggested).map((hotel) => (
+                                                <HotelCard key={hotel.hotelId} hotel={hotel} isSuggested />
+                                            ))}
+                                        </>
+                                    )}
+                                </>
                             )}
 
                             {/* Pagination Component */}

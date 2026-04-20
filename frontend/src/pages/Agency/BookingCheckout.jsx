@@ -4,13 +4,14 @@ import { parseISO, differenceInSeconds, format, differenceInDays } from "date-fn
 import {
     Clock, CheckCircle2, User, CigaretteOff, RefreshCw, Loader2,
     MapPin, Users, ShieldCheck, Wallet, CreditCard,
-    Tag, XCircle, ChevronRight, AlertCircle, PhoneCall, TrendingUp
+    Tag, XCircle, ChevronRight, AlertCircle, PhoneCall, TrendingUp, X, ExternalLink, FileText, ArrowRight
 } from "lucide-react";
 import { bookingService } from "@/services/booking.service.js";
 import { useBookingPromotion } from "@/components/agency/booking/useBookingPromotion.js";
 import { addonServiceApi } from "@/services/addonService.service.js";
 import ExtraServiceSection from "@/components/agency/booking/ExtraServiceSection.jsx";
 import api from "@/services/axios.config.js";
+import { pdfDocumentService } from "@/services/pdf.service.js";
 
 /* ================= TIMER BAR ================= */
 const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCount, maxExtensions }) => {
@@ -73,6 +74,32 @@ const BookingTimerBar = ({ expiredAt, onExpire, onExtend, isExtending, extendCou
 export default function BookingCheckoutPage() {
     const location = useLocation();
     const navigate = useNavigate();
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
+    useEffect(() => {
+        const fetchPolicy = async () => {
+            try {
+                const pdfRes = await pdfDocumentService.getAllPdfs();
+                if (pdfRes?.result) {
+                    // Tìm tài liệu có tiêu đề phù hợp
+                    const policyDoc = pdfRes.result.find(doc =>
+                        doc.title.includes("Phụ lục điều khoản đặt phòng") ||
+                        doc.title.includes("Quy tắc đặt phòng")
+                    );
+                    setPolicyUrl(policyDoc?.fileUrl || "");
+                }
+            } catch (error) {
+                console.error("Không thể tải chính sách:", error);
+            }
+        };
+        fetchPolicy();
+    }, []);
+    // Khóa cuộn trang khi mở modal
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     // const [data, setData] = useState(location.state || {});
     // Khởi tạo data: Ưu tiên dữ liệu cũ đang thanh toán dở
@@ -277,12 +304,12 @@ export default function BookingCheckoutPage() {
             const errorCode = errorData?.code;
             const errorMessage = errorData?.message;
 
-            // Xử lý riêng cho lỗi thiếu tiền (Code 2206)
+            // Xử lý lỗi thiếu tiền
             if (errorCode === 2206) {
                 alert("Số dư tài khoản của bạn không đủ để thực hiện thanh toán này. Vui lòng kiểm tra lại Ví hoặc Hạn mức tín dụng!");
             }
             // Xử lý lỗi phiên giữ chỗ hết hạn (Nếu có)
-            else if (errorCode === 1402) { // Ví dụ code 1402 là hết hạn hold
+            else if (errorCode === 1402) { // code 1402 là hết hạn hold
                 alert("Phiên giữ chỗ đã hết hạn. Vui lòng thực hiện tìm kiếm lại.");
                 navigate("/agency/search-hotel");
             }
@@ -336,7 +363,7 @@ export default function BookingCheckoutPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Tên khách hàng</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Tên khách hàng</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.name} placeholder="Nguyễn Văn A"
@@ -344,7 +371,7 @@ export default function BookingCheckoutPage() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Email nhận vé</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Địa chỉ Email</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.email} placeholder="example@gmail.com"
@@ -352,7 +379,7 @@ export default function BookingCheckoutPage() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase">Số điện thoại</label>
+                                <label className="text-[11px] font-bold text-slate-700 uppercase">Số điện thoại</label>
                                 <input
                                     className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                                     value={customerInfo.phone} placeholder="09xx xxx xxx"
@@ -392,7 +419,7 @@ export default function BookingCheckoutPage() {
 
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CreditCard size={20} className="text-blue-700"/> Chọn nguồn tiền thanh toán
+                             Chọn nguồn tiền thanh toán
                         </h2>
 
                         <div className="space-y-4">
@@ -650,10 +677,14 @@ export default function BookingCheckoutPage() {
                                             </div>
                                             <label htmlFor="terms"
                                                    className="text-[12px] text-slate-600 leading-tight cursor-pointer select-none">
-                                                Tôi đồng ý với <span
-                                                className="text-blue-600 font-bold hover:underline">Quy tắc đặt phòng</span> & <span
-                                                className="text-blue-600 font-bold hover:underline">Chính sách hủy</span> của
-                                                hệ thống.
+                                                Tôi đồng ý với {" "}
+                                                <span
+                                                    onClick={() => policyUrl ? setShowPdfModal(true) : alert("Tài liệu đang được cập nhật!")}
+                                                    className="text-blue-600 font-bold hover:underline cursor-pointer"
+                                                >
+                                                    Quy tắc đặt phòng & Chính sách hủy
+                                                </span>{" "}
+                                                của hệ thống.
                                             </label>
                                         </div>
                                         <div
@@ -700,6 +731,76 @@ export default function BookingCheckoutPage() {
                         </div>
                     </div>
                 </div>
+            {/* MODAL PDF ĐIỀU KHOẢN ĐẶT PHÒNG */}
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+
+                        {/* Header Modal - Nút điều hướng */}
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18}/>
+                            </a>
+                            <button
+                                onClick={() => {
+                                    setShowPdfModal(false);
+                                    setIsPdfLoading(true); 
+                                }}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18}/>
+                            </button>
+                        </div>
+
+                        {/* Nội dung PDF */}
+                        <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                            {policyUrl ? (
+                                <div className="w-full h-full overflow-hidden">
+                                    <object
+
+                                        data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                        type="application/pdf"
+                                        style={{
+                                            width: '100%',
+                                            height: 'calc(100% + 40px)',
+                                            marginTop: '-40px'
+                                        }}
+                                        className="relative z-10"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    >
+                                        <iframe
+                                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                            className="w-full h-full border-none"
+                                            title="Chính sách đặt phòng"
+                                            onLoad={() => setIsPdfLoading(false)}
+                                        />
+                                    </object>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                    <Info size={40} className="mb-2 opacity-20" />
+                                    <p className="text-sm font-medium">Tài liệu đang được cập nhật...</p>
+                                </div>
+                            )}
+
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                            Đang chuẩn bị tài liệu...
+                        </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             </div>
             );
             }

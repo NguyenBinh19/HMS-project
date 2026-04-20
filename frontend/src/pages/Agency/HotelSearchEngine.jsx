@@ -1,9 +1,51 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import HotelSearchForm from "@/components/agency/booking/SearchForm.jsx";
 import { History, Star, Gift, Crown, Building2 } from "lucide-react";
 import homepage from "@/assets/images/homepage.jpg";
+import phuQuocImg from "@/assets/images/phu-quoc.jpg";
+import vungTauImg from "@/assets/images/vung-tau.jpg";
+import daLatImg from "@/assets/images/da-lat.jpg";
+import daNangImg from "@/assets/images/da-nang.jpg";
+import quyNhonImg from "@/assets/images/quy-nhon.webp";
+import nhaTrangImg from "@/assets/images/nha-trang.webp";
+import phanThietImg from "@/assets/images/phan-thiet.png";
+import phuYenImg from "@/assets/images/phu-yen.jpg";
+
+const DESTINATIONS = [
+    { id: 1, name: "Phú Quốc",  img: phuQuocImg, gridClass: "md:col-span-2 md:row-span-1" },
+    { id: 4, name: "Vũng Tàu", img: vungTauImg, gridClass: "md:col-span-1 md:row-span-2" },
+    { id: 2, name: "Đà Lạt", img: daLatImg, gridClass: "md:col-span-1 md:row-span-1" },
+    { id: 3, name: "Đà Nẵng",  img: daNangImg, gridClass: "md:col-span-1 md:row-span-1" },
+];
+
+const DESTINATIONS_GROUP_2 = [
+    { id: 5, name: "Nha Trang", img: nhaTrangImg, gridClass: "md:col-span-1 md:row-span-2" },
+    { id: 6, name: "Quy Nhơn",  img: quyNhonImg, gridClass: "md:col-span-2 md:row-span-1" },
+    { id: 7, name: "Phan Thiết", img: phanThietImg, gridClass: "md:col-span-1 md:row-span-1" },
+    { id: 8, name: "Phú Yên",  img: phuYenImg, gridClass: "md:col-span-1 md:row-span-1" },
+];
 
 export default function HotelSearchEngine() {
+    const navigate = useNavigate();
+    const handleQuickSearch = (name) => {
+        // const today = new Date();
+        // const tomorrow = new Date(today);
+        // tomorrow.setDate(tomorrow.getDate() + 1);
+        // const nextDay = new Date(tomorrow);
+        // nextDay.setDate(nextDay.getDate() + 2);
+
+        const params = new URLSearchParams();
+        params.set("keyword", name);
+        // params.set("checkIn", tomorrow.toISOString().split("T")[0]);
+        // params.set("checkOut", nextDay.toISOString().split("T")[0]);
+        // params.set("rooms", "1");
+        // params.set("adults", "2");
+        // params.set("children", "0");
+
+        navigate(`/agency/search-hotel/list?${params.toString()}`);
+    };
+
     return (
         <div className="w-full bg-[#F8FAFC] min-h-screen">
             {/* ================= HERO SECTION ================= */}
@@ -30,64 +72,60 @@ export default function HotelSearchEngine() {
                     </p>
 
                     {/* 3. Search Bar Widget */}
-                    <div className="w-full flex justify-center animate-in fade-in slide-in-from-bottom-5 duration-700">
-                        <HotelSearchForm variant="hero" />
+                    <div className="w-full max-w-5xl animate-in fade-in slide-in-from-bottom-5 duration-700">
+                        <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                            <HotelSearchForm variant="hero" />
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Phần Gợi ý thông minh */}
-            {/*<div className="max-w-6xl mx-auto py-12 px-6">*/}
-            {/*    <div className="flex items-center gap-2 mb-6">*/}
-            {/*        <h2 className="text-xl font-black text-slate-800">Gợi ý thông minh</h2>*/}
-            {/*    </div>*/}
+            {/* ================= BÊN DƯỚI ================= */}
+            <div className="max-w-6xl mx-auto py-16 px-3">
+                {/* Tiêu đề vùng trắng */}
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">
+                        Điểm đến yêu thích trong nước
+                    </h2>
+                    <p className="text-slate-500 font-medium mt-1">
+                        Lên rừng xuống biển. Trọn vẹn Việt Nam
+                    </p>
+                </div>
 
-            {/*    /!* Lịch sử tìm kiếm gần đây *!/*/}
-            {/*    <div className="flex flex-wrap items-center gap-2 mb-10">*/}
-            {/*        <span className="text-slate-500 text-sm font-bold flex items-center gap-1 mr-2 italic">*/}
-            {/*            <History size={16} /> Lịch sử tìm kiếm gần đây*/}
-            {/*        </span>*/}
-            {/*        {["Đà Nẵng (20-22/05)", "Hà Nội (01-05/06)", "Phú Quốc (15-18/07)"].map((loc) => (*/}
-            {/*            <div key={loc} className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[12px] font-bold border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer">*/}
-            {/*                {loc}*/}
-            {/*            </div>*/}
-            {/*        ))}*/}
-            {/*    </div>*/}
+                {/* Grid ảnh địa điểm */}
+                {/* Grid nhóm 1 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4 h-auto md:h-[500px] mb-6">
+                    {DESTINATIONS.map((dest) => (
+                        <DestinationCard key={dest.id} dest={dest} onSearch={handleQuickSearch} />
+                    ))}
+                </div>
 
-            {/*    /!* Cards Grid *!/*/}
-            {/*    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">*/}
-            {/*        <PromoCard*/}
-            {/*            icon={<Star size={22} />} bgColor="bg-[#EBF8FF]" textColor="text-[#2B6CB0]"*/}
-            {/*            title="Flash Sale Mường Thanh" desc="Chiết khấu thêm 5% cho Đại lý hạng A"*/}
-            {/*            badgeText="GIẢM 5%" badgeSub="Áp dụng đến 30/06/2026"*/}
-            {/*        />*/}
-            {/*        <PromoCard*/}
-            {/*            icon={<Gift size={22} />} bgColor="bg-[#FAF5FF]" textColor="text-[#6B46C1]"*/}
-            {/*            title="Combo Vịnh Hạ Long" desc="Tặng 1 đêm miễn phí cho mỗi 3 đêm đặt"*/}
-            {/*            badgeText="TẶNG 1 ĐÊM" badgeSub="Áp dụng đến 31/12/2026"*/}
-            {/*        />*/}
-            {/*        <PromoCard*/}
-            {/*            icon={<Crown size={22} />} bgColor="bg-[#FFFFF0]" textColor="text-[#B7791F]"*/}
-            {/*            title="Đại lý VIP" desc="Ưu tiên xử lý booking và hỗ trợ 24/7"*/}
-            {/*            badgeText="VIP SUPPORT" badgeSub="Luôn sẵn sàng hỗ trợ"*/}
-            {/*        />*/}
-            {/*    </div>*/}
-
-            {/*    /!* Khách sạn InterContinental Highlight *!/*/}
-            {/*    <div className="mt-8 bg-white border border-slate-100 rounded-[24px] p-6 flex items-center gap-5 hover:shadow-xl transition-all shadow-sm">*/}
-            {/*        <div className="bg-[#E6FFFA] p-4 rounded-2xl">*/}
-            {/*            <Building2 className="text-[#319795]" size={32} />*/}
-            {/*        </div>*/}
-            {/*        <div className="flex-1">*/}
-            {/*            <h3 className="font-black text-slate-800 text-lg uppercase">Khách sạn InterContinental</h3>*/}
-            {/*            <p className="text-sm text-slate-500 font-medium italic">Giá tốt nhất thị trường với chính sách hủy linh hoạt</p>*/}
-            {/*        </div>*/}
-            {/*        <div className="bg-[#F0FFF4] px-10 py-4 rounded-2xl border border-emerald-100 text-center">*/}
-            {/*            <div className="text-[#2F855A] font-black text-lg">GIÁ TỐT NHẤT</div>*/}
-            {/*            <div className="text-[#38A169] text-[10px] font-bold italic opacity-80 uppercase tracking-tighter">Cam kết giá thấp hơn 5%</div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
+                {/* Grid nhóm 2 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-4 h-auto md:h-[500px]">
+                    {DESTINATIONS_GROUP_2.map((dest) => (
+                        <DestinationCard key={dest.id} dest={dest} onSearch={handleQuickSearch} />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+// Component phụ để tránh lặp code
+function DestinationCard({ dest, onSearch }) {
+    return (
+        <div
+            onClick={() => onSearch(dest.name)}
+            className={`relative overflow-hidden rounded-2xl cursor-pointer group shadow-lg ${dest.gridClass}`}
+        >
+            <img
+                src={dest.img}
+                alt={dest.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+            <div className="absolute bottom-5 left-6 text-white">
+                <h3 className="text-2xl font-black drop-shadow-md">{dest.name}</h3>
+            </div>
         </div>
     );
 }

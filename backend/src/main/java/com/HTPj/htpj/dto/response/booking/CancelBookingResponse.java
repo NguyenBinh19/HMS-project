@@ -14,6 +14,7 @@ public class CancelBookingResponse {
     private String bookingCode;
     private String bookingStatus;
     private BigDecimal cancellationPenalty;
+    private BigDecimal finalAmount;
     private BigDecimal refundAmount;
     private String reason;
     private LocalDateTime cancelledAt;

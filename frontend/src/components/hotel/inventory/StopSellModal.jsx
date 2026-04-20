@@ -116,7 +116,7 @@ const StopSellModal = ({ isOpen, onClose, roomTypes, onSetStopSell, onRemoveStop
                         >
                             <option value="">-- Chọn loại phòng --</option>
                             {roomTypes
-                                .filter(rt => rt.roomStatus === 'ACTIVE')
+                                .filter(rt => rt.roomStatus === 'active')
                                 .map(rt => (
                                     <option key={rt.roomTypeId} value={rt.roomTypeId}>
                                         {rt.roomTypeName || rt.roomTitle} (Tối đa: {rt.totalPhysicalRooms || rt.totalRooms})

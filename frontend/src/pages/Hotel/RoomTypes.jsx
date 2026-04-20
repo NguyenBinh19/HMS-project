@@ -211,7 +211,7 @@ Bạn có chắc chắn xác nhận đã xử lý hết các đơn hàng và mu�
                         ) : (
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                <tr className="text-sm font-semibold text-slate-500 border-b border-slate-100">
+                                <tr className="text-sm font-semibold text-slate-600 border-b border-slate-100">
                                     <th className="px-6 py-5 w-[30%]">Thông tin</th>
                                     <th className="px-6 py-5 w-[30%]">Sức chứa</th>
                                     <th className="px-6 py-5 w-[15%]">Số lượng vật lý</th>

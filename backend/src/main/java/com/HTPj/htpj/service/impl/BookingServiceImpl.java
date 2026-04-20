@@ -1091,6 +1091,7 @@ public class BookingServiceImpl implements BookingService {
         return CancelBookingResponse.builder()
                 .bookingCode(booking.getBookingCode())
                 .bookingStatus("CANCELLED")
+                .finalAmount(booking.getFinalAmount())
                 .cancellationPenalty(penalty)
                 .refundAmount(refund)
                 .reason(request.getReason())

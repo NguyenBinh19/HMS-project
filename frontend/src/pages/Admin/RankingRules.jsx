@@ -122,12 +122,12 @@ const RankingRules = () => {
                             </div>
                             <div className="flex items-center gap-4">
                                 <div className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-center">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Bắt đầu</span>
+                                    <span className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Bắt đầu</span>
                                     <span className="font-mono font-bold text-slate-700">{periods.RANK_PERIOD_1_START}</span>
                                 </div>
                                 <ArrowRight className="text-slate-300" size={20} />
                                 <div className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-center">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Kết thúc</span>
+                                    <span className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Kết thúc</span>
                                     <span className="font-mono font-bold text-slate-700">{periods.RANK_PERIOD_1_END}</span>
                                 </div>
                             </div>
@@ -141,12 +141,12 @@ const RankingRules = () => {
                             </div>
                             <div className="flex items-center gap-4">
                                 <div className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-center">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Bắt đầu</span>
+                                    <span className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Bắt đầu</span>
                                     <span className="font-mono font-bold text-slate-700">{periods.RANK_PERIOD_2_START}</span>
                                 </div>
                                 <ArrowRight className="text-slate-300" size={20} />
                                 <div className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-center">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Kết thúc</span>
+                                    <span className="text-[9px] font-bold text-slate-600 uppercase block mb-1">Kết thúc</span>
                                     <span className="font-mono font-bold text-slate-700">{periods.RANK_PERIOD_2_END}</span>
                                 </div>
                             </div>
@@ -195,7 +195,7 @@ const RankingRules = () => {
 
                                 <div className="px-8 mt-4 space-y-4 flex-grow">
                                     <div className="bg-slate-50 rounded-[24px] p-5 border border-slate-100 group-hover:bg-white group-hover:border-blue-100 transition-colors">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase block mb-3 tracking-widest">Doanh thu tối thiểu</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase block mb-3 tracking-widest">Doanh thu tối thiểu</span>
                                         <div className="flex items-center gap-3">
                                             <BarChart3 size={18} className="text-blue-500"/>
                                             <span className="text-base font-black text-slate-800">{(rank.upgradeMinTotalRevenue || 0).toLocaleString()} đ</span>

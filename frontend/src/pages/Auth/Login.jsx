@@ -308,7 +308,7 @@ const Login = () => {
                                 </div>
                             </form>
 
-                            <div className="my-6 flex items-center gap-4">
+                            {/* <div className="my-6 flex items-center gap-4">
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hoặc tiếp tục với</span>
                                 <div className="h-[1px] bg-slate-200 flex-1"></div>
@@ -327,7 +327,7 @@ const Login = () => {
                                     />
                                     Google
                                 </button>
-                            </div>
+                            </div> */}
                         </div>
 
                     </div>

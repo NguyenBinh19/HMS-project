@@ -46,10 +46,12 @@ public class HotelController {
             @RequestParam String keyword,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkIn,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate checkOut,
-            @RequestParam(required = false) Integer rooms
+            @RequestParam(required = false) Integer rooms,
+            @RequestParam(required = false) Integer adults,
+            @RequestParam(required = false) Integer children
     ) {
         return ApiResponse.<List<HotelDetailResponse>>builder()
-                .result(hotelServiceImpl.searchHotels(keyword, checkIn, checkOut, rooms))
+                .result(hotelServiceImpl.searchHotels(keyword, checkIn, checkOut, rooms, adults, children))
                 .build();
     }
 

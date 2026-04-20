@@ -27,15 +27,15 @@ const RenderInputBox = ({
                 <div className="p-1.5 bg-slate-100 rounded-lg group-hover:bg-blue-50 transition-colors">
                     {Icon && <Icon size={14} className="text-slate-500 group-hover:text-blue-500" />}
                 </div>
-                <label className="text-[10px] xl:text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] xl:text-[11px] font-black text-slate-600 uppercase tracking-widest">
                     {label}
                 </label>
             </div>
 
             <div className="relative flex items-center">
                 <input
-                    type="text" // Dùng text để kiểm soát hoàn toàn đầu vào
-                    inputMode="numeric" // Hiển thị bàn phím số trên mobile
+                    type="text"
+                    inputMode="numeric"
                     value={value || ''}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -48,7 +48,7 @@ const RenderInputBox = ({
                     </span>
                 )}
             </div>
-            {helperText && <p className="mt-2 text-[10px] text-slate-400 italic leading-relaxed line-clamp-1">{helperText}</p>}
+            {helperText && <p className="mt-2 text-[11px] text-slate-600 italic leading-relaxed line-clamp-1">{helperText}</p>}
         </div>
     );
 };
@@ -226,21 +226,22 @@ const CancelPolicyTab = () => {
             className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 p-4 xl:p-8 bg-white/50 rounded-[40px]">
             <ToastPortal ref={toastRef} autoClose={true} autoCloseTime={2800}/>
             {/* Header Section */}
-            <div className="bg-slate-900 rounded-[24px] py-5 px-7 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            <div className="bg-slate-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-12 -mt-12"></div>
                 <div className="flex items-center gap-4 z-10">
-                    <div className="p-3 bg-blue-500/20 rounded-xl border border-blue-500/20 shadow-inner">
-                        <ShieldAlert size={24} className="text-blue-400"/>
+                    <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/20 shadow-inner">
+                        <ShieldAlert size={22} className="text-blue-400"/>
                     </div>
                     <div>
-                        <h2 className="text-lg font-black uppercase tracking-tight italic">
+                        <h2 className="text-base font-bold tracking-tight uppercase">
                             Thiết lập Chính sách Phạt hủy
                         </h2>
                     </div>
                 </div>
                 <button
+                    type="button"
                     onClick={fetchConfigs}
-                    className="mt-4 sm:mt-0 p-2.5 hover:bg-white/10 rounded-xl transition-all text-slate-400 group border border-white/5 shadow-lg active:scale-90"
+                    className="mt-4 sm:mt-0 p-2 hover:bg-white/10 rounded-full transition-all text-slate-400 group border border-white/5 active:scale-90"
                 >
                     <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700"/>
                 </button>
@@ -300,7 +301,7 @@ const CancelPolicyTab = () => {
                 <div className="space-y-4">
                     <div
                         className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Clock size={16} className="text-blue-500"/> Mốc thời gian áp dụng (Số ngày trước Check-in)
+                        <Clock size={16} className="text-blue-700"/> Mốc thời gian áp dụng (Số ngày trước Check-in)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                         <RenderInputBox
@@ -330,7 +331,7 @@ const CancelPolicyTab = () => {
                 <div className="space-y-4">
                     <div
                         className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Percent size={16} className="text-blue-500"/> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
+                        <Percent size={16} className="text-blue-700"/> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                         <RenderInputBox label="Phí Level 1 (Sớm)" suffix="%" value={form.level1Percent}

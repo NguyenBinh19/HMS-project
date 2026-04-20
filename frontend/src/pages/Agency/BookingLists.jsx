@@ -9,7 +9,7 @@ import {
     Star,
     RefreshCcw,
     FileText,
-    Clock, Loader2, XCircle
+    Clock, Loader2, XCircle, ChevronRight,
 } from 'lucide-react';
 import { bookingService } from '@/services/booking.service.js';
 import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
@@ -247,51 +247,60 @@ const OrderListScreen = () => {
                     {filteredOrders.map((order) => {
                         const statusLabel = getStatusLabel(order.bookingStatus, order.paymentStatus);
                         const tab = getTabFromStatus(order.bookingStatus);
+                        // Hàm điều hướng dùng chung
+                        const goToDetail = () => navigate(`/agency/booking-list/detail/${encodeURIComponent(order.bookingCode)}`);
                         return (
-                            <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-                                <div
-                                    onClick={() => navigate(`/agency/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
-                                    className="flex justify-between items-start mb-4 cursor-pointer group"
-                                >
-                                    <div>
-                                <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
-                                    {order.bookingCode}
-                                </span>
+                            <div
+                                key={order.bookingId}
+                                className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all relative group cursor-pointer"
+                                onClick={goToDetail} // Cho phép click vào bất cứ đâu trống trên card để vào chi tiết
+                            >
+                                {/* Nút mũi tên với hiệu ứng trượt nhẹ khi hover vào card */}
+                                <div className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300">
+                                    <ChevronRight size={22} strokeWidth={2.5} />
+                                </div>
+
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="pr-12"> {/* Chừa khoảng trống rộng hơn cho mũi tên */}
+                                        <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
+                                            {order.bookingCode}
+                                        </span>
                                         <p className="text-[11px] text-slate-400 mt-0.5">
                                             {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
                                         </p>
                                     </div>
-                                    <div
-                                        className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
-                                            statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
-                                                statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
-                                        }`}>
+
+                                    {/* Status Label */}
+                                    <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 mr-8 ${
+                                        statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                            statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                                    }`}>
                                         {statusLabel !== 'ĐÃ HỦY' && <CheckIcon/>}
-                                        {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
                                         {statusLabel}
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4">
+                                <div className="flex gap-4 pr-10">
                                     <div className="flex-1">
                                         <h3 className="font-bold text-slate-800 mb-1">{order.hotelName}</h3>
                                         <div className="space-y-1">
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><UserIcon /></span>
+                                                <span className="w-4 flex justify-center"><UserIcon/></span>
                                                 {order.guestName}{order.totalGuests > 1 ? ` (+${order.totalGuests - 1} người)` : ""}
                                             </p>
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><Calendar size={14} /></span>
+                                                <span className="w-4 flex justify-center"><Calendar size={14}/></span>
                                                 {formatDate(order.checkInDate)} - {formatDate(order.checkOutDate)} ({order.nights} đêm)
                                             </p>
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><BedIcon /></span>
+                                                <span className="w-4 flex justify-center"><BedIcon/></span>
                                                 {order.totalRooms} phòng
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right flex flex-col justify-between items-end">
-                                        <span className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
+                                        <span
+                                            className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
 
                                         <div className="flex gap-2">
                                             {tab === "Sắp khởi hành" && (
@@ -301,7 +310,9 @@ const OrderListScreen = () => {
                                                         disabled={isDownloading === order.bookingCode}
                                                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:bg-slate-300 transition-all shadow-sm"
                                                     >
-                                                        {isDownloading === order.bookingCode ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
+                                                        {isDownloading === order.bookingCode ?
+                                                            <Loader2 size={14} className="animate-spin"/> :
+                                                            <Download size={14}/>}
                                                         Tải Voucher
                                                     </button>
                                                     <button
@@ -363,7 +374,7 @@ const OrderListScreen = () => {
                         onClick={() => setPage(p => p - 1)}
                         className="px-4 py-2 rounded-lg border bg-white text-sm font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
                     >
-                        ← Trước
+                    ← Trước
                     </button>
 
                     <div className="flex gap-1">

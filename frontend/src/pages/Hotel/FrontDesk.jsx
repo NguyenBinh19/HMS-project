@@ -31,6 +31,14 @@ const FrontDeskDashboard = () => {
         });
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10; // Số lượng đơn mỗi trang
+
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchBookings();
+    }, [currentDate, activeTab]);
+
     const fetchBookings = async () => {
         setLoading(true);
         try {
@@ -142,6 +150,9 @@ const FrontDeskDashboard = () => {
         b.guestName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
     return (
         <div className="p-6 bg-[#f8fafc] min-h-screen font-sans">
@@ -197,11 +208,15 @@ const FrontDeskDashboard = () => {
                     </div>
                 ) : (
                     <BookingTable
-                        bookings={filteredBookings}
+                        bookings={paginatedBookings}
                         activeTab={activeTab}
                         onCheckin={handleCheckin}
                         onCheckout={handleCheckout}
                         onNoShow={openNoShowModal}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        totalResults={filteredBookings.length}
                     />
                 )}
             </div>

@@ -169,7 +169,7 @@ const StaffDashboard = () => {
                     <div className="overflow-visible rounded-[24px">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/30 border-b border-slate-50">
-                            <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                            <tr className="text-[12px] font-bold text-slate-600 uppercase tracking-wider">
                                 <th className="px-8 py-5">Quản trị viên</th>
                                 <th className="px-8 py-5">Vai trò</th>
                                 <th className="px-8 py-5">Thông tin cá nhân</th>
@@ -229,11 +229,29 @@ const StaffDashboard = () => {
                                         {staff.dob && <p className="text-[10px] text-slate-400">NS: {staff.dob}</p>}
                                     </td>
                                     <td className="px-8 py-6 text-center">
-                                        <Toggle
-                                            checked={staff.status === 'ACTIVE'}
-                                            onChange={() => handleToggleStatus(staff)}
-                                            disabled={!isFullAdmin || staff.id === currentUserId}
-                                        />
+                                        <div className="flex flex-col items-center gap-1.5">
+                                            {/* Toggle Switch */}
+                                            <Toggle
+                                                checked={staff.status === 'ACTIVE'}
+                                                onChange={() => handleToggleStatus(staff)}
+                                                disabled={!isFullAdmin || staff.id === currentUserId}
+                                            />
+                                            {/* Label Trạng thái  */}
+                                            <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                                                staff.id === currentUserId
+                                                    ? 'text-slate-400 italic' 
+                                                    : (staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500')
+                                            }`}>
+                                                {staff.id === currentUserId ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                                        Đang truy cập
+                                                    </span>
+                                                ) : (
+                                                    staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'
+                                                )}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <StaffActionMenu
@@ -253,13 +271,14 @@ const StaffDashboard = () => {
 
                     {/* Phân Trang */}
                     {filteredStaffs.length > itemsPerPage && (
-                        <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
+                        <div
+                            className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(prev => prev - 1)}
                                 className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50"
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronLeft size={18}/>
                             </button>
                             {[...Array(totalPages)].map((_, index) => (
                                 <button

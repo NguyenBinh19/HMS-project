@@ -101,14 +101,14 @@ const SpecialEvents = ({ roomTypeId }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Tên sự kiện</label>
-                        <input type="text" placeholder="ví dụ: Tết Nguyên Đán" value={form.ruleName} onChange={e => setForm({...form, ruleName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <input type="text" placeholder="ví dụ: Tết Nguyên Đán" value={form.ruleName} onChange={e => setForm({ ...form, ruleName: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Khoảng thời gian</label>
                         <div className="flex items-center gap-2">
-                            <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none" />
+                            <input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none" />
                             <span className="text-gray-500">đến</span>
-                            <input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none" />
+                            <input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none" />
                         </div>
                     </div>
                 </div>
@@ -117,20 +117,32 @@ const SpecialEvents = ({ roomTypeId }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Điều chỉnh giá</label>
                     <div className="flex items-center gap-6">
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="adjustment" checked={form.adjustmentType === 'FIXED'} onChange={() => setForm({...form, adjustmentType: 'FIXED'})} className="w-4 h-4 text-blue-600" />
+                            <input type="radio" name="adjustment" checked={form.adjustmentType === 'FIXED'} onChange={() => setForm({ ...form, adjustmentType: 'FIXED' })} className="w-4 h-4 text-blue-600" />
                             <span className="text-sm text-gray-700">Giá cố định (₫)</span>
                         </label>
 
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="adjustment" checked={form.adjustmentType === 'PERCENT'} onChange={() => setForm({...form, adjustmentType: 'PERCENT'})} className="w-4 h-4 text-blue-600" />
+                            <input type="radio" name="adjustment" checked={form.adjustmentType === 'PERCENT'} onChange={() => setForm({ ...form, adjustmentType: 'PERCENT' })} className="w-4 h-4 text-blue-600" />
                             <span className="text-sm text-gray-700 font-medium">Phần trăm (%)</span>
                         </label>
 
                         <input
                             type="number"
+                            min="0"
+                            max={form.adjustmentType === 'PERCENT' ? 100 : undefined}
                             placeholder="Giá trị"
                             value={form.adjustmentValue}
-                            onChange={e => setForm({...form, adjustmentValue: e.target.value})}
+                            onChange={e => {
+                                let value = Number(e.target.value);
+
+                                if (value < 0) value = 0;
+
+                                if (form.adjustmentType === 'PERCENT' && value > 100) {
+                                    value = 100;
+                                }
+
+                                setForm({ ...form, adjustmentValue: value });
+                            }}
                             className="border border-gray-300 rounded-lg px-3 py-1.5 w-32 outline-none"
                         />
                     </div>
@@ -157,34 +169,34 @@ const SpecialEvents = ({ roomTypeId }) => {
                 ) : events.length === 0 ? (
                     <p className="text-sm text-gray-400 italic py-4">Chưa có sự kiện nào được cấu hình.</p>
                 ) : (
-                <div className="space-y-3">
-                    {events.map(ev => (
-                        <div key={ev.ruleId} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center hover:shadow-sm transition-shadow">
-                            <div>
-                                <div className="flex items-center gap-3 mb-1">
-                                    <span className="font-bold text-gray-800">{ev.ruleName}</span>
+                    <div className="space-y-3">
+                        {events.map(ev => (
+                            <div key={ev.ruleId} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center hover:shadow-sm transition-shadow">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className="font-bold text-gray-800">{ev.ruleName}</span>
+                                    </div>
+                                    <div className="text-sm text-gray-500 flex items-center gap-2 mb-2">
+                                        <Calendar size={14} />
+                                        {ev.startDate} - {ev.endDate}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
+                                            +{ev.adjustmentValue}{ev.adjustmentType === 'PERCENT' ? '%' : 'đ'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-2 mb-2">
-                                    <Calendar size={14} />
-                                    {ev.startDate} - {ev.endDate}
-                                </div>
-                                <div className="flex items-center gap-3">
-                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
-                                +{ev.adjustmentValue}{ev.adjustmentType === 'PERCENT' ? '%' : 'đ'}
-                            </span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleEdit(ev)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button onClick={() => handleDelete(ev.ruleId)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => handleEdit(ev)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
-                                    <Edit2 size={16} />
-                                </button>
-                                <button onClick={() => handleDelete(ev.ruleId)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
                 )}
             </div>
         </div>

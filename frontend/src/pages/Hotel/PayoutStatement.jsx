@@ -2,10 +2,11 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     FileText, CheckCircle, AlertCircle, Download,
     ArrowLeft, History, Search, ExternalLink, Printer,
-    ChevronLeft, ChevronRight, Loader2
+    ChevronLeft, ChevronRight, Loader2, X
 } from "lucide-react";
 import StatementHeader from '@/components/hotel/finance/StatementHeader';
 import { payoutService } from '@/services/payout.service';
+import { pdfDocumentService } from "@/services/pdf.service.js";
 import { toast } from 'react-hot-toast';
 const BANK_LIST = [
     { code: "VCB", name: "Vietcombank" },
@@ -33,6 +34,32 @@ const formatVN = (val) => val != null ? new Intl.NumberFormat('vi-VN').format(va
 const StatementListView = ({ hotelId, onSelectStatement }) => {
     const [statements, setStatements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [policyUrl, setPolicyUrl] = useState("");
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPolicy = async () => {
+            try {
+                const pdfRes = await pdfDocumentService.getAllPdfs();
+                if (pdfRes?.result) {
+                    const policyDoc = pdfRes.result.find(doc => {
+                        const title = (doc.title || "").toLowerCase();
+                        return title.includes("doanh thu") && title.includes("thanh toán");
+                    });
+                    setPolicyUrl(policyDoc?.fileUrl || "");
+                }
+            } catch (error) {
+                console.error("Lỗi tải chính sách thanh toán:", error);
+            }
+        };
+        fetchPolicy();
+    }, []);
+
+    useEffect(() => {
+        document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [showPdfModal]);
 
     useEffect(() => {
         const fetchStatements = async () => {
@@ -71,10 +98,23 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
 
     return (
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-            <div className="p-6 border-b border-slate-50">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
                 <h3 className="font-black text-slate-800 flex items-center gap-2 uppercase text-[10px] tracking-widest">
                     <History size={16} className="text-blue-600" /> Tất cả các kỳ đối soát ({statements.length})
                 </h3>
+                {/* NÚT XEM CHÍNH SÁCH MỚI */}
+                <button
+                    onClick={() => {
+                        if (!policyUrl) {
+                            toast.error("Đang tải hoặc không tìm thấy file PDF!");
+                            return;
+                        }
+                        setShowPdfModal(true);
+                    }}
+                    className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-all uppercase"
+                >
+                    <FileText size={14} /> Phụ lục thanh toán
+                </button>
             </div>
             <table className="w-full text-left text-sm border-collapse">
                 <thead>
@@ -108,9 +148,10 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                                 <td className="px-8 py-4 text-right">
                                     <button
                                         onClick={() => onSelectStatement(stmt.statementId)}
-                                        className="text-slate-300 hover:text-blue-600 transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all text-xs font-bold"
                                     >
                                         <ExternalLink size={14} />
+                                        <span>Chi tiết</span>
                                     </button>
                                 </td>
                             </tr>
@@ -118,6 +159,74 @@ const StatementListView = ({ hotelId, onSelectStatement }) => {
                     })}
                 </tbody>
             </table>
+            {/* MODAL PDF CHÍNH SÁCH THANH TOÁN */}
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        {/* Header Modal - Nút điều hướng */}
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={policyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18} />
+                            </a>
+                            <button
+                                onClick={() => {
+                                    setShowPdfModal(false);
+                                    setIsPdfLoading(true);
+                                }}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Nội dung PDF */}
+                        <div className="flex-1 bg-slate-50 relative overflow-hidden">
+                            {policyUrl ? (
+                                <div className="w-full h-full overflow-hidden">
+                                    <object
+                                        data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                        type="application/pdf"
+                                        style={{
+                                            width: '100%',
+                                            height: 'calc(100% + 40px)',
+                                            marginTop: '-40px'
+                                        }}
+                                        className="relative z-10"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    >
+                                        <iframe
+                                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                                            className="w-full h-full border-none"
+                                            title="Chính sách thanh toán"
+                                            onLoad={() => setIsPdfLoading(false)}
+                                        />
+                                    </object>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                    <FileText size={40} className="mb-2 opacity-20" />
+                                    <p className="text-sm font-medium">Đường dẫn tài liệu không hợp lệ.</p>
+                                </div>
+                            )}
+
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                                        Đang tải phụ lục thanh toán...
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

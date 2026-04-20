@@ -18,10 +18,11 @@ import {
     Phone,
     Building2,
     Briefcase,
-    AlertCircle
+    AlertCircle, ExternalLink
 } from "lucide-react";
 import LoginSlider from "../../components/auth/LoginSlider.jsx";
 import LegalModal from "../../components/auth/LegalModal.jsx";
+import { pdfDocumentService } from '@/services/pdf.service.js';
 
 const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:8080/hms";
 const BG_URL =
@@ -63,13 +64,13 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden animate-zoom-in border border-emerald-100">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl"></div>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden animate-zoom-in border border-blue-100">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-50 rounded-full blur-2xl"></div>
 
                 <div className="text-center relative z-10">
-                    <div className="mx-auto mb-6 w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce-slow">
-                        <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <div className="mx-auto mb-6 w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center animate-bounce-slow">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
                             <MailCheck size={32} className="text-white" />
                         </div>
                     </div>
@@ -81,7 +82,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
                     <p className="text-slate-600 text-sm mb-6 leading-relaxed">
                         Chúng tôi đã gửi mã xác thực OTP 6 số đến email:
                         <br />
-                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block">
+                        <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded mt-1 inline-block">
                             {email}
                         </span>
                         <br />
@@ -100,18 +101,18 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
                         </div>
                         <div className="h-1.5 w-32 mx-auto bg-slate-100 rounded-full mt-3 overflow-hidden">
                             <div
-                                className="h-full bg-emerald-500 transition-all duration-1000 ease-linear"
+                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-1000 ease-linear"
                                 style={{ width: `${(countdown / 5) * 100}%` }}
                             ></div>
                         </div>
                     </div>
 
-                    <button
+                    {/* <button
                         onClick={onVerifyNow}
-                        className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                         Xác thực OTP ngay <ArrowRight size={18} />
-                    </button>
+                    </button> */}
                 </div>
             </div>
         </div>
@@ -121,7 +122,7 @@ const RegistrationSuccessModal = ({ isOpen, email, countdown, onVerifyNow }) => 
 const Register = () => {
     const navigate = useNavigate();
     const scrollContainerRef = useRef(null);
-
+    const [isPdfLoading, setIsPdfLoading] = useState(true);
     const [step, setStep] = useState(1); // 1: Role selection, 2: Form
     const [selectedRole, setSelectedRole] = useState(""); // HOTEL_MANAGER or AGENCY_MANAGER
 
@@ -153,6 +154,37 @@ const Register = () => {
     const [errors, setErrors] = useState({});
     const [error, setError] = useState("");
     const [focusedField, setFocusedField] = useState(null);
+
+    const [showPdfModal, setShowPdfModal] = useState(false);
+    const [pdfLinks, setPdfLinks] = useState({
+        HOTEL_MANAGER: null,
+        AGENCY_MANAGER: null
+    });
+    useEffect(() => {
+        const fetchLegalPdfs = async () => {
+            try {
+                const res = await pdfDocumentService.getAllPdfs();
+                if (res?.result) {
+                    // File 1: Chứa từ khóa "Khách sạn"
+                    const hotelFile = res.result.find(doc =>
+                        doc.title.includes("Điều khoản hợp tác với Khách sạn")
+                    );
+                    // File 2: Chứa từ khóa "Đại lý" (Khớp với title bạn vừa nêu)
+                    const agencyFile = res.result.find(doc =>
+                        doc.title.includes("Điều khoản hợp tác với Đại lý")
+                    );
+
+                    setPdfLinks({
+                        HOTEL_MANAGER: hotelFile?.fileUrl || null,
+                        AGENCY_MANAGER: agencyFile?.fileUrl || null
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi khi đồng bộ file PDF pháp lý:", err);
+            }
+        };
+        fetchLegalPdfs();
+    }, []);
 
     const [touched, setTouched] = useState({ password: false });
 
@@ -387,7 +419,7 @@ const Register = () => {
                     >
                         <div className="max-w-md mx-auto w-full mt-4 md:mt-8 pb-40">
                             <div className="mb-8">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-4 border border-emerald-100">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-100">
                                     <UserPlus size={14} /> Đăng ký đối tác
                                 </div>
                                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
@@ -462,8 +494,7 @@ const Register = () => {
                                         </span>
                                         <Link
                                             to="/login"
-                                            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline decoration-2 underline-offset-4 transition-colors"
-                                        >
+                                            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"                                        >
                                             Đăng nhập ngay
                                         </Link>
                                     </div>
@@ -476,8 +507,11 @@ const Register = () => {
                                     {/* Back to role selection */}
                                     <button
                                         type="button"
-                                        onClick={() => setStep(1)}
-                                        className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-emerald-600 transition-colors"
+                                        onClick={() => {
+                                            setStep(1);
+                                            setSelectedRole("");
+                                        }}
+                                        className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-500 transition-colors"
                                     >
                                         <ArrowLeft size={16} />
                                         {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"} — Thay đổi
@@ -488,7 +522,7 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "username"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
                                                     }`}
                                             >
@@ -502,7 +536,7 @@ const Register = () => {
                                                 value={formData.username}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "username"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
                                                     }`}
                                                 placeholder="Họ và tên đầy đủ"
@@ -518,7 +552,7 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "email"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
                                                     }`}
                                             >
@@ -532,7 +566,7 @@ const Register = () => {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "email"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
                                                     }`}
                                                 placeholder="Email"
@@ -548,7 +582,7 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "phone"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
                                                     }`}
                                             >
@@ -562,7 +596,7 @@ const Register = () => {
                                                 value={formData.phone}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "phone"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
                                                     }`}
                                                 placeholder="Số điện thoại"
@@ -578,7 +612,7 @@ const Register = () => {
                                         <div className="relative group">
                                             <div
                                                 className={`absolute left-4 top-3.5 transition-colors ${focusedField === "password"
-                                                    ? "text-emerald-600"
+                                                    ? "text-blue-500"
                                                     : "text-slate-400"
                                                     }`}
                                             >
@@ -596,7 +630,7 @@ const Register = () => {
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "password"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
                                                     }`}
                                                 placeholder="Mật khẩu"
@@ -635,7 +669,8 @@ const Register = () => {
                                                     </span>
                                                 </div>
 
-                                                <div className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
+                                                <div
+                                                    className="h-1.5 w-full bg-slate-200 rounded-full mb-3 overflow-hidden">
                                                     <div
                                                         className={`h-full rounded-full transition-all duration-500 ${getStrengthColor()}`}
                                                         style={{ width: `${(passwordScore / 4) * 100}%` }}
@@ -677,7 +712,7 @@ const Register = () => {
                                                 value={formData.confirmPassword}
                                                 onChange={handleChange}
                                                 className={`w-full pl-4 pr-12 py-3.5 bg-slate-50 border-2 rounded-xl outline-none font-semibold text-slate-800 transition-all ${focusedField === "confirmPassword"
-                                                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10"
+                                                    ? "border-blue-400 bg-white"
                                                     : "border-slate-100 hover:border-slate-300"
                                                     }`}
                                                 placeholder="Nhập lại mật khẩu"
@@ -685,7 +720,8 @@ const Register = () => {
 
                                             {formData.confirmPassword &&
                                                 formData.password === formData.confirmPassword && (
-                                                    <div className="absolute right-12 top-1/2 -translate-y-1/2 text-green-500">
+                                                    <div
+                                                        className="absolute right-12 top-1/2 -translate-y-1/2 text-green-500">
                                                         <Check
                                                             size={18}
                                                             fill="currentColor"
@@ -708,6 +744,46 @@ const Register = () => {
                                         </div>
 
                                         {/* Checkbox Terms */}
+                                        {/*<div className="flex items-start gap-3 mt-4 group">*/}
+                                        {/*    <div className="relative flex items-center pt-0.5">*/}
+                                        {/*        <input*/}
+                                        {/*            type="checkbox"*/}
+                                        {/*            id="terms"*/}
+                                        {/*            checked={agreed}*/}
+                                        {/*            onChange={(e) => setAgreed(e.target.checked)}*/}
+                                        {/*            className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"*/}
+                                        {/*        />*/}
+                                        {/*        <Check*/}
+                                        {/*            size={14}*/}
+                                        {/*            strokeWidth={3}*/}
+                                        {/*            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100"*/}
+                                        {/*        />*/}
+                                        {/*    </div>*/}
+                                        {/*    <label*/}
+                                        {/*        htmlFor="terms"*/}
+                                        {/*        className="text-sm text-slate-500 leading-snug cursor-pointer select-none"*/}
+                                        {/*    >*/}
+                                        {/*        Tôi đồng ý với{" "}*/}
+                                        {/*        <button*/}
+                                        {/*            type="button"*/}
+                                        {/*            onClick={() => setModalType("terms")}*/}
+                                        {/*            className="text-emerald-600 font-bold hover:underline"*/}
+                                        {/*        >*/}
+                                        {/*            Điều khoản*/}
+                                        {/*        </button>{" "}*/}
+                                        {/*        và{" "}*/}
+                                        {/*        <button*/}
+                                        {/*            type="button"*/}
+                                        {/*            onClick={() => setModalType("privacy")}*/}
+                                        {/*            className="text-emerald-600 font-bold hover:underline"*/}
+                                        {/*        >*/}
+                                        {/*            Chính sách bảo mật*/}
+                                        {/*        </button>*/}
+                                        {/*        .*/}
+                                        {/*    </label>*/}
+                                        {/*</div>*/}
+
+                                        {/* Checkbox Đồng ý điều khoản */}
                                         <div className="flex items-start gap-3 mt-4 group">
                                             <div className="relative flex items-center pt-0.5">
                                                 <input
@@ -715,7 +791,7 @@ const Register = () => {
                                                     id="terms"
                                                     checked={agreed}
                                                     onChange={(e) => setAgreed(e.target.checked)}
-                                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
+                                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 transition-all checked:border-blue-500 checked:bg-blue-500 hover:border-blue-400"
                                                 />
                                                 <Check
                                                     size={14}
@@ -730,20 +806,18 @@ const Register = () => {
                                                 Tôi đồng ý với{" "}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setModalType("terms")}
-                                                    className="text-emerald-600 font-bold hover:underline"
+                                                    onClick={() => {
+                                                        if (pdfLinks[selectedRole]) {
+                                                            setShowPdfModal(true);
+                                                        } else {
+                                                            alert("Tài liệu đang được cập nhật, vui lòng thử lại sau.");
+                                                        }
+                                                    }}
+                                                    className="font-bold text-cyan-600 hover:text-blue-600 hover:underline transition-colors"
                                                 >
-                                                    Điều khoản
-                                                </button>{" "}
-                                                và{" "}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setModalType("privacy")}
-                                                    className="text-emerald-600 font-bold hover:underline"
-                                                >
-                                                    Chính sách bảo mật
+                                                    Điều khoản & Chính sách dành
+                                                    cho {selectedRole === "HOTEL_MANAGER" ? "Khách sạn" : "Đại lý"}
                                                 </button>
-                                                .
                                             </label>
                                         </div>
 
@@ -751,7 +825,7 @@ const Register = () => {
                                             type="submit"
                                             disabled={loading || !isFormValid}
                                             className={`group w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] mt-4 ${isFormValid
-                                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/30 cursor-pointer"
+                                                ? "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-blue-500/30 cursor-pointer"
                                                 : "bg-slate-200 text-slate-400 cursor-not-allowed opacity-80"
                                                 }`}
                                         >
@@ -770,7 +844,7 @@ const Register = () => {
                                         </span>
                                         <Link
                                             to="/login"
-                                            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline decoration-2 underline-offset-4 transition-colors"
+                                            className="text-sm font-bold text-cyan-600 hover:text-blue-600 hover:underline decoration-2 underline-offset-4 transition-colors"
                                         >
                                             Đăng nhập ngay
                                         </Link>
@@ -830,6 +904,105 @@ const Register = () => {
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.3s ease-out; }
       `}</style>
+            {/*{showPdfModal && (*/}
+            {/*    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">*/}
+            {/*        <div*/}
+            {/*            className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">*/}
+            {/*            <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">*/}
+            {/*                <a*/}
+            {/*                    href={pdfLinks[selectedRole]}*/}
+            {/*                    target="_blank"*/}
+            {/*                    rel="noreferrer"*/}
+            {/*                    title="Mở tab mới"*/}
+            {/*                    className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"*/}
+            {/*                >*/}
+            {/*                    <ExternalLink size={18}/>*/}
+            {/*                </a>*/}
+            {/*                <button*/}
+            {/*                    onClick={() => setShowPdfModal(false)}*/}
+            {/*                    className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"*/}
+            {/*                >*/}
+            {/*                    <X size={18}/>*/}
+            {/*                </button>*/}
+            {/*            </div>*/}
+
+            {/*            /!* Iframe content *!/*/}
+            {/*            <div className="flex-1 bg-slate-100 relative">*/}
+            {/*                <iframe*/}
+            {/*                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfLinks[selectedRole])}&embedded=true`}*/}
+            {/*                    className="w-full h-full border-none relative z-10"*/}
+            {/*                    title="PDF Preview"*/}
+            {/*                />*/}
+            {/*                <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-slate-50">*/}
+            {/*                    <Loader2 size={40} className="animate-spin text-slate-200 mb-3"/>*/}
+            {/*                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Đang tải tài liệu...</span>*/}
+            {/*                </div>*/}
+            {/*            </div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*)}*/}
+
+            {showPdfModal && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                        {/* Header Modal */}
+                        <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+                            <a
+                                href={pdfLinks[selectedRole]}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Mở tab mới"
+                                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                            >
+                                <ExternalLink size={18} />
+                            </a>
+                            <button
+                                onClick={() => {
+                                    setShowPdfModal(false);
+                                    setIsPdfLoading(true);
+                                }}
+                                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Nội dung PDF  */}
+                        <div className="flex-1 bg-slate-100 relative">
+                            {pdfLinks[selectedRole] ? (
+                                <object
+                                    data={`${pdfLinks[selectedRole]}#view=FitH`}
+                                    type="application/pdf"
+                                    className="w-full h-full border-none relative z-10"
+                                    onLoad={() => setIsPdfLoading(false)}
+                                >
+                                    <iframe
+                                        src={`${pdfLinks[selectedRole]}#view=FitH`}
+                                        className="w-full h-full border-none"
+                                        title="PDF Preview"
+                                        onLoad={() => setIsPdfLoading(false)}
+                                    />
+                                </object>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500 z-20 relative bg-white">
+                                    <p className="font-medium text-lg">Không tìm thấy tài liệu liên quan.</p>
+                                    <p className="text-sm">Vui lòng kiểm tra lại đường dẫn tài liệu.</p>
+                                </div>
+                            )}
+
+                            {isPdfLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-[15] bg-slate-50">
+                                    <Loader2 size={40} className="animate-spin text-blue-600 mb-3" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                                        Đang chuẩn bị tài liệu...
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
@@ -848,5 +1021,22 @@ const Badge = ({ active, text }) => (
         {text}
     </div>
 );
+
+// const Badge = ({ active, text }) => (
+//     <div
+//         className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md transition-all duration-300 ${
+//             active
+//                 ? "bg-blue-100 text-blue-600 border border-blue-200"
+//                 : "bg-slate-100 text-slate-400"
+//         }`}
+//     >
+//         {active ? (
+//             <Check size={12} strokeWidth={4} />
+//         ) : (
+//             <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+//         )}
+//         {text}
+//     </div>
+// );
 
 export default Register;

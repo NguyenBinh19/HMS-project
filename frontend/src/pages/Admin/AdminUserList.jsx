@@ -125,11 +125,11 @@ const AdminUserList = () => {
             {/* Header */}
             <div className="flex justify-between items-end mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">QUẢN LÝ NGƯỜI DÙNG</h1>
+                    <h1 className="text-3xl font-bold text-slate-900">QUẢN LÝ NGƯỜI DÙNG</h1>
                     <p className="text-slate-500 text-sm mt-1">Tìm kiếm, lọc và quản lý tài khoản người dùng</p>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-xl px-5 py-3 shadow-sm">
-                    <p className="text-xs text-slate-500 font-medium">Người dùng hoạt động</p>
+                    <p className="text-xs text-slate-600 font-medium">Người dùng hoạt động</p>
                     <p className="text-2xl font-black text-emerald-600">{metrics.activeUsers}</p>
                 </div>
             </div>
@@ -138,7 +138,7 @@ const AdminUserList = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
                 <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-4">
                     <div className="flex-1 min-w-[240px]">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Tìm kiếm</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Tìm kiếm</label>
                         <div className="relative">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
@@ -151,7 +151,7 @@ const AdminUserList = () => {
                         </div>
                     </div>
                     <div className="min-w-[180px]">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Vai trò</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Vai trò</label>
                         <select
                             value={role}
                             onChange={(e) => { setRole(e.target.value); setPage(0); }}
@@ -163,7 +163,7 @@ const AdminUserList = () => {
                         </select>
                     </div>
                     <div className="min-w-[180px]">
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Trạng thái</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase mb-1 block">Trạng thái</label>
                         <select
                             value={status}
                             onChange={(e) => { setStatus(e.target.value); setPage(0); }}
@@ -198,12 +198,12 @@ const AdminUserList = () => {
                     <table className="w-full">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-200">
-                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Người dùng</th>
-                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Email</th>
-                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Vai trò</th>
-                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Trạng thái</th>
-                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Đăng nhập cuối</th>
-                                <th className="text-center px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">Thao tác</th>
+                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Người dùng</th>
+                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Email</th>
+                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Vai trò</th>
+                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Trạng thái</th>
+                                <th className="text-left px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Đăng nhập cuối</th>
+                                <th className="text-center px-5 py-3.5 text-xs font-bold text-slate-600 uppercase">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>

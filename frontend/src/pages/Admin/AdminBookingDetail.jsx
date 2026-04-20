@@ -76,11 +76,11 @@ const AdminBookingDetail = () => {
                     <div>
                         <button
                             onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
+                            className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
                         >
                             <ChevronLeft size={16} /> QUAY LẠI DANH SÁCH
                         </button>
-                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 flex items-center gap-3">
+                        <h1 className="text-3xl font-black tracking-tighter text-slate-800 flex items-center gap-3">
                             Chi tiết <span className="text-blue-600">Đơn hàng</span>
                         </h1>
                     </div>
@@ -107,19 +107,19 @@ const AdminBookingDetail = () => {
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ngày đến</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ngày đến</p>
                                     <p className="font-black text-slate-800 text-lg">{formatDate(booking.checkInDate)}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ngày đi</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ngày đi</p>
                                     <p className="font-black text-slate-800 text-lg">{formatDate(booking.checkOutDate)}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Thời gian</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Thời gian</p>
                                     <p className="font-black text-blue-600 text-lg">{booking.nights} ĐÊM</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Số khách</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Số khách</p>
                                     <p className="font-black text-slate-800 text-lg">{booking.totalGuests} NGƯỜI</p>
                                 </div>
                             </div>

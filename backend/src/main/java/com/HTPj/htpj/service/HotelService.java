@@ -13,7 +13,7 @@ public interface HotelService {
 
     HotelDetailResponse getHotelDetailForView(Integer hotelId);
 
-    List<HotelDetailResponse> searchHotels(String keyword, java.time.LocalDate checkIn, java.time.LocalDate checkOut, Integer rooms);
+    List<HotelDetailResponse> searchHotels(String keyword, java.time.LocalDate checkIn, java.time.LocalDate checkOut, Integer rooms, Integer adults, Integer children);
 
     List<HotelListResponse> getAllHotels();
 

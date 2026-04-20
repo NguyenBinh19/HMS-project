@@ -1,9 +1,9 @@
 import api from "./axios.config.js";
 
 // View Rvenue Report of Hotel
-const getRevenueReport = async (hotelId, params) => {
+const getRevenueReport = async ( params) => {
     try {
-        const response = await api.get(`/revenue/report/${hotelId}`, {
+        const response = await api.get(`/revenue/report`, {
             params
         });
         return response.data;

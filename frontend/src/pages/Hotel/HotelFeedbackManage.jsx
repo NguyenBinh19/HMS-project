@@ -73,9 +73,9 @@ const HotelFeedbackManagement = () => {
             {/* 1. Dashboard Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Điểm trung bình</p>
+                    <p className="text-sm font-bold text-slate-700 uppercase tracking-widest mb-1">Điểm trung bình</p>
                     <h2 className="text-5xl font-black text-slate-800">{stats?.averageScore?.toFixed(1) || '0.0'}<span className="text-xl text-slate-400">/5.0</span></h2>
-                    <p className="text-xs text-slate-400 mt-2">{stats?.totalReviews || 0} đánh giá</p>
+                    <p className="text-xs text-slate-600 mt-2">{stats?.totalReviews || 0} đánh giá</p>
                 </div>
 
                 <div className="md:col-span-3 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">

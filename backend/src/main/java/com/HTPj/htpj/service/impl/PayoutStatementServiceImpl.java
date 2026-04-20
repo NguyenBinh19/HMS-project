@@ -269,10 +269,10 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         }
 
         // BR-FIN-02: Confirm window is 3rd–5th of the month only
-        int dayOfMonth = LocalDate.now().getDayOfMonth();
-        if (dayOfMonth < 3 || dayOfMonth > 5) {
-            throw new AppException(ErrorCode.STATEMENT_CONFIRM_WINDOW_CLOSED);
-        }
+//        int dayOfMonth = LocalDate.now().getDayOfMonth();
+//        if (dayOfMonth < 3 || dayOfMonth > 5) {
+//            throw new AppException(ErrorCode.STATEMENT_CONFIRM_WINDOW_CLOSED);
+//        }
 
         if (request.getBankName() == null || request.getBankName().isBlank() ||
                 request.getBankAccountHolder() == null || request.getBankAccountHolder().isBlank() ||

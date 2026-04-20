@@ -114,6 +114,9 @@ public class UserServiceImpl implements UserService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(String userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        }
         userRepository.deleteById(userId);
     }
 
@@ -244,6 +247,11 @@ public class UserServiceImpl implements UserService {
     private Users getCurrentUserr() {
         var context = SecurityContextHolder.getContext();
         var authentication = context.getAuthentication();
+
+        // KIỂM TRA NULL Ở ĐÂY
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
 
         Object principal = authentication.getPrincipal();
 

@@ -150,19 +150,19 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                                 <div className="grid grid-cols-12 gap-6">
                                     <div className="col-span-8 space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tên hạng hiển thị</label>
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Tên hạng hiển thị</label>
                                             <input required name="rankName" value={formData.rankName} onChange={handleChange}
                                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 outline-none focus:ring-2 ring-blue-500/10" />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Mô tả chi tiết</label>
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Mô tả chi tiết</label>
                                             <textarea name="description" value={formData.description} onChange={handleChange}
                                                       className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl h-24 outline-none text-sm" />
                                         </div>
                                     </div>
                                     <div className="col-span-4 space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Màu & Độ ưu tiên</label>
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Màu & Độ ưu tiên</label>
                                             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                                                 <div className="flex items-center gap-3">
                                                     <input name="color" type="color" value={formData.color} onChange={handleChange} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-white shadow-sm" />
@@ -179,7 +179,7 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
 
                                 {/* Icon Picker */}
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Thay đổi biểu tượng</label>
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Thay đổi biểu tượng</label>
                                     <div className="flex flex-wrap gap-3 p-4 bg-slate-50 border border-slate-200 rounded-[24px]">
                                         {iconOptions.map((item) => {
                                             const IconComp = item.component;
@@ -197,7 +197,7 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
 
                             {/* 2. Chỉ số tài chính */}
                             <section className="space-y-4">
-                                <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><TrendingUp size={14} /> 2. Chỉ số thăng hạng & duy trì</h4>
+                                <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">2. Chỉ số thăng hạng & duy trì</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="p-6 bg-emerald-50/50 rounded-[28px] border border-emerald-100 space-y-3">
                                         <label className="text-[10px] font-black text-emerald-700 uppercase flex items-center gap-2"><Star size={12}/> Doanh thu nâng hạng</label>
@@ -221,7 +221,7 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                             {/* 3. Thấu chi (Read Only) */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"><Wallet size={14} /> 3. Đặc quyền thấu chi</h4>
+                                    <h4 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"> 3. Đặc quyền thấu chi</h4>
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-100">
                                         <AlertCircle size={12} />
                                         <span className="text-[10px] font-bold">Trường này không được phép sửa</span>
