@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RoomTypeDetailResponse {
-
     private Integer roomTypeId;
     private Integer hotelId;
     private String roomCode;
@@ -29,6 +28,5 @@ public class RoomTypeDetailResponse {
     private LocalDateTime updatedAt;
     private List<String> amenities;
     private List<RoomTypeImageResponse> images;
-
 
 }
