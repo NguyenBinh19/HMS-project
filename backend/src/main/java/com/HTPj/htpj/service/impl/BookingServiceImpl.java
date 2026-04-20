@@ -188,20 +188,40 @@ public class BookingServiceImpl implements BookingService {
 
                 RoomPricingRule rule = selectedRule.get();
 
-                if (rule.getAdjustmentValue() != null &&
-                        rule.getAdjustmentType() != null) {
+//                if (rule.getAdjustmentValue() != null &&
+//                        rule.getAdjustmentType() != null) {
+//
+//                    if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
+//
+//                        BigDecimal percentAmount = basePrice
+//                                .multiply(rule.getAdjustmentValue())
+//                                .divide(BigDecimal.valueOf(100));
+//
+//                        dailyPrice = dailyPrice.add(percentAmount);
+//                    }
+//
+//                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+//                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+//                    }
+//                }
+                if (rule.getAdjustmentValue() != null && rule.getAdjustmentType() != null) {
+                    BigDecimal adjustmentAmount = BigDecimal.ZERO;
 
+                    //Tính toán giá trị điều chỉnh
                     if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
-
-                        BigDecimal percentAmount = basePrice
+                        adjustmentAmount = basePrice
                                 .multiply(rule.getAdjustmentValue())
                                 .divide(BigDecimal.valueOf(100));
-
-                        dailyPrice = dailyPrice.add(percentAmount);
+                    } else if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+                        adjustmentAmount = rule.getAdjustmentValue();
                     }
 
-                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
-                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+                    // action để cộng (INCREASE) hoặc trừ (DECREASE)
+                    if ("DECREASE".equalsIgnoreCase(rule.getAction())) {
+                        dailyPrice = dailyPrice.subtract(adjustmentAmount);
+                    } else {
+                        // Mặc định là INCREASE hoặc các trường hợp khác
+                        dailyPrice = dailyPrice.add(adjustmentAmount);
                     }
                 }
             }
