@@ -99,6 +99,7 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         corsConfiguration.addAllowedOriginPattern("http://localhost:*");
+        corsConfiguration.addAllowedOriginPattern("http://localhost");
         corsConfiguration.addAllowedOriginPattern("https://www.jushotel.site");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");

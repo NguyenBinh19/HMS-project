@@ -24,7 +24,6 @@ export default function SessionExpiredHandler() {
         // Xóa sạch thông tin đăng nhập
         localStorage.clear();
         sessionStorage.clear();
-
         // Đóng modal
         setIsOpen(false);
 
