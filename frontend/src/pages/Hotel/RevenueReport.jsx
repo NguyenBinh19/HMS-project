@@ -15,12 +15,17 @@ import { toast } from 'react-hot-toast';
 const RevenueReport = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState(null);
-
+    const [decisionAlerts, setDecisionAlerts] = useState([]);
+    const [strategicHacks, setStrategicHacks] = useState([]);
     const [startDate, setStartDate] = useState("2026-03-01");
     const [endDate, setEndDate] = useState("2026-03-31");
     const [granularity, setGranularity] = useState("DAILY"); // DAILY | WEEKLY | MONTHLY
     const [dateError, setDateError] = useState("");
     const MAX_DAILY_RANGE_DAYS = 365;
+    const getHotelId = () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        return user?.hotelId;
+    };
     const validateRevenueRequest = (start, end, granularity = "DAILY") => {
         if (!start || !end) {
             return "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc";
@@ -43,13 +48,50 @@ const RevenueReport = () => {
         return null;
     };
 
+    // Hàm phân tích dữ liệu từ summary
+    const analyzePerformance = (summary) => {
+        const hacks = [];
+        if (!summary) return;
+        // 1. Phân tích Công suất (Occupancy)
+        if (summary.occupancyRate < 40) {
+            hacks.push({
+                title: "Cải thiện lấp đầy",
+                desc: `Công suất đạt ${summary.occupancyRate}%, thấp hơn kỳ vọng. Hãy cân nhắc chạy Flash Sale vào các ngày giữa tuần.`,
+                type: "warning"
+            });
+        } else if (summary.occupancyRate > 85) {
+            hacks.push({
+                title: "Tối ưu giá bán",
+                desc: "Công suất đang rất cao. Bạn có thể tăng giá ADR thêm 5-10% để tối ưu lợi nhuận cho các đêm còn lại.",
+                type: "success"
+            });
+        }
+        // 2. Phân tích ADR & RevPAR
+        if (summary.revenueGrowthPercent < 0) {
+            hacks.push({
+                title: "Cảnh báo tăng trưởng",
+                desc: `Doanh thu giảm ${Math.abs(summary.revenueGrowthPercent)}% so với kỳ trước. Cần kiểm tra lại chính sách giá cạnh tranh.`,
+                type: "danger"
+            });
+        }
+        // 3. Gợi ý dựa trên RevPAR (Hiệu suất tổng thể)
+        if (summary.revPar < (summary.adr * 0.5)) {
+            hacks.push({
+                title: "Hiệu suất phòng thấp",
+                desc: "Chỉ số RevPAR chưa đạt mức tối ưu so với giá bán trung bình. Cần đẩy mạnh Marketing trên các kênh OTA.",
+                type: "info"
+            });
+        }
+
+        setStrategicHacks(hacks);
+    };
+
     const fetchRevenue = async () => {
         const error = validateRevenueRequest(startDate, endDate, granularity);
         if (error) {
             setDateError(error);
             return; // Dừng lại không gọi API
         }
-
         setLoading(true);
         setDateError(""); // Xóa lỗi cũ nếu có
         try {
@@ -62,6 +104,7 @@ const RevenueReport = () => {
 
             if (res.code === 1000) {
                 setReportData(res.result);
+                analyzePerformance(res.result.summary);
             }
         } catch (error) {
             console.error("Lỗi tải báo cáo:", error);
@@ -73,6 +116,11 @@ const RevenueReport = () => {
 
     // --- LOGIC XỬ LÝ DOWNLOAD FILE  ---
     const handleDownloadReport = async (format = 'EXCEL', reportType = 'REVENUE') => {
+        const hotelId = getHotelId(); // Lấy ID ở đây
+        if (!hotelId) {
+            toast.error("Không tìm thấy thông tin khách sạn");
+            return;
+        }
         try {
             toast.loading(`Đang tải file ${format}...`, { id: 'export-status' });
 
@@ -225,11 +273,47 @@ const RevenueReport = () => {
                 <KPICard title="RevPAR" value={summary.revPar || 0} unit="VNĐ" trend={summary.revParGrowthPercent || 0} isUp={(summary.revParGrowthPercent || 0) >= 0} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* PHẦN GỢI Ý CHIẾN LƯỢC */}
+            {!loading && granularity === 'MONTHLY' && strategicHacks.length > 0 && (
+                <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="flex flex-wrap gap-6">
+                        {strategicHacks.map((hack, index) => (
+                            <div
+                                key={index}
+                                className={`bg-white border border-slate-100 p-6 rounded-[2.5rem] shadow-sm flex items-start gap-4 transition-all hover:shadow-md hover:border-blue-100
+                        ${strategicHacks.length === 1
+                                    ? 'w-full md:w-[450px]' 
+                                    : 'flex-1 min-w-[300px] max-w-[calc(33.333%-1rem)]' 
+                                }
+                    `}
+                            >
+                                <div className={`p-3.5 rounded-2xl shrink-0 shadow-inner ${
+                                    hack.type === 'warning' ? 'bg-amber-50 text-amber-600' :
+                                        hack.type === 'danger' ? 'bg-rose-50 text-rose-600' :
+                                            hack.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+                                }`}>
+                                    <BarChart3 size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Gợi ý chiến lược</h4>
+                                    </div>
+                                    <h5 className="text-sm font-extrabold text-slate-800 leading-tight mb-2 truncate">
+                                        {hack.title}
+                                    </h5>
+                                    <p className="text-[12px] font-medium text-slate-500 leading-relaxed italic">
+                                        {hack.desc}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* BIỂU ĐỒ XU HƯỚNG  */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl relative min-h-[500px]">
-                    {/* Hiệu ứng Loading đè lên biểu đồ khi đang fetch data */}
                     {loading && (
                         <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-[3rem]">
                             <RefreshCcw className="animate-spin text-blue-600" size={32} />
@@ -281,7 +365,7 @@ const RevenueReport = () => {
                         {roomTypeStats.length > 0 ? roomTypeStats.map((item, idx) => (
                             <div key={idx} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                                 <div className="flex justify-between items-start mb-2">
-                                    <span className="text-[11px] font-black text-slate-500 uppercase leading-tight w-2/3">
+                                    <span className="text-[11px] font-black text-slate-550 uppercase leading-tight w-2/3">
                                         {item.roomTypeName}
                                     </span>
                                     <span className="text-sm font-black text-blue-600">{item.contribution}%</span>

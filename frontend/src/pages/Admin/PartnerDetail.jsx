@@ -7,6 +7,7 @@ import {
     HotelIcon, CheckCircle2, ShieldAlert, Wallet
 } from "lucide-react";
 import { partnerService } from "@/services/partner.service.js";
+import HotelBookingHistory from "./HotelBookingHistory.jsx"
 import { toast } from "react-hot-toast";
 
 const PartnerDetail = () => {
@@ -193,7 +194,8 @@ const PartnerDetail = () => {
                     {[
                         {id: "overview", label: "TỔNG QUAN", icon: Info},
                         {id: "legal", label: "HỒ SƠ PHÁP LÝ", icon: FileCheck},
-                        ...(isAgency ? [{id: "finance", label: "HẠN MỨC TÍN DỤNG", icon: CreditCard}] : [])
+                        ...(isAgency ? [{id: "finance", label: "HẠN MỨC TÍN DỤNG", icon: CreditCard}] : []),
+                        ...(!isAgency ? [{id: "booking_history", label: "LỊCH SỬ ĐẶT PHÒNG", icon: History}] : [])
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -210,6 +212,9 @@ const PartnerDetail = () => {
 
                 {/* CONTENT AREA */}
                 <div className="bg-white rounded-[40px] p-10 shadow-sm border border-slate-200 min-h-[400px]">
+                    {activeTab === "booking_history" && !isAgency && (
+                        <HotelBookingHistory hotelId={id} />
+                    )}
                     {activeTab === "overview" && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                             <section className="space-y-6">

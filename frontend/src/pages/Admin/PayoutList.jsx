@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useLocation, Link } from "react-router-dom";
 import {
     Search, Loader2, CheckCircle2, Clock, AlertCircle,
     ChevronLeft, ChevronRight, Download,
@@ -19,6 +20,12 @@ const STATUS_CONFIG = {
 };
 
 const PayoutList = () => {
+    const location = useLocation();
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = currentUser?.roles || "";
+    const isFullAdmin = userRole === "ROLE_ADMIN";
+    const isReadOnly = !isFullAdmin;
+
     const [payoutData, setPayoutData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
@@ -213,11 +220,11 @@ const PayoutList = () => {
                         </button>
                         <button
                             onClick={handleGenerate}
-                            disabled={generating}
+                            disabled={generating || isReadOnly}
                             className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50"
                         >
                             {generating ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}
-                            {generating ? "Dang tao..." : "Tạo sao kê cho kỳ hiện tại"}
+                            {isReadOnly ? "Quyền xem nội bộ" : (generating ? "Đang tạo..." : "Tạo sao kê")}
                         </button>
                     </div>
                 </header>
@@ -258,7 +265,7 @@ const PayoutList = () => {
                                     <Download size={14} />
                                     Export ({selectedIds.length})
                                 </button> */}
-
+                                {!isReadOnly && (
                                 <button
                                     onClick={() => setMarkPaidModal(true)}
                                     disabled={selectedIds.length === 0}
@@ -271,6 +278,7 @@ const PayoutList = () => {
                                     <CheckCircle2 size={14} />
                                     Mark Paid ({selectedIds.length})
                                 </button>
+                                )}
                             </div>
                         </div>
 

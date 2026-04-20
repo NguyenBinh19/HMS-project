@@ -27,8 +27,8 @@ const SidebarAdmin = () => {
             path: "/admin/staff",
             hideForStaff: true
         },
-        { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules" },
-        { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission" },
+        { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules",  hideForStaff: true },
+        { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission",  hideForStaff: true },
         { icon: <Contact2 size={20} />, label: "XỬ LÝ XÁC MINH KYC", path: "/admin/kyc-queue" },
         // { icon: <Clock size={20} />, label: "LỊCH SỬ THANH TOÁN", path: "/admin/payment-transaction" },
         { icon: <CreditCard size={20} />, label: "QUẢN LÝ HẠN MỨC & HẠNG", path: "/admin/set-ranking" },
@@ -37,8 +37,7 @@ const SidebarAdmin = () => {
                 { icon: <MessageSquareWarning size={19} />, label: "XỬ LÝ KHIẾU NẠI", path: "/admin/dispute" },
             ]},
         { icon: <ClipboardCheck size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
-        // { icon: <FileText size={20} />, label: "QUẢN LÝ KHIẾU NẠI", path: "/admin/dispute-center" },
-        { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users" },
+        { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users", hideForStaff: true },
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
         { icon: <BookOpen size={20} />, label: "NHẬT KÝ HỆ THỐNG", path: "/admin/audit-logs", hideForStaff: true },
     ];

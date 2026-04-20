@@ -41,7 +41,8 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
         e.preventDefault();
         const cleanPhone = formData.phone.trim(); // Loại bỏ khoảng trắng thừa
         if (!validateVietnamesePhone(cleanPhone)) {
-            alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (ví dụ: 09xx...)");
+            alert("Số điện thoại không hợp lệ! " +
+                "Vui lòng nhập đúng 10 chữ số và bắt đầu bằng các đầu số: 03, 05, 07, 08 hoặc 09.");
             return;
         }
         setIsSubmitting(true);

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     BedDouble, RefreshCcw, Loader2, ChevronRight,
     ArrowUpRight, ArrowDownLeft, Zap, Star, BellRing,
-    Target, DoorOpen, ShieldCheck, Calendar
+    Target, DoorOpen, ShieldCheck, ArrowRight, BarChart3
 } from 'lucide-react';
 import { bookingService } from '@/services/booking.service';
 import { revenueService } from '@/services/revenue.service';
@@ -127,41 +127,67 @@ const HotelProfessionalDashboard = () => {
                 </div>
 
                 {/* --- KPI CARDS --- */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <KpiCard label="Doanh thu" value={formatVND(stats?.totalRevenue)}
-                                 trend={stats?.revenueGrowthPercent} icon={<Target size={20}/>} color="blue"/>
-                        <KpiCard label="Công suất phòng" value={`${stats?.occupancyRate || 0}%`}
-                                 trend={stats?.occupancyGrowthPercent} icon={<BedDouble size={20}/>}
-                                 progress={stats?.occupancyRate} color="purple"/>
-                        <KpiCard label="Chỉ số ADR" value={formatVND(stats?.adr)} trend={stats?.adrGrowthPercent}
-                                 icon={<Zap size={20}/>} color="amber"/>
-                        <FeedbackCard stats={feedbackStats} navigate={navigate}/>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KpiCard label="Doanh thu" value={formatVND(stats?.totalRevenue)}
+                             trend={stats?.revenueGrowthPercent} icon={<Target size={20}/>} color="blue"/>
+                    <KpiCard label="Công suất phòng" value={`${stats?.occupancyRate || 0}%`}
+                             trend={stats?.occupancyGrowthPercent} icon={<BedDouble size={20}/>}
+                             progress={stats?.occupancyRate} color="purple"/>
+                    <KpiCard label="Chỉ số ADR" value={formatVND(stats?.adr)} trend={stats?.adrGrowthPercent}
+                             icon={<Zap size={20}/>} color="amber"/>
+                    <FeedbackCard stats={feedbackStats} navigate={navigate}/>
+                </div>
 
                 {/* --- DECISION ALERTS --- */}
-                {decisionAlerts.length > 0 && (
-                    <div className={`grid gap-4 ${decisionAlerts.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                        {decisionAlerts.map(alert => (
-                            <div key={alert.id}
-                                 className="bg-white p-4 rounded-2xl border-l-4 border-[#4318FF] shadow-sm flex items-center justify-between border border-slate-100">
-                                <div className="flex items-center gap-4">
-                                    <div
-                                        className={`p-2.5 rounded-xl ${alert.type === 'danger' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>
-                                        <BellRing size={20}/>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-black text-[13px] uppercase text-[#1B2559]">{alert.title}</h4>
-                                        <p className="text-[12px] text-[#707EAE] font-bold mt-0.5">{alert.desc}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => navigate(alert.link)}
-                                        className="px-4 py-2 bg-[#1B2559] text-white rounded-xl text-[11px] font-black uppercase hover:bg-black transition-all">
-                                    Xử lý ngay
-                                </button>
-                            </div>
-                        ))}
+                {/*{decisionAlerts.length > 0 && (*/}
+                {/*    <div className={`grid gap-4 ${decisionAlerts.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>*/}
+                {/*        {decisionAlerts.map(alert => (*/}
+                {/*            <div key={alert.id}*/}
+                {/*                 className="bg-white p-4 rounded-2xl border-l-4 border-[#4318FF] shadow-sm flex items-center justify-between border border-slate-100">*/}
+                {/*                <div className="flex items-center gap-4">*/}
+                {/*                    <div*/}
+                {/*                        className={`p-2.5 rounded-xl ${alert.type === 'danger' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>*/}
+                {/*                        <BellRing size={20}/>*/}
+                {/*                    </div>*/}
+                {/*                    <div>*/}
+                {/*                        <h4 className="font-black text-[13px] uppercase text-[#1B2559]">{alert.title}</h4>*/}
+                {/*                        <p className="text-[12px] text-[#707EAE] font-bold mt-0.5">{alert.desc}</p>*/}
+                {/*                    </div>*/}
+                {/*                </div>*/}
+                {/*                <button onClick={() => navigate(alert.link)}*/}
+                {/*                        className="px-4 py-2 bg-[#1B2559] text-white rounded-xl text-[11px] font-black uppercase hover:bg-black transition-all">*/}
+                {/*                    Xử lý ngay*/}
+                {/*                </button>*/}
+                {/*            </div>*/}
+                {/*        ))}*/}
+                {/*    </div>*/}
+                {/*)}*/}
+                <div
+                    className="bg-white border border-slate-100 p-4 rounded-[24px] shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
+                    <div className="flex items-center gap-4">
+                        {/* Icon đại diện: Biểu đồ doanh thu */}
+                        <div
+                            className="p-3 bg-blue-50 rounded-2xl text-blue-600 group-hover:scale-110 transition-transform">
+                            <BarChart3 size={24}/>
+                        </div>
+
+                        <div>
+                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                                Phân tích & Báo cáo doanh thu
+                            </h4>
+                            <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                                Xem chi tiết biến động doanh số, công suất phòng và hiệu quả kinh doanh.
+                            </p>
+                        </div>
                     </div>
-                )}
+
+                    <button
+                        onClick={() => navigate('/hotel/revenue-report')}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-[#1B2559] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-900 transition-all shadow-md active:scale-95"
+                    >
+                        Xem báo cáo <ArrowRight size={14}/>
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-12 gap-5">
                     {/* TRANSACTIONS TABLE */}
@@ -226,7 +252,7 @@ const HotelProfessionalDashboard = () => {
                         {/* OPERATIONS */}
                         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
                             <h3 className="text-[13px] font-black uppercase mb-5 flex items-center gap-2 text-[#1B2559]">
-                                 Lịch trình hôm nay
+                                Lịch trình hôm nay
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <OperationMini label="Check-in" count={tasks.checkins} color="blue"
@@ -240,7 +266,7 @@ const HotelProfessionalDashboard = () => {
                         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100">
                             <div className="flex justify-between items-center mb-5">
                                 <h3 className="text-[13px] font-black uppercase text-[#1B2559] flex items-center gap-2">
-                                   Quản lý hạng phòng
+                                    Quản lý hạng phòng
                                 </h3>
                             </div>
                             {/* Thêm max-h và overflow-y-auto */}

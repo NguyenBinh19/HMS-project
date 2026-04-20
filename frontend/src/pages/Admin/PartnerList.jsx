@@ -138,7 +138,7 @@ const PartnerList = () => {
                                     setActiveTab(tab.id);
                                     setSearchTerm("");
                                 }}
-                                className={`flex items-center gap-2 pb-4 px-2 text-sm font-black transition-all relative ${
+                                className={`flex items-center gap-2 pb-4 px-1 text-[11px] font-black tracking-[0.1em] transition-all relative ${
                                     activeTab === tab.id ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                                 }`}
                             >

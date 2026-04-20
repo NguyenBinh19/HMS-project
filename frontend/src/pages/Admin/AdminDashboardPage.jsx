@@ -79,8 +79,12 @@ const AdminDashboard = () => {
 
                 // Tính toán thống kê từ danh sách booking
                 const bookingStats = allBookings.reduce((acc, curr) => {
-                    acc.totalRevenue += (curr.finalAmount || 0);
+                    // acc.totalRevenue += (curr.finalAmount || 0);
+                    // Chỉ tính nếu đơn hàng ở trạng thái xác nhận, đang ở, hoặc đã hoàn thành
                     const status = curr.bookingStatus?.toUpperCase();
+                    if (['CONFIRMED', 'CHECKED-IN', 'COMPLETED'].includes(status)) {
+                        acc.totalRevenue += (curr.finalAmount || 0);
+                    }
                     if (status === 'BOOKED' || status === 'PENDING') acc.pendingBookings++;
                     if (status === 'CONFIRMED' || status === 'COMPLETED') acc.confirmedBookings++;
                     return acc;
@@ -147,10 +151,10 @@ const AdminDashboard = () => {
                 {/* 2. Top Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <StatCard
-                        label="Tổng giá trị Booking"
+                        label="Tổng giá trị giao dịch"
                         value={formatVND(data.stats.totalRevenue)}
                         // trend="+12.5%"
-                        sub="Tổng doanh thu tích lũy"
+                        sub="Thống kê dựa trên các đơn đã xác thực"
                         icon={<TrendingUp size={20} />}
                         color="blue"
                     />

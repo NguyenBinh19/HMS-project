@@ -208,9 +208,9 @@ const CommissionList = () => {
                                                 <span
                                                     className="text-gray-700">{format(new Date(item.startDate), 'dd/MM/yyyy')}</span>
                                                 <span
-                                                    className="text-gray-400 font-medium italic">đến {format(new Date(item.endDate), 'dd/MM/yyyy')}</span>
+                                                    className="text-gray-800 font-medium italic">đến {format(new Date(item.endDate), 'dd/MM/yyyy')}</span>
                                             </div>
-                                        ) : <span className="text-blue-500 uppercase text-[9px]">Vĩnh viễn</span>}
+                                        ) : <span className="text-blue-700 uppercase text-[9px]">Vĩnh viễn</span>}
                                     </td>
                                     <td className="px-6 py-4">
                                             <span
