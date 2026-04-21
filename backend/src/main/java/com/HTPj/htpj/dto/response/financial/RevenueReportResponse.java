@@ -26,6 +26,7 @@ public class RevenueReportResponse {
         private BigDecimal previousPeriodRevenue;
         private Double revenueGrowthPercent;
         private Integer totalBookings;
+        private Integer cancelledBookings;
         private Integer previousPeriodBookings;
         private Integer totalRoomNightsSold;
         private Integer totalRoomNightsAvailable;

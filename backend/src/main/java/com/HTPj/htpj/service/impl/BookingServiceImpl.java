@@ -99,6 +99,15 @@ public class BookingServiceImpl implements BookingService {
                                 Collectors.summingInt(RoomHoldDetail::getQuantity)
                         ));
 
+        // Fetch allotment data for all room types in the date range
+        List<Integer> roomTypeIds = roomTypes.stream()
+                .map(RoomType::getRoomTypeId).toList();
+        // Allotment covers nights: checkIn to checkOut - 1
+        LocalDate allotmentEnd = request.getCheckOut().minusDays(1);
+        List<RoomAllotment> allotments = roomAllotmentRepository
+                .findByRoomTypeIdsAndDateRange(roomTypeIds, request.getCheckIn(), allotmentEnd);
+        Map<Integer, List<RoomAllotment>> allotmentMap = allotments.stream()
+                .collect(Collectors.groupingBy(RoomAllotment::getRoomTypeId));
 
         List<RoomAvailabilityResponse> responses = new ArrayList<>();
 
@@ -109,14 +118,33 @@ public class BookingServiceImpl implements BookingService {
                 continue;
             }
 
+            // Determine effective allotment ceiling from allotment records
+            List<RoomAllotment> rtAllotments = allotmentMap
+                    .getOrDefault(rt.getRoomTypeId(), Collections.emptyList());
+            Map<LocalDate, RoomAllotment> rtAllotmentDateMap = rtAllotments.stream()
+                    .collect(Collectors.toMap(RoomAllotment::getAllotmentDate, a -> a));
+
+            int effectiveCeiling = rt.getTotalRooms();
+            boolean isStopSell = false;
+            for (LocalDate date = request.getCheckIn(); !date.isAfter(allotmentEnd); date = date.plusDays(1)) {
+                RoomAllotment ra = rtAllotmentDateMap.get(date);
+                if (ra != null) {
+                    if (Boolean.TRUE.equals(ra.getStopSell())) {
+                        isStopSell = true;
+                        break;
+                    }
+                    effectiveCeiling = Math.min(effectiveCeiling, ra.getAllotment());
+                }
+            }
+
             int bookedQuantity =
                     bookedQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
 
             int holdingQuantity =
                     holdingQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
 
-            int availableQuantity =
-                    rt.getTotalRooms() - bookedQuantity - holdingQuantity;
+            int availableQuantity = isStopSell ? 0 :
+                    effectiveCeiling - bookedQuantity - holdingQuantity;
 
             BigDecimal calculatedPrice = calculateTotalPrice(
                     rt,
@@ -131,7 +159,7 @@ public class BookingServiceImpl implements BookingService {
                                 .roomTitle(rt.getRoomTitle())
                                 .price(calculatedPrice)
                                 .quantityAvaiable(0)
-                                .status("sold_out")
+                                .status(isStopSell ? "stop_sell" : "sold_out")
                                 .build()
                 );
             } else {

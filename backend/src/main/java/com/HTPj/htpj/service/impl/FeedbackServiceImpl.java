@@ -136,7 +136,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .getAuthentication();
 
         Jwt jwt = (Jwt) authentication.getPrincipal();
-        String userId = jwt.getClaim("UserId");
+        String userId = jwt.getClaim("userId");
         return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(review -> {
                     Booking booking = review.getBookingId() != null

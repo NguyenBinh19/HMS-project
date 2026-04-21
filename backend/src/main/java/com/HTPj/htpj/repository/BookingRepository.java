@@ -265,7 +265,7 @@ ORDER BY b.createdAt DESC
     LEFT JOIN FETCH b.bookingDetails
     WHERE b.hotelId = :hotelId
       AND b.bookingStatus IN :statuses
-      AND b.checkOutDate >= :startDate
+      AND b.checkOutDate > :startDate
       AND b.checkInDate <= :endDate
     """)
     List<Booking> findRevenueBookings(
@@ -280,7 +280,7 @@ ORDER BY b.createdAt DESC
     LEFT JOIN FETCH b.bookingDetails
     WHERE b.hotelId = :hotelId
       AND b.bookingStatus IN :statuses
-      AND b.checkOutDate >= :startDate
+      AND b.checkOutDate > :startDate
       AND b.checkInDate <= :endDate
       AND b.agencyId = :agencyId
     """)

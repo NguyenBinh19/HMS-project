@@ -48,6 +48,7 @@ public class HotelServiceImpl implements HotelService {
     S3Service s3Service;
     UserRepository userRepository;
     NotificationService notificationService;
+    RoomAllotmentRepository roomAllotmentRepository;
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -170,6 +171,15 @@ public class HotelServiceImpl implements HotelService {
                             RoomHoldDetail::getRoomTypeId,
                             Collectors.summingInt(RoomHoldDetail::getQuantity)));
 
+            // Fetch allotment data for all room types
+            List<Integer> allRoomTypeIds = allRoomTypes.stream()
+                    .map(RoomType::getRoomTypeId).toList();
+            LocalDate allotmentEnd = checkOut.minusDays(1);
+            List<RoomAllotment> allotments = roomAllotmentRepository
+                    .findByRoomTypeIdsAndDateRange(allRoomTypeIds, checkIn, allotmentEnd);
+            Map<Integer, List<RoomAllotment>> allotmentMap = allotments.stream()
+                    .collect(Collectors.groupingBy(RoomAllotment::getRoomTypeId));
+
             // Group room types by hotel
             Map<Integer, List<RoomType>> roomTypesByHotel = allRoomTypes.stream()
                     .filter(rt -> "ACTIVE".equalsIgnoreCase(rt.getRoomStatus()))
@@ -184,7 +194,27 @@ public class HotelServiceImpl implements HotelService {
                 for (RoomType rt : rts) {
                     int booked = bookedMap.getOrDefault(rt.getRoomTypeId(), 0);
                     int held = holdMap.getOrDefault(rt.getRoomTypeId(), 0);
-                    int available = rt.getTotalRooms() - booked - held;
+
+                    // Determine effective ceiling from allotment records
+                    List<RoomAllotment> rtAllotments = allotmentMap
+                            .getOrDefault(rt.getRoomTypeId(), Collections.emptyList());
+                    Map<LocalDate, RoomAllotment> rtAllotmentDateMap = rtAllotments.stream()
+                            .collect(Collectors.toMap(RoomAllotment::getAllotmentDate, a -> a));
+
+                    int effectiveCeiling = rt.getTotalRooms();
+                    boolean isStopSell = false;
+                    for (LocalDate date = checkIn; !date.isAfter(allotmentEnd); date = date.plusDays(1)) {
+                        RoomAllotment ra = rtAllotmentDateMap.get(date);
+                        if (ra != null) {
+                            if (Boolean.TRUE.equals(ra.getStopSell())) {
+                                isStopSell = true;
+                                break;
+                            }
+                            effectiveCeiling = Math.min(effectiveCeiling, ra.getAllotment());
+                        }
+                    }
+
+                    int available = isStopSell ? 0 : effectiveCeiling - booked - held;
 
                     if (available > 0) {
                         totalAvailable += available;

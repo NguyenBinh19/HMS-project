@@ -79,7 +79,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 RoomAllotment existing = dateMap.get(date);
                 int sold = rtSoldMap.getOrDefault(date, 0);
-                int allotment = existing != null ? existing.getAllotment() : 0;
+                int allotment = existing != null ? existing.getAllotment() : rt.getTotalRooms();
                 boolean stopSell = existing != null && Boolean.TRUE.equals(existing.getStopSell());
                 int available = Math.max(0, allotment - sold);
 
@@ -291,7 +291,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
                     RoomAllotment.builder()
                             .roomTypeId(request.getRoomTypeId())
                             .allotmentDate(date)
-                            .allotment(0)
+                            .allotment(roomType.getTotalRooms())
                             .soldCount(0)
                             .build());
 
