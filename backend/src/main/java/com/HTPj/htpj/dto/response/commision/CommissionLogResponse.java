@@ -15,6 +15,8 @@ public class CommissionLogResponse {
     private Long id;
 
     private Long hotelId;
+    private String oldRateType;
+    private String newRateType;
 
     private Long oldCommissionId;
     private BigDecimal oldValue;

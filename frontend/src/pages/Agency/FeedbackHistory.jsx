@@ -34,7 +34,7 @@ const FeedbackHistory = () => {
     const [filterRating, setFilterRating] = useState('all');
     const [expandedId, setExpandedId] = useState(null);
 
-    // Xử lý Filter (Alternative Flow 1)
+    // Xử lý Filter
     const filteredList = feedbacks.filter(item => {
         if (filterRating === 'all') return true;
         if (filterRating === 'low') return item.ratingScore <= 2;
@@ -49,12 +49,12 @@ const FeedbackHistory = () => {
         );
     }
 
-    // Nếu không có lịch sử (Exception UC033.E1)
+    // Nếu không có lịch sử
     if (feedbacks.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-20 bg-white rounded-3xl border border-dashed border-slate-300">
                 <MessageSquare size={64} className="text-slate-200 mb-4" />
-                <p className="text-slate-500 font-medium">MSG-SYS-27: Bạn chưa đánh giá chuyến đi nào.</p>
+                <p className="text-slate-500 font-medium">Bạn chưa đánh giá chuyến đi nào.</p>
             </div>
         );
     }

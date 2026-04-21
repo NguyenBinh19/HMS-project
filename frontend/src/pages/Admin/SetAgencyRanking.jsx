@@ -4,7 +4,7 @@ import {
     Award, ChevronRight, CheckCircle2, XCircle,
     MapPin, Loader2, RefreshCw, TrendingUp,
     ArrowUpRight, ArrowDownRight, Mail, Calendar, Info, ArrowRight,
-    ExternalLink, Hash, Eye, DollarSign
+    ExternalLink, Hash, Eye, DollarSign, History
 } from 'lucide-react';
 import { rankService } from '@/services/rank.service.js';
 import { kycService } from '@/services/kyc.service.js';
@@ -25,7 +25,7 @@ const AgencyRankingManager = () => {
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [loadingBookings, setLoadingBookings] = useState(false);
     const [reason, setReason] = useState('');
-
+    const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     // Khởi tạo chu kỳ
     useEffect(() => {
         const init = async () => {
@@ -434,6 +434,89 @@ const AgencyRankingManager = () => {
                                                             </p>
                                                         </div>
                                                     </div>
+                                                </div>
+
+                                                {/* LỊCH SỬ THAY ĐỔI THỨ HẠNG  */}
+                                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">
+                                                            Lịch sử thăng/hạ hạng
+                                                        </h4>
+                                                        <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                                                            {agencyDetail?.histories?.length || 0} bản ghi
+                                                        </span>
+                                                    </div>
+                                                    <div className={`relative ml-4 transition-all duration-500 ${
+                                                        isHistoryExpanded ? "max-h-[400px] overflow-y-auto pr-3 custom-scrollbar" : "max-h-fit"
+                                                    } before:absolute before:inset-y-0 before:left-0 before:w-[1px] before:bg-slate-200`}>
+                                                        <div className="space-y-6">
+                                                            {agencyDetail?.histories?.length > 0 ? (
+                                                                (isHistoryExpanded
+                                                                        ? agencyDetail.histories
+                                                                        : agencyDetail.histories.slice(0, 3)
+                                                                ).map((his, idx) => (
+                                                                    <div key={his.id || idx} className="relative pl-7 group">
+                                                                        <div className={`absolute left-[-4.5px] top-5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10 ${
+                                                                            his.changeType === 'UPGRADE' ? 'bg-emerald-500' : 'bg-rose-500'
+                                                                        }`} />
+                                                                        <div className="bg-slate-50/50 hover:bg-white hover:shadow-md border border-slate-100/50 hover:border-slate-200 p-4 rounded-2xl transition-all duration-300">
+                                                                            {/* Header Card */}
+                                                                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-[11px] font-black text-slate-600 uppercase">{his.oldRank}</span>
+                                                                                    <ArrowRight size={10} className="text-slate-300" />
+                                                                                    <span className={`text-[11px] font-black uppercase ${his.changeType === 'UPGRADE' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                                                        {his.newRank}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className="text-[10px] font-bold text-slate-700">
+                                                                                    {his.changedAt ? new Date(his.changedAt).toLocaleDateString('vi-VN') : '---'}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {/* Info Grid */}
+                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                <div className="flex items-center gap-1.5 text-slate-600">
+                                                                                    <DollarSign size={12} className="opacity-50" />
+                                                                                    <span className="text-[10px] font-bold">
+                                                                                        Doanh thu: {his.totalRevenue?.toLocaleString()}đ
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1.5 text-slate-600">
+                                                                                    <History size={12} className="opacity-50" />
+                                                                                    <span className="text-[10px] font-bold uppercase tracking-tighter">
+                                                                                        {his.changeType === 'UPGRADE' ? 'Nâng hạng' : 'Hạ hạng'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            {/* Reason */}
+                                                                            {his.reason && (
+                                                                                <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-200/40">
+                                                                                    <Info size={12} className="text-blue-700 mt-0.5 shrink-0" />
+                                                                                    <p className="text-[10px] text-slate-700 italic leading-relaxed">
+                                                                                        Lý do: {his.reason}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="py-6 text-center text-[10px] text-slate-400 font-bold uppercase italic tracking-widest">
+                                                                    Chưa có lịch sử thay đổi
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {/* Nút Xem thêm */}
+                                                    {agencyDetail?.histories?.length > 3 && (
+                                                        <button
+                                                            onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                                                            className="w-full py-2 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border border-slate-100"
+                                                        >
+                                                            {isHistoryExpanded ? "Thu gọn lịch sử" : `Xem tiếp (${agencyDetail.histories.length - 3} bản ghi)`}
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {/* Lý do phê duyệt */}

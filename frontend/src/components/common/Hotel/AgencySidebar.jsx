@@ -12,7 +12,7 @@ import {
     Eye,
     List,
     CreditCard,
-    Building2, BarChart3
+    Building2, BarChart3, MessageSquare
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -65,12 +65,12 @@ const Sidebar = () => {
         {
             icon: <CalendarDays size={20} />,
             label: "QUẢN LÝ BOOKING",
-            path: "/agency/booking-list", //
-            // subItems: [
-            //     // { icon: <CalendarDays size={18} />, label: "Booking Checkout", path: "/agency/booking-checkout" },
-            //     { icon: <List size={18} />, label: "Danh sách tất cả đơn hàng", path: "/agency/booking-list" },
-            //     // { icon: <FileText size={18} />, label: "Đơn hàng đang xử lý", path: "/agency/bookings/pending" },
-            // ]
+            path: "/agency/booking-list",
+        },
+        {
+            icon: <MessageSquare size={20} />,
+            label: "PHẢN HỒI TỪ KHÁCH SẠN",
+            path: "/agency/feedback-history"
         }
     ];
 

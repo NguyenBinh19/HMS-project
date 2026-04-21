@@ -8,8 +8,23 @@ import { ExternalLink, FileText, ArrowRight } from 'lucide-react';
 import { partnerService } from "@/services/partner.service.js";
 import { pdfDocumentService } from "@/services/pdf.service.js";
 import ToastPortal from "@/components/common/Notification/ToastPortal.jsx";
+import { commissionService } from "@/services/commission.service.js";
 
 const HotelProfileManager = () => {
+    const typeStyles = {
+        DEAL: {
+            label: 'Ưu đãi (Deal)',
+            classes: 'text-emerald-700 bg-emerald-50 border-emerald-100'
+        },
+        DEFAULT: {
+            label: 'Mặc định',
+            classes: 'text-slate-600 bg-slate-100 border-slate-200'
+        },
+        HOTEL: {
+            label: 'Riêng biệt',
+            classes: 'text-blue-700 bg-blue-50 border-blue-100'
+        }
+    };
     const navigate = useNavigate();
     const currentUser = useMemo(() => {
         try {
@@ -32,6 +47,23 @@ const HotelProfileManager = () => {
     const [bankErrors, setBankErrors] = useState({});
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [policyUrl, setPolicyUrl] = useState("");
+    const [showRankModal, setShowRankModal] = useState(false);
+    const [rankHistory, setRankHistory] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    const fetchCommissionHistory = async () => {
+        setLoadingHistory(true);
+        try {
+            const response = await commissionService.getMyHotelLogs();
+            if (response.code === 1000) {
+                setRankHistory(response.result);
+                setShowRankModal(true);
+            }
+        } catch (error) {
+            toast.current.addMessage({ mode: 'error', message: "Không thể tải lịch sử hoa hồng" });
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
 
     const [formData, setFormData] = useState({
         hotelName: "", address: "", city: "", country: "",
@@ -278,6 +310,11 @@ const HotelProfileManager = () => {
         setDeleteImageIds(prev => [...prev, imgId]);
     };
 
+    const formatCommValue = (value, type) => {
+        const num = Number(value || 0).toLocaleString('vi-VN');
+        return type === 'FIXED' ? `${num}đ` : `${num}%`;
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={40}/></div>;
 
     return (
@@ -496,12 +533,12 @@ const HotelProfileManager = () => {
                                 <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-800">Album
                                     ảnh ({existingImages.length})</h3>
                                 {canEdit && (
-                                <label
-                                    className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 hover:text-white transition-all">
-                                    <input type="file" multiple className="hidden"
-                                           onChange={(e) => setNewImages([...newImages, ...Array.from(e.target.files)])}/>
-                                    <Upload size={18}/>
-                                </label>
+                                    <label
+                                        className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-600 hover:text-white transition-all">
+                                        <input type="file" multiple className="hidden"
+                                               onChange={(e) => setNewImages([...newImages, ...Array.from(e.target.files)])}/>
+                                        <Upload size={18}/>
+                                    </label>
                                 )}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -536,35 +573,98 @@ const HotelProfileManager = () => {
                             </div>
                         </div>
 
+                        {/* CARD THÔNG TIN HOA HỒNG */}
+                        <section
+                            className="rounded-[28px] p-6 text-white shadow-lg relative overflow-hidden transition-all duration-500 bg-[#0F172A] border border-white/5"
+                        >
+                            <div className="absolute -right-2 -top-2 opacity-5">
+                                <ShieldCheck size={120}/>
+                            </div>
+
+                            <div className="relative z-10 flex flex-col gap-6">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-2">
+                                            Hoa hồng hiện tại
+                                        </p>
+                                        <div className="flex items-baseline gap-1">
+                                            <h2 className="text-5xl font-black tracking-tighter">
+                                                {originalData?.commissionValue || "0"}
+                                                <span className="text-xl not-italic ml-1 opacity-50">
+                                                    {originalData?.rateType === 'PERCENT' ? '%' : 'VNĐ'}
+                                                </span>
+                                            </h2>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={fetchCommissionHistory}
+                                        disabled={loadingHistory}
+                                        className="p-3 bg-white/5 hover:bg-blue-600 rounded-2xl transition-all border border-white/10 group active:scale-95"
+                                    >
+                                        {loadingHistory ? <Loader2 size={16} className="animate-spin"/> :
+                                            <Info size={16}/>}
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Phân loại</span>
+                                        <span
+                                            className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider w-fit ${
+                                                originalData?.commissionType === 'DEAL' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                                    originalData?.commissionType === 'HOTEL' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                                                        'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                                            }`}>
+                                            {originalData?.commissionType === 'DEAL' ? 'Ưu đãi (Deal)' :
+                                                originalData?.commissionType === 'HOTEL' ? 'Riêng biệt' : 'Mặc định'}
+                                        </span>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cập
+                                            nhật bởi</p>
+                                        <p className="text-[11px] font-black text-white/80 uppercase mt-1">
+                                            {originalData?.commissionUpdatedBy || "Hệ thống"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         {/* PHẦN XÁC THỰC PHÁP LÝ */}
                         <div className="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
-                            <div className="absolute -right-4 -bottom-4 text-slate-800/30"><ShieldCheck size={100}/></div>
+                            <div className="absolute -right-4 -bottom-4 text-slate-800/30"><ShieldCheck size={100}/>
+                            </div>
                             <div className="flex justify-between items-center mb-6 relative z-10">
                                 <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
                                     <CheckCircle2 size={16}/> Xác thực pháp lý
                                 </h3>
                                 {/* NÚT ĐIỀU HƯỚNG KYC */}
                                 {canEdit && (
-                                <button
-                                    onClick={handleGoToKYC}
-                                    className="flex items-center gap-1.5 text-[9px] font-black text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all uppercase"
-                                >
-                                    <Edit3 size={12} /> Sửa KYC
-                                </button>
+                                    <button
+                                        onClick={handleGoToKYC}
+                                        className="flex items-center gap-1.5 text-[9px] font-black text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all uppercase"
+                                    >
+                                        <Edit3 size={12}/> Sửa KYC
+                                    </button>
                                 )}
                             </div>
                             <div className="space-y-4 relative z-10">
-                                <ReadOnlyItem label="Mã số thuế" value={originalData?.verification?.taxCode} />
-                                <ReadOnlyItem label="Số giấy phép KD" value={originalData?.verification?.businessLicenseNumber} />
-                                <ReadOnlyItem label="Người đại diện" value={originalData?.verification?.representativeName} />
+                                <ReadOnlyItem label="Mã số thuế" value={originalData?.verification?.taxCode}/>
+                                <ReadOnlyItem label="Số giấy phép KD"
+                                              value={originalData?.verification?.businessLicenseNumber}/>
+                                <ReadOnlyItem label="Người đại diện"
+                                              value={originalData?.verification?.representativeName}/>
                             </div>
                         </div>
 
                         {/* PHẦN TÀI LIỆU HỢP ĐỒNG */}
-                        <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden transition-all hover:border-blue-200 group">
+                        <div
+                            className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden transition-all hover:border-blue-200 group">
                             <div className="flex items-center gap-3.5 mb-5">
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                                    <FileText size={18} />
+                                <div
+                                    className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                    <FileText size={18}/>
                                 </div>
                                 <div className="flex flex-col min-w-0">
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-blue-600/80 mb-0.5">
@@ -579,8 +679,11 @@ const HotelProfileManager = () => {
                             {/* Nút bấm thiết kế tinh gọn */}
                             <button
                                 onClick={() => {
-                                    if(policyUrl) setShowPdfModal(true);
-                                    else toast.current.addMessage({ mode: 'warning', message: "Tài liệu đang được cập nhật!" });
+                                    if (policyUrl) setShowPdfModal(true);
+                                    else toast.current.addMessage({
+                                        mode: 'warning',
+                                        message: "Tài liệu đang được cập nhật!"
+                                    });
                                 }}
                                 className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-slate-200"
                             >
@@ -591,11 +694,13 @@ const HotelProfileManager = () => {
                     </div>
                 </div>
             </div>
-            <ToastPortal ref={toast} autoClose={true} autoCloseTime={3000} />
+            <ToastPortal ref={toast} autoClose={true} autoCloseTime={3000}/>
             {/* MODAL PDF  */}
             {showPdfModal && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+                <div
+                    className="fixed inset-0 z-[10000] flex items-center justify-center p-0 md:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div
+                        className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
                         <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
                             <a
                                 href={policyUrl}
@@ -604,13 +709,13 @@ const HotelProfileManager = () => {
                                 title="Mở tab mới"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
-                                <ExternalLink size={18} />
+                                <ExternalLink size={18}/>
                             </a>
                             <button
                                 onClick={() => setShowPdfModal(false)}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
-                                <X size={18} />
+                                <X size={18}/>
                             </button>
                         </div>
                         {/* Content View */}
@@ -627,6 +732,103 @@ const HotelProfileManager = () => {
                         Đang tải tài liệu...
                     </span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL LỊCH SỬ HOA HỒNG */}
+            {showRankModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] border border-slate-100 overflow-hidden">
+                        <div className="px-8 pt-8 pb-5 flex justify-between items-start shrink-0">
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-[14px] font-black text-slate-900 uppercase tracking-[0.1em]">
+                                    Lịch sử biến động hoa hồng
+                                </h3>
+                                <div className="w-8 h-1 bg-blue-600 rounded-full" />
+                            </div>
+                            <button
+                                onClick={() => setShowRankModal(false)}
+                                className="p-2 hover:bg-slate-100 rounded-full transition-all text-slate-600 active:scale-90"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {/* Danh sách cuộn */}
+                        <div className="flex-1 overflow-y-auto px-8 custom-scrollbar pb-4">
+                            {rankHistory && rankHistory.length > 0 ? (
+                                <div className="relative border-l-2 border-slate-100 ml-2 pl-7 space-y-10 py-4">
+                                    {rankHistory.map((item, index) => {
+                                        const typeConfigs = {
+                                            HOTEL: {
+                                                label: 'Riêng biệt',
+                                                style: 'text-blue-700 bg-blue-50 border-blue-100'
+                                            },
+                                            DEAL: {
+                                                label: 'Ưu đãi (Deal)',
+                                                style: 'text-emerald-700 bg-emerald-50 border-emerald-100'
+                                            },
+                                            DEFAULT: {
+                                                label: 'Mặc định',
+                                                style: 'text-slate-600 bg-slate-100 border-slate-200'
+                                            }
+                                        };
+                                        const config = typeConfigs[item.newCommissionType] || typeConfigs.DEFAULT;
+                                        return (
+                                            <div key={item.id || index} className="relative animate-in slide-in-from-left-2 duration-300">
+                                                {/* Dot tín hiệu */}
+                                                <div className="absolute -left-[37px] top-1 w-4 h-4 rounded-full border-4 border-white shadow-sm bg-blue-600" />
+
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex justify-between items-center">
+                                            <span className="text-[11px] font-black text-slate-900 tracking-tight">
+                                                {new Date(item.changedAt).toLocaleString('vi-VN', {
+                                                    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+                                                })}
+                                            </span>
+                                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${config.style}`}>
+                                                {config.label}
+                                            </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3 py-1">
+                                            <span className="text-[15px] font-bold text-slate-500">
+                                               {formatCommValue(item.oldValue, item.oldRateType)}
+                                            </span>
+                                                        <ArrowRight size={14} className="text-slate-300" />
+                                                        <span className="text-[20px] font-black text-blue-600 tracking-tighter">
+                                                {formatCommValue(item.newValue, item.newRateType)}
+                                            </span>
+                                                    </div>
+
+                                                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
+                                                        <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
+                                                            <span className="text-[10px] font-black text-slate-700 mr-1.5 opacity-70 uppercase">Ghi chú:</span>
+                                                            {item.note || "Cập nhật hệ thống"}
+                                                        </p>
+                                                        <div className="flex justify-end border-t border-slate-200/50 mt-2 pt-1.5 text-[10px] font-bold text-slate-500 italic">
+                                                            Bởi: <span className="uppercase ml-1 text-slate-800 not-italic">{item.changedBy}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="py-24 text-center">
+                                    <p className="text-xs font-black text-slate-300 uppercase tracking-widest">Không có dữ liệu lịch sử</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-8 pt-4 shrink-0 bg-white border-t border-slate-50">
+                            <button
+                                onClick={() => setShowRankModal(false)}
+                                className="w-full py-4 bg-slate-900 text-white rounded-[20px] text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 hover:bg-blue-600 shadow-lg"
+                            >
+                                Đóng cửa sổ
+                            </button>
                         </div>
                     </div>
                 </div>

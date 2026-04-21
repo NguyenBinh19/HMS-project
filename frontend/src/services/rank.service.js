@@ -143,6 +143,28 @@ const changeRank = async (payload) => {
     }
 };
 
+// 14. Lấy toàn bộ lịch sử thay đổi hạng
+const getAllRankHistories = async () => {
+    try {
+        const response = await api.get(`/ranks/history`);
+        return response.data;
+    } catch (error) {
+        console.error("Get All Rank Histories Error:", error);
+        throw error;
+    }
+};
+
+// 15. Lấy lịch sử thay đổi hạng của đại lý
+const getMyAgencyRankHistories = async () => {
+    try {
+        const response = await api.get(`/ranks/history/agency`);
+        return response.data;
+    } catch (error) {
+        console.error("Get My Agency Rank Histories Error:", error);
+        throw error;
+    }
+};
+
 export const rankService = {
     createRank,
     updateRank,
@@ -157,4 +179,6 @@ export const rankService = {
     getDowngradeCandidates,
     getAgencyRankDetail,
     changeRank,
+    getAllRankHistories,
+    getMyAgencyRankHistories,
 };

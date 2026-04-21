@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import {
     LayoutDashboard, Settings, PenLine, BarChart3,
     CreditCard, Contact2, Users, HandCoins, ShieldCheck,
-    ClipboardCheck, Building2, BookOpen, UserRoundCog, FileText, MessageSquareWarning
+    ClipboardCheck, Building2, BookOpen, UserRoundCog, FileText, MessageSquareWarning, ShieldAlert
 } from "lucide-react";
 import React from "react";
 
@@ -40,6 +40,12 @@ const SidebarAdmin = () => {
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users", hideForStaff: true },
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
         { icon: <BookOpen size={20} />, label: "NHẬT KÝ HỆ THỐNG", path: "/admin/audit-logs", hideForStaff: true },
+        {
+            icon: <ShieldAlert size={20} />,
+            label: "NHẬT KÝ ĐỐI TÁC",
+            path: "/admin/partner-audit",
+            hideForStaff: true
+        },
     ];
 
     const filteredMenuItems = menuItems.filter(item => {

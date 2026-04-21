@@ -9,6 +9,7 @@ import {
 import { ExternalLink, FileText, ArrowRight } from 'lucide-react';
 import { agencyService } from "@/services/agency.service.js";
 import { pdfDocumentService } from "@/services/pdf.service.js";
+import { rankService } from "@/services/rank.service.js"
 import { partnerService } from "@/services/partner.service.js";
 import { toast } from "react-hot-toast";
 
@@ -36,6 +37,24 @@ const AgencyProfile = () => {
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [policyUrl, setPolicyUrl] = useState("");
 
+    const [rankData, setRankData] = useState(null);
+    const [currentRank, setCurrentRank] = useState(null);
+    const [rankHistory, setRankHistory] = useState([]);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    // // Hàm fetch thông tin hạng
+    // const fetchRankData = async (agencyId) => {
+    //     if (!agencyId) return;
+    //     try {
+    //         // 1. Lấy hạng hiện tại bằng ID lấy từ response profile
+    //         const rankRes = await rankService.getAgencyRankDetail({ agencyId: agencyId });
+    //         setCurrentRank(rankRes.result);
+    //         // 2. Lấy lịch sử hạng (hàm này thường lấy theo token nên giữ nguyên)
+    //         const historyRes = await rankService.getMyAgencyRankHistories();
+    //         setRankHistory(historyRes.result || []);
+    //     } catch (error) {
+    //         console.error("Lỗi khi tải thông tin hạng:", error);
+    //     }
+    // };
     const [profile, setProfile] = useState({
         agencyName: "",
         email: "",
@@ -58,7 +77,6 @@ const AgencyProfile = () => {
         if (!profile.agencyName?.trim()) {
             newErrors.agencyName = "Tên hiển thị không được để trống";
         }
-
         // Validate Email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (profile.email && profile.email.trim() !== "") {
@@ -66,60 +84,113 @@ const AgencyProfile = () => {
                 newErrors.email = "Định dạng email không hợp lệ";
             }
         }
-
         // Validate Hotline (Cho phép 10-11 số)
         if (profile.hotline && profile.hotline.trim() !== "") {
             if (!phoneRegex.test(profile.hotline.replace(/\s/g, ""))) {
                 newErrors.hotline = "Hotline phải từ 10-11 số";
             }
         }
-
         // Validate SĐT liên hệ
         if (profile.contactPhone && profile.contactPhone.trim() !== "") {
             if (!phoneRegex.test(profile.contactPhone.replace(/\s/g, ""))) {
                 newErrors.contactPhone = "Số điện thoại không hợp lệ";
             }
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const fetchAgencyDetail = async () => {
+    // const fetchAgencyDetail = async () => {
+    //     setLoading(true);
+    //     try {
+    //         const response = await agencyService.getAgencyProfileDetail();
+    //         const res = response.result;
+    //         setOriginalData(res);
+    //
+    //         setProfile({
+    //             agencyName: res.agencyName || "",
+    //             email: res.email || "",
+    //             hotline: res.hotline || "",
+    //             contactPhone: res.contactPhone || "",
+    //             address: res.address || "",
+    //             taxCode: res.verification?.taxCode || "Chưa cập nhật",
+    //             legalName: res.verification?.legalName || "Chưa cập nhật",
+    //             representativeName: res.verification?.representativeName || "Chưa cập nhật",
+    //             businessLicenseNumber: res.verification?.businessLicenseNumber || "Chưa cập nhật",
+    //             creditLimit: res.creditLimit || 0,
+    //             currentCredit: res.currentCredit || 0
+    //         });
+    //         if (res.agencyId) {
+    //             fetchRankData(res.agencyId);
+    //         }
+    //         const pdfRes = await pdfDocumentService.getAllPdfs();
+    //         if (pdfRes?.result) {
+    //             const agencyPolicy = pdfRes.result.find(doc =>
+    //                 doc.title.includes("Điều khoản hợp tác với Đại lý")
+    //             );
+    //             setPolicyUrl(agencyPolicy?.fileUrl || "");
+    //         }
+    //     } catch (error) {
+    //         toast.error("Không thể tải thông tin đại lý");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+    //
+    // useEffect(() => {
+    //     fetchAgencyDetail();
+    // }, []);
+
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const response = await agencyService.getAgencyProfileDetail();
-            const res = response.result;
-            setOriginalData(res);
+            const agencyRes = await agencyService.getAgencyProfileDetail();
+            const agency = agencyRes.result;
+            setOriginalData(agency);
 
             setProfile({
-                agencyName: res.agencyName || "",
-                email: res.email || "",
-                hotline: res.hotline || "",
-                contactPhone: res.contactPhone || "",
-                address: res.address || "",
-                taxCode: res.verification?.taxCode || "Chưa cập nhật",
-                legalName: res.verification?.legalName || "Chưa cập nhật",
-                representativeName: res.verification?.representativeName || "Chưa cập nhật",
-                businessLicenseNumber: res.verification?.businessLicenseNumber || "Chưa cập nhật",
-                creditLimit: res.creditLimit || 0,
-                currentCredit: res.currentCredit || 0
+                agencyName: agency.agencyName || "",
+                email: agency.email || "",
+                hotline: agency.hotline || "",
+                contactPhone: agency.contactPhone || "",
+                address: agency.address || "",
+                taxCode: agency.verification?.taxCode || "Chưa cập nhật",
+                legalName: agency.verification?.legalName || "Chưa cập nhật",
+                representativeName: agency.verification?.representativeName || "Chưa cập nhật",
+                businessLicenseNumber: agency.verification?.businessLicenseNumber || "Chưa cập nhật",
+                creditLimit: agency.creditLimit || 0,
+                currentCredit: agency.currentCredit || 0
             });
-            const pdfRes = await pdfDocumentService.getAllPdfs();
+            // Promise.allSettled trả về một mảng các object {status, value/reason}
+            const results = await Promise.allSettled([
+                agency.rankId ? rankService.getRankDetail(agency.rankId) : Promise.reject("No Rank ID"),
+                rankService.getMyAgencyRankHistories(),
+                pdfDocumentService.getAllPdfs()
+            ]);
+            // Helper check an toàn
+            const getSafeValue = (promiseResult) =>
+                (promiseResult && promiseResult.status === 'fulfilled') ? promiseResult.value : null;
+            const rankDetailRes = getSafeValue(results[0]);
+            const historyRes = getSafeValue(results[1]);
+            const pdfRes = getSafeValue(results[2]);
+            // Gán dữ liệu
+            setRankData(rankDetailRes?.result || null);
+            setRankHistory(historyRes?.result || []);
             if (pdfRes?.result) {
-                const agencyPolicy = pdfRes.result.find(doc =>
-                    doc.title.includes("Điều khoản hợp tác với Đại lý")
-                );
-                setPolicyUrl(agencyPolicy?.fileUrl || "");
+                const policy = pdfRes.result.find(doc => doc.title.includes("Điều khoản hợp tác với Đại lý"));
+                setPolicyUrl(policy?.fileUrl || "");
             }
         } catch (error) {
-            toast.error("Không thể tải thông tin đại lý");
+            console.error("Lỗi fetch dữ liệu:", error);
+            toast.error("Không thể tải đầy đủ thông tin hồ sơ");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchAgencyDetail(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
     useEffect(() => {
         document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
         return () => { document.body.style.overflow = 'unset'; };
@@ -289,6 +360,40 @@ const AgencyProfile = () => {
                                 </div>
                             </div>
                         </section>
+
+                        {/* CARD HẠNG HIỆN TẠI */}
+                        <section
+                            className="rounded-2xl p-4 text-white shadow-sm relative overflow-hidden mb-6 transition-all border border-white/5"
+                            style={{
+                                backgroundColor: rankData?.color || '#1e293b',
+                                backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.1), transparent)'
+                            }}
+                        >
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
+                                <ShieldCheck size={48}/>
+                            </div>
+
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-1">
+                Hạng hiện tại
+            </span>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight leading-none">
+                                        {rankData?.rankName || originalData?.rankName || "---"}
+                                    </h2>
+                                </div>
+
+                                {/* Nút lịch sử tinh gọn */}
+                                <button
+                                    onClick={() => setShowHistoryModal(true)}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 active:scale-95 group"
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-wider">Lịch sử</span>
+                                    <Info size={14} className="group-hover:rotate-12 transition-transform"/>
+                                </button>
+                            </div>
+                        </section>
+
                         <div
                             className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden transition-all hover:border-blue-200 group">
                             <div className="flex items-center gap-3.5 mb-5">
@@ -305,7 +410,6 @@ const AgencyProfile = () => {
                                     </h2>
                                 </div>
                             </div>
-
                             {/* Nút bấm thiết kế tinh gọn */}
                             <button
                                 onClick={() => {
@@ -361,6 +465,109 @@ const AgencyProfile = () => {
                     </div>
                 </div>
             )}
+            {/* MODAL LỊCH SỬ HẠNG */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-slate-100">
+                        <div className="px-6 py-5 flex justify-between items-center border-b border-slate-50 shrink-0 bg-white z-10">
+                            <div>
+                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                                    Lịch sử thay đổi hạng
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setShowHistoryModal(false)}
+                                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 active:scale-95"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto px-6 custom-scrollbar bg-white">
+                            {rankHistory && rankHistory.length > 0 ? (
+                                <div className="relative border-l-2 border-slate-100 ml-1.5 pl-6 py-6">
+                                    {rankHistory.map((item, index) => {
+                                        const isUpgrade = item.changeType === 'UPGRADE';
+                                        return (
+                                            <div
+                                                key={item.id || index}
+                                                className={`relative animate-in slide-in-from-bottom-2 duration-300 ${index !== 0 ? 'mt-10' : ''}`}
+                                            >
+                                                {/* Dot tín hiệu */}
+                                                <div className={`absolute -left-[33px] top-1 w-3 h-3 rounded-full ring-4 ring-white ${isUpgrade ? 'bg-blue-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]'}`} />
+                                                <div className="flex flex-col gap-2">
+                                                    {/* Time & Type Row */}
+                                                    <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                                                {new Date(item.changedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                            </span>
+                                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isUpgrade ? 'text-blue-600 bg-blue-50' : 'text-rose-600 bg-rose-50'}`}>
+                                                {isUpgrade ? 'Nâng hạng' : 'Hạ hạng'}
+                                            </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm font-bold text-slate-700">{item.oldRank}</span>
+                                                        <ArrowRight size={14} className="text-slate-700" />
+                                                        <span className="text-[16px] font-black text-slate-900 uppercase tracking-tight">
+                                                {item.newRank}
+                                            </span>
+                                                    </div>
+                                                    <div className="space-y-1 text-[12px] border-l-2 border-slate-50 pl-3 mt-1">
+                                                        <div className="flex justify-between border-b border-dashed border-slate-100 pb-1">
+                                                            <span className="text-slate-600 font-medium">Doanh thu ghi nhận:</span>
+                                                            <span className="font-black text-slate-800">
+                                                    {new Intl.NumberFormat('vi-VN').format(item.totalRevenue)}đ
+                                                </span>
+                                                        </div>
+
+                                                        <div className="pt-1">
+                                                            <p className="text-slate-900 leading-relaxed">
+                                                                "{item.reason || "Cập nhật hệ thống"}"
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="text-[10px] text-slate-500 pt-1 flex justify-end">
+                                                            <span>Thực hiện: <span className="font-bold text-slate-700 uppercase">{item.changedBy}</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="h-64 flex flex-col items-center justify-center text-slate-300">
+                                    <AlertCircle size={40} strokeWidth={1} className="mb-2" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Chưa có dữ liệu</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-slate-50 shrink-0 bg-white">
+                            <button
+                                onClick={() => setShowHistoryModal(false)}
+                                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-lg active:scale-[0.98]"
+                            >
+                                Đóng cửa sổ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <style jsx>{`
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #cbd5e1;
+    }
+`}</style>
         </div>
     );
 };

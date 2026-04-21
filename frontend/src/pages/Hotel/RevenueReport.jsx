@@ -78,7 +78,7 @@ const RevenueReport = () => {
         if (summary.revPar < (summary.adr * 0.5)) {
             hacks.push({
                 title: "Hiệu suất phòng thấp",
-                desc: "Chỉ số RevPAR chưa đạt mức tối ưu so với giá bán trung bình. Cần đẩy mạnh Marketing trên các kênh OTA.",
+                desc: "Chỉ số RevPAR chưa đạt mức tối ưu so với giá bán trung bình. Cần đẩy mạnh Marketing trên các kênh.",
                 type: "info"
             });
         }
@@ -272,7 +272,42 @@ const RevenueReport = () => {
                 <KPICard title="Giá trung bình (ADR)" value={summary.adr || 0} unit="VNĐ" trend={summary.adrGrowthPercent || 0} isUp={(summary.adrGrowthPercent || 0) >= 0} />
                 <KPICard title="RevPAR" value={summary.revPar || 0} unit="VNĐ" trend={summary.revParGrowthPercent || 0} isUp={(summary.revParGrowthPercent || 0) >= 0} />
             </div>
+            {/* SECTION  */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Tổng đơn đặt</p>
+                        <h4 className="text-xl font-black text-slate-800">{summary.totalBookings} <span className="text-sm font-medium text-slate-700">Đơn</span></h4>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                        <Calendar size={20} />
+                    </div>
+                </div>
 
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Tỷ lệ hủy đơn</p>
+                        <h4 className="text-xl font-black text-rose-600">
+                            {summary.totalBookings > 0
+                                ? ((summary.cancelledBookings / summary.totalBookings) * 100).toFixed(1)
+                                : 0}%
+                        </h4>
+                    </div>
+                    <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                        <AlertCircle size={20} />
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Đêm phòng đã bán</p>
+                        <h4 className="text-xl font-black text-emerald-600">{summary.totalRoomNightsSold} / {summary.totalRoomNightsAvailable}</h4>
+                    </div>
+                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                        <Home size={20} />
+                    </div>
+                </div>
+            </div>
             {/* PHẦN GỢI Ý CHIẾN LƯỢC */}
             {!loading && granularity === 'MONTHLY' && strategicHacks.length > 0 && (
                 <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
