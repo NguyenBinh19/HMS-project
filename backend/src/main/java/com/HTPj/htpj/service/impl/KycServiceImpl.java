@@ -46,6 +46,7 @@ public class KycServiceImpl implements KycService {
     private final NotificationService notificationService;
     private final SystemLogRepository systemLogRepository;
     private final PartnerBlacklistRepository partnerBlacklistRepository;
+    private final CommissionLogRepository commissionLogRepository;
 
     @Override
     public KycUploadResponse uploadKyc(String userId,KycUploadRequest request, MultipartFile[] files) {
@@ -212,6 +213,31 @@ public class KycServiceImpl implements KycService {
                 .collect(Collectors.toList());
     }
 
+    private void saveCommissionLog(
+            Hotel hotel,
+            Commission commission,
+            String userId,
+            String note
+    ) {
+        CommissionLog log = new CommissionLog();
+
+        log.setHotelId(Long.valueOf(hotel.getHotelId()));
+
+        // hotel mới tạo → chưa có commission cũ
+        log.setOldCommissionId(null);
+        log.setOldValue(null);
+        log.setOldCommissionType(null);
+
+        log.setNewCommissionId(commission.getCommissionId());
+        log.setNewValue(commission.getCommissionValue());
+        log.setNewCommissionType(commission.getCommissionType());
+
+        log.setChangedBy(userId);
+        log.setChangedAt(LocalDateTime.now());
+        log.setNote(note);
+
+        commissionLogRepository.save(log);
+    }
     @Override
     public void approveVerification(ApproveVerificationRequest request, String reviewedBy) {
 
@@ -223,8 +249,6 @@ public class KycServiceImpl implements KycService {
         verification.setReviewedAt(LocalDateTime.now());
         verification.setStatus(request.getStatus());
         verification.setRejectionReason(request.getRejectionReason());
-
-//
 
         String navigateUrl = "/"; // default trước
 
@@ -303,6 +327,14 @@ public class KycServiceImpl implements KycService {
                 hotel.setCommissionUpdatedBy(reviewedBy);
 
                 Hotel savedHotel = hotelRepository.save(hotel);
+
+                saveCommissionLog(
+                        savedHotel,
+                        selectedCommission,
+                        reviewedBy,
+                        "Áp dụng hoa hồng mặc định khi duyệt KYC (tạo khách sạn)"
+                );
+
                 verification.setHotel(savedHotel);
                 user.setHotel(savedHotel);
                 userRepository.save(user);

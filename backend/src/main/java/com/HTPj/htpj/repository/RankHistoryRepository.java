@@ -25,4 +25,6 @@ public interface RankHistoryRepository extends JpaRepository<RankHistory, Long> 
     WHERE rh.changedAt > :endDate
 """)
     List<Long> findAgencyIdsChangedAfter(@Param("endDate") LocalDateTime endDate);
+
+    List<RankHistory> findByAgency_AgencyId(Long agencyId);
 }

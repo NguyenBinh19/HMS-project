@@ -70,6 +70,15 @@ public class RankServiceImpl implements RankService {
         systemLogRepository.save(log);
     }
 
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
+    }
+
     @Override
     public String createRank(CreateRankRequest request) {
 
@@ -151,15 +160,6 @@ public class RankServiceImpl implements RankService {
         response.setUpdatedBy(getUsernameFromId(rank.getUpdatedBy()));
 
         return response;
-    }
-
-    private String getUsernameFromId(String userId) {
-        if (userId == null || userId.isEmpty()) {
-            return "Unknown";
-        }
-        return userRepository.findById(userId)
-                .map(Users::getUsername)
-                .orElse("User not found in system");
     }
 
     @Override
@@ -555,5 +555,56 @@ public class RankServiceImpl implements RankService {
                     "RANK", String.valueOf(request.getAgencyId()), "agency/agency-dashboard");
         }
         return "Change rank successfully";
+    }
+
+
+    @Override
+    public List<RankHistoryResponse> getAllRankHistories() {
+
+        List<RankHistory> histories = rankHistoryRepository.findAll();
+
+        return histories.stream().map(h -> RankHistoryResponse.builder()
+                .id(h.getId())
+                .agencyId(h.getAgency().getAgencyId())
+                .agencyName(h.getAgency().getAgencyName())
+                .oldRank(h.getOldRank() != null ? h.getOldRank().getRankName() : null)
+                .newRank(h.getNewRank().getRankName())
+                .totalRevenue(h.getTotalRevenueSnapshot())
+                .changeType(h.getChangeType())
+                .reason(h.getReason())
+                .changedAt(h.getChangedAt())
+                .changedBy(getUsernameFromId(h.getChangedBy())) // convert id -> username
+                .build()
+        ).toList();
+    }
+    @Override
+    public List<RankHistoryResponse> getMyAgencyRankHistories() {
+
+        String userId = getCurrentUserId();
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getAgency() == null) {
+            throw new RuntimeException("User is not belong to any agency");
+        }
+
+        Long agencyId = user.getAgency().getAgencyId();
+
+        List<RankHistory> histories = rankHistoryRepository.findByAgency_AgencyId(agencyId);
+
+        return histories.stream().map(h -> RankHistoryResponse.builder()
+                .id(h.getId())
+                .agencyId(h.getAgency().getAgencyId())
+                .agencyName(h.getAgency().getAgencyName())
+                .oldRank(h.getOldRank() != null ? h.getOldRank().getRankName() : null)
+                .newRank(h.getNewRank().getRankName())
+                .totalRevenue(h.getTotalRevenueSnapshot())
+                .changeType(h.getChangeType())
+                .reason(h.getReason())
+                .changedAt(h.getChangedAt())
+                .changedBy(getUsernameFromId(h.getChangedBy()))
+                .build()
+        ).toList();
     }
 }

@@ -5,6 +5,7 @@ import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
+import com.HTPj.htpj.dto.response.commision.CommissionLogResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
 import com.HTPj.htpj.service.CommissionService;
@@ -79,6 +80,22 @@ public class CommissionController {
     public ApiResponse<String> setDefaultCommission(@PathVariable Integer hotelId) {
         return ApiResponse.<String>builder()
                 .result(commissionService.setDefaultCommission(hotelId))
+                .build();
+    }
+
+    //admin
+    @GetMapping("/logs")
+    public ApiResponse<List<CommissionLogResponse>> getAllLogs() {
+        return ApiResponse.<List<CommissionLogResponse>>builder()
+                .result(commissionService.getAllCommissionLogs())
+                .build();
+    }
+
+    //hotel
+    @GetMapping("/logs/hotel")
+    public ApiResponse<List<CommissionLogResponse>> getMyHotelLogs() {
+        return ApiResponse.<List<CommissionLogResponse>>builder()
+                .result(commissionService.getHotelCommissionLogs())
                 .build();
     }
 

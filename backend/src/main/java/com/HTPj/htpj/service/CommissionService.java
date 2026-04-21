@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
+import com.HTPj.htpj.dto.response.commision.CommissionLogResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
 
@@ -27,4 +28,10 @@ public interface CommissionService {
 
     //set to default:
     String setDefaultCommission(Integer hotelId);
+
+    //admin
+    List<CommissionLogResponse> getAllCommissionLogs();
+
+    //hotel
+    List<CommissionLogResponse> getHotelCommissionLogs();
 }
