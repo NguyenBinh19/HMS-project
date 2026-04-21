@@ -124,4 +124,19 @@ public class RankController {
                 .result(rankService.changeRank(request))
                 .build();
     }
+
+    @GetMapping("/history")
+    public ApiResponse<List<RankHistoryResponse>> getAllRankHistories() {
+        return ApiResponse.<List<RankHistoryResponse>>builder()
+                .result(rankService.getAllRankHistories())
+                .build();
+    }
+
+    @GetMapping("/history/agency")
+    public ApiResponse<List<RankHistoryResponse>> getMyAgencyRankHistories() {
+        return ApiResponse.<List<RankHistoryResponse>>builder()
+                .result(rankService.getMyAgencyRankHistories())
+                .build();
+    }
+
 }

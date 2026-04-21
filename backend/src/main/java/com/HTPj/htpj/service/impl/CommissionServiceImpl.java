@@ -4,21 +4,15 @@ import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
+import com.HTPj.htpj.dto.response.commision.CommissionLogResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
-import com.HTPj.htpj.entity.Commission;
-import com.HTPj.htpj.entity.CommissionHotel;
-import com.HTPj.htpj.entity.Hotel;
-import com.HTPj.htpj.entity.Users;
-import com.HTPj.htpj.entity.SystemLog;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
-import com.HTPj.htpj.repository.CommissionHotelRepository;
-import com.HTPj.htpj.repository.CommissionRepository;
-import com.HTPj.htpj.repository.HotelRepository;
-import com.HTPj.htpj.repository.SystemLogRepository;
-import com.HTPj.htpj.repository.UserRepository;
+import com.HTPj.htpj.mapper.CommissionLogMapper;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.CommissionService;
 import com.HTPj.htpj.service.NotificationService;
 import lombok.AccessLevel;
@@ -44,6 +38,8 @@ public class CommissionServiceImpl implements CommissionService {
     UserRepository userRepository;
     NotificationService notificationService;
     SystemLogRepository systemLogRepository;
+    CommissionLogRepository commissionLogRepository;
+    CommissionLogMapper commissionLogMapper;
 
     private String getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -58,6 +54,42 @@ public class CommissionServiceImpl implements CommissionService {
         log.setUpdatedAt(LocalDateTime.now());
 
         systemLogRepository.save(log);
+    }
+
+    private void saveCommissionLog(
+            Hotel hotel,
+            Commission newCommission,
+            String userId,
+            String note
+    ) {
+        CommissionLog log = new CommissionLog();
+
+        log.setHotelId(Long.valueOf(hotel.getHotelId()));
+
+        // OLD
+        log.setOldCommissionId(hotel.getCommissionId());
+        log.setOldValue(hotel.getCommissionValue());
+        log.setOldCommissionType(hotel.getCommissionType());
+
+        // NEW
+        log.setNewCommissionId(newCommission.getCommissionId());
+        log.setNewValue(newCommission.getCommissionValue());
+        log.setNewCommissionType(newCommission.getCommissionType());
+
+        log.setChangedBy(userId);
+        log.setChangedAt(LocalDateTime.now());
+        log.setNote(note);
+
+        commissionLogRepository.save(log);
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
     @Override
@@ -148,6 +180,13 @@ public class CommissionServiceImpl implements CommissionService {
                 hotel.setCommissionType("HOTEL");
 
                 hotelRepository.save(hotel);
+
+                saveCommissionLog(
+                        hotel,
+                        commission,
+                        userId,
+                        "Cập nhật hoa hồng riêng cho khách sạn"
+                );
 
                 saveLog("Tạo % hoa hồng cho khách sạn: "
                         + hotel.getHotelId() + " - " + hotel.getHotelName()
@@ -243,15 +282,6 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         return response;
-    }
-
-    private String getUsernameFromId(String userId) {
-        if (userId == null || userId.isEmpty()) {
-            return "Unknown";
-        }
-        return userRepository.findById(userId)
-                .map(Users::getUsername)
-                .orElse("User not found in system");
     }
 
     @Override
@@ -424,7 +454,6 @@ public class CommissionServiceImpl implements CommissionService {
         return "Active commission thành công";
     }
 
-
     @Override
     public HotelUsingDealResponse getHotelsUsingDeal(Long commissionId) {
 
@@ -493,4 +522,44 @@ public class CommissionServiceImpl implements CommissionService {
 
         return "Set hotel về DEFAULT commission thành công";
     }
+
+    @Override
+    public List<CommissionLogResponse> getAllCommissionLogs() {
+
+        List<CommissionLogResponse> logs = commissionLogMapper.toResponseList(
+                commissionLogRepository.findAll()
+        );
+
+        logs.forEach(log ->
+                log.setChangedBy(getUsernameFromId(log.getChangedBy()))
+        );
+
+        return logs;
+    }
+
+    @Override
+    public List<CommissionLogResponse> getHotelCommissionLogs() {
+
+        String userId = getUserId();
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getHotel() == null) {
+            throw new RuntimeException("User does not belong to any hotel");
+        }
+
+        Long hotelId = Long.valueOf(user.getHotel().getHotelId());
+
+        List<CommissionLogResponse> logs = commissionLogMapper.toResponseList(
+                commissionLogRepository.findByHotelId(hotelId)
+        );
+
+        logs.forEach(log ->
+                log.setChangedBy(getUsernameFromId(log.getChangedBy()))
+        );
+
+        return logs;
+    }
+
 }
