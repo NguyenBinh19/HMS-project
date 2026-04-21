@@ -56,7 +56,10 @@ const SystemLogList = () => {
         try {
             const res = await systemConfigService.getAllAuditLog();
             const data = res.result || [];
-            setLogs(data);
+            const sortedData = data.sort((a, b) =>
+                new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+            );
+            setLogs(sortedData);
             setCurrentPage(1);
         } catch (error) {
             console.error("Lỗi tải nhật ký hệ thống:", error);
@@ -184,12 +187,12 @@ const SystemLogList = () => {
                                                 <div className="inline-flex flex-col items-end">
                                                     <div
                                                         className="flex items-center gap-1.5 text-slate-900 font-black text-xs">
-                                                        <Clock size={12} className="text-slate-400"/>
+                                                        <Clock size={12} className="text-slate-500"/>
                                                         {/* 2. Format giờ phút giây */}
                                                         {logDate ? format(logDate, 'HH:mm:ss') : '--:--:--'}
                                                     </div>
                                                     <span
-                                                        className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                                                        className="text-[10px] text-slate-700 font-bold uppercase tracking-tighter">
                                                             {/* 3. Format ngày tháng Tiếng Việt */}
                                                         {logDate ? format(logDate, 'dd MMM yyyy', {locale: vi}) : 'N/A'}
                                                         </span>
