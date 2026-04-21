@@ -2,6 +2,7 @@ package com.HTPj.htpj.dto.response.rank;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -25,4 +26,6 @@ public class RankResponse {
     private BigDecimal creditLimit;
 
     private Long agencies;
+    private LocalDateTime updatedAt;
+    private String updatedBy;
 }

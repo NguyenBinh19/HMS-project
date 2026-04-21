@@ -220,6 +220,13 @@ public class CommissionServiceImpl implements CommissionService {
         Commission commission = commissionRepository.findById(commissionId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
 
+
+        String createBy = getUsernameFromId(commission.getCreatedBy());
+        String updateBy = getUsernameFromId(commission.getUpdatedBy());
+
+        commission.setCreatedBy(createBy);
+        commission.setUpdatedBy(updateBy);
+
         CommissionDetailResponse response = new CommissionDetailResponse();
         response.setCommission(commission);
 
@@ -236,6 +243,15 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         return response;
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
     @Override
