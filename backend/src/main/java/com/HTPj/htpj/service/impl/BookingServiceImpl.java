@@ -216,20 +216,40 @@ public class BookingServiceImpl implements BookingService {
 
                 RoomPricingRule rule = selectedRule.get();
 
-                if (rule.getAdjustmentValue() != null &&
-                        rule.getAdjustmentType() != null) {
+//                if (rule.getAdjustmentValue() != null &&
+//                        rule.getAdjustmentType() != null) {
+//
+//                    if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
+//
+//                        BigDecimal percentAmount = basePrice
+//                                .multiply(rule.getAdjustmentValue())
+//                                .divide(BigDecimal.valueOf(100));
+//
+//                        dailyPrice = dailyPrice.add(percentAmount);
+//                    }
+//
+//                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+//                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+//                    }
+//                }
+                if (rule.getAdjustmentValue() != null && rule.getAdjustmentType() != null) {
+                    BigDecimal adjustmentAmount = BigDecimal.ZERO;
 
+                    //Tính toán giá trị điều chỉnh
                     if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
-
-                        BigDecimal percentAmount = basePrice
+                        adjustmentAmount = basePrice
                                 .multiply(rule.getAdjustmentValue())
                                 .divide(BigDecimal.valueOf(100));
-
-                        dailyPrice = dailyPrice.add(percentAmount);
+                    } else if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+                        adjustmentAmount = rule.getAdjustmentValue();
                     }
 
-                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
-                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+                    // action để cộng (INCREASE) hoặc trừ (DECREASE)
+                    if ("DECREASE".equalsIgnoreCase(rule.getAction())) {
+                        dailyPrice = dailyPrice.subtract(adjustmentAmount);
+                    } else {
+                        // Mặc định là INCREASE hoặc các trường hợp khác
+                        dailyPrice = dailyPrice.add(adjustmentAmount);
                     }
                 }
             }
@@ -1273,74 +1293,127 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void recalculateDebts() {
+
         List<AgencyBooking> allBookings = agencyBookingRepository.findAll();
         LocalDate today = LocalDate.now();
 
         for (AgencyBooking booking : allBookings) {
+
             if (Boolean.TRUE.equals(booking.getIsPaid())) {
                 continue;
             }
 
-            BigDecimal principal = booking.getPrincipalRemaining();
-            BigDecimal penalty = booking.getPenaltyInterest();
+            BigDecimal principal = booking.getPrincipalRemaining() != null
+                    ? booking.getPrincipalRemaining()
+                    : BigDecimal.ZERO;
+
+            BigDecimal penalty = booking.getPenaltyInterest() != null
+                    ? booking.getPenaltyInterest()
+                    : BigDecimal.ZERO;
 
             YearMonth ym = YearMonth.parse(booking.getMonth());
             LocalDate dueDate = ym.plusMonths(1).atDay(2);
 
+            int totalLateDays = 0;
+            int totalWorkingDays = 0;
+            BigDecimal currentRate = BigDecimal.ZERO;
+
             if (today.isAfter(dueDate)) {
+
                 LocalDate startDate = dueDate.plusDays(1);
-                LocalDate lastCalc = booking.getUpdatedAt() != null
-                        ? booking.getUpdatedAt().toLocalDate()
+
+                LocalDate lastCalc = booking.getLastInterestCalculatedDate() != null
+                        ? booking.getLastInterestCalculatedDate()
                         : startDate.minusDays(1);
 
-                LocalDate calcFrom = lastCalc.isBefore(startDate) ? startDate : lastCalc.plusDays(1);
+                LocalDate calcFrom = lastCalc.isBefore(startDate)
+                        ? startDate
+                        : lastCalc.plusDays(1);
 
-                long daysLate = ChronoUnit.DAYS.between(calcFrom, today) + 1;
-                int workingDays = countWorkingDays(startDate, calcFrom.minusDays(1));
+                totalLateDays = (int) ChronoUnit.DAYS.between(startDate, today) + 1;
 
-                for (int i = 0; i < daysLate; i++) {
+                totalWorkingDays = countWorkingDays(startDate, calcFrom.minusDays(1));
+
+                long daysToCalculate = 0;
+                if (!calcFrom.isAfter(today)) {
+                    daysToCalculate = ChronoUnit.DAYS.between(calcFrom, today) + 1;
+                }
+
+                for (int i = 0; i < daysToCalculate; i++) {
+
                     LocalDate d = calcFrom.plusDays(i);
 
                     if (isBusinessDay(d)) {
-                        workingDays++;
+                        totalWorkingDays++;
                     }
 
-                    BigDecimal rate = (workingDays <= 15)
+                    BigDecimal rate = (totalWorkingDays <= 15)
                             ? BigDecimal.valueOf(0.0003)
                             : BigDecimal.valueOf(0.0005);
 
-                    penalty = penalty.add(principal.multiply(rate));
+                    BigDecimal dailyInterest = principal
+                            .multiply(rate)
+                            .setScale(0, RoundingMode.HALF_UP);
+
+                    penalty = penalty.add(dailyInterest);
                 }
+
+                currentRate = (totalWorkingDays <= 15)
+                        ? BigDecimal.valueOf(0.0003)
+                        : BigDecimal.valueOf(0.0005);
 
                 Agency agency = agencyRepository.findById(booking.getAgencyId())
                         .orElseThrow(() -> new RuntimeException("Agency not found"));
 
-                if (workingDays <= 15) {
-                    agency.setStatus("WARNING");
-                } else {
+                if (totalLateDays > 30) {
+                    agency.setStatus("LEGAL");
+                } else if (totalWorkingDays > 15) {
                     agency.setStatus("LOCKED");
+                } else {
+                    agency.setStatus("WARNING");
                 }
 
                 agencyRepository.save(agency);
+
+                booking.setLastInterestCalculatedDate(today);
+
+            } else {
+                totalLateDays = 0;
+                totalWorkingDays = 0;
+                currentRate = BigDecimal.ZERO;
+
+                booking.setLastInterestCalculatedDate(null);
             }
 
+            booking.setLateDays(totalLateDays);
+            booking.setLateWorkingDays(totalWorkingDays);
+            booking.setPenaltyRate(currentRate);
             booking.setPenaltyInterest(penalty);
             booking.setUpdatedAt(LocalDateTime.now());
+
             agencyBookingRepository.save(booking);
         }
 
-        // Notify agencies with debt warnings
         Set<Long> notifiedAgencies = new HashSet<>();
+
         for (AgencyBooking ab : allBookings) {
-            if (!Boolean.TRUE.equals(ab.getIsPaid()) && !notifiedAgencies.contains(ab.getAgencyId())) {
+
+            if (!Boolean.TRUE.equals(ab.getIsPaid())
+                    && !notifiedAgencies.contains(ab.getAgencyId())) {
+
                 notifiedAgencies.add(ab.getAgencyId());
-                List<Users> agencyUsers = userRepository.findByAgency_AgencyId(ab.getAgencyId());
+
+                List<Users> agencyUsers =
+                        userRepository.findByAgency_AgencyId(ab.getAgencyId());
+
                 for (Users u : agencyUsers) {
                     notificationService.sendNotification(
-                            u.getId(), "PAYMENT",
+                            u.getId(),
+                            "PAYMENT",
                             "Cập nhật dư nợ",
                             "Dư nợ của đại lý đã được tính lại. Vui lòng kiểm tra.",
-                            "AGENCY", String.valueOf(ab.getAgencyId()),
+                            "AGENCY",
+                            String.valueOf(ab.getAgencyId()),
                             "/agency/credit-wallet"
                     );
                 }

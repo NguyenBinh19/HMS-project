@@ -147,7 +147,19 @@ public class RankServiceImpl implements RankService {
         Long count = rankRepository.countAgencyByRankId(id);
         response.setAgencies(count);
 
+        response.setUpdatedAt(rank.getUpdatedAt());
+        response.setUpdatedBy(getUsernameFromId(rank.getUpdatedBy()));
+
         return response;
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
     @Override

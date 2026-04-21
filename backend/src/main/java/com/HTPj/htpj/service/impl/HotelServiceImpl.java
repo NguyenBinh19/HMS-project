@@ -330,6 +330,7 @@ public class HotelServiceImpl implements HotelService {
                 hotelMapper.toVerificationInfoResponse(verification);
 
         response.setVerification(verificationInfo);
+        response.setCommissionUpdatedBy(getUsernameFromId(hotel.getCommissionUpdatedBy()));
 
         List<HotelImageResponse> images = hotelImageRepository
                 .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
@@ -349,6 +350,15 @@ public class HotelServiceImpl implements HotelService {
         response.setTotalReviews(totalReviews);
 
         return response;
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
 
@@ -384,6 +394,7 @@ public class HotelServiceImpl implements HotelService {
                 hotelMapper.toVerificationInfoResponse(verification);
 
         response.setVerification(verificationInfo);
+        response.setCommissionUpdatedBy(getUsernameFromId(hotel.getCommissionUpdatedBy()));
 
         List<HotelImageResponse> images = hotelImageRepository
                 .findByHotelHotelIdOrderBySortOrderAsc(hotelId)

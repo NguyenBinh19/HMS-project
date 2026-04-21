@@ -8,5 +8,12 @@ public record CreditSummaryDto(
         BigDecimal debt,
         BigDecimal creditLimit,
         int usedPercent,
-        LocalDate dueDate
+        LocalDate dueDate,
+
+        Integer lateDays,
+        Integer lateWorkingDays,
+        BigDecimal penaltyRate,
+        BigDecimal penaltyAmount,
+
+        String status
 ) {}

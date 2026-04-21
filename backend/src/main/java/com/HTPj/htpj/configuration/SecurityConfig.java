@@ -69,9 +69,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // bật CORS
                 .authorizeHttpRequests(request ->
                         request
-//                                .requestMatchers("/booking/**").permitAll()
                                 .requestMatchers("/room-types/**").permitAll()
-                                .requestMatchers("/ws/**").permitAll()
+                                .requestMatchers("/ws/**", "/ws/info/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENPOINTS).permitAll()
@@ -101,6 +100,7 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         corsConfiguration.addAllowedOriginPattern("http://localhost:*");
+        corsConfiguration.addAllowedOriginPattern("http://localhost");
         corsConfiguration.addAllowedOriginPattern("https://www.jushotel.site");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
