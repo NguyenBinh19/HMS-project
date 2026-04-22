@@ -954,15 +954,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Integer extractHotelId() {
-        String userId = extractUserId();
-        Users user = userRepository.findByUsername(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        Hotel hotel = user.getHotel();
-        if (hotel == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-        }
-        return hotel.getHotelId();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        Number hotelIdClaim = jwt.getClaim("hotelId");
+        return hotelIdClaim.intValue();
     }
 
     // =========================================================================
