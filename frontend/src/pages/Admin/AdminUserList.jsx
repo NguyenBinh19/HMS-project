@@ -9,6 +9,7 @@ import { userService } from "@/services/user.service.js";
 const ROLES = [
     { value: "", label: "Tất cả vai trò" },
     { value: "ADMIN", label: "Admin" },
+    { value: "ADMIN_STAFF", label: "Admin Staff" },
     { value: "HOTEL_MANAGER", label: "Hotel Manager" },
     { value: "HOTEL_STAFF", label: "Hotel Staff" },
     { value: "AGENCY_MANAGER", label: "Agency Manager" },
@@ -93,6 +94,7 @@ const AdminUserList = () => {
     const getRoleBadge = (roleName) => {
         const map = {
             ADMIN: { label: "Admin", color: "bg-blue-100 text-blue-700" },
+            ADMIN_STAFF: { label: "Admin Staff", color: "bg-indigo-100 text-indigo-700" },
             HOTEL_MANAGER: { label: "Hotel Manager", color: "bg-emerald-100 text-emerald-700" },
             HOTEL_STAFF: { label: "Hotel Staff", color: "bg-teal-100 text-teal-700" },
             AGENCY_MANAGER: { label: "Agency Manager", color: "bg-violet-100 text-violet-700" },

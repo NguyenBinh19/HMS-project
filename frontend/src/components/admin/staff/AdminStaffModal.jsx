@@ -79,7 +79,11 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
         e.preventDefault();
         // Chặn tuyệt đối nếu không phải ADMIN tổng
         if (effectiveViewOnly || isSubmitting) return;
-
+        if (formData.userId === currentUserId && formData.status !== initialData.status) {
+            alert("Bạn không được phép tự thay đổi trạng thái hoạt động của chính mình!");
+            setFormData(prev => ({...prev, status: initialData.status}));
+            return;
+        }
         const cleanPhone = formData.phone.trim();
         if (!validateVietnamesePhone(cleanPhone)) {
             alert("Số điện thoại không hợp lệ!");

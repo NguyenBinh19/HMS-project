@@ -3,6 +3,8 @@ import { X, Calendar, MapPin, Phone, ShieldCheck, User, AtSign, CheckCircle2 } f
 import { staffService } from '@/services/staff.service.js';
 
 const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = false }) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
     const [formData, setFormData] = useState({
         userId: '',
         firstName: '',
@@ -67,6 +69,10 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isViewOnly) return;
+        if (formData.userId === currentUserId && formData.status !== initialData.status) {
+            alert("Bạn không thể tự thay đổi trạng thái hoạt động của chính mình!");
+            return;
+        }
         const cleanPhone = formData.phone.trim();
         if (!validateVietnamesePhone(cleanPhone)) {
             alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (03, 05, 07, 08, 09...).");
@@ -96,7 +102,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     if (!isOpen) return null;
 
     const isHotelAccount = formData.permission?.startsWith('HOTEL_');
-
+    const isSelfEditing = formData.userId === currentUserId;
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-end z-[150]">
             <form onSubmit={handleSubmit} className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
@@ -208,7 +214,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <div>
                                 <label className="block text-[11px] font-black text-slate-400 mb-2 uppercase tracking-widest">Trạng thái tài khoản</label>
                                 <select
-                                    disabled={isViewOnly}
+                                    disabled={isViewOnly || isSelfEditing}
                                     value={formData.status}
                                     onChange={e => setFormData({...formData, status: e.target.value})}
                                     className={`w-full px-4 py-3 border rounded-xl outline-none transition-all font-black ${
@@ -217,9 +223,14 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                                             : 'bg-rose-50 border-rose-100 text-rose-600'
                                     }`}
                                 >
-                                    <option value="ACTIVE">● ĐANG HOẠT ĐỘNG</option>
-                                    <option value="LOCKED">● ĐANG BỊ KHÓA</option>
+                                    <option value="ACTIVE"> ĐANG HOẠT ĐỘNG</option>
+                                    <option value="LOCKED"> ĐANG BỊ KHÓA</option>
                                 </select>
+                                {isSelfEditing && !isViewOnly && (
+                                    <p className="text-[10px] text-amber-600 font-bold mt-2 italic">
+                                        Bạn không thể tự khóa tài khoản của chính mình
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

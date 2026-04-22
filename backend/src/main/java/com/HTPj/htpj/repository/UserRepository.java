@@ -27,11 +27,11 @@ public interface UserRepository extends JpaRepository<Users, String> {
     Optional<Users> findByUsername(String username);
 
     @Modifying
-    @Query("UPDATE Users u SET u.status='INACTIVE' WHERE u.agency.agencyId = :agencyId")
+    @Query("UPDATE Users u SET u.status='LOCKED' WHERE u.agency.agencyId = :agencyId")
     void suspendUsersByAgency(Long agencyId);
 
     @Modifying
-    @Query("UPDATE Users u SET u.status='INACTIVE' WHERE u.hotel.hotelId = :hotelId")
+    @Query("UPDATE Users u SET u.status='LOCKED' WHERE u.hotel.hotelId = :hotelId")
     void suspendUsersByHotel(Integer hotelId);
 
     Optional<Users> findByResetToken(String resetToken);

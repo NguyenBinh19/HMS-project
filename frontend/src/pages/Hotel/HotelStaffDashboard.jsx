@@ -150,7 +150,7 @@ const StaffDashboard = () => {
                             >
                                 <option value="ALL">Tất cả trạng thái</option>
                                 <option value="ACTIVE">Hoạt động</option>
-                                <option value="INACTIVE">Bị khóa</option>
+                                <option value="LOCKED">Bị khóa</option>
                             </select>
                         </div>
                     </div>
