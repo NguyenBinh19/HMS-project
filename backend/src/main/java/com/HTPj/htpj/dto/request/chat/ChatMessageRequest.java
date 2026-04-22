@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class ChatMessageRequest {
+    private String conversationId;
     private String senderId;
-    private String receiverId;
     private String content;
+    private String booking;
 }

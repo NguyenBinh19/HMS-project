@@ -3,14 +3,15 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.chat.ChatMessageRequest;
 import com.HTPj.htpj.dto.request.chat.ConversationDTO;
 import com.HTPj.htpj.dto.response.chat.ChatMessageResponse;
-import com.HTPj.htpj.entity.Hotel;
-import com.HTPj.htpj.entity.Message;
-import com.HTPj.htpj.entity.Users;
+import com.HTPj.htpj.entity.*;
+import com.HTPj.htpj.repository.ConversationRepository;
 import com.HTPj.htpj.repository.HotelRepository;
 import com.HTPj.htpj.repository.MessageRepository;
 import com.HTPj.htpj.repository.UserRepository;
 import com.HTPj.htpj.service.ChatService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -21,21 +22,30 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ChatServiceImpl implements ChatService {
 
-    private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
-    private final HotelRepository hotelRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    MessageRepository messageRepository;
+    UserRepository userRepository;
+    HotelRepository hotelRepository;
+    SimpMessagingTemplate messagingTemplate;
+    ConversationRepository conversationRepository;
+
 
     public Message save(ChatMessageRequest request) {
+
+        Conversation convo = conversationRepository.findById(request.getConversationId())
+                .orElseThrow();
+
         Users sender = userRepository.findById(request.getSenderId())
                 .orElseThrow();
 
-        Users receiver = userRepository.findById(request.getReceiverId())
-                .orElseThrow();
+        Users receiver = convo.getUser1().getId().equals(sender.getId())
+                ? convo.getUser2()
+                : convo.getUser1();
 
         Message message = Message.builder()
+                .conversation(convo)
                 .sender(sender)
                 .receiver(receiver)
                 .content(request.getContent())
@@ -45,55 +55,44 @@ public class ChatServiceImpl implements ChatService {
         return messageRepository.save(message);
     }
 
-    public List<ChatMessageResponse> getHistory(String user1, String user2) {
-        return messageRepository.getChatHistory(user1, user2)
+    public List<ChatMessageResponse> getHistory(String conversationId) {
+        return messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId)
                 .stream()
-                .map(p -> ChatMessageResponse.builder()
-                        .senderId(p.getSenderId())
-                        .receiverId(p.getReceiverId())
-                        .content(p.getContent())
-                        .createdAt(p.getCreatedAt())
+                .map(m -> ChatMessageResponse.builder()
+                        .senderId(m.getSender().getId())
+                        .receiverId(m.getReceiver().getId())
+                        .content(m.getContent())
+                        .createdAt(m.getCreatedAt())
                         .build())
                 .toList();
     }
 
     public List<ConversationDTO> getConversations(String userId) {
-        List<Message> messages = messageRepository.findAllMessagesOfUser(userId);
 
-        Map<String, Message> latestMap = new HashMap<>();
+        List<Conversation> conversations =
+                conversationRepository.findByUser1_IdOrUser2_Id(userId, userId);
 
-        for (Message m : messages) {
-            String otherUserId;
+        return conversations.stream().map(convo -> {
 
-            if (m.getSender().getId().equals(userId)) {
-                otherUserId = m.getReceiver().getId();
-            } else {
-                otherUserId = m.getSender().getId();
-            }
+            Message lastMessage =
+                    messageRepository.findTopByConversation_IdOrderByCreatedAtDesc(convo.getId());
 
-            // chỉ lấy message mới nhất cho mỗi user
-            if (!latestMap.containsKey(otherUserId)) {
-                latestMap.put(otherUserId, m);
-            }
-        }
+            Users otherUser = convo.getUser1().getId().equals(userId)
+                    ? convo.getUser2()
+                    : convo.getUser1();
 
-        return latestMap.entrySet().stream()
-                .map(entry -> {
-                    Message m = entry.getValue();
+            return ConversationDTO.builder()
+                    .conversationId(convo.getId())
+                    .userId(otherUser.getId())
+                    .name(otherUser.getUsername())
+                    .booking(convo.getBookingId())
+                    .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
+                    .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
+                    .type(convo.getType())
+                    .referenceId(convo.getReferenceId())
+                    .build();
 
-                    Users otherUser = m.getSender().getId().equals(userId)
-                            ? m.getReceiver()
-                            : m.getSender();
-
-                    return new ConversationDTO(
-                            otherUser.getId(),
-                            otherUser.getUsername(), // hoặc firstName + lastName
-                            m.getContent(),
-                            m.getCreatedAt()
-                    );
-                })
-                .sorted((a, b) -> b.getTime().compareTo(a.getTime()))
-                .toList();
+        }).toList();
     }
 
     public ConversationDTO buildConversation(Message m, String currentUserId) {
@@ -115,67 +114,60 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ConversationDTO initChatWithHotel(String userId, String hotelId) {
+    public ConversationDTO initChatWithHotel(
+            String userId,
+            String hotelId,
+            String bookingId,
+            String bookingCode,
+            String hotelName
+    ) {
 
-        Hotel hotel = hotelRepository.findById(Integer.valueOf(hotelId))
-                .orElseThrow(() -> new RuntimeException("Hotel not found"));
-
+        Users user = userRepository.findById(userId).orElseThrow();
         String hotelManagerID = userRepository.findHotelMangerID(hotelId);
+        Users hotelManager = userRepository.findById(hotelManagerID).orElseThrow();
 
-        if (hotelManagerID == null) {
-            throw new RuntimeException("Hotel manager not found");
-        }
+        Conversation convo = conversationRepository
+                .findByUser1_IdAndUser2_IdAndReferenceId(userId, hotelManagerID, hotelId)
+                .orElse(null);
 
-        if (userId.equals(hotelManagerID)) {
-            throw new RuntimeException("Cannot chat with yourself");
+        if (convo == null) {
+            convo = Conversation.builder()
+                    .user1(user)
+                    .user2(hotelManager)
+                    .type("BOOKING")
+                    .referenceId(hotelId)
+                    .createdAt(LocalDateTime.now())
+                    .bookingId(bookingCode)
+                    .build();
+
+            conversationRepository.save(convo);
+
+            Message firstMessage = Message.builder()
+                    .sender(user)
+                    .receiver(hotelManager)
+                    .conversation(convo)
+                    .content("Xin chào, tôi cần hỗ trợ đơn booking #" + bookingCode)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            messageRepository.save(firstMessage);
+        } else {
+            convo.setBookingId(bookingCode);
+            conversationRepository.save(convo);
         }
 
         Message lastMessage = messageRepository
-                .findTopBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByCreatedAtDesc(
-                        userId, hotelManagerID,
-                        userId, hotelManagerID
-                );
+                .findTopByConversation_IdOrderByCreatedAtDesc(convo.getId());
 
-        if (lastMessage != null) {
-            return buildConversation(lastMessage, userId);
-        }
-
-        Message firstMessage = Message.builder()
-                .sender(userRepository.findById(userId).orElseThrow())
-                .receiver(userRepository.findById(hotelManagerID).orElseThrow())
-                .content("Xin chào, tôi cần hỗ trợ 🙏")
-                .createdAt(LocalDateTime.now())
+        return ConversationDTO.builder()
+                .conversationId(convo.getId())
+                .userId(hotelManager.getId())
+                .name(hotelManager.getUsername())
+                .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
+                .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
+                .booking(convo.getBookingId())
+                .type(convo.getType())
+                .referenceId(convo.getReferenceId())
                 .build();
-
-        messageRepository.save(firstMessage);
-
-        ConversationDTO convo = buildConversation(firstMessage, userId);
-
-        messagingTemplate.convertAndSendToUser(
-                userId,
-                "/queue/conversations",
-                convo
-        );
-
-        messagingTemplate.convertAndSendToUser(
-                hotelManagerID,
-                "/queue/conversations",
-                buildConversation(firstMessage, hotelManagerID)
-        );
-
-        ChatMessageResponse msgRes = ChatMessageResponse.builder()
-                .senderId(userId)
-                .receiverId(hotelManagerID)
-                .content(firstMessage.getContent())
-                .createdAt(firstMessage.getCreatedAt())
-                .build();
-
-        messagingTemplate.convertAndSendToUser(
-                hotelManagerID,
-                "/queue/messages",
-                msgRes
-        );
-
-        return convo;
     }
 }

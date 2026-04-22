@@ -9,8 +9,8 @@ import java.util.List;
 
 public interface ChatService {
     Message save(ChatMessageRequest request);
-    List<ChatMessageResponse> getHistory(String user1, String user2);
+    List<ChatMessageResponse> getHistory(String conversationId);
     List<ConversationDTO> getConversations(String userId);
     ConversationDTO buildConversation(Message m, String currentUserId);
-    ConversationDTO initChatWithHotel(String userId, String hotelId);
+    ConversationDTO initChatWithHotel(String userId, String hotelId, String bookingId, String bookingCode, String hotelName);
 }
