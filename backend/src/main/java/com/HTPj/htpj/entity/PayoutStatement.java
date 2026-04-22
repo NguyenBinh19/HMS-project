@@ -81,6 +81,9 @@ public class PayoutStatement {
     @Column(name = "paid_by", length = 255)
     private String paidBy;
 
+    @Column(name = "payment_proof_s3_key", length = 255)
+    private String paymentProofS3Key;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

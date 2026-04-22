@@ -361,6 +361,7 @@ const StatementDetailView = ({ statementId, onBack }) => {
 
     const status = statement.status;
     const isPending = status === "PENDING_CONFIRMATION";
+    const isPaid = status === "PAID";
 
     return (
         <>
@@ -389,6 +390,44 @@ const StatementDetailView = ({ statementId, onBack }) => {
                 adjustments={statement.totalRefunds || 0}
                 net={statement.netPayout || 0}
             />
+
+            {isPaid && (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
+                    <h3 className="text-sm font-black text-emerald-700 uppercase tracking-wider mb-3">Thông tin chuyển khoản</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div className="bg-white rounded-2xl p-4 border border-emerald-100">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase">Mã giao dịch</p>
+                            <p className="font-black text-slate-800 mt-1">{statement.bankReference || "-"}</p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-emerald-100">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase">Người chi trả</p>
+                            <p className="font-black text-slate-800 mt-1">{statement.paidBy || "-"}</p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-emerald-100">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase">Người nhận</p>
+                            <p className="font-black text-slate-800 mt-1">{statement.bankAccountHolder || "-"}</p>
+                            <p className="text-xs text-slate-500 mt-1">{statement.bankName || "-"} - {statement.bankAccountNumber || "-"}</p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-emerald-100">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase">Thời gian chuyển</p>
+                            <p className="font-black text-slate-800 mt-1">
+                                {statement.paidAt ? new Date(statement.paidAt).toLocaleString("vi-VN") : "-"}
+                            </p>
+                        </div>
+                    </div>
+
+                    {statement.paymentProofUrl && (
+                        <a
+                            href={statement.paymentProofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center mt-4 px-4 py-2 rounded-xl bg-white border border-emerald-200 text-emerald-700 text-xs font-black uppercase"
+                        >
+                            <ExternalLink size={14} className="mr-2" /> Xem ảnh minh chứng
+                        </a>
+                    )}
+                </div>
+            )}
 
             {/* Table */}
             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">

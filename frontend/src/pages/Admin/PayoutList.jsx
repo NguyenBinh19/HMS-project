@@ -18,6 +18,28 @@ const STATUS_CONFIG = {
     DRAFT: { label: "Nháp", color: "bg-slate-100 text-slate-600 border-slate-200", dot: "bg-slate-400" },
 };
 
+const formatDateISO = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+const getPreviousCycleRange = () => {
+    const now = new Date();
+    const day = now.getDate();
+
+    if (day >= 26) {
+        const periodStart = new Date(now.getFullYear(), now.getMonth() - 1, 26);
+        const periodEnd = new Date(now.getFullYear(), now.getMonth(), 25);
+        return { periodStart, periodEnd };
+    }
+
+    const periodStart = new Date(now.getFullYear(), now.getMonth() - 2, 26);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() - 1, 25);
+    return { periodStart, periodEnd };
+};
+
 const PayoutList = () => {
     const [payoutData, setPayoutData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -29,12 +51,17 @@ const PayoutList = () => {
     const [detailLoading, setDetailLoading] = useState(false);
     const [markPaidModal, setMarkPaidModal] = useState(false);
     const [bankReference, setBankReference] = useState("");
+    const [recipientBankName, setRecipientBankName] = useState("");
+    const [recipientBankHolder, setRecipientBankHolder] = useState("");
+    const [recipientBankAccount, setRecipientBankAccount] = useState("");
+    const [proofImage, setProofImage] = useState(null);
     const [markingPaid, setMarkingPaid] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [policyUrl, setPolicyUrl] = useState("");
     const [isPdfLoading, setIsPdfLoading] = useState(true);
+    const previousCycle = useMemo(() => getPreviousCycleRange(), []);
 
     useEffect(() => {
         const fetchPolicy = async () => {
@@ -62,7 +89,11 @@ const PayoutList = () => {
     const fetchPayouts = async () => {
         setLoading(true);
         try {
-            const params = {};
+            const params = {
+                periodStart: formatDateISO(previousCycle.periodStart),
+                periodEnd: formatDateISO(previousCycle.periodEnd),
+                includeDisputed: false,
+            };
             if (statusFilter) params.status = statusFilter;
             const res = await payoutService.getPayoutList(params);
             setPayoutData(res.result);
@@ -73,7 +104,7 @@ const PayoutList = () => {
         }
     };
 
-    useEffect(() => { fetchPayouts(); }, [statusFilter]);
+    useEffect(() => { fetchPayouts(); }, [statusFilter, previousCycle]);
 
     const filteredPayouts = useMemo(() => {
         if (!payoutData?.payouts) return [];
@@ -119,15 +150,25 @@ const PayoutList = () => {
 
     const handleMarkPaid = async () => {
         if (!bankReference.trim()) return alert("Vui lòng nhập mã giao dịch ngân hàng");
+        if (!recipientBankName.trim()) return alert("Vui lòng nhập ngân hàng người nhận");
+        if (!recipientBankHolder.trim()) return alert("Vui lòng nhập người nhận");
+        if (!recipientBankAccount.trim()) return alert("Vui lòng nhập số tài khoản người nhận");
         setMarkingPaid(true);
         try {
             await payoutService.markAsPaid({
                 statementIds: selectedIds,
-                bankReference: bankReference.trim()
-            });
+                bankReference: bankReference.trim(),
+                bankName: recipientBankName.trim(),
+                bankAccountHolder: recipientBankHolder.trim(),
+                bankAccountNumber: recipientBankAccount.trim(),
+            }, proofImage);
             alert("Đã đánh dấu thanh toán thành công!");
             setMarkPaidModal(false);
             setBankReference("");
+            setRecipientBankName("");
+            setRecipientBankHolder("");
+            setRecipientBankAccount("");
+            setProofImage(null);
             setSelectedIds([]);
             fetchPayouts();
         } catch (err) {
@@ -157,7 +198,7 @@ const PayoutList = () => {
 
     const toggleSelectAll = () => {
         const eligibleIds = paginatedData
-            .filter(p => p.status === "APPROVED" || p.status === "PROCESSING")
+            .filter(p => p.status === "APPROVED")
             .map(p => p.statementId);
         if (selectedIds.length === eligibleIds.length) {
             setSelectedIds([]);
@@ -196,7 +237,9 @@ const PayoutList = () => {
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl font-black text-slate-800 uppercase">Quản lý thanh toán (Payout)</h1>
-                        <p className="text-slate-500 text-sm font-medium">Sao kê & thanh toán cho khách sạn dối tác</p>
+                        <p className="text-slate-500 text-sm font-medium">
+                            Sao kê & thanh toán cho khách sạn đối tác. Kỳ đang xử lý: {format(previousCycle.periodStart, "dd/MM/yyyy")} - {format(previousCycle.periodEnd, "dd/MM/yyyy")}
+                        </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
@@ -313,7 +356,7 @@ const PayoutList = () => {
                                     <tr>
                                         <th className="px-4 py-3 w-10">
                                             <input type="checkbox" onChange={toggleSelectAll}
-                                                checked={selectedIds.length > 0 && selectedIds.length === paginatedData.filter(p => p.status === "APPROVED" || p.status === "PROCESSING").length}
+                                                checked={selectedIds.length > 0 && selectedIds.length === paginatedData.filter(p => p.status === "APPROVED").length}
                                                 className="rounded" />
                                         </th>
                                         <th className="px-4 py-3">Mã sao kê</th>
@@ -344,7 +387,7 @@ const PayoutList = () => {
                                         paginatedData.map(p => (
                                             <tr key={p.statementId} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-4 py-4">
-                                                    {(p.status === "APPROVED" || p.status === "PROCESSING") && (
+                                                    {p.status === "APPROVED" && (
                                                         <input type="checkbox"
                                                             checked={selectedIds.includes(p.statementId)}
                                                             onChange={() => toggleSelect(p.statementId)}
@@ -520,8 +563,62 @@ const PayoutList = () => {
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-emerald-300"
                             />
                         </div>
+                        <div className="text-left mb-6">
+                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">
+                                Người nhận (Chủ tài khoản)
+                            </label>
+                            <input
+                                type="text"
+                                value={recipientBankHolder}
+                                onChange={e => setRecipientBankHolder(e.target.value)}
+                                placeholder="VD: CONG TY TNHH ABC"
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-emerald-300"
+                            />
+                        </div>
+                        <div className="text-left mb-6">
+                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">
+                                Ngân hàng người nhận
+                            </label>
+                            <input
+                                type="text"
+                                value={recipientBankName}
+                                onChange={e => setRecipientBankName(e.target.value)}
+                                placeholder="VD: Vietcombank"
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-emerald-300"
+                            />
+                        </div>
+                        <div className="text-left mb-6">
+                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">
+                                Số tài khoản người nhận
+                            </label>
+                            <input
+                                type="text"
+                                value={recipientBankAccount}
+                                onChange={e => setRecipientBankAccount(e.target.value)}
+                                placeholder="VD: 1234567890"
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-emerald-300"
+                            />
+                        </div>
+                        <div className="text-left mb-6">
+                            <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">
+                                Ảnh minh chứng chuyển khoản
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={e => setProofImage(e.target.files?.[0] || null)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                            />
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => { setMarkPaidModal(false); setBankReference(""); }}
+                            <button onClick={() => {
+                                setMarkPaidModal(false);
+                                setBankReference("");
+                                setRecipientBankName("");
+                                setRecipientBankHolder("");
+                                setRecipientBankAccount("");
+                                setProofImage(null);
+                            }}
                                 className="py-3 bg-gray-100 rounded-2xl font-bold text-xs uppercase">Huỷ</button>
                             <button onClick={handleMarkPaid} disabled={markingPaid}
                                 className="py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs uppercase disabled:opacity-50 flex items-center justify-center gap-2">

@@ -28,8 +28,13 @@ const exportBatchPayment = async (statementIds) => {
 };
 
 // Admin: Mark as paid (manual reconciliation)
-const markAsPaid = async (data) => {
-    const response = await api.post('/admin/payout/mark-paid', data);
+const markAsPaid = async (data, proofImage) => {
+    const formData = new FormData();
+    formData.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+    if (proofImage) {
+        formData.append("proofImage", proofImage);
+    }
+    const response = await api.post('/admin/payout/mark-paid', formData);
     return response.data;
 };
 

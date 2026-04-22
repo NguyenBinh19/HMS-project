@@ -1168,7 +1168,7 @@ public class BookingServiceImpl implements BookingService {
 
         // Check-in is only allowed on the scheduled check-in date
         LocalDate today = LocalDate.now();
-        if (!today.equals(booking.getCheckInDate())) {
+        if (today.isBefore(booking.getCheckInDate())) {
             throw new AppException(ErrorCode.CHECKIN_DATE_MISMATCH);
         }
 
@@ -1235,11 +1235,7 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.NOSHOW_NOT_ALLOWED);
         }
 
-        // Cannot report no-show before check-in date
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(booking.getCheckInDate())) {
-            throw new AppException(ErrorCode.NOSHOW_BEFORE_CHECKIN);
-        }
+
 
         // No-show: only change status, do NOT release inventory and do NOT refund
         booking.setBookingStatus("NO_SHOW");

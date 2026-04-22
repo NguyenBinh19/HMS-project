@@ -39,7 +39,7 @@ export default function FilterSidebar({ onApplyFilter }) {
             {/* LỌC THEO HẠNG SAO */}
             <div className="mb-6 pb-6 border-b border-slate-100">
                 <h4 className="text-[12px] font-black text-[#003580] uppercase mb-4 flex items-center gap-2 tracking-tighter">
-                    <Star size={14} className="text-blue-600" fill="currentColor" /> Hạng sao
+                    <Star size={14} className="text-blue-600" fill="currentColor" /> Hạng đánh giá
                 </h4>
                 <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map(star => (

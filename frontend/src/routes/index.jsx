@@ -93,6 +93,8 @@ import BookingListDemo from "@/pages/Demo/Agency/BookingListDemo.jsx";
 import BookingDetailDemo from "@/pages/Demo/Agency/BookingDetailDemo.jsx";
 import ViewAuditLogs from "@/pages/Admin/ViewAuditLogs.jsx"
 import DisputeManagement from "@/pages/Admin/DisputeManage.jsx";
+import PayoutStatementOverview from "@/pages/Admin/PayoutStatementOverview.jsx";
+
 const AppRoutes = () => {
     return (
         <>
@@ -205,6 +207,8 @@ const AppRoutes = () => {
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />
                     <Route path="payout-list" element={<PayoutList />} />
+                    <Route path="payout-statements" element={<PayoutStatementOverview />} />
+
                 </Route>
 
                 {/*Luồng Demo*/}

@@ -27,7 +27,7 @@ public class PayoutStatementResponse {
     private String status;
     private String confirmedBy;
     private LocalDateTime confirmedAt;
-//    private String disputeReason;
+    //    private String disputeReason;
 //    private String disputeReasonCode;
     //bank
     private String bankName;
@@ -35,6 +35,8 @@ public class PayoutStatementResponse {
     private String bankAccountNumber;
 
     private String bankReference;
+    private String paidBy;
+    private String paymentProofUrl;
     private LocalDateTime paidAt;
     private LocalDateTime createdAt;
     private List<PayoutLineItemResponse> lineItems;

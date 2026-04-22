@@ -34,13 +34,15 @@ public class PayoutAdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodStart,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodEnd,
-            @RequestParam(required = false) Integer hotelId
+            @RequestParam(required = false) Integer hotelId,
+            @RequestParam(required = false, defaultValue = "false") Boolean includeDisputed
     ) {
         PayoutListRequest request = new PayoutListRequest();
         request.setStatus(status);
         request.setPeriodStart(periodStart);
         request.setPeriodEnd(periodEnd);
         request.setHotelId(hotelId);
+        request.setIncludeDisputed(includeDisputed);
 
         return ApiResponse.<PayoutListResponse>builder()
                 .result(payoutStatementService.getPayoutList(request))
@@ -74,12 +76,13 @@ public class PayoutAdminController {
     /**
      * UC-088.2: Mark As Paid (Manual Reconciliation)
      */
-    @PostMapping("/mark-paid")
+    @PostMapping(value = "/mark-paid", consumes = "multipart/form-data")
     ApiResponse<List<PayoutStatementResponse>> markAsPaid(
-            @RequestBody MarkAsPaidRequest request
+            @RequestPart("data") MarkAsPaidRequest request,
+            @RequestPart(value = "proofImage", required = false) MultipartFile proofImage
     ) {
         return ApiResponse.<List<PayoutStatementResponse>>builder()
-                .result(payoutStatementService.markAsPaid(request))
+                .result(payoutStatementService.markAsPaid(request, proofImage))
                 .build();
     }
 

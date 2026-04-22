@@ -118,7 +118,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 String agencyName = agencyRepository.findById(booking.getAgencyId())
                         .map(Agency::getAgencyName)
                         .orElse("Unknown Agency");
-            System.out.print(agencyName);
+                System.out.print(agencyName);
                 PayoutLineItem lineItem = PayoutLineItem.builder()
                         .payoutStatement(statement)
                         .bookingId(booking.getBookingId())
@@ -374,14 +374,19 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     @Override
     @Transactional(readOnly = true)
     public PayoutListResponse getPayoutList(PayoutListRequest request) {
-        List<PayoutStatement> statements;
+        List<PayoutStatement> statements = statementRepository.findAll();
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
-            statements = statementRepository.findByStatus(request.getStatus());
-        } else if (request.getPeriodStart() != null && request.getPeriodEnd() != null) {
-            statements = statementRepository.findByPeriod(request.getPeriodStart(), request.getPeriodEnd());
-        } else {
-            statements = statementRepository.findAll();
+            statements = statements.stream()
+                    .filter(s -> request.getStatus().equalsIgnoreCase(s.getStatus()))
+                    .collect(Collectors.toList());
+        }
+
+        if (request.getPeriodStart() != null && request.getPeriodEnd() != null) {
+            statements = statements.stream()
+                    .filter(s -> !s.getPeriodStart().isBefore(request.getPeriodStart())
+                            && !s.getPeriodEnd().isAfter(request.getPeriodEnd()))
+                    .collect(Collectors.toList());
         }
 
         // Filter by hotelId if specified
@@ -391,9 +396,14 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                     .collect(Collectors.toList());
         }
 
-        // Exclude disputed statements (per UC-088 assumptions)
+        if (!Boolean.TRUE.equals(request.getIncludeDisputed())) {
+            statements = statements.stream()
+                    .filter(s -> !"DISPUTED".equals(s.getStatus()))
+                    .collect(Collectors.toList());
+        }
+
         statements = statements.stream()
-                .filter(s -> !"DISPUTED".equals(s.getStatus()))
+                .sorted(Comparator.comparing(PayoutStatement::getPeriodEnd).reversed())
                 .collect(Collectors.toList());
 
         // Batch fetch hotels
@@ -412,7 +422,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
             String hotelName = hotel != null ? hotel.getHotelName() : "Unknown";
 
             // UC-088.E1: Missing bank info detection
-            boolean missingBankInfo = (hotel == null || hotel.getEmail() == null);
+            boolean missingBankInfo = (hotel == null || s.getBankAccountHolder() == null ||s.getBankAccountNumber() == null||s.getBankName() == null);
 
             PayoutListItemResponse item = PayoutListItemResponse.builder()
                     .statementId(s.getStatementId())
@@ -462,9 +472,25 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
     @Override
     @Transactional
-    public List<PayoutStatementResponse> markAsPaid(MarkAsPaidRequest request) {
+    public List<PayoutStatementResponse> markAsPaid(MarkAsPaidRequest request, MultipartFile proofImage) {
+        if (request.getStatementIds() == null || request.getStatementIds().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        if (request.getBankReference() == null || request.getBankReference().isBlank()) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        if (request.getBankName() == null || request.getBankName().isBlank()
+                || request.getBankAccountHolder() == null || request.getBankAccountHolder().isBlank()
+                || request.getBankAccountNumber() == null || request.getBankAccountNumber().isBlank()) {
+            throw new AppException(ErrorCode.INVALID_BANK_INFO);
+        }
+
         String adminUserId = getCurrentUserId();
+        String adminUsername = getCurrentUsername();
         List<PayoutStatementResponse> results = new ArrayList<>();
+        String paymentProofKey = uploadPayoutProofIfPresent(proofImage);
 
         for (Long id : request.getStatementIds()) {
             PayoutStatement stmt = statementRepository.findById(id)
@@ -476,8 +502,12 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
             stmt.setStatus("PAID");
             stmt.setBankReference(request.getBankReference());
+            stmt.setBankName(request.getBankName());
+            stmt.setBankAccountHolder(request.getBankAccountHolder());
+            stmt.setBankAccountNumber(request.getBankAccountNumber());
             stmt.setPaidAt(LocalDateTime.now());
-            stmt.setPaidBy(adminUserId);
+            stmt.setPaidBy((adminUsername != null && !adminUsername.isBlank()) ? adminUsername : adminUserId);
+            stmt.setPaymentProofS3Key(paymentProofKey);
             statementRepository.save(stmt);
 
             Hotel hotel = hotelRepository.findById(stmt.getHotelId())
@@ -564,6 +594,8 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .bankAccountHolder(s.getBankAccountHolder())
                 .bankAccountNumber(s.getBankAccountNumber())
                 .bankReference(s.getBankReference())
+                .paidBy(s.getPaidBy())
+                .paymentProofUrl(getProofUrl(s.getPaymentProofS3Key()))
                 .paidAt(s.getPaidAt())
                 .createdAt(s.getCreatedAt())
                 .build();
@@ -589,6 +621,36 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return jwt.getClaim("userId");
+    }
+
+    private String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        return jwt.getSubject();
+    }
+
+    private String uploadPayoutProofIfPresent(MultipartFile proofImage) {
+        if (proofImage == null || proofImage.isEmpty()) {
+            return null;
+        }
+
+        String key = "payout/proof/"
+                + System.currentTimeMillis() + "_"
+                + proofImage.getOriginalFilename();
+
+        try {
+            s3Service.uploadFile(proofImage, key);
+            return key;
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    private String getProofUrl(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            return null;
+        }
+        return s3Service.getFileUrl(s3Key);
     }
 
     @Override
