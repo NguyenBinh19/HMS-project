@@ -315,10 +315,10 @@ const OrderListScreen = () => {
                                                             <Download size={14}/>}
                                                         Tải Voucher
                                                     </button>
-                                                    <button
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                                                        <MessageCircle size={14}/> Chat với KS
-                                                    </button>
+                                                    {/*<button*/}
+                                                    {/*    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">*/}
+                                                    {/*    <MessageCircle size={14}/> Chat với KS*/}
+                                                    {/*</button>*/}
                                                     {/*{canCancel(order) && (*/}
                                                     {/*    <button*/}
                                                     {/*        onClick={() => { setSelectedBooking(order); setIsCancelModalOpen(true); }}*/}

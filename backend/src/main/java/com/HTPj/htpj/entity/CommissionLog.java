@@ -22,6 +22,12 @@ public class CommissionLog {
     @Column(name = "hotel_id", nullable = false)
     private Long hotelId;
 
+    @Column(name = "old_rate_type")
+    private String oldRateType;
+
+    @Column(name = "new_rate_type")
+    private String newRateType;
+
     @Column(name = "old_commission_id")
     private Long oldCommissionId;
 

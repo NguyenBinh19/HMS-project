@@ -70,11 +70,13 @@ public class CommissionServiceImpl implements CommissionService {
         log.setOldCommissionId(hotel.getCommissionId());
         log.setOldValue(hotel.getCommissionValue());
         log.setOldCommissionType(hotel.getCommissionType());
+        log.setOldRateType(hotel.getRateType());
 
         // NEW
         log.setNewCommissionId(newCommission.getCommissionId());
         log.setNewValue(newCommission.getCommissionValue());
         log.setNewCommissionType(newCommission.getCommissionType());
+        log.setNewRateType(newCommission.getRateType());
 
         log.setChangedBy(userId);
         log.setChangedAt(LocalDateTime.now());
@@ -354,7 +356,7 @@ public class CommissionServiceImpl implements CommissionService {
 
                     Hotel hotel = hotelRepository.findById(ch.getHotelId())
                             .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-
+                    saveCommissionLog(hotel, commission, userId, "Cập nhật chiết khấu riêng của khách sạn");
                     hotel.setUpdatedAt(now);
 
                     hotel.setCommissionValue(request.getCommissionValue());

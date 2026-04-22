@@ -208,9 +208,9 @@ const CommissionList = () => {
                                                 <span
                                                     className="text-gray-700">{format(new Date(item.startDate), 'dd/MM/yyyy')}</span>
                                                 <span
-                                                    className="text-gray-400 font-medium italic">đến {format(new Date(item.endDate), 'dd/MM/yyyy')}</span>
+                                                    className="text-gray-800 font-medium italic">đến {format(new Date(item.endDate), 'dd/MM/yyyy')}</span>
                                             </div>
-                                        ) : <span className="text-blue-500 uppercase text-[9px]">Vĩnh viễn</span>}
+                                        ) : <span className="text-blue-700 uppercase text-[9px]">Vĩnh viễn</span>}
                                     </td>
                                     <td className="px-6 py-4">
                                             <span
@@ -222,15 +222,30 @@ const CommissionList = () => {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center gap-1">
+                                            {/* NÚT CHỈNH SỬA HOẶC XEM CHI TIẾT */}
                                             <button
                                                 onClick={() => {
                                                     setSelectedId(item.commissionId);
                                                     setIsEditOpen(true);
                                                 }}
-                                                className={`p-2 rounded-xl transition-all ${item.isActive ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50' : 'text-blue-500 hover:bg-blue-50'}`}
-                                                title={item.isActive ? "Chỉnh sửa" : "Xem chi tiết"}
+                                                className={`p-2 rounded-xl transition-all ${
+                                                    // Nếu là HOTEL hoặc đã bị ẩn (không active) thì chỉ là Xem chi tiết
+                                                    (!item.isActive || item.commissionType === 'HOTEL')
+                                                        ? 'text-blue-500 hover:bg-blue-50'
+                                                        : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                                                }`}
+                                                title={
+                                                    (item.isActive && item.commissionType !== 'HOTEL')
+                                                        ? "Chỉnh sửa"
+                                                        : "Xem chi tiết"
+                                                }
                                             >
-                                                {item.isActive ? <Edit2 size={16}/> : <Info size={18}/>}
+                                                {/* Logic Icon: Chỉ hiện bút chì khi đang active VÀ không phải là loại HOTEL */}
+                                                {(item.isActive && item.commissionType !== 'HOTEL') ? (
+                                                    <Edit2 size={16} />
+                                                ) : (
+                                                    <Info size={18} />
+                                                )}
                                             </button>
 
                                             {/* NÚT KÍCH HOẠT RIÊNG CHO DEAL KHI ĐANG TẮT */}
@@ -313,8 +328,8 @@ const CommissionList = () => {
                         <h3 className="text-xl font-black text-gray-800 uppercase mb-2">Xác nhận lưu trữ?</h3>
                         <div className="p-4 bg-gray-50 rounded-2xl mb-6">
                             <p className="text-xs text-gray-600 font-medium italic">
-                                ⚠️ Hiện tại đang có <span
-                                className="font-black text-red-500">{confirmModal.hotelCount} khách sạn</span> đang sử
+                                ⚠️ Hãy kiểm tra kĩ xem hiện tại đang có <span
+                                className="font-black text-red-500">bao nhiêu khách sạn</span> đang sử
                                 dụng chính sách này.
                             </p>
                         </div>

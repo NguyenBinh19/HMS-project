@@ -88,6 +88,28 @@ const setDefaultCommission = async (hotelId) => {
     }
 };
 
+// 9. Admin Lấy tất cả logs lịch sử commission
+const getAllLogs = async () => {
+    try {
+        const response = await api.get(`/commissions/logs`);
+        return response.data;
+    } catch (error) {
+        console.error("Get All Logs Error:", error);
+        throw error;
+    }
+};
+
+// 10. Hotel Lấy logs lịch sử của khách sạn hiện tại
+const getMyHotelLogs = async () => {
+    try {
+        const response = await api.get(`/commissions/logs/hotel`);
+        return response.data;
+    } catch (error) {
+        console.error("Get My Hotel Logs Error:", error);
+        throw error;
+    }
+};
+
 export const commissionService = {
     createCommission,
     deleteCommission,
@@ -97,4 +119,6 @@ export const commissionService = {
     activeCommission,
     getHotelsUsingDeal,
     setDefaultCommission,
+    getAllLogs,
+    getMyHotelLogs,
 };

@@ -74,7 +74,7 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
     if (!isOpen || !detail) return null;
 
     const type = detail.commissionType;
-    const isReadOnly = !detail.isActive;
+    const isReadOnly = !detail.isActive || type === 'HOTEL';
     const isDefault = type === 'DEFAULT';
     const hasHotels = hotels.length > 0;
 

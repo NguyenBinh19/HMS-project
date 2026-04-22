@@ -95,6 +95,7 @@ import ViewAuditLogs from "@/pages/Admin/ViewAuditLogs.jsx"
 import DisputeManagement from "@/pages/Admin/DisputeManage.jsx";
 import PayoutStatementOverview from "@/pages/Admin/PayoutStatementOverview.jsx";
 
+import PartnerAuditLog from "@/pages/Admin/PartnerAuditLog.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -203,6 +204,7 @@ const AppRoutes = () => {
                     <Route path="staff" element={<AdminStaffDashboard/>} />
                     <Route path="audit-logs" element={<ViewAuditLogs/>} />
                     <Route path="dispute" element={<DisputeManagement/>} />
+                    <Route path="partner-audit" element={<PartnerAuditLog/>} />
                     {/*Luồng Admin Financial*/}
                     <Route path="commission" element={<CommissionList />} />
                     <Route path="payment-transaction" element={<TransactionPage />} />

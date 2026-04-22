@@ -7,6 +7,7 @@ import {
     HotelIcon, CheckCircle2, ShieldAlert, Wallet
 } from "lucide-react";
 import { partnerService } from "@/services/partner.service.js";
+import HotelBookingHistory from "./HotelBookingHistory.jsx"
 import { toast } from "react-hot-toast";
 
 const PartnerDetail = () => {
@@ -40,7 +41,6 @@ const PartnerDetail = () => {
     useEffect(() => {
         fetchDetail();
     }, [id, isAgency]);
-
     // HÀM XỬ LÝ BAN PARTNER
     const handleBanPartner = async () => {
         // 1. Kiểm tra nếu đã bị khóa rồi
@@ -48,18 +48,14 @@ const PartnerDetail = () => {
             toast.error("Đối tác này đã bị khóa từ trước.");
             return;
         }
-
         const reason = window.prompt("Nhập lý do khóa đối tác này (Bắt buộc):");
-
         if (reason === null) return; // Người dùng nhấn Hủy
         if (reason.trim() === "") {
             alert("Bạn phải nhập lý do để thực hiện khóa!");
             return;
         }
-
         const confirmBan = window.confirm("Hành động này sẽ khóa toàn bộ tài khoản nhân viên của đối tác. Xác nhận?");
         if (!confirmBan) return;
-
         setIsBanning(true);
         try {
             const partnerType = isAgency ? "AGENCY" : "HOTEL";
@@ -87,7 +83,6 @@ const PartnerDetail = () => {
     );
 
     if (!partner) return <div className="p-20 text-center font-bold text-slate-500">Không tìm thấy dữ liệu đối tác.</div>;
-
     const displayName = isAgency ? partner.agencyName : partner.hotelName;
     const amenities = isAgency ? [] : (partner.amenitiesList || []);
     const verif = partner.verification || {};
@@ -107,6 +102,15 @@ const PartnerDetail = () => {
         }
     };
 
+    const getCommissionLabel = (type) => {
+        switch (type?.toUpperCase()) {
+            case "DEFAULT": return "Mặc định hệ thống";
+            case "DEAL": return "Chương trình khuyến mãi";
+            case "HOTEL": return "Thỏa thuận riêng";
+            default: return type;
+        }
+    };
+
     const creditLimit = partner.creditLimit || 0;
     const currentCredit = partner.currentCredit || 0;
     const creditUsed = creditLimit - currentCredit; // Số tiền đã tiêu
@@ -115,7 +119,6 @@ const PartnerDetail = () => {
     return (
         <div className="p-8 bg-[#F8FAFC] min-h-screen">
             <div className="max-w-[1200px] mx-auto space-y-8">
-
                 {/* HEADER ACTIONS */}
                 <div className="flex justify-between items-center">
                     <button
@@ -193,7 +196,8 @@ const PartnerDetail = () => {
                     {[
                         {id: "overview", label: "TỔNG QUAN", icon: Info},
                         {id: "legal", label: "HỒ SƠ PHÁP LÝ", icon: FileCheck},
-                        ...(isAgency ? [{id: "finance", label: "HẠN MỨC TÍN DỤNG", icon: CreditCard}] : [])
+                        ...(isAgency ? [{id: "finance", label: "HẠN MỨC TÍN DỤNG", icon: CreditCard}] : []),
+                        ...(!isAgency ? [{id: "booking_history", label: "LỊCH SỬ ĐẶT PHÒNG", icon: History}] : [])
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -210,6 +214,9 @@ const PartnerDetail = () => {
 
                 {/* CONTENT AREA */}
                 <div className="bg-white rounded-[40px] p-10 shadow-sm border border-slate-200 min-h-[400px]">
+                    {activeTab === "booking_history" && !isAgency && (
+                        <HotelBookingHistory hotelId={id} />
+                    )}
                     {activeTab === "overview" && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                             <section className="space-y-6">
@@ -230,6 +237,60 @@ const PartnerDetail = () => {
                                     )}
                                     <InfoItem icon={<Mail/>} label="Email đối tác" value={partner.email}/>
                                 </div>
+
+                                {/* --- PHẦN HOA HỒNG MỚI (CHỈ HIỂN THỊ NẾU LÀ HOTEL) --- */}
+                                {!isAgency && partner.commissionValue !== undefined && (
+                                    <div className="pt-2 space-y-4">
+                                        <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
+                                            Chính sách hoa hồng
+                                        </h4>
+                                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                                            {/* Header  */}
+                                            <div className="p-5 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-600 rounded-xl text-white shadow-sm shadow-blue-200">
+                                                        <Wallet size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">Mức hoa hồng</p>
+                                                        <p className="text-lg font-black text-slate-800 leading-none">
+                                                            {partner.commissionValue?.toLocaleString('vi-VN')}
+                                                            <span className="text-black-600 ml-0.5">
+                                                                {partner.rateType === 'PERCENT' ? '%' : 'đ'}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-wider border border-blue-100">
+                                                    {getCommissionLabel(partner.commissionType)}
+                                                </span>
+                                            </div>
+                                            {/* Footer của Card: Thông tin người cập nhật */}
+                                            <div className="grid grid-cols-2 divide-x divide-slate-50">
+                                                <div className="p-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                                                        <User size={14} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[8px] font-black text-slate-600 uppercase leading-none mb-1">Cập nhật bởi</p>
+                                                        <p className="text-[11px] font-bold text-slate-700 truncate">{partner.commissionUpdatedBy || "System"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                                                        <History size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-slate-600 uppercase leading-none mb-1">Thời gian</p>
+                                                        <p className="text-[11px] font-bold text-slate-700">
+                                                            {partner.commissionUpdatedAt ? new Date(partner.commissionUpdatedAt).toLocaleDateString('vi-VN') : "---"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {!isAgency && amenities.length > 0 && (
                                     <div className="pt-4">

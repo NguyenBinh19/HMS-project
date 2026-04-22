@@ -51,6 +51,7 @@
     "react-router-dom": "^7.9.5",
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.0",
+    "sepay-pg-node": "^1.0.0",
     "sockjs-client": "^1.6.1",
     "sweetalert2": "^11.26.24",
     "use-debounce": "^10.0.6",

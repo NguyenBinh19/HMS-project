@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -20,6 +21,12 @@ public class SePayWebhookController {
     @PostMapping("/webhook")
     public ResponseEntity<?> handleWebhook(@RequestBody Map<String, Object> payload) {
         webhookService.processWebhook(payload);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/webhook-demo")
+    public ResponseEntity<?> handleWebhookDemo(@RequestBody Map<String, Object> payload) {
+        webhookService.processWebhookDemo(payload);
         return ResponseEntity.ok(Map.of("success", true));
     }
 }

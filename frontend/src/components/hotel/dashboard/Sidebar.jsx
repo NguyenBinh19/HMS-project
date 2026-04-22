@@ -23,7 +23,7 @@ const Sidebar = () => {
         { icon: <LineChart size={20} />, label: "BÁO CÁO DOANH THU", path: "/hotel/revenue-report" },
         { icon: <Wallet size={20} />, label: "TÀI CHÍNH & THANH TOÁN", path: "/hotel/payout-state", hideForStaff: true, },
         { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/front-desk" },
-        { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat" },
+        // { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat" },
         { icon: <StarHalf size={20} />, label: "ĐÁNH GIÁ & XẾP HẠNG", path: "/hotel/reviews" },
     ];
 
