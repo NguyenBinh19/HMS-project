@@ -204,7 +204,7 @@ const ServiceModal = ({ mode, initial, onClose, onSaved }) => {
                                         onChange={(e) => handleChange("publicPrice", e.target.value)}
                                     />
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-1 italic">Để Agency tham khảo giá lẻ</p>
+                               
                             </div>
                             <div>
                                 <label className="text-xs text-slate-500 mb-1 block">Đơn vị tính *</label>

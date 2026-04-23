@@ -64,6 +64,7 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
                         ruleType: 'WEEKLY',
                         dayOfWeek: rule.dbKey,
                         action: rule.action,
+                        priority: 1,
                         adjustmentType: rule.adjustment_type,
                         adjustmentValue: rule.adjustment_value,
                         isActive: true
@@ -180,33 +181,6 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
                 })}
             </div>
 
-            {/* Section: Mô phỏng giá */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 min-h-[300px] flex flex-col justify-between relative">
-                <h3 className="text-[15px] font-bold text-gray-900 mb-4">Mô phỏng giá cho tuần tới</h3>
-
-                {/* Chart placeholder */}
-                <div className="flex-1 w-full bg-gray-50/50 rounded border border-dashed border-gray-200 mb-4 flex items-center justify-center text-gray-400 text-sm">
-                    Biểu đồ biến động giá
-                </div>
-
-                {/* Footer thông số */}
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-gray-600 pt-4 border-t border-gray-100">
-                    <div>
-                        Giá Gốc: <span className="font-bold text-gray-900 underline decoration-gray-300 underline-offset-4">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice)}</span>
-                    </div>
-                    <div>
-                        Thứ Bảy: <span className="font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice + 100000)}</span> <span className="text-green-600 font-medium">(+6.7%)</span>
-                    </div>
-                    <div>
-                        Chủ Nhật: <span className="font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice + 200000)}</span> <span className="text-green-600 font-medium">(+13.3%)</span>
-                    </div>
-                </div>
-
-                {/* Labels ngày tháng dưới cùng biểu đồ */}
-                <div className="flex justify-between text-xs text-gray-400 mt-2 px-2">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                </div>
-            </div>
 
             {/* Save Button */}
             <div className="flex justify-end mt-6">
