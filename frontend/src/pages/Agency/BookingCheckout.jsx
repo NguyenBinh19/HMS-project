@@ -400,12 +400,12 @@ export default function BookingCheckoutPage() {
                                         <span
                                             className="font-medium">Tối đa: {room.maxAdults} người lớn {room.maxChildren > 0 && `& ${room.maxChildren} trẻ em`}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-emerald-600 font-medium">
-                                        <CheckCircle2 size={16}/><span>Bao gồm Internet & Phí dịch vụ</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-500">
-                                        <CigaretteOff size={16}/><span>Không hút thuốc</span>
-                                    </div>
+                                    {/*<div className="flex items-center gap-2 text-emerald-600 font-medium">*/}
+                                    {/*    <CheckCircle2 size={16}/><span>Bao gồm Internet & Phí dịch vụ</span>*/}
+                                    {/*</div>*/}
+                                    {/*<div className="flex items-center gap-2 text-slate-500">*/}
+                                    {/*    <CigaretteOff size={16}/><span>Không hút thuốc</span>*/}
+                                    {/*</div>*/}
                                 </div>
                             </div>
                         ))}

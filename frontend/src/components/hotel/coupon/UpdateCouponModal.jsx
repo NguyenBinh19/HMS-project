@@ -49,7 +49,6 @@ export default function UpdateCouponModal({ isOpen, onClose, onSuccess, couponId
             let val = parseFloat(value);
             if (isNaN(val)) return;
             val = Math.max(0, val);
-
             // Giới hạn 100%
             if (field === "discountVal" && formData.typeDiscount === "PERCENT") {
                 val = Math.min(100, val);
@@ -60,19 +59,40 @@ export default function UpdateCouponModal({ isOpen, onClose, onSuccess, couponId
         }
     };
 
+    const validateForm = () => {
+        const {
+            name, discountVal,
+            applyStartDate, applyEndDate,
+            stayStartDate, stayEndDate,
+            maxUsage, minStay
+        } = formData;
+        // 1. Kiểm tra trống thông tin cơ bản
+        if (!name.trim()) return "Tên chương trình không được để trống";
+        if (discountVal === "" || Number(discountVal) <= 0) return "Giá trị giảm phải lớn hơn 0";
+        if (minStay === "" || Number(minStay) < 1) return "Số đêm ở tối thiểu phải từ 1";
+        if (maxUsage === "" || Number(maxUsage) < 1) return "Số lượt dùng tối đa phải từ 1";
+        // 2. Kiểm tra ngày áp dụng (Apply Date)
+        if (!applyStartDate) return "Vui lòng chọn ngày bắt đầu áp dụng";
+        if (!applyEndDate) return "Vui lòng chọn ngày kết thúc áp dụng";
+        const applyStart = new Date(applyStartDate);
+        const applyEnd = new Date(applyEndDate);
+        if (applyEnd <= applyStart) return "Ngày kết thúc áp dụng phải sau ngày bắt đầu áp dụng";
+        // 3. Kiểm tra ngày lưu trú (Stay Date)
+        if (!stayStartDate) return "Vui lòng chọn ngày bắt đầu lưu trú";
+        if (!stayEndDate) return "Vui lòng chọn ngày kết thúc lưu trú";
+        const stayStart = new Date(stayStartDate);
+        const stayEnd = new Date(stayEndDate);
+        if (stayEnd <= stayStart) return "Ngày kết thúc lưu trú phải sau ngày bắt đầu lưu trú";
+        // 4. Kiểm tra logic
+        if (stayEnd < applyStart) return "Ngày kết thúc lưu trú không thể trước ngày bắt đầu khuyến mãi";
+
+        return null;
+    };
+
     const handleSubmit = async () => {
         // 1. Validation Logic
-        if (!formData.name.trim()) return alert("Tên chương trình không được để trống");
-
-        const applyStart = new Date(formData.applyStartDate);
-        const applyEnd = new Date(formData.applyEndDate);
-        if (applyStart >= applyEnd) return alert("Ngày bắt đầu áp dụng phải nhỏ hơn ngày kết thúc áp dụng!");
-
-        const stayStart = new Date(formData.stayStartDate);
-        const stayEnd = new Date(formData.stayEndDate);
-        if (stayStart >= stayEnd) return alert("Ngày bắt đầu lưu trú phải nhỏ hơn ngày kết thúc lưu trú!");
-
-        if (Number(formData.discountVal) <= 0) return alert("Giá trị giảm phải lớn hơn 0");
+        const errorMsg = validateForm();
+        if (errorMsg) return alert(errorMsg);
 
         setIsSubmitting(true);
         try {
@@ -222,7 +242,7 @@ export default function UpdateCouponModal({ isOpen, onClose, onSuccess, couponId
                                             </div>
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 block mb-1">ĐẾN NGÀY</label>
-                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" value={formData.applyEndDate} onChange={(e) => handleChange("applyEndDate", e.target.value)} />
+                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" min={formData.applyStartDate} value={formData.applyEndDate} onChange={(e) => handleChange("applyEndDate", e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
@@ -232,11 +252,11 @@ export default function UpdateCouponModal({ isOpen, onClose, onSuccess, couponId
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 block mb-1">TỪ NGÀY</label>
-                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" value={formData.stayStartDate} onChange={(e) => handleChange("stayStartDate", e.target.value)} />
+                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" min={formData.applyStartDate} value={formData.stayStartDate} onChange={(e) => handleChange("stayStartDate", e.target.value)} />
                                             </div>
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 block mb-1">ĐẾN NGÀY</label>
-                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" value={formData.stayEndDate} onChange={(e) => handleChange("stayEndDate", e.target.value)} />
+                                                <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-bold" min={formData.stayStartDate} value={formData.stayEndDate} onChange={(e) => handleChange("stayEndDate", e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
