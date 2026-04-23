@@ -178,7 +178,7 @@ public class AddonServiceServiceImpl implements AddonServiceService {
                     .amount(totalAddonCost)
                     .creditAfter(after)
                     .type("PAID_ADDON")
-                    .description("Thanh toán addon booking " + booking.getBookingCode())
+                    .description("Thanh toán dịch vụ thêm của booking" + booking.getBookingCode())
                     .createdAt(LocalDateTime.now())
                     .build();
             agencyCreditHistoryRepository.save(creditHistory);
@@ -186,7 +186,7 @@ public class AddonServiceServiceImpl implements AddonServiceService {
             TransactionHistory tx = TransactionHistory.builder()
                     .transactionDate(LocalDateTime.now())
                     .transactionType("Payment")
-                    .description("Thanh toán addon booking (" + booking.getBookingCode() + ")")
+                    .description("Thanh toán dịch vụ thêm của booking (" + booking.getBookingCode() + ")")
                     .sourceType("Credit")
                     .amount(totalAddonCost)
                     .balanceAfter(after)
@@ -219,7 +219,7 @@ public class AddonServiceServiceImpl implements AddonServiceService {
             TransactionHistory tx = TransactionHistory.builder()
                     .transactionDate(LocalDateTime.now())
                     .transactionType("Payment")
-                    .description("Thanh toán addon booking (" + booking.getBookingCode() + ")")
+                    .description("Thanh toán dịch vụ thêm của booking (" + booking.getBookingCode() + ")")
                     .sourceType("Wallet")
                     .amount(totalAddonCost)
                     .balanceAfter(after)

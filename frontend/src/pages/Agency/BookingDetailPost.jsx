@@ -9,6 +9,7 @@ import EditGuestModal from '@/components/agency/booking/EditGuestBookingModal.js
 import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
 import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
 import { pdfDocumentService } from "@/services/pdf.service.js";
+import api from '../../services/axios.config';
 
 const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -75,7 +76,7 @@ const BookingDetailPost = () => {
         fetchPolicy();
     }, []);
 
-// Khóa cuộn trang khi mở modal
+    // Khóa cuộn trang khi mở modal
     useEffect(() => {
         document.body.style.overflow = showPolicyModal ? 'hidden' : 'unset';
         return () => { document.body.style.overflow = 'unset'; };
@@ -196,7 +197,7 @@ const BookingDetailPost = () => {
                 `Hủy thành công!\n` +
                 `---------------------------\n` +
                 `Mã đơn: ${data.bookingCode}\n` +
-                `Số tiền booking: ${formatCurrency(data.finalAmount)}\n`+
+                `Số tiền booking: ${formatCurrency(data.finalAmount)}\n` +
                 `Phí hủy dịch vụ: ${formatCurrency(data.cancellationPenalty)}\n` +
                 `Tiền hoàn lại cho bạn: ${formatCurrency(data.refundAmount)}\n` +
                 `Lý do: ${data.reason}`
@@ -239,6 +240,54 @@ const BookingDetailPost = () => {
         );
     }
 
+    const handleChatWithHotel = async () => {
+        try {
+            const currentUser = JSON.parse(sessionStorage.getItem("user"));
+
+            if (!currentUser?.userId) {
+                alert("Bạn cần đăng nhập để chat");
+                return;
+            }
+
+            if (!booking?.hotelId) {
+                alert("Không tìm thấy khách sạn");
+                return;
+            }
+
+            const res = await api.post("/chat/init", null, {
+                params: {
+                    hotelId: booking.hotelId,
+                    userId: currentUser.userId,
+
+                    // 🔥 ADD 3 dòng này
+                    bookingId: booking.id,
+                    bookingCode: booking.bookingCode,
+                    hotelName: booking.hotelName
+                }
+            });
+
+            const convo = res.data;
+
+            navigate(`/agency/chat-page`, {
+                state: {
+                    conversationId: convo.conversationId,
+                    bookingInfo: {
+                        bookingId: booking.id,
+                        bookingCode: booking.bookingCode,
+                        hotelName: booking.hotelName,
+                        room: booking.roomDetails?.[0]?.roomTitle,
+                        checkIn: booking.checkInDate,
+                        checkOut: booking.checkOutDate
+                    }
+                }
+            });
+
+        } catch (err) {
+            console.error("Chat init lỗi:", err);
+            alert("Không thể mở chat");
+        }
+    };
+
     const statusConfig = getStatusConfig(booking.bookingStatus);
 
     return (
@@ -276,8 +325,17 @@ const BookingDetailPost = () => {
                     {/* 1. Các tác vụ hậu mãi */}
                     <div className="p-5 border-b border-slate-100">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-bold text-slate-800">Các tác vụ hậu mãi</h3>
-                            {/*<span className="text-[10px] text-slate-400 font-medium">Chế độ ẩn giá (Agent Mode)</span>*/}
+                            <h3 className="text-sm font-bold text-slate-800">
+                                Các tác vụ hậu mãi
+                            </h3>
+
+                            <button
+                                onClick={() => handleChatWithHotel()}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600"
+                            >
+                                <MessageCircle size={16} />
+                                Chat với khách sạn
+                            </button>
                         </div>
                         {/* Thay đổi grid-cols-4 thành grid-cols-2 md:grid-cols-5 để thêm nút Đánh giá */}
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -285,20 +343,19 @@ const BookingDetailPost = () => {
                             <button
                                 onClick={handleDownloadVoucher}
                                 disabled={isDownloading || !canDownloadVoucher()}
-                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
-                                    isDownloading || !canDownloadVoucher()
-                                        ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-100"
-                                        : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95 shadow-sm"
-                                }`}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${isDownloading || !canDownloadVoucher()
+                                    ? "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-100"
+                                    : "bg-[#006ce4] text-white hover:bg-blue-700 active:scale-95 shadow-sm"
+                                    }`}
                             >
                                 {isDownloading ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin"/>
+                                        <Loader2 size={14} className="animate-spin" />
                                         <span>Đang xử lý...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Download size={14}/>
+                                        <Download size={14} />
                                         <span>Tải Voucher</span>
                                     </>
                                 )}
@@ -307,11 +364,10 @@ const BookingDetailPost = () => {
                             {/* Sửa khách */}
                             <button
                                 onClick={() => canEdit() ? setIsEditModalOpen(true) : alert("Không thể sửa thông tin tại thời điểm này.")}
-                                className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all border ${
-                                    canEdit() ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50" : "bg-slate-50 text-slate-300 border-transparent cursor-not-allowed"
-                                }`}
+                                className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all border ${canEdit() ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50" : "bg-slate-50 text-slate-300 border-transparent cursor-not-allowed"
+                                    }`}
                             >
-                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"}/> Sửa
+                                <UserCircle size={18} className={canEdit() ? "text-slate-600" : "text-slate-300"} /> Sửa
                                 thông tin khách
                             </button>
 
@@ -320,13 +376,12 @@ const BookingDetailPost = () => {
                                 <button
                                     onClick={() => setIsReviewModalOpen(true)}
                                     disabled={booking.hasFeedback}
-                                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all ${
-                                        booking.hasFeedback
-                                            ? "bg-slate-100 text-slate-400 border border-transparent cursor-not-allowed"
-                                            : "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
-                                    }`}
+                                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-bold transition-all ${booking.hasFeedback
+                                        ? "bg-slate-100 text-slate-400 border border-transparent cursor-not-allowed"
+                                        : "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
+                                        }`}
                                 >
-                                    <Star size={18} fill={booking.hasFeedback ? "none" : "currentColor"}/>
+                                    <Star size={18} fill={booking.hasFeedback ? "none" : "currentColor"} />
                                     {booking.hasFeedback ? "Đã đánh giá" : "Đánh giá ngay"}
                                 </button>
                             )}
@@ -344,11 +399,10 @@ const BookingDetailPost = () => {
                                         setIsCancelModalOpen(true); // Nếu ko có PDF thì mở thẳng modal hủy như cũ
                                     }
                                 }}
-                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${
-                                    canCancel() ? "bg-[#fef2f2] text-rose-600 hover:bg-rose-100" : "bg-slate-100 text-slate-300 cursor-not-allowed"
-                                }`}
+                                className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold transition-all ${canCancel() ? "bg-[#fef2f2] text-rose-600 hover:bg-rose-100" : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                                    }`}
                             >
-                                <XCircle size={14}/> Hủy phòng
+                                <XCircle size={14} /> Hủy phòng
                             </button>
                         </div>
                     </div>
@@ -545,7 +599,7 @@ const BookingDetailPost = () => {
                                 rel="noreferrer"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
-                                <ExternalLink size={18}/>
+                                <ExternalLink size={18} />
                             </a>
                             <button
                                 onClick={() => {
@@ -554,7 +608,7 @@ const BookingDetailPost = () => {
                                 }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
-                                <X size={18}/>
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -589,10 +643,10 @@ const BookingDetailPost = () => {
 
                             {isPdfLoading && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-[15] bg-slate-50">
-                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
                                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                            Đang tải chính sách hủy phòng...
-                        </span>
+                                        Đang tải chính sách hủy phòng...
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -618,4 +672,4 @@ const BookingDetailPost = () => {
 
 export default BookingDetailPost;
 
-    
+

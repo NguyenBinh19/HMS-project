@@ -13,9 +13,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -63,6 +63,10 @@ public class SecurityConfig {
     @Autowired
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
+
+    @Autowired
+    private OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -81,8 +85,7 @@ public class SecurityConfig {
                         .authorizationEndpoint(auth -> auth.baseUri("/oauth2/authorization"))
                         .redirectionEndpoint(redir -> redir.baseUri("/oauth2/callback/*"))
                         .successHandler(oAuth2LoginSuccessHandler)
-                        .failureHandler(new SimpleUrlAuthenticationFailureHandler(
-                                frontendUrl + "/oauth-callback?error=OAuth2+login+failed"))
+                        .failureHandler(oAuth2LoginFailureHandler)
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)

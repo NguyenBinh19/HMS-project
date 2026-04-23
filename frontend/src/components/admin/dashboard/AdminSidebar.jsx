@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import {
     LayoutDashboard, Settings, PenLine, BarChart3,
     CreditCard, Contact2, Users, HandCoins, ShieldCheck,
-    ClipboardCheck, Building2, BookOpen, UserRoundCog, FileText, MessageSquareWarning, ShieldAlert
+    ClipboardCheck, Building2, BookOpen, UserRoundCog, FileText, MessageSquareWarning, ShieldAlert, MessageCircle
 } from "lucide-react";
 import React from "react";
 
@@ -27,16 +27,18 @@ const SidebarAdmin = () => {
             path: "/admin/staff",
             hideForStaff: true
         },
-        { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules",  hideForStaff: true },
-        { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission",  hideForStaff: true },
+        { icon: <BarChart3 size={20} />, label: "QUẢN LÝ XẾP HẠNG", path: "/admin/ranking-rules", hideForStaff: true },
+        { icon: <PenLine size={20} />, label: "QUẢN LÝ HOA HỒNG", path: "/admin/commission", hideForStaff: true },
         { icon: <Contact2 size={20} />, label: "XỬ LÝ XÁC MINH KYC", path: "/admin/kyc-queue" },
         // { icon: <Clock size={20} />, label: "LỊCH SỬ THANH TOÁN", path: "/admin/payment-transaction" },
         { icon: <CreditCard size={20} />, label: "QUẢN LÝ HẠN MỨC & HẠNG", path: "/admin/set-ranking" },
-        { icon: <HandCoins size={20} />, label: "XỬ LÝ GIAO DỊCH THANH TOÁN", path: "/admin/payout-list",
+        {
+            icon: <HandCoins size={20} />, label: "XỬ LÝ GIAO DỊCH THANH TOÁN", path: "/admin/payout-list",
             subItems: [
                 { icon: <FileText size={19} />, label: "TỔNG SAO KÊ", path: "/admin/payout-statements" },
                 { icon: <MessageSquareWarning size={19} />, label: "XỬ LÝ KHIẾU NẠI", path: "/admin/dispute" },
-            ]},
+            ]
+        },
         { icon: <ClipboardCheck size={20} />, label: "QUẢN LÝ ĐẶT PHÒNG", path: "/admin/view-booking" },
         { icon: <Users size={20} />, label: "QUẢN LÝ NGƯỜI DÙNG", path: "/admin/users", hideForStaff: true },
         { icon: <Building2 size={20} />, label: "QUẢN LÝ ĐỐI TÁC", path: "/admin/partners" },
@@ -47,6 +49,11 @@ const SidebarAdmin = () => {
             path: "/admin/partner-audit",
             hideForStaff: true
         },
+        {
+            icon: <MessageCircle size={20} />,
+            label: "Trung tâm trò chuyện",
+            path: "/agency/chat-page"
+        }
     ];
 
     const filteredMenuItems = menuItems.filter(item => {
@@ -81,8 +88,8 @@ const SidebarAdmin = () => {
                                 className={`
                                     flex items-center gap-4 px-6 py-3.5 transition-all duration-200 group border-l-[4px]
                                     ${isActive
-                                    ? "text-[#2e6da4] bg-[#f4f8fb] border-[#337ab7] font-bold"
-                                    : "text-[#333] hover:bg-gray-50 hover:text-slate-900 border-transparent font-medium"}
+                                        ? "text-[#2e6da4] bg-[#f4f8fb] border-[#337ab7] font-bold"
+                                        : "text-[#333] hover:bg-gray-50 hover:text-slate-900 border-transparent font-medium"}
                                 `}
                             >
                                 <span className={`${isActive ? "text-[#337ab7]" : "text-gray-500 group-hover:scale-110 transition-transform"}`}>
@@ -103,8 +110,8 @@ const SidebarAdmin = () => {
                                                 className={`
                                                     flex items-center gap-3 pl-14 pr-6 py-2.5 transition-colors
                                                     ${isSubActive
-                                                    ? "text-[#337ab7] font-semibold"
-                                                    : "text-slate-500 hover:text-slate-800"}
+                                                        ? "text-[#337ab7] font-semibold"
+                                                        : "text-slate-500 hover:text-slate-800"}
                                                 `}
                                             >
                                                 <span className="opacity-70">{sub.icon}</span>

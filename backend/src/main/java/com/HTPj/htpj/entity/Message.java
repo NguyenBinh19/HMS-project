@@ -37,4 +37,8 @@ public class Message {
 
     @Builder.Default
     Boolean seen = false;
+
+    @ManyToOne
+    @JoinColumn(name = "conversation_id")
+    Conversation conversation;
 }

@@ -1,7 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import {
     Home, Hotel, Tags, Package, CalendarDays,
-    LineChart, TicketPercent, Wallet, Bell, MessageSquare, Building2, Users, StarHalf
+    LineChart, TicketPercent, Wallet, Bell, MessageSquare, Building2, Users, StarHalf, MessageCircle
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -25,6 +25,7 @@ const Sidebar = () => {
         { icon: <Bell size={20} />, label: "QUẦY LỄ TÂN", path: "/hotel/front-desk" },
         // { icon: <MessageSquare size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat" },
         { icon: <StarHalf size={20} />, label: "ĐÁNH GIÁ & XẾP HẠNG", path: "/hotel/reviews" },
+        { icon: <MessageCircle size={20} />, label: "TRUNG TÂM TRÒ CHUYỆN", path: "/hotel/chat-page" }
     ];
 
     const filteredMenuItems = menuItems.filter(item => {

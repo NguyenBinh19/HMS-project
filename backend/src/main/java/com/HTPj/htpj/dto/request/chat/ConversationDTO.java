@@ -1,19 +1,22 @@
 package com.HTPj.htpj.dto.request.chat;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class ConversationDTO {
-    private String userId;
-    private String name;
-    private String lastMessage;
-    private LocalDateTime time;
+    String conversationId;
+    String userId;
+    String name;
+    String lastMessage;
+    LocalDateTime time;
+
+    String type;
+    String referenceId;
+    String booking;
 }

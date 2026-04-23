@@ -23,10 +23,9 @@ public class ChatController {
 
     @GetMapping("/history")
     public List<ChatMessageResponse> getHistory(
-            @RequestParam String user1,
-            @RequestParam String user2
+            @RequestParam String conversationId
     ) {
-        return chatService.getHistory(user1, user2);
+        return chatService.getHistory(conversationId);
     }
 
     @GetMapping("/conversations")
@@ -37,8 +36,31 @@ public class ChatController {
     }
 
     @PostMapping("/init")
-    public ConversationDTO initChatWithHotel(@RequestParam String hotelId,
-                                             @RequestParam String userId) {
-        return chatService.initChatWithHotel(userId, hotelId);
+    public ConversationDTO initChatWithHotel(
+            @RequestParam String hotelId,
+            @RequestParam String userId,
+            @RequestParam(required = false) String bookingId,
+            @RequestParam(required = false) String bookingCode,
+            @RequestParam(required = false) String hotelName
+    ) {
+
+        System.out.println("=== INIT CHAT ===");
+        System.out.println("hotelId: " + hotelId);
+        System.out.println("userId: " + userId);
+        System.out.println("bookingId: " + bookingId);
+        System.out.println("bookingCode: " + bookingCode);
+        System.out.println("hotelName: " + hotelName);
+
+        if (hotelId == null || userId == null) {
+            throw new RuntimeException("Missing required params");
+        }
+
+        return chatService.initChatWithHotel(
+                userId,
+                hotelId,
+                bookingId,
+                bookingCode,
+                hotelName
+        );
     }
 }

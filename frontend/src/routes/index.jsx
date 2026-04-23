@@ -96,6 +96,8 @@ import DisputeManagement from "@/pages/Admin/DisputeManage.jsx";
 import PayoutStatementOverview from "@/pages/Admin/PayoutStatementOverview.jsx";
 
 import PartnerAuditLog from "@/pages/Admin/PartnerAuditLog.jsx";
+import GlobalChatWidget from "../components/chat/GlobalChatWidget.jsx";
+import TestChat from "../components/chat/TestChat.jsx";
 const AppRoutes = () => {
     return (
         <>
@@ -148,6 +150,7 @@ const AppRoutes = () => {
                     <Route path="feedback-history" element={<FeedbackHistory />} />
                     <Route path="agency-dashboard" element={<AgencyDashboardPage />} />
                     <Route path="prepaid" element={<PrepaidWallet />} />
+                    <Route path="chat-page" element={<GlobalChatWidget />} />
                     <Route path="credit-wallet" element={<CreditWallet />} />
                     <Route path="transaction-history" element={<TransactionHistoryPage />} />
                     <Route path="staff-spending-limit" element={<StaffSpendingLimit />} />
@@ -176,6 +179,7 @@ const AppRoutes = () => {
                     <Route path="reviews" element={<HotelFeedbackManagement />} />
                     <Route path="front-desk" element={<FrontDesk/>} />
                     <Route path="rate-allotment" element={<RateAndAllotment/>} />
+                    <Route path="chat-page" element={<GlobalChatWidget />} />
                     <Route path="revenue-report" element={<RevenueReport/>} />
                     <Route path="payout-state" element={<PayoutStatement/>} />
                     <Route path="view-booking/:bookingCode" element={<HotelBookingDetail />} />
@@ -201,6 +205,7 @@ const AppRoutes = () => {
                     <Route path="ranking-rules" element={<RankingRulesPage />} />
                     <Route path="set-ranking" element={<SetAgencyRanking />} />
                     <Route path="system-config" element={<SystemConfigPage/>} />
+                    <Route path="chat-page" element={<GlobalChatWidget />} />
                     <Route path="staff" element={<AdminStaffDashboard/>} />
                     <Route path="audit-logs" element={<ViewAuditLogs/>} />
                     <Route path="dispute" element={<DisputeManagement/>} />

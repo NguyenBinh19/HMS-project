@@ -1,5 +1,6 @@
 package com.HTPj.htpj.configuration;
 
+import com.HTPj.htpj.interceptors.UserHandshakeInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.messaging.*;
@@ -29,6 +30,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
+                .addInterceptors(new UserHandshakeInterceptor()) // 👈 thêm dòng này
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
                     @Override
                     protected Principal determineUser(
@@ -36,21 +38,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             WebSocketHandler wsHandler,
                             Map<String, Object> attributes
                     ) {
-                        String query = request.getURI().getQuery();
-                        String userId; // giá trị mặc định
 
-                        if (query != null && query.contains("=")) {
-                            String[] parts = query.split("=");
-                            if (parts.length > 1) {
-                                userId = parts[1];
+                        String userId = (String) attributes.get("userId");
+
+                        if (userId == null) {
+                            String query = request.getURI().getQuery();
+
+                            if (query != null && query.contains("=")) {
+                                String[] parts = query.split("=");
+                                if (parts.length > 1) {
+                                    userId = parts[1];
+                                } else {
+                                    userId = "anonymous";
+                                }
                             } else {
                                 userId = "anonymous";
                             }
-                        } else {
-                            userId = "anonymous";
                         }
 
-                        return () -> userId;
+                        String finalUserId = userId;
+                        return () -> finalUserId;
                     }
                 })
                 .withSockJS();

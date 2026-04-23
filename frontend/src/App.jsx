@@ -7,21 +7,10 @@ import { useState, useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 
 function App() {
-    const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setUser(JSON.parse(localStorage.getItem("user")));
-        };
-        window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
-    }, []);
-
     return (
         <BrowserRouter>
             <AuthContextProvider>
                 <ScrollToTop />
-                {user && <GlobalChatWidget />}
                 <AppRoutes />
             </AuthContextProvider>
         </BrowserRouter>

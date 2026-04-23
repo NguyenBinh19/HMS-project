@@ -46,6 +46,7 @@ public enum ErrorCode {
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
     ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
+    EVENT_DATE_CONFLICT(400, "Khoảng thời gian sự kiện bị trùng với sự kiện khác",HttpStatus.BAD_REQUEST),
 
     //promotion
     PROMOTION_NOT_FOUND(2101, "Promotion not found", HttpStatus.NOT_FOUND),

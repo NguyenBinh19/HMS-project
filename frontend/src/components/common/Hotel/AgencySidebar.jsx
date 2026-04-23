@@ -12,7 +12,10 @@ import {
     Eye,
     List,
     CreditCard,
-    Building2, BarChart3, MessageSquare
+    Building2, 
+    BarChart3, 
+    MessageSquare,
+    MessageCircle
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -71,6 +74,11 @@ const Sidebar = () => {
             icon: <MessageSquare size={20} />,
             label: "PHẢN HỒI TỪ KHÁCH SẠN",
             path: "/agency/feedback-history"
+        },
+        {
+            icon: <MessageCircle size={20} />,
+            label: "Trung tâm trò chuyện",
+            path: "/agency/chat-page"
         }
     ];
 
