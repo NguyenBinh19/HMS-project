@@ -1,9 +1,13 @@
 package com.HTPj.htpj.scheduler;
 
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
+import com.HTPj.htpj.entity.Booking;
 import com.HTPj.htpj.entity.Hotel;
+import com.HTPj.htpj.entity.PayoutLineItem;
 import com.HTPj.htpj.entity.PayoutStatement;
+import com.HTPj.htpj.repository.BookingRepository;
 import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.repository.PayoutLineItemRepository;
 import com.HTPj.htpj.repository.PayoutStatementRepository;
 import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.NotificationService;
@@ -27,11 +31,12 @@ public class PayoutStatementScheduler {
 
     private final PayoutStatementService payoutStatementService;
     private final PayoutStatementRepository statementRepository;
+    private final PayoutLineItemRepository lineItemRepository;
+    private final BookingRepository bookingRepository;
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
-
     /**
      * Auto-generate payout statements on the 3rd of every month at 00:05 AM.
      * Billing cycle: 26th of two months ago -> 25th of previous month.
@@ -89,37 +94,54 @@ public class PayoutStatementScheduler {
      */
     @Scheduled(cron = "0 5 0 6 * ?")
     @Transactional
-    public void autoApproveUnconfirmedStatements() {
-        log.info("=== SCHEDULED: Auto-approving unconfirmed payout statements ===");
+    public void autoDeferUnconfirmedStatements() {
+        log.info("=== SCHEDULED: Auto-deferring unconfirmed payout statements ===");
 
         try {
             List<PayoutStatement> pending = statementRepository.findByStatus("PENDING_CONFIRMATION");
 
             int count = 0;
             for (PayoutStatement stmt : pending) {
-                stmt.setStatus("APPROVED");
-                stmt.setConfirmedBy("SYSTEM_AUTO_APPROVE");
+                // 1) Release the bookings linked to this statement so they can be
+                //    re-included in the next monthly statement.
+                List<PayoutLineItem> items = lineItemRepository.findByStatementId(stmt.getStatementId());
+                List<Long> bookingIds = items.stream()
+                        .map(PayoutLineItem::getBookingId)
+                        .filter(java.util.Objects::nonNull)
+                        .toList();
+                if (!bookingIds.isEmpty()) {
+                    List<Booking> bookings = bookingRepository.findAllById(bookingIds);
+                    for (Booking b : bookings) {
+                        b.setPayoutProcessed(false);
+                    }
+                    bookingRepository.saveAll(bookings);
+                }
+
+                // 2) Mark the statement as ROLLOVER (carried forward to next cycle).
+                stmt.setStatus("ROLLOVER");
+                stmt.setConfirmedBy("SYSTEM_AUTO_DEFER");
                 stmt.setConfirmedAt(LocalDateTime.now());
                 statementRepository.save(stmt);
                 count++;
 
-                // Notify hotel users
+                // 3) Notify hotel users that the balance has been carried forward.
                 List<Users> hotelUsers = userRepository.findByHotel_HotelId(stmt.getHotelId());
                 Hotel hotel = hotelRepository.findById(stmt.getHotelId()).orElse(null);
                 String hotelName = hotel != null ? hotel.getHotelName() : "Unknown";
 
                 for (Users u : hotelUsers) {
                     notificationService.sendNotification(u.getId(), "FINANCIAL",
-                            "Bảng sao kê đã được tự động xác nhận",
+                            "Bảng sao kê được chuyển sang kỳ kế tiếp",
                             "Bảng sao kê " + stmt.getStatementCode() + " của khách sạn " + hotelName
-                                    + " đã được tự động xác nhận do hết thời hạn xác nhận (3-5 hàng tháng).",
+                                    + " chưa được xác nhận trong thời hạn (3-5 hàng tháng)"
+                                    + " nên doanh thu sẽ được cộng dồn vào kỳ đối soát tháng tiếp theo.",
                             "PAYOUT", String.valueOf(stmt.getStatementId()), "/hotel/payout-state");
                 }
             }
 
-            log.info("=== SCHEDULED: Auto-approved {} statements ===", count);
+            log.info("=== SCHEDULED: Auto-deferred {} statements (rolled over to next cycle) ===", count);
         } catch (Exception e) {
-            log.error("=== SCHEDULED: Error during auto-approve ===", e);
+            log.error("=== SCHEDULED: Error during auto-defer ===", e);
         }
     }
 }

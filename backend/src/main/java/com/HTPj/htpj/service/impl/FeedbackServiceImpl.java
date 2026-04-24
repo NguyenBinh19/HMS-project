@@ -249,7 +249,7 @@ public class FeedbackServiceImpl implements FeedbackService {
                     "Phản hồi từ khách sạn",
                     "Khách sạn " + review.getHotel().getHotelName() + " đã phản hồi đánh giá của bạn.",
                     "FEEDBACK", String.valueOf(reviewId),
-                    "agency/feedback-history"
+                    "/agency/feedback-history"
             );
         }
 

@@ -552,7 +552,7 @@ public class RankServiceImpl implements RankService {
             notificationService.sendNotification(u.getId(), "RANK",
                     "Cập nhật hạng đại lý",
                     "Hạng của đại lý bạn " + action + " thành " + targetRank.getRankCode() + ".",
-                    "RANK", String.valueOf(request.getAgencyId()), "agency/agency-dashboard");
+                    "RANK", String.valueOf(request.getAgencyId()), null);
         }
         return "Change rank successfully";
     }

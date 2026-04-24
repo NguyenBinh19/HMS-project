@@ -78,7 +78,7 @@ public class PromotionServiceImpl implements PromotionService {
                 notificationService.sendNotification(u.getId(), "PROMOTION",
                         "Khuyến mãi mới",
                         "Khuyến mãi \"" + savedPromotion.getCode() + "\" hiện đã có sẵn để đặt booking.Thử ngay!!",
-                        "PROMOTION", String.valueOf(savedPromotion.getId()), "/agency/search-hotel");
+                        "PROMOTION", String.valueOf(savedPromotion.getId()), null);
             }
         }
         return promotionMapper.toPromotionResponse(savedPromotion);
