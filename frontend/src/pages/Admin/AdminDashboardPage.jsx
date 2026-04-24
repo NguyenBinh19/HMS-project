@@ -82,11 +82,11 @@ const AdminDashboard = () => {
                     // acc.totalRevenue += (curr.finalAmount || 0);
                     // Chỉ tính nếu đơn hàng ở trạng thái xác nhận, đang ở, hoặc đã hoàn thành
                     const status = curr.bookingStatus?.toUpperCase();
-                    if (['CONFIRMED', 'CHECKED-IN', 'COMPLETED'].includes(status)) {
+                    if (['BOOKED', 'CHECKED-IN', 'COMPLETED'].includes(status)) {
                         acc.totalRevenue += (curr.finalAmount || 0);
                     }
                     if (status === 'BOOKED' || status === 'PENDING') acc.pendingBookings++;
-                    if (status === 'CONFIRMED' || status === 'COMPLETED') acc.confirmedBookings++;
+                    if (status === 'BOOKED' || status === 'COMPLETED') acc.confirmedBookings++;
                     return acc;
                 }, { totalRevenue: 0, pendingBookings: 0, confirmedBookings: 0 });
 
@@ -175,10 +175,10 @@ const AdminDashboard = () => {
                         color="indigo"
                     />
                     <StatCard
-                        label="Tổng số đơn phòng"
+                        label="Tổng số đơn thành công"
                         value={data.stats.totalBookings}
                         trend={data.stats.confirmedBookings > 0 ? "Ổn định" : null}
-                        sub={`Thành công: ${data.stats.confirmedBookings} đơn`}
+                        sub={`Giao dịch thành công: ${data.stats.confirmedBookings} đơn`}
                         icon={<Calendar size={20} />}
                         color="orange"
                     />

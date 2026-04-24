@@ -90,7 +90,7 @@ const AgencyDashboard = () => {
                 const isThisMonth = bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
 
                 if (isThisMonth) {
-                    if (b.bookingStatus === 'COMPLETED' || b.bookingStatus === 'BOOKED') {
+                    if (b.bookingStatus === 'COMPLETED') {
                         stats.completed.count++;
                         stats.completed.revenue += b.finalAmount;
                     } else if (b.bookingStatus === 'CANCELLED') {
