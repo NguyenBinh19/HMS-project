@@ -15,4 +15,7 @@ public class ChatMessageResponse {
     String receiverId;
     String content;
     LocalDateTime createdAt;
+    String type;
+    String fileUrl;
+    String fileName;
 }

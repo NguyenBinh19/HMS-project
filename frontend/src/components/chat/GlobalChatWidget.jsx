@@ -12,7 +12,11 @@ import {
     PhoneOutlined,
     VideoCameraOutlined
 } from "@ant-design/icons";
-
+import {
+    PaperClipOutlined,
+    ThunderboltOutlined,
+    PictureOutlined
+} from "@ant-design/icons";
 export default function GlobalChatWidget() {
     const navigate = useNavigate();
     const peerRef = useRef(null);
@@ -28,12 +32,11 @@ export default function GlobalChatWidget() {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [chats, setChats] = useState([]);
-
     const [allUsers, setAllUsers] = useState([]);
     const [searchText, setSearchText] = useState("");
     const [showSearch, setShowSearch] = useState(false);
     const [loadingUsers, setLoadingUsers] = useState(false);
-
+    const [activeFilter, setActiveFilter] = useState("ALL");
     const [connected, setConnected] = useState(false);
     const targetUserIdRef = useRef(null);
     const clientRef = useRef(null);
@@ -46,14 +49,14 @@ export default function GlobalChatWidget() {
     const [mode, setMode] = useState("user"); // "user" | "ai"
     const [aiMessages, setAiMessages] = useState([]);
     const [aiInput, setAiInput] = useState("");
-    const [unreadCounts, setUnreadCounts] = useState({});
-    const totalUnread = Object.values(unreadCounts).reduce((sum, val) => sum + val, 0);
     const protocol = window.location.protocol === "https:" ? "https" : "http";
-    const location = useLocation();
-    const bookingInfo = location.state?.bookingInfo;
     const conversationIdFromNav = location.state?.conversationId;
     const iceQueueRef = useRef([]);
     const remoteAudioRef = useRef(null);
+    const fileInputRef = useRef();
+    const imageInputRef = useRef();
+    const [previewImage, setPreviewImage] = useState(null);
+    const messagesEndRef = useRef(null);
 
     const createPeer = () => {
         const pc = new RTCPeerConnection({
@@ -70,9 +73,6 @@ export default function GlobalChatWidget() {
 
             if (remoteAudioRef.current) {
                 remoteAudioRef.current.srcObject = stream;
-                remoteAudioRef.current.play()
-                    .then(() => console.log("🔊 audio playing"))
-                    .catch(e => console.error("audio play blocked:", e));
             }
 
             if (remoteVideoRef.current) {
@@ -140,8 +140,7 @@ export default function GlobalChatWidget() {
                         setIsVideoCall(signal.video);
 
                         setSelectedChat({
-                            userId: signal.fromUserId,
-                            name: "Caller"
+                            userId: signal.fromUserId
                         });
                     }
 
@@ -229,13 +228,6 @@ export default function GlobalChatWidget() {
                             (newMsg.receiverId === currentUserId && newMsg.senderId === currentChat.userId)
                         );
 
-                    if (!isCurrentChat && newMsg.senderId !== currentUserId) {
-                        setUnreadCounts((prev) => ({
-                            ...prev,
-                            [otherUserId]: (prev[otherUserId] || 0) + 1,
-                        }));
-                    }
-
                     if (!isCurrentChat) return;
                     if (newMsg.senderId === currentUserId) return;
 
@@ -244,6 +236,9 @@ export default function GlobalChatWidget() {
                         {
                             type: "left",
                             content: newMsg.content,
+                            fileUrl: newMsg.fileUrl,
+                            fileName: newMsg.fileName,
+                            msgType: newMsg.type,
                             time: new Date(newMsg.createdAt).toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit"
@@ -319,11 +314,17 @@ export default function GlobalChatWidget() {
 
             const res = await api.get("/users");
 
-            const filtered = res.data.result
-                .filter((u) => u.id !== currentUserId)
-                .filter((u) =>
-                    (u.username || "").toLowerCase().includes(value.toLowerCase())
-                );
+            const users = res.data.result || [];
+
+            const filtered = users.filter((u) => {
+                if (u.id === currentUserId) return false;
+
+                if (!value) return true;
+
+                return (u.username || "")
+                    .toLowerCase()
+                    .includes(value.toLowerCase());
+            });
 
             setAllUsers(filtered);
             setLoadingUsers(false);
@@ -334,6 +335,8 @@ export default function GlobalChatWidget() {
     useEffect(() => {
         if (!selectedChat?.conversationId) return;
 
+        setMessages([]);
+
         api.get("/chat/history", {
             params: {
                 conversationId: selectedChat.conversationId
@@ -343,24 +346,37 @@ export default function GlobalChatWidget() {
                 res.data.map((m) => ({
                     type: m.senderId === currentUserId ? "right" : "left",
                     content: m.content,
-                    time: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    fileUrl: m.fileUrl,
+                    fileName: m.fileName,
+                    msgType: m.type, // 🔥 FIX QUAN TRỌNG
+                    time: new Date(m.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }),
                 }))
             );
         });
     }, [selectedChat]);
 
-    const startChat = (user) => {
-        const newChat = {
-            userId: user.id,
-            name: user.username,
-            lastMessage: "",
-        };
+    const startChat = async (user) => {
+        setMessages([]);
 
-        setSelectedChat(newChat);
+        const res = await api.post("/chat/init-regular", null, {
+            params: {
+                userId: currentUserId,
+                hotelId: user.id
+            }
+        });
+
+        const conversation = res.data;
+
+        setSelectedChat(conversation);
 
         setChats((prev) => {
-            const exists = prev.find((c) => c.userId === user.id);
-            return exists ? prev : [newChat, ...prev];
+            const exists = prev.find(
+                (c) => c.conversationId === conversation.conversationId
+            );
+            return exists ? prev : [conversation, ...prev];
         });
 
         setShowSearch(false);
@@ -369,7 +385,11 @@ export default function GlobalChatWidget() {
     };
 
     const sendMessage = () => {
-        if (!message.trim() || !clientRef.current?.connected || !selectedChat) return;
+        if (
+            !message.trim() ||
+            !clientRef.current?.connected ||
+            !selectedChat?.conversationId
+        ) return;
 
         const text = message;
 
@@ -394,74 +414,19 @@ export default function GlobalChatWidget() {
         });
     };
 
-    const sendAIMessage = async () => {
-        if (!aiInput.trim()) return;
+    const displayList = chats.filter((item) => {
+        if (activeFilter === "ALL") return true;
 
-        const text = aiInput;
-        setAiInput("");
-
-        setAiMessages((prev) => [
-            ...prev,
-            {
-                type: "right",
-                content: text,
-                time: new Date().toLocaleTimeString(),
-            }
-        ]);
-
-        setAiMessages((prev) => [
-            ...prev,
-            { type: "left", content: "Typing...", loading: true }
-        ]);
-
-        try {
-            const res = await api.post("/ai/chat", {
-                message: text,
-            });
-
-            // ❗ replace "Typing..." bằng message thật
-            setAiMessages((prev) => {
-                const withoutTyping = prev.filter((m) => !m.loading);
-
-                return [
-                    ...withoutTyping,
-                    {
-                        type: "left",
-                        content: res.data.reply,
-                        time: new Date().toLocaleTimeString(),
-                    }
-                ];
-            });
-
-        } catch (err) {
-            setAiMessages((prev) => {
-                const withoutTyping = prev.filter((m) => !m.loading);
-
-                return [
-                    ...withoutTyping,
-                    {
-                        type: "left",
-                        content: "AI lỗi 😅",
-                        time: new Date().toLocaleTimeString(),
-                    }
-                ];
-            });
+        if (activeFilter === "UNREAD") {
+            return item.unreadCount > 0;
         }
-    };
 
-    const displayList = isSearching
-        ? allUsers.map((u) => ({
-            userId: u.id,
-            name: u.username,
-            lastMessage: "",
-            time: null,
-            conversationId: null,
-            unread: 0,
-            bookingCode: null,
-            tag: null,
-            rank: null
-        }))
-        : chats;
+        if (activeFilter === "NEGOTIATION") {
+            return item.type === "NEGOTIATION";
+        }
+
+        return true;
+    });
 
     const handleCall = async (video) => {
         targetUserIdRef.current = selectedChat.userId;
@@ -519,10 +484,17 @@ export default function GlobalChatWidget() {
     };
 
     const acceptCall = async () => {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log("🔓 audio unlocked");
+        } catch (e) {
+            console.error("❌ mic permission denied:", e);
+        }
+
         const stream = await startMedia(isVideoCall);
+
         let pc = peerRef.current;
 
-        // ❗ nếu chưa có peer thì mới tạo
         if (!pc) {
             pc = createPeer();
             peerRef.current = pc;
@@ -532,7 +504,6 @@ export default function GlobalChatWidget() {
             pc.addTrack(track, stream);
         });
 
-        // ❗ đảm bảo đã có remoteDescription
         if (!pc.remoteDescription) {
             console.error("❌ No remote offer yet!");
             return;
@@ -540,8 +511,6 @@ export default function GlobalChatWidget() {
 
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-
-        console.log("Test: ", targetUserIdRef.current);
 
         clientRef.current.publish({
             destination: "/app/call.signal",
@@ -554,7 +523,12 @@ export default function GlobalChatWidget() {
         });
 
         setCallState("in-call");
-        document.body.click();
+
+        setTimeout(() => {
+            remoteAudioRef.current?.play()
+                .then(() => console.log("🔊 playing"))
+                .catch(err => console.error("play error:", err));
+        }, 300);
     };
 
     const rejectCall = () => {
@@ -569,6 +543,76 @@ export default function GlobalChatWidget() {
             })
         });
     };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await api.post("/storage/upload-chat", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        const { url, fileName } = res.data;
+
+        sendFileMessage("FILE", url, fileName);
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await api.post("/storage/upload-chat", formData);
+
+        const { url, fileName } = res.data;
+
+        sendFileMessage("IMAGE", url, fileName);
+    };
+
+    const sendFileMessage = (type, url, fileName) => {
+        if (!clientRef.current?.connected || !selectedChat) return;
+
+        const msg = {
+            conversationId: selectedChat.conversationId,
+            senderId: currentUserId,
+            content: "",
+            type,
+            fileUrl: url,
+            fileName
+        };
+
+        clientRef.current.publish({
+            destination: "/app/chat.send",
+            body: JSON.stringify(msg)
+        });
+
+        setMessages(prev => [
+            ...prev,
+            {
+                type: "right",
+                content: "",
+                fileUrl: url,
+                fileName,
+                msgType: type,
+                time: new Date().toLocaleTimeString()
+            }
+        ]);
+    };
+
+    useEffect(() => {
+        const el = messagesEndRef.current?.parentElement;
+        if (!el) return;
+
+        el.scrollTo({
+            top: el.scrollHeight,
+            behavior: "smooth",
+        });
+    }, [messages]);
 
     return (
         <div>
@@ -589,15 +633,35 @@ export default function GlobalChatWidget() {
                         />
 
                         {/* FILTER */}
-                        <div className="flex gap-2 mt-3 text-sm">
-                            <button className="px-4 py-2 bg-blue-500 text-white rounded-full cursor-pointer">
+                        <div className="flex gap-2 mt-3 text-xs bg-gray-100 p-1 rounded-full w-fit">
+                            <button
+                                onClick={() => setActiveFilter("ALL")}
+                                className={`px-3 py-1.5 rounded-full transition-all ${activeFilter === "ALL"
+                                    ? "bg-white shadow text-blue-600 font-medium"
+                                    : "text-gray-500 hover:text-black"
+                                    }`}
+                            >
                                 Tất cả
                             </button>
-                            <button className="px-4 py-2 bg-gray-200 rounded-full cursor-pointer">
+
+                            <button
+                                onClick={() => setActiveFilter("UNREAD")}
+                                className={`px-3 py-1.5 rounded-full transition-all ${activeFilter === "UNREAD"
+                                    ? "bg-white shadow text-blue-600 font-medium"
+                                    : "text-gray-500 hover:text-black"
+                                    }`}
+                            >
                                 Chưa đọc
                             </button>
-                            <button className="px-4 py-2 bg-gray-200 rounded-full cursor-pointer">
-                                Thương lượng giá
+
+                            <button
+                                onClick={() => setActiveFilter("NEGOTIATION")}
+                                className={`px-3 py-1.5 rounded-full transition-all ${activeFilter === "NEGOTIATION"
+                                    ? "bg-white shadow text-blue-600 font-medium"
+                                    : "text-gray-500 hover:text-black"
+                                    }`}
+                            >
+                                Thương lượng
                             </button>
                         </div>
                     </div>
@@ -610,10 +674,49 @@ export default function GlobalChatWidget() {
                             </div>
                         )}
 
-                        {!loadingUsers && displayList.map((item) => (
+                        {searchText && allUsers.length > 0 && (
+                            <div className="p-2">
+                                <div className="text-xs text-gray-400 mb-2 px-2">
+                                    Kết quả tìm kiếm
+                                </div>
+
+                                {allUsers.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        onClick={() => startChat(user)}
+                                        className="p-3 rounded-xl cursor-pointer hover:bg-gray-100 flex gap-3 items-center"
+                                    >
+                                        <Avatar className="bg-green-500">
+                                            {user.username?.[0]}
+                                        </Avatar>
+
+                                        <div className="text-sm font-medium">
+                                            {user.username}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {!searchText && displayList.map((item) => (
                             <div
                                 key={item.userId}
-                                onClick={() => setSelectedChat(item)}
+                                onClick={async () => {
+                                    setSelectedChat(item);
+
+                                    await api.post("/chat/read", null, {
+                                        params: {
+                                            conversationId: item.conversationId,
+                                            userId: currentUserId
+                                        }
+                                    });
+
+                                    const res = await api.get("/chat/conversations", {
+                                        params: { userId: currentUserId }
+                                    });
+
+                                    setChats(res.data);
+                                }}
                                 className={`p-3 rounded-xl cursor-pointer mb-2 transition ${selectedChat?.userId === item.userId
                                     ? "bg-blue-100"
                                     : "hover:bg-gray-100"
@@ -627,9 +730,9 @@ export default function GlobalChatWidget() {
                                             {item.name?.[0]}
                                         </Avatar>
 
-                                        {item.unread > 0 && (
+                                        {item.unreadCount > 0 && (
                                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">
-                                                {item.unread}
+                                                {item.unreadCount}
                                             </span>
                                         )}
                                     </div>
@@ -693,7 +796,7 @@ export default function GlobalChatWidget() {
                 </div>
 
                 {/* RIGHT PANEL */}
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-h-0">
 
                     {/* HEADER */}
                     <div className="p-4 border-b bg-white flex justify-between items-center">
@@ -730,27 +833,33 @@ export default function GlobalChatWidget() {
                         </div>
                     </div>
 
-                    {bookingInfo && (
+                    {selectedChat?.type === "BOOKING" && (
                         <div className="p-3 border-b bg-gray-50">
                             <div className="bg-blue-50 p-3 rounded-lg flex justify-between items-center">
                                 <div>
                                     <div className="font-medium text-sm text-blue-700">
-                                        {bookingInfo.hotelName}
+                                        {selectedChat?.hotelName || "Booking Chat"}
                                     </div>
+
                                     <div className="text-xs text-gray-500">
-                                        {new Date(bookingInfo.checkIn).toLocaleDateString()} -{" "}
-                                        {new Date(bookingInfo.checkOut).toLocaleDateString()} • #{bookingInfo.bookingCode}
+                                        {selectedChat?.checkIn && selectedChat?.checkOut && (
+                                            <>
+                                                {new Date(selectedChat.checkIn).toLocaleDateString()} -{" "}
+                                                {new Date(selectedChat.checkOut).toLocaleDateString()} • #{selectedChat.booking}
+                                            </>
+                                        )}
                                     </div>
-                                    {bookingInfo.room && (
+
+                                    {selectedChat?.room && (
                                         <div className="text-xs text-gray-400">
-                                            {bookingInfo.room}
+                                            {selectedChat.room}
                                         </div>
                                     )}
                                 </div>
 
                                 <div
                                     onClick={() =>
-                                        navigate(`/agency/booking-list/detail/${bookingInfo?.bookingCode}`)
+                                        navigate(`/agency/booking-list/detail/${selectedChat.booking}`)
                                     }
                                     className="text-blue-500 text-xs cursor-pointer"
                                 >
@@ -761,7 +870,10 @@ export default function GlobalChatWidget() {
                     )}
 
                     {/* MESSAGES */}
-                    <div className="flex-1 overflow-auto p-4 bg-gray-100 space-y-3">
+                    <div
+                        ref={bottomRef}
+                        className="flex-1 min-h-0 overflow-y-auto p-4 bg-gray-100 space-y-3"
+                    >
                         {messages.map((msg, i) => (
                             <div
                                 key={i}
@@ -776,7 +888,30 @@ export default function GlobalChatWidget() {
                                         : "bg-white"
                                         }`}
                                 >
-                                    <div>{msg.content}</div>
+                                    {msg.msgType === "IMAGE" && msg.fileUrl && (
+                                        <img
+                                            src={msg.fileUrl}
+                                            className="max-w-[200px] rounded cursor-pointer hover:opacity-80 transition"
+                                            onClick={() => setPreviewImage(msg.fileUrl)}
+                                        />
+                                    )}
+
+                                    {msg.msgType === "FILE" && msg.fileUrl && (
+                                        <a
+                                            href={msg.fileUrl}
+                                            target="_blank"
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg ${msg.type === "right"
+                                                ? "bg-white/20 text-white hover:bg-white/30"
+                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                } transition`}
+                                        >
+                                            📎 <span className="truncate max-w-[150px]">{msg.fileName}</span>
+                                        </a>
+                                    )}
+
+                                    {msg.msgType !== "IMAGE" && msg.msgType !== "FILE" && (
+                                        <div>{msg.content}</div>
+                                    )}
 
                                     <div className="text-[10px] opacity-60 mt-1 text-right">
                                         {msg.time}
@@ -785,15 +920,48 @@ export default function GlobalChatWidget() {
                             </div>
                         ))}
 
-                        <div ref={bottomRef} />
+                        <div ref={messagesEndRef} />
                     </div>
 
                     {/* INPUT */}
                     <div className="p-3 border-t bg-white flex items-center gap-2">
 
                         <div className="flex gap-3 text-gray-500 text-lg px-2">
-                            📎 ⚡ 📷
+                            <span
+                                onClick={() => fileInputRef.current.click()}
+                                className="hover:text-blue-500 cursor-pointer transition"
+                            >
+                                <PaperClipOutlined />
+                            </span>
+
+                            <span
+                                className="hover:text-yellow-500 cursor-pointer transition"
+                            >
+                                <ThunderboltOutlined />
+                            </span>
+
+                            <span
+                                onClick={() => imageInputRef.current.click()}
+                                className="hover:text-green-500 cursor-pointer transition"
+                            >
+                                <PictureOutlined />
+                            </span>
                         </div>
+
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            hidden
+                            onChange={handleFileUpload}
+                        />
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={imageInputRef}
+                            hidden
+                            onChange={handleImageUpload}
+                        />
 
                         <input
                             value={message}
@@ -901,6 +1069,18 @@ export default function GlobalChatWidget() {
                         </div>
                     )}
                 </div>
+                {previewImage && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <img
+                            src={previewImage}
+                            className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+                            onClick={(e) => e.stopPropagation()} // ❗ tránh click ảnh bị đóng
+                        />
+                    </div>
+                )}
                 <audio ref={remoteAudioRef} autoPlay playsInline />
             </div>
         </div>

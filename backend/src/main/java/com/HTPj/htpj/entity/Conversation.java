@@ -36,4 +36,9 @@ public class Conversation {
     String referenceId; // bookingId
 
     LocalDateTime createdAt;
+
+    String room;
+    String checkIn;
+    String checkOut;
+    String hotelName;
 }

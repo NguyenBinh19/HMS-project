@@ -27,8 +27,6 @@ public class ChatServiceImpl implements ChatService {
 
     MessageRepository messageRepository;
     UserRepository userRepository;
-    HotelRepository hotelRepository;
-    SimpMessagingTemplate messagingTemplate;
     ConversationRepository conversationRepository;
 
 
@@ -49,6 +47,9 @@ public class ChatServiceImpl implements ChatService {
                 .sender(sender)
                 .receiver(receiver)
                 .content(request.getContent())
+                .type(request.getType())
+                .fileUrl(request.getFileUrl())
+                .fileName(request.getFileName())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -62,6 +63,9 @@ public class ChatServiceImpl implements ChatService {
                         .senderId(m.getSender().getId())
                         .receiverId(m.getReceiver().getId())
                         .content(m.getContent())
+                        .type(m.getType())
+                        .fileUrl(m.getFileUrl())
+                        .fileName(m.getFileName())
                         .createdAt(m.getCreatedAt())
                         .build())
                 .toList();
@@ -81,15 +85,25 @@ public class ChatServiceImpl implements ChatService {
                     ? convo.getUser2()
                     : convo.getUser1();
 
+            int unreadCount = messageRepository
+                    .countByConversation_IdAndReceiver_IdAndSeenFalse(
+                            convo.getId(), userId
+                    );
+
             return ConversationDTO.builder()
                     .conversationId(convo.getId())
                     .userId(otherUser.getId())
                     .name(otherUser.getUsername())
-                    .booking(convo.getBookingId())
                     .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
                     .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
                     .type(convo.getType())
                     .referenceId(convo.getReferenceId())
+                    .booking(convo.getBookingId())
+                    .unreadCount(unreadCount)
+                    .room(convo.getRoom())
+                    .checkIn(convo.getCheckIn())
+                    .checkOut(convo.getCheckOut())
+                    .hotelName(convo.getHotelName())
                     .build();
 
         }).toList();
@@ -119,7 +133,10 @@ public class ChatServiceImpl implements ChatService {
             String hotelId,
             String bookingId,
             String bookingCode,
-            String hotelName
+            String hotelName,
+            String room,
+            String checkIn,
+            String checkOut
     ) {
 
         Users user = userRepository.findById(userId).orElseThrow();
@@ -138,6 +155,10 @@ public class ChatServiceImpl implements ChatService {
                     .referenceId(hotelId)
                     .createdAt(LocalDateTime.now())
                     .bookingId(bookingCode)
+                    .room(room)
+                    .checkIn(checkIn)
+                    .checkOut(checkOut)
+                    .hotelName(hotelName)
                     .build();
 
             conversationRepository.save(convo);
@@ -147,6 +168,67 @@ public class ChatServiceImpl implements ChatService {
                     .receiver(hotelManager)
                     .conversation(convo)
                     .content("Xin chào, tôi cần hỗ trợ đơn booking #" + bookingCode)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            messageRepository.save(firstMessage);
+        } else {
+            convo.setBookingId(bookingCode);
+            conversationRepository.save(convo);
+        }
+
+        Message lastMessage = messageRepository
+                .findTopByConversation_IdOrderByCreatedAtDesc(convo.getId());
+
+        return ConversationDTO.builder()
+                .conversationId(convo.getId())
+                .userId(hotelManager.getId())
+                .name(hotelManager.getUsername())
+                .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
+                .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
+                .booking(convo.getBookingId())
+                .type(convo.getType())
+                .referenceId(convo.getReferenceId())
+                .room(convo.getRoom())
+                .checkIn(convo.getCheckIn())
+                .checkOut(convo.getCheckOut())
+                .hotelName(convo.getHotelName())
+                .build();
+    }
+
+    @Override
+    public ConversationDTO initChatRegular(
+            String userId,
+            String hotelId,
+            String bookingId,
+            String bookingCode,
+            String hotelName
+    ) {
+
+        Users user = userRepository.findById(userId).orElseThrow();
+        Users hotelManager = userRepository.findById(hotelId).orElseThrow();
+
+        Conversation convo = conversationRepository
+                .findByUser1_IdAndUser2_IdAndReferenceId(userId, hotelManager.getId(), hotelId)
+                .orElse(null);
+
+        if (convo == null) {
+            convo = Conversation.builder()
+                    .user1(user)
+                    .user2(hotelManager)
+                    .type("GENERAL")
+                    .referenceId(hotelId)
+                    .createdAt(LocalDateTime.now())
+                    .bookingId(bookingCode)
+                    .build();
+
+            conversationRepository.save(convo);
+
+            Message firstMessage = Message.builder()
+                    .sender(user)
+                    .receiver(hotelManager)
+                    .conversation(convo)
+                    .content("Xin chào!")
                     .createdAt(LocalDateTime.now())
                     .build();
 
