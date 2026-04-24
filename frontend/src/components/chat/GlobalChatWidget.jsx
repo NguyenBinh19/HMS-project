@@ -109,8 +109,8 @@ export default function GlobalChatWidget() {
 
     const socketUrl =
         protocol === "https"
-            ? `https://www.jushotel.site/backend/hms/ws`
-            : `http://localhost:8080/hms/ws`;
+            ? `https://www.jushotel.site/backend/ws`
+            : `http://localhost:8080/ws`;
     useEffect(() => {
         selectedChatRef.current = selectedChat;
     }, [selectedChat]);
