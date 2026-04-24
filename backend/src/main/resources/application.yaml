@@ -1,6 +1,13 @@
 server:
   servlet:
-    context-path: /hms
+    context-path: /
+    session:
+      cookie:
+        name: JSESSIONID
+        same-site: none
+        secure: true
+        http-only: true
+  forward-headers-strategy: framework
   port: 8080
 
 spring:
@@ -39,7 +46,7 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID:815111395458-jg0lh3ker5tkrlicliapsm26a3t41p6f.apps.googleusercontent.com}
             client-secret: ${GOOGLE_CLIENT_SECRET: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}
             scope: openid, profile, email
-            redirect-uri: "https://www.jushotel.site/backend/hms/oauth2/callback/{registrationId}"
+            redirect-uri: "https://www.jushotel.site/backend/login/oauth2/code/google"
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
