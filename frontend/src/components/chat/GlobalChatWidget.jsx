@@ -59,6 +59,10 @@ export default function GlobalChatWidget() {
     const messagesEndRef = useRef(null);
 
     const createPeer = () => {
+        if (peerRef.current) {
+            peerRef.current.close();
+        }
+
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: "stun:stun.l.google.com:19302" }
@@ -67,23 +71,16 @@ export default function GlobalChatWidget() {
 
         pc.ontrack = (event) => {
             const stream = event.streams[0];
-
             setRemoteStream(stream);
-
-            console.log("REMOTE STREAM TRACKS:", stream.getTracks());
-            console.log("AUDIO TRACK ENABLED:", stream.getAudioTracks()[0]?.enabled);
 
             if (remoteAudioRef.current) {
                 remoteAudioRef.current.srcObject = stream;
+                remoteAudioRef.current.play().catch(() => { });
             }
 
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = stream;
             }
-        };
-
-        pc.onconnectionstatechange = () => {
-            console.log("🔗 Connection state:", pc.connectionState);
         };
 
         pc.onicecandidate = (event) => {
@@ -97,6 +94,14 @@ export default function GlobalChatWidget() {
                         candidate: event.candidate
                     })
                 });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log("🔗 state:", pc.connectionState);
+
+            if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+                cleanupCall();
             }
         };
 
@@ -116,6 +121,368 @@ export default function GlobalChatWidget() {
     useEffect(() => {
         selectedChatRef.current = selectedChat;
     }, [selectedChat]);
+
+    const cleanupCall = () => {
+        console.log("🧹 cleanup call");
+
+        if (peerRef.current) {
+            peerRef.current.ontrack = null;
+            peerRef.current.onicecandidate = null;
+            peerRef.current.close();
+            peerRef.current = null;
+        }
+
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+            localStreamRef.current = null;
+        }
+
+        if (localVideoRef.current) {
+            localVideoRef.current.srcObject = null;
+        }
+
+        if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null;
+        }
+
+        if (remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = null;
+        }
+
+        setLocalStream(null);
+        setRemoteStream(null);
+        setCallState("idle");
+    };
+
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        api.get("/chat/conversations", {
+            params: { userId: currentUserId },
+        }).then((res) => {
+            setChats(res.data);
+
+            if (conversationIdFromNav) {
+                const found = res.data.find(
+                    (c) => c.conversationId === conversationIdFromNav
+                );
+                if (found) setSelectedChat(found);
+            } else if (res.data.length > 0) {
+                setSelectedChat(res.data[0]);
+            }
+        });
+    }, [currentUserId]);
+
+    const startMedia = async (video = false) => {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video,
+        });
+
+        setLocalStream(stream);
+        localStreamRef.current = stream;
+
+        return stream;
+    };
+
+    const handleSearch = (value) => {
+        setSearchText(value);
+
+        clearTimeout(searchTimeout.current);
+
+        searchTimeout.current = setTimeout(async () => {
+            if (!value.trim()) {
+                setAllUsers([]);
+                setIsSearching(false);
+                return;
+            }
+
+            setIsSearching(true);
+            setLoadingUsers(true);
+
+            const res = await api.get("/users");
+
+            const users = res.data.result || [];
+
+            const filtered = users.filter((u) => {
+                if (u.id === currentUserId) return false;
+
+                if (!value) return true;
+
+                return (u.username || "")
+                    .toLowerCase()
+                    .includes(value.toLowerCase());
+            });
+
+            setAllUsers(filtered);
+            setLoadingUsers(false);
+        }, 300);
+    };
+
+    useEffect(() => {
+        if (!selectedChat?.conversationId) return;
+
+        setMessages([]);
+
+        api.get("/chat/history", {
+            params: {
+                conversationId: selectedChat.conversationId
+            }
+        }).then((res) => {
+            setMessages(
+                res.data.map((m) => ({
+                    type: m.senderId === currentUserId ? "right" : "left",
+                    content: m.content,
+                    fileUrl: m.fileUrl,
+                    fileName: m.fileName,
+                    msgType: m.type, // 🔥 FIX QUAN TRỌNG
+                    time: new Date(m.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }),
+                }))
+            );
+        });
+    }, [selectedChat]);
+
+    const startChat = async (user) => {
+        setMessages([]);
+
+        const res = await api.post("/chat/init-regular", null, {
+            params: {
+                userId: currentUserId,
+                hotelId: user.id
+            }
+        });
+
+        const conversation = res.data;
+
+        setSelectedChat(conversation);
+
+        setChats((prev) => {
+            const exists = prev.find(
+                (c) => c.conversationId === conversation.conversationId
+            );
+            return exists ? prev : [conversation, ...prev];
+        });
+
+        setShowSearch(false);
+        setSearchText("");
+        setAllUsers([]);
+    };
+
+    const sendMessage = () => {
+        if (
+            !message.trim() ||
+            !clientRef.current?.connected ||
+            !selectedChat?.conversationId
+        ) return;
+
+        const text = message;
+
+        setMessage("");
+
+        setMessages((prev) => [
+            ...prev,
+            {
+                type: "right",
+                content: text,
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+        ]);
+
+        clientRef.current.publish({
+            destination: "/app/chat.send",
+            body: JSON.stringify({
+                conversationId: selectedChat.conversationId,
+                senderId: currentUserId,
+                content: text
+            })
+        });
+    };
+
+    const displayList = chats.filter((item) => {
+        if (activeFilter === "ALL") return true;
+
+        if (activeFilter === "UNREAD") {
+            return item.unreadCount > 0;
+        }
+
+        if (activeFilter === "NEGOTIATION") {
+            return item.type === "NEGOTIATION";
+        }
+
+        return true;
+    });
+
+    const handleCall = async (video) => {
+        if (!selectedChat || !clientRef.current?.connected) return;
+
+        targetUserIdRef.current = selectedChat.userId;
+
+        setCallState("calling");
+        setIsVideoCall(video);
+
+        const stream = await startMedia(video);
+
+        const pc = createPeer();
+        peerRef.current = pc;
+
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        clientRef.current.publish({
+            destination: "/app/call.signal",
+            body: JSON.stringify({
+                type: "OFFER",
+                fromUserId: currentUserId,
+                toUserId: targetUserIdRef.current,
+                offer,
+                video
+            })
+        });
+    };
+
+    const endCall = () => {
+        if (clientRef.current && targetUserIdRef.current) {
+            clientRef.current.publish({
+                destination: "/app/call.signal",
+                body: JSON.stringify({
+                    type: "END",
+                    fromUserId: currentUserId,
+                    toUserId: targetUserIdRef.current
+                })
+            });
+        }
+
+        cleanupCall();
+    };
+
+    const acceptCall = async () => {
+        const stream = await startMedia(isVideoCall);
+
+        let pc = peerRef.current;
+
+        if (!pc) {
+            pc = createPeer();
+            peerRef.current = pc;
+        }
+
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        if (!pc.remoteDescription) {
+            console.error("❌ No remote offer");
+            return;
+        }
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        clientRef.current.publish({
+            destination: "/app/call.signal",
+            body: JSON.stringify({
+                type: "ANSWER",
+                fromUserId: currentUserId,
+                toUserId: targetUserIdRef.current,
+                answer
+            })
+        });
+
+        setCallState("in-call");
+    };
+
+    const rejectCall = () => {
+        if (clientRef.current && targetUserIdRef.current) {
+            clientRef.current.publish({
+                destination: "/app/call.signal",
+                body: JSON.stringify({
+                    type: "REJECT",
+                    fromUserId: currentUserId,
+                    toUserId: targetUserIdRef.current
+                })
+            });
+        }
+
+        cleanupCall();
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await api.post("/storage/upload-chat", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        const { url, fileName } = res.data;
+
+        sendFileMessage("FILE", url, fileName);
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await api.post("/storage/upload-chat", formData);
+
+        const { url, fileName } = res.data;
+
+        sendFileMessage("IMAGE", url, fileName);
+    };
+
+    const sendFileMessage = (type, url, fileName) => {
+        if (!clientRef.current?.connected || !selectedChat) return;
+
+        const msg = {
+            conversationId: selectedChat.conversationId,
+            senderId: currentUserId,
+            content: "",
+            type,
+            fileUrl: url,
+            fileName
+        };
+
+        clientRef.current.publish({
+            destination: "/app/chat.send",
+            body: JSON.stringify(msg)
+        });
+
+        setMessages(prev => [
+            ...prev,
+            {
+                type: "right",
+                content: "",
+                fileUrl: url,
+                fileName,
+                msgType: type,
+                time: new Date().toLocaleTimeString()
+            }
+        ]);
+    };
+
+    useEffect(() => {
+        const el = messagesEndRef.current?.parentElement;
+        if (!el) return;
+
+        el.scrollTo({
+            top: el.scrollHeight,
+            behavior: "smooth",
+        });
+    }, [messages]);
+
+    useEffect(() => {
+        if (callState === "in-call" && localVideoRef.current && localStream) {
+            localVideoRef.current.srcObject = localStream;
+        }
+    }, [callState, localStream]);
 
     useEffect(() => {
         if (!currentUserId) return;
@@ -144,6 +511,16 @@ export default function GlobalChatWidget() {
                         setSelectedChat({
                             userId: signal.fromUserId
                         });
+                    }
+
+                    if (signal.type === "REJECT") {
+                        console.log("❌ Call rejected");
+                        cleanupCall();
+                    }
+
+                    if (signal.type === "END") {
+                        console.log("📴 Call ended");
+                        cleanupCall();
                     }
 
                     if (signal.type === "OFFER") {
@@ -257,351 +634,6 @@ export default function GlobalChatWidget() {
 
         return () => client.deactivate();
     }, [currentUserId]);
-
-    // 📡 LOAD CHAT LIST
-    useEffect(() => {
-        if (!currentUserId) return;
-
-        api.get("/chat/conversations", {
-            params: { userId: currentUserId },
-        }).then((res) => {
-            setChats(res.data);
-
-            if (conversationIdFromNav) {
-                const found = res.data.find(
-                    (c) => c.conversationId === conversationIdFromNav
-                );
-                if (found) setSelectedChat(found);
-            } else if (res.data.length > 0) {
-                setSelectedChat(res.data[0]);
-            }
-        });
-    }, [currentUserId]);
-
-    const startMedia = async (video = false) => {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video,
-        });
-
-        setLocalStream(stream);
-        localStreamRef.current = stream;
-
-        return stream;
-    };
-
-    // 🔍 SEARCH
-    const handleSearch = (value) => {
-        setSearchText(value);
-
-        clearTimeout(searchTimeout.current);
-
-        searchTimeout.current = setTimeout(async () => {
-            if (!value.trim()) {
-                setAllUsers([]);
-                setIsSearching(false);
-                return;
-            }
-
-            setIsSearching(true);
-            setLoadingUsers(true);
-
-            const res = await api.get("/users");
-
-            const users = res.data.result || [];
-
-            const filtered = users.filter((u) => {
-                if (u.id === currentUserId) return false;
-
-                if (!value) return true;
-
-                return (u.username || "")
-                    .toLowerCase()
-                    .includes(value.toLowerCase());
-            });
-
-            setAllUsers(filtered);
-            setLoadingUsers(false);
-        }, 300);
-    };
-
-    // 📡 HISTORY
-    useEffect(() => {
-        if (!selectedChat?.conversationId) return;
-
-        setMessages([]);
-
-        api.get("/chat/history", {
-            params: {
-                conversationId: selectedChat.conversationId
-            }
-        }).then((res) => {
-            setMessages(
-                res.data.map((m) => ({
-                    type: m.senderId === currentUserId ? "right" : "left",
-                    content: m.content,
-                    fileUrl: m.fileUrl,
-                    fileName: m.fileName,
-                    msgType: m.type, // 🔥 FIX QUAN TRỌNG
-                    time: new Date(m.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                    }),
-                }))
-            );
-        });
-    }, [selectedChat]);
-
-    const startChat = async (user) => {
-        setMessages([]);
-
-        const res = await api.post("/chat/init-regular", null, {
-            params: {
-                userId: currentUserId,
-                hotelId: user.id
-            }
-        });
-
-        const conversation = res.data;
-
-        setSelectedChat(conversation);
-
-        setChats((prev) => {
-            const exists = prev.find(
-                (c) => c.conversationId === conversation.conversationId
-            );
-            return exists ? prev : [conversation, ...prev];
-        });
-
-        setShowSearch(false);
-        setSearchText("");
-        setAllUsers([]);
-    };
-
-    const sendMessage = () => {
-        if (
-            !message.trim() ||
-            !clientRef.current?.connected ||
-            !selectedChat?.conversationId
-        ) return;
-
-        const text = message;
-
-        setMessage("");
-
-        setMessages((prev) => [
-            ...prev,
-            {
-                type: "right",
-                content: text,
-                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
-        ]);
-
-        clientRef.current.publish({
-            destination: "/app/chat.send",
-            body: JSON.stringify({
-                conversationId: selectedChat.conversationId,
-                senderId: currentUserId,
-                content: text
-            })
-        });
-    };
-
-    const displayList = chats.filter((item) => {
-        if (activeFilter === "ALL") return true;
-
-        if (activeFilter === "UNREAD") {
-            return item.unreadCount > 0;
-        }
-
-        if (activeFilter === "NEGOTIATION") {
-            return item.type === "NEGOTIATION";
-        }
-
-        return true;
-    });
-
-    const handleCall = async (video) => {
-        targetUserIdRef.current = selectedChat.userId;
-        if (!selectedChat || !clientRef.current?.connected) return;
-
-        setCallState("calling");
-        setIsVideoCall(video);
-
-        const stream = await startMedia(video);
-
-        const pc = createPeer();
-        peerRef.current = pc;
-
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        clientRef.current.publish({
-            destination: "/app/call.signal",
-            body: JSON.stringify({
-                type: "OFFER",
-                fromUserId: currentUserId,
-                toUserId: targetUserIdRef.current,
-                offer,
-                video
-            })
-        });
-    };
-
-    const endCall = () => {
-        if (clientRef.current && selectedChat?.userId) {
-            clientRef.current.publish({
-                destination: "/app/call.signal",
-                body: JSON.stringify({
-                    type: "END",
-                    fromUserId: currentUserId,
-                    toUserId: selectedChat.userId
-                })
-            });
-        }
-
-        window.location.reload();
-    };
-
-    const acceptCall = async () => {
-        try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            console.log("🔓 audio unlocked");
-        } catch (e) {
-            console.error("❌ mic permission denied:", e);
-        }
-
-        const stream = await startMedia(isVideoCall);
-
-        let pc = peerRef.current;
-
-        if (!pc) {
-            pc = createPeer();
-            peerRef.current = pc;
-        }
-
-        stream.getTracks().forEach(track => {
-            pc.addTrack(track, stream);
-        });
-
-        if (!pc.remoteDescription) {
-            console.error("❌ No remote offer yet!");
-            return;
-        }
-
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        clientRef.current.publish({
-            destination: "/app/call.signal",
-            body: JSON.stringify({
-                type: "ANSWER",
-                fromUserId: currentUserId,
-                toUserId: targetUserIdRef.current,
-                answer
-            })
-        });
-
-        setCallState("in-call");
-
-        setTimeout(() => {
-            remoteAudioRef.current?.play()
-                .then(() => console.log("🔊 playing"))
-                .catch(err => console.error("play error:", err));
-        }, 300);
-    };
-
-    const rejectCall = () => {
-        setCallState("idle");
-
-        clientRef.current.publish({
-            destination: "/app/call.signal",
-            body: JSON.stringify({
-                type: "REJECT",
-                fromUserId: currentUserId,
-                toUserId: selectedChat.userId
-            })
-        });
-    };
-
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await api.post("/storage/upload-chat", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        const { url, fileName } = res.data;
-
-        sendFileMessage("FILE", url, fileName);
-    };
-
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await api.post("/storage/upload-chat", formData);
-
-        const { url, fileName } = res.data;
-
-        sendFileMessage("IMAGE", url, fileName);
-    };
-
-    const sendFileMessage = (type, url, fileName) => {
-        if (!clientRef.current?.connected || !selectedChat) return;
-
-        const msg = {
-            conversationId: selectedChat.conversationId,
-            senderId: currentUserId,
-            content: "",
-            type,
-            fileUrl: url,
-            fileName
-        };
-
-        clientRef.current.publish({
-            destination: "/app/chat.send",
-            body: JSON.stringify(msg)
-        });
-
-        setMessages(prev => [
-            ...prev,
-            {
-                type: "right",
-                content: "",
-                fileUrl: url,
-                fileName,
-                msgType: type,
-                time: new Date().toLocaleTimeString()
-            }
-        ]);
-    };
-
-    useEffect(() => {
-        const el = messagesEndRef.current?.parentElement;
-        if (!el) return;
-
-        el.scrollTo({
-            top: el.scrollHeight,
-            behavior: "smooth",
-        });
-    }, [messages]);
-
-    useEffect(() => {
-        if (callState === "in-call" && localVideoRef.current && localStream) {
-            localVideoRef.current.srcObject = localStream;
-        }
-    }, [callState, localStream]);
 
     return (
         <div>
@@ -806,22 +838,6 @@ export default function GlobalChatWidget() {
                                 <div className="text-xs text-gray-400">
                                     {selectedChat?.phoneNumber}
                                 </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <div
-                                onClick={() => handleCall(false)}
-                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-blue-100 hover:text-blue-500 cursor-pointer transition"
-                            >
-                                <PhoneOutlined />
-                            </div>
-
-                            <div
-                                onClick={() => handleCall(true)}
-                                className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-blue-100 hover:text-blue-500 cursor-pointer transition"
-                            >
-                                <VideoCameraOutlined />
                             </div>
                         </div>
                     </div>
