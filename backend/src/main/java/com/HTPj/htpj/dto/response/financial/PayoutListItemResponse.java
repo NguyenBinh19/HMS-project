@@ -22,6 +22,7 @@ public class PayoutListItemResponse {
     private BigDecimal totalCommission;
     private BigDecimal netPayout;
     private Integer totalBookings;
+    private BigDecimal carriedForwardAmount;
     private String status;
     private Boolean missingBankInfo;
     private LocalDateTime confirmedAt;

@@ -536,6 +536,11 @@ public class RankServiceImpl implements RankService {
 
         } else {
             history.setChangeType("HOLD");
+            agency.setRank(currentRank);
+            agency.setCreditLimit(currentRank.getCreditLimit());
+            agency.setCurrentCredit(currentRank.getCreditLimit());
+
+            agencyRepository.save(agency);
         }
 
         rankHistoryRepository.save(history);

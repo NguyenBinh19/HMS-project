@@ -53,13 +53,21 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
     public List<PayoutStatementResponse> generateStatementsForPeriod(LocalDate periodStart, LocalDate periodEnd) {
         log.info("Generating payout statements for period {} to {}", periodStart, periodEnd);
 
-        // Find all hotels that have unprocessed paid bookings (current period + late-paid from previous)
-        List<Integer> hotelIds = bookingRepository.findHotelIdsWithUnprocessedPaidBookings(periodEnd);
-        log.info("Found {} hotels with unprocessed paid bookings up to {}", hotelIds.size(), periodEnd);
+        // Hotels with new unprocessed paid bookings this cycle
+        List<Integer> hotelIdsWithBookings = bookingRepository.findHotelIdsWithUnprocessedPaidBookings(periodEnd);
+        log.info("Found {} hotels with unprocessed paid bookings up to {}", hotelIdsWithBookings.size(), periodEnd);
+
+        // Also include hotels that have a ROLLOVER balance from a previous cycle
+        // (they may have no new bookings this month but still deserve a statement)
+        List<Integer> hotelIdsWithRollover = statementRepository.findHotelIdsWithRolloverStatements();
+
+        // Merge both lists without duplicates
+        Set<Integer> allHotelIds = new LinkedHashSet<>(hotelIdsWithBookings);
+        allHotelIds.addAll(hotelIdsWithRollover);
 
         List<PayoutStatementResponse> results = new ArrayList<>();
 
-        for (Integer hotelId : hotelIds) {
+        for (Integer hotelId : allHotelIds) {
             // Skip if statement already exists for this hotel and period
             if (statementRepository.existsByHotelIdAndPeriodStartAndPeriodEnd(hotelId, periodStart, periodEnd)) {
                 log.info("Statement already exists for hotel {} in period {} - {}, skipping", hotelId, periodStart, periodEnd);
@@ -72,23 +80,23 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 continue;
             }
 
-            // Get all unprocessed paid bookings for this hotel (current period + late-paid from previous)
-            List<Booking> bookings = bookingRepository.findUnprocessedPaidBookingsByHotel(
-                    hotelId, periodEnd);
+            // ---------- 1) Current-cycle bookings ----------
+            List<Booking> bookings = bookingRepository.findUnprocessedPaidBookingsByHotel(hotelId, periodEnd);
 
-            if (bookings.isEmpty()) continue;
+            // ---------- 2) Carry-forward from ROLLOVER statements ----------
+            List<PayoutStatement> rolloverStmts = statementRepository.findRolloverStatementsByHotelId(hotelId);
+            BigDecimal carriedForward = rolloverStmts.stream()
+                    .map(r -> r.getNetPayout() != null ? r.getNetPayout() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Calculate totals
-            BigDecimal grossRevenue = BigDecimal.ZERO;
-            BigDecimal totalCommission = BigDecimal.ZERO;
-            BigDecimal totalRefunds = BigDecimal.ZERO;
-            int totalRoomNights = 0;
+            // If neither bookings nor rollover → nothing to do
+            if (bookings.isEmpty() && carriedForward.compareTo(BigDecimal.ZERO) == 0) continue;
 
             // Generate statement code: STM-YYYYMM-hotelId
             String periodCode = periodEnd.format(DateTimeFormatter.ofPattern("yyyyMM"));
             String statementCode = String.format("STM-%s-%04d", periodCode, hotelId);
 
-            // Create statement first
+            // Create statement shell
             PayoutStatement statement = PayoutStatement.builder()
                     .statementCode(statementCode)
                     .hotelId(hotelId)
@@ -100,7 +108,12 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
             statement = statementRepository.save(statement);
 
-            // Create line items for each booking
+            // ---------- 3) Build line items for current-cycle bookings ----------
+            BigDecimal grossRevenue = BigDecimal.ZERO;
+            BigDecimal totalCommission = BigDecimal.ZERO;
+            BigDecimal totalRefunds = BigDecimal.ZERO;
+            int totalRoomNights = 0;
+
             List<PayoutLineItem> lineItems = new ArrayList<>();
             for (Booking booking : bookings) {
                 BigDecimal bookingGross = booking.getFinalAmount() != null
@@ -108,9 +121,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 BigDecimal bookingRefund = booking.getRefundAmount() != null
                         ? booking.getRefundAmount() : BigDecimal.ZERO;
 
-                // Calculate commission based on hotel's commission settings
                 BigDecimal commissionAmount = calculateCommission(bookingGross, hotel);
-
                 BigDecimal netAmount = bookingGross.subtract(commissionAmount).subtract(bookingRefund);
 
                 int roomNights = booking.getNights() != null ? booking.getNights() : 0;
@@ -118,7 +129,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 String agencyName = agencyRepository.findById(booking.getAgencyId())
                         .map(Agency::getAgencyName)
                         .orElse("Unknown Agency");
-                System.out.print(agencyName);
+
                 PayoutLineItem lineItem = PayoutLineItem.builder()
                         .payoutStatement(statement)
                         .bookingId(booking.getBookingId())
@@ -141,20 +152,27 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 totalRoomNights += roomNights;
             }
 
-            lineItemRepository.saveAll(lineItems);
+            if (!lineItems.isEmpty()) {
+                lineItemRepository.saveAll(lineItems);
+            }
 
-            // Mark all included bookings as processed so they won't be picked up again
+            // Mark bookings as processed so they won't be picked up again
             for (Booking booking : bookings) {
                 booking.setPayoutProcessed(true);
             }
-            bookingRepository.saveAll(bookings);
+            if (!bookings.isEmpty()) {
+                bookingRepository.saveAll(bookings);
+            }
 
-            // Update statement totals
-            BigDecimal netPayout = grossRevenue.subtract(totalCommission).subtract(totalRefunds);
+            // ---------- 4) Compute final totals (current cycle + carried-forward) ----------
+            BigDecimal currentCycleNet = grossRevenue.subtract(totalCommission).subtract(totalRefunds);
+            BigDecimal netPayout = currentCycleNet.add(carriedForward);
+
             statement.setGrossRevenue(grossRevenue);
             statement.setTotalCommission(totalCommission);
             statement.setTotalRefunds(totalRefunds);
             statement.setAdjustments(BigDecimal.ZERO);
+            statement.setCarriedForwardAmount(carriedForward);
             statement.setNetPayout(netPayout);
             statement.setTotalRoomNights(totalRoomNights);
 
@@ -169,14 +187,28 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
 
             statementRepository.save(statement);
 
+            // ---------- 5) Mark absorbed ROLLOVER statements as MERGED ----------
+            for (PayoutStatement rollover : rolloverStmts) {
+                rollover.setStatus("MERGED");
+                rollover.setConfirmedBy("SYSTEM_MERGE");
+                rollover.setConfirmedAt(LocalDateTime.now());
+                statementRepository.save(rollover);
+                log.info("Merged ROLLOVER statement {} into new statement {}",
+                        rollover.getStatementCode(), statementCode);
+            }
+
             results.add(toResponse(statement, hotel.getHotelName(), false));
-            log.info("Generated statement {} for hotel {} ({}): netPayout={}",
-                    statementCode, hotelId, hotel.getHotelName(), netPayout);
+            log.info("Generated statement {} for hotel {} ({}): currentCycleNet={}, carriedForward={}, netPayout={}",
+                    statementCode, hotelId, hotel.getHotelName(), currentCycleNet, carriedForward, netPayout);
+
             List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+            String msgSuffix = carriedForward.compareTo(BigDecimal.ZERO) > 0
+                    ? " (bao gồm " + carriedForward.toPlainString() + " VND doanh thu chuyển từ kỳ trước)"
+                    : "";
             for (Users u : hotelUsers) {
                 notificationService.sendNotification(u.getId(), "FINANCIAL",
                         "Bảng sao kê thanh toán đã được tạo",
-                        "Một bảng sao kê thanh toán mới " + statementCode + " đã được tạo cho khách sạn của bạn.",
+                        "Một bảng sao kê thanh toán mới " + statementCode + " đã được tạo cho khách sạn của bạn" + msgSuffix + ".",
                         "PAYOUT", String.valueOf(statement.getStatementId()), "/hotel/payout-state");
             }
         }
@@ -435,6 +467,7 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                     .totalCommission(s.getTotalCommission())
                     .netPayout(s.getNetPayout())
                     .totalBookings(s.getTotalBookings())
+                    .carriedForwardAmount(s.getCarriedForwardAmount())
                     .status(s.getStatus())
                     .missingBankInfo(missingBankInfo)
                     .confirmedAt(s.getConfirmedAt())
@@ -582,14 +615,13 @@ public class PayoutStatementServiceImpl implements PayoutStatementService {
                 .totalCommission(s.getTotalCommission())
                 .totalRefunds(s.getTotalRefunds())
                 .adjustments(s.getAdjustments())
+                .carriedForwardAmount(s.getCarriedForwardAmount())
                 .netPayout(s.getNetPayout())
                 .totalBookings(s.getTotalBookings())
                 .totalRoomNights(s.getTotalRoomNights())
                 .status(s.getStatus())
                 .confirmedBy(s.getConfirmedBy())
                 .confirmedAt(s.getConfirmedAt())
-//                .disputeReason(s.getDisputeReason())
-//                .disputeReasonCode(s.getDisputeReasonCode())
                 .bankName(s.getBankName())
                 .bankAccountHolder(s.getBankAccountHolder())
                 .bankAccountNumber(s.getBankAccountNumber())

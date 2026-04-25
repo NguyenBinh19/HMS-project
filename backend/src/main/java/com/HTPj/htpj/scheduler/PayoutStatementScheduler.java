@@ -1,13 +1,9 @@
 package com.HTPj.htpj.scheduler;
 
 import com.HTPj.htpj.dto.response.financial.PayoutStatementResponse;
-import com.HTPj.htpj.entity.Booking;
 import com.HTPj.htpj.entity.Hotel;
-import com.HTPj.htpj.entity.PayoutLineItem;
 import com.HTPj.htpj.entity.PayoutStatement;
-import com.HTPj.htpj.repository.BookingRepository;
 import com.HTPj.htpj.repository.HotelRepository;
-import com.HTPj.htpj.repository.PayoutLineItemRepository;
 import com.HTPj.htpj.repository.PayoutStatementRepository;
 import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.NotificationService;
@@ -31,12 +27,11 @@ public class PayoutStatementScheduler {
 
     private final PayoutStatementService payoutStatementService;
     private final PayoutStatementRepository statementRepository;
-    private final PayoutLineItemRepository lineItemRepository;
-    private final BookingRepository bookingRepository;
     private final HotelRepository hotelRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+
     /**
      * Auto-generate payout statements on the 3rd of every month at 00:05 AM.
      * Billing cycle: 26th of two months ago -> 25th of previous month.
@@ -89,8 +84,15 @@ public class PayoutStatementScheduler {
     }
 
     /**
-     * Auto-approve all PENDING_CONFIRMATION statements on the 6th of every month at 00:05 AM.
-     * Hotels have a 3-day confirm window (3rd-5th). After that, statements are auto-approved.
+     * Auto-defer all PENDING_CONFIRMATION statements on the 6th of every month at 00:05 AM.
+     *
+     * Hotels have a 3-day confirm window (3rd–5th). Per business rule (UC-088),
+     * an unconfirmed statement must NOT be auto-approved. Instead it is marked ROLLOVER.
+     * The carried-forward balance is then absorbed automatically the next time
+     * {@code generateStatementsForPeriod} runs (on the 3rd of the following month):
+     * it queries all ROLLOVER statements for each hotel, sums their netPayout into
+     * {@code carriedForwardAmount} of the new statement, and marks these old statements
+     * as MERGED. No booking-level reset is needed.
      */
     @Scheduled(cron = "0 5 0 6 * ?")
     @Transactional
@@ -102,29 +104,15 @@ public class PayoutStatementScheduler {
 
             int count = 0;
             for (PayoutStatement stmt : pending) {
-                // 1) Release the bookings linked to this statement so they can be
-                //    re-included in the next monthly statement.
-                List<PayoutLineItem> items = lineItemRepository.findByStatementId(stmt.getStatementId());
-                List<Long> bookingIds = items.stream()
-                        .map(PayoutLineItem::getBookingId)
-                        .filter(java.util.Objects::nonNull)
-                        .toList();
-                if (!bookingIds.isEmpty()) {
-                    List<Booking> bookings = bookingRepository.findAllById(bookingIds);
-                    for (Booking b : bookings) {
-                        b.setPayoutProcessed(false);
-                    }
-                    bookingRepository.saveAll(bookings);
-                }
-
-                // 2) Mark the statement as ROLLOVER (carried forward to next cycle).
+                // Mark as ROLLOVER – the statement data (netPayout) is preserved
+                // and will be picked up as carried-forward in the next cycle's statement.
                 stmt.setStatus("ROLLOVER");
                 stmt.setConfirmedBy("SYSTEM_AUTO_DEFER");
                 stmt.setConfirmedAt(LocalDateTime.now());
                 statementRepository.save(stmt);
                 count++;
 
-                // 3) Notify hotel users that the balance has been carried forward.
+                // Notify hotel users that the balance is carried forward.
                 List<Users> hotelUsers = userRepository.findByHotel_HotelId(stmt.getHotelId());
                 Hotel hotel = hotelRepository.findById(stmt.getHotelId()).orElse(null);
                 String hotelName = hotel != null ? hotel.getHotelName() : "Unknown";
@@ -139,7 +127,7 @@ public class PayoutStatementScheduler {
                 }
             }
 
-            log.info("=== SCHEDULED: Auto-deferred {} statements (rolled over to next cycle) ===", count);
+            log.info("=== SCHEDULED: Auto-deferred {} statements (to be merged next cycle) ===", count);
         } catch (Exception e) {
             log.error("=== SCHEDULED: Error during auto-defer ===", e);
         }

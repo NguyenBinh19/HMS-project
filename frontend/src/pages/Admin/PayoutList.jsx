@@ -14,7 +14,8 @@ const STATUS_CONFIG = {
     APPROVED: { label: "Sẵn sàng", color: "bg-blue-100 text-blue-700 border-blue-200", dot: "bg-blue-500" },
     PROCESSING: { label: "Đang xử lý", color: "bg-indigo-100 text-indigo-700 border-indigo-200", dot: "bg-indigo-500 animate-pulse" },
     PAID: { label: "Đã thanh toán", color: "bg-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-    ROLLOVER: { label: "Chuyển kỳ sau", color: "bg-gray-100 text-gray-600 border-gray-200", dot: "bg-gray-400" },
+    ROLLOVER: { label: "Chuyển kỳ sau", color: "bg-amber-100 text-amber-700 border-amber-200", dot: "bg-amber-400" },
+    MERGED: { label: "Đã gộp kỳ mới", color: "bg-slate-100 text-slate-500 border-slate-200", dot: "bg-slate-400" },
     DISPUTED: { label: "Khiếu nại", color: "bg-red-100 text-red-700 border-red-200", dot: "bg-red-500" },
     DRAFT: { label: "Nháp", color: "bg-slate-100 text-slate-600 border-slate-200", dot: "bg-slate-400" },
 };
@@ -156,6 +157,9 @@ const PayoutList = () => {
     };
 
     const handleMarkPaid = async () => {
+        if (selectedIds.length !== 1) {
+            return alert("Chỉ được chọn 1 sao kê để thanh toán");
+        }
         if (!bankReference.trim()) return alert("Vui lòng nhập mã giao dịch ngân hàng");
         if (!recipientBankName.trim()) return alert("Vui lòng nhập ngân hàng người nhận");
         if (!recipientBankHolder.trim()) return alert("Vui lòng nhập người nhận");
@@ -200,19 +204,10 @@ const PayoutList = () => {
     };
 
     const toggleSelect = (id) => {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+        setSelectedIds(prev => prev.includes(id) ? [] : [id]);
     };
 
-    const toggleSelectAll = () => {
-        const eligibleIds = paginatedData
-            .filter(p => p.status === "APPROVED")
-            .map(p => p.statementId);
-        if (selectedIds.length === eligibleIds.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(eligibleIds);
-        }
-    };
+
 
     const renderStatusTag = (status) => {
         const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
@@ -237,6 +232,40 @@ const PayoutList = () => {
         { label: "Tổng phải trả", value: formatMoney(payoutData.totalPayoutLiability) + " VND", color: "text-orange-600", bg: "bg-orange-50", icon: <FileText size={22} /> },
     ] : [];
 
+    const getCurrentCycleNet = (statement) => {
+        const grossRevenue = Number(statement?.grossRevenue || 0);
+        const totalCommission = Number(statement?.totalCommission || 0);
+        const totalRefunds = Number(statement?.totalRefunds || 0);
+        const adjustments = Number(statement?.adjustments || 0);
+
+        return grossRevenue - totalCommission - totalRefunds + adjustments;
+    };
+    const handleOpenMarkPaidModal = async () => {
+        if (selectedIds.length !== 1) {
+            alert("Chỉ được chọn 1 sao kê để thanh toán");
+            return;
+        }
+
+        const selectedStatementId = selectedIds[0];
+
+        try {
+            setDetailLoading(true);
+
+            const res = await payoutService.getStatementDetail(selectedStatementId);
+            const statement = res.result;
+
+            setRecipientBankName(statement.bankName || "");
+            setRecipientBankHolder(statement.bankAccountHolder || "");
+            setRecipientBankAccount(statement.bankAccountNumber || "");
+
+            setMarkPaidModal(true);
+        } catch (err) {
+            console.error("Lỗi tải thông tin ngân hàng:", err);
+            alert("Không thể tải thông tin ngân hàng của sao kê đã chọn");
+        } finally {
+            setDetailLoading(false);
+        }
+    };
     return (
         <div className="p-8 bg-[#f8fafc] min-h-screen font-sans">
             <div className="max-w-7xl mx-auto">
@@ -259,14 +288,14 @@ const PayoutList = () => {
                             }}
                             className="flex items-center gap-2 text-[11px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-5 py-2.5 rounded-xl hover:bg-blue-100 transition-all uppercase tracking-tight"
                         >
-                            <FileText size={16}/> Phụ lục thanh toán
+                            <FileText size={16} /> Phụ lục thanh toán
                         </button>
                         <button
                             onClick={handleGenerate}
                             disabled={generating || isReadOnly}
                             className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50"
                         >
-                            {generating ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}
+                            {generating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
                             {isReadOnly ? "Quyền xem nội bộ" : (generating ? "Đang tạo..." : "Tạo sao kê")}
                         </button>
                     </div>
@@ -277,7 +306,7 @@ const PayoutList = () => {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         {stats.map((s, idx) => (
                             <div key={idx}
-                                 className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-5">
+                                className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-5">
                                 <div className={`p-4 ${s.bg} ${s.color} rounded-2xl`}>{s.icon}</div>
                                 <div>
                                     <p className="text-slate-500 text-xs font-bold mb-1">{s.label}</p>
@@ -309,18 +338,18 @@ const PayoutList = () => {
                                     Export ({selectedIds.length})
                                 </button> */}
                                 {!isReadOnly && (
-                                <button
-                                    onClick={() => setMarkPaidModal(true)}
-                                    disabled={selectedIds.length === 0}
-                                    className={`flex items-center gap-1 px-4 py-2 rounded-xl font-bold text-xs transition-all
-                ${selectedIds.length === 0
-                                            ? "bg-emerald-300 text-white cursor-not-allowed opacity-60"
-                                            : "bg-emerald-600 text-white hover:bg-emerald-700"
-                                        }`}
-                                >
-                                    <CheckCircle2 size={14} />
-                                    Mark Paid ({selectedIds.length})
-                                </button>
+                                    <button
+                                        onClick={handleOpenMarkPaidModal}
+                                        disabled={selectedIds.length !== 1}
+                                        className={`flex items-center gap-1 px-4 py-2 rounded-xl font-bold text-xs transition-all
+${selectedIds.length !== 1
+                                                ? "bg-emerald-300 text-white cursor-not-allowed opacity-60"
+                                                : "bg-emerald-600 text-white hover:bg-emerald-700"
+                                            }`}
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        Thanh toán sao kê
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -363,16 +392,15 @@ const PayoutList = () => {
                                 <thead className="bg-slate-50/50 text-[10px] font-black text-slate-600 uppercase tracking-widest">
                                     <tr>
                                         <th className="px-4 py-3 w-10">
-                                            <input type="checkbox" onChange={toggleSelectAll}
-                                                checked={selectedIds.length > 0 && selectedIds.length === paginatedData.filter(p => p.status === "APPROVED").length}
-                                                className="rounded" />
+                                            Chọn
                                         </th>
                                         <th className="px-4 py-3">Mã sao kê</th>
                                         <th className="px-4 py-3">Khách sạn</th>
                                         <th className="px-4 py-3">Ky sao kê</th>
                                         <th className="px-4 py-3 text-right">Doanh thu</th>
                                         <th className="px-4 py-3 text-right">Hoa hồng</th>
-                                        <th className="px-4 py-3 text-right">Thanh toán</th>
+                                        <th className="px-4 py-3 text-right">Chuyển kỳ trước</th>
+                                        <th className="px-4 py-3 text-right">Tổng thanh toán</th>
                                         <th className="px-4 py-3">Trạng thái</th>
                                         <th className="px-4 py-3 text-center">Thao tác</th>
                                     </tr>
@@ -380,14 +408,14 @@ const PayoutList = () => {
                                 <tbody className="divide-y divide-gray-100 text-gray-700">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="9" className="px-6 py-20 text-center">
+                                            <td colSpan="10" className="px-6 py-20 text-center">
                                                 <Loader2 className="animate-spin mx-auto text-blue-500 mb-2" size={32} />
                                                 <span className="text-xs font-bold text-gray-400 uppercase">Đang tải dữ liệu...</span>
                                             </td>
                                         </tr>
                                     ) : paginatedData.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9" className="px-6 py-20 text-center text-gray-400 font-bold uppercase text-xs">
+                                            <td colSpan="10" className="px-6 py-20 text-center text-gray-400 font-bold uppercase text-xs">
                                                 Không có dữ liệu
                                             </td>
                                         </tr>
@@ -421,6 +449,15 @@ const PayoutList = () => {
                                                 </td>
                                                 <td className="px-4 py-4 text-right font-bold text-sm text-slate-800">{formatMoney(p.grossRevenue)}</td>
                                                 <td className="px-4 py-4 text-right font-bold text-sm text-red-500">-{formatMoney(p.totalCommission)}</td>
+                                                <td className="px-4 py-4 text-right font-bold text-sm">
+                                                    {Number(p.carriedForwardAmount || 0) > 0 ? (
+                                                        <span className="text-indigo-600">
+                                                            +{formatMoney(p.carriedForwardAmount)}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-400">0</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-4 py-4 text-right font-black text-sm text-blue-600">{formatMoney(p.netPayout)}</td>
                                                 <td className="px-4 py-4">{renderStatusTag(p.status)}</td>
                                                 <td className="px-4 py-4 text-center">
@@ -496,10 +533,53 @@ const PayoutList = () => {
                                         <InfoBox label="Trạng thái" value={renderStatusTag(detailModal.status)} isComponent />
                                     </div>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                        <InfoBox label="Doanh thu gộp" value={`${formatMoney(detailModal.grossRevenue)} VND`} highlight="text-slate-800" />
-                                        <InfoBox label="Hoa hồng" value={`-${formatMoney(detailModal.totalCommission)} VND`} highlight="text-red-500" />
-                                        <InfoBox label="Hoàn trả" value={`-${formatMoney(detailModal.totalRefunds)} VND`} highlight="text-orange-500" />
-                                        <InfoBox label="Thanh toán thực" value={`${formatMoney(detailModal.netPayout)} VND`} highlight="text-blue-600" />
+                                        <InfoBox
+                                            label="Doanh thu gộp"
+                                            value={`${formatMoney(detailModal.grossRevenue)} VND`}
+                                            highlight="text-slate-800"
+                                        />
+
+                                        <InfoBox
+                                            label="Hoa hồng"
+                                            value={`-${formatMoney(detailModal.totalCommission)} VND`}
+                                            highlight="text-red-500"
+                                        />
+
+                                        <InfoBox
+                                            label="Hoàn trả"
+                                            value={`-${formatMoney(detailModal.totalRefunds)} VND`}
+                                            highlight="text-orange-500"
+                                        />
+
+                                        <InfoBox
+                                            label="Thực nhận kỳ này"
+                                            value={`${formatMoney(getCurrentCycleNet(detailModal))} VND`}
+                                            highlight="text-emerald-600"
+                                        />
+
+                                        {Number(detailModal.carriedForwardAmount || 0) > 0 ? (
+                                            <div className="col-span-2 md:col-start-3 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <InfoBox
+                                                    label="Doanh thu chuyển kỳ trước"
+                                                    value={`+${formatMoney(detailModal.carriedForwardAmount)} VND`}
+                                                    highlight="text-indigo-600"
+                                                />
+
+                                                <InfoBox
+                                                    label="Tổng thanh toán"
+                                                    value={`${formatMoney(detailModal.netPayout)} VND`}
+                                                    highlight="text-blue-600"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="col-span-2 md:col-start-4 md:col-span-1">
+                                                <InfoBox
+                                                    label="Tổng thanh toán"
+                                                    value={`${formatMoney(detailModal.netPayout)} VND`}
+                                                    highlight="text-blue-600"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Line Items Table */}
@@ -651,7 +731,7 @@ const PayoutList = () => {
                                 title="Mở tab mới"
                                 className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
                             >
-                                <ExternalLink size={18}/>
+                                <ExternalLink size={18} />
                             </a>
                             <button
                                 onClick={() => {
@@ -660,7 +740,7 @@ const PayoutList = () => {
                                 }}
                                 className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
                             >
-                                <X size={18}/>
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -693,10 +773,10 @@ const PayoutList = () => {
                             )}
                             {isPdfLoading && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
-                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2"/>
+                                    <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
-                            Đang chuẩn bị tài liệu...
-                        </span>
+                                        Đang chuẩn bị tài liệu...
+                                    </span>
                                 </div>
                             )}
                         </div>

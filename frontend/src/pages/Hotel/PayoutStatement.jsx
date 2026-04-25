@@ -25,7 +25,8 @@ const STATUS_MAP = {
     PROCESSING: { label: "Đang xử lý", color: "bg-blue-100 text-blue-700" },
     PAID: { label: "Đã thanh toán", color: "bg-green-100 text-green-700" },
     DISPUTED: { label: "Khiếu nại", color: "bg-red-100 text-red-700" },
-    ROLLOVER: { label: "Chuyển kỳ sau", color: "bg-slate-100 text-slate-600" },
+    ROLLOVER: { label: "Chuyển kỳ sau", color: "bg-amber-100 text-amber-700" },
+    MERGED: { label: "Đã gộp kỳ mới", color: "bg-slate-100 text-slate-500" },
 };
 
 const formatVN = (val) => val != null ? new Intl.NumberFormat('vi-VN').format(val) : '0';
@@ -362,7 +363,20 @@ const StatementDetailView = ({ statementId, onBack }) => {
     const status = statement.status;
     const isPending = status === "PENDING_CONFIRMATION";
     const isPaid = status === "PAID";
+    const isRollover = status === "ROLLOVER";
+    const isMerged = status === "MERGED";
+    const getCurrentCycleNet = (statement) => {
+        const grossRevenue = Number(statement?.grossRevenue || 0);
+        const totalCommission = Number(statement?.totalCommission || 0);
+        const totalRefunds = Number(statement?.totalRefunds || 0);
+        const adjustments = Number(statement?.adjustments || 0);
 
+        return grossRevenue - totalCommission - totalRefunds + adjustments;
+    };
+
+    const currentCycleNet = getCurrentCycleNet(statement);
+    const carriedForwardAmount = Number(statement?.carriedForwardAmount || 0);
+    const totalPayment = Number(statement?.netPayout || 0);
     return (
         <>
             {/* Header */}
@@ -387,8 +401,11 @@ const StatementDetailView = ({ statementId, onBack }) => {
             <StatementHeader
                 gross={statement.grossRevenue || 0}
                 commission={statement.totalCommission || 0}
-                adjustments={statement.totalRefunds || 0}
-                net={statement.netPayout || 0}
+                refunds={statement.totalRefunds || 0}
+                adjustments={-Number(statement.totalRefunds || 0)}
+                currentCycleNet={currentCycleNet}
+                carriedForward={carriedForwardAmount}
+                net={totalPayment}
             />
 
             {isPaid && (
@@ -515,7 +532,15 @@ const StatementDetailView = ({ statementId, onBack }) => {
                     </div>
 
                     <div className="flex gap-3">
-                        {isPending ? (
+                        {isMerged ? (
+                            <div className="flex items-center gap-3 font-bold text-xs px-6 py-3 rounded-2xl border text-slate-400 bg-slate-500/10 border-slate-500/20">
+                                <CheckCircle size={16} /> ĐÃ GỘP VÀO KỲ MỚI
+                            </div>
+                        ) : isRollover ? (
+                            <div className="flex items-center gap-3 font-bold text-xs px-6 py-3 rounded-2xl border text-amber-400 bg-amber-500/10 border-amber-500/20">
+                                <AlertCircle size={16} /> CHUYỂN KỲ SAU
+                            </div>
+                        ) : isPending ? (
                             <>
                                 <button
                                     onClick={handleDispute}

@@ -55,7 +55,15 @@ public class PayoutStatement {
     private Integer totalRoomNights;
 
     /**
-     * DRAFT, PENDING_CONFIRMATION, APPROVED, DISPUTED, PROCESSING, PAID, ROLLOVER
+     * Amount carried forward from previous ROLLOVER statement(s).
+     * Included in netPayout of this statement.
+     */
+    @Column(name = "carried_forward_amount", precision = 18, scale = 2)
+    private BigDecimal carriedForwardAmount;
+
+    /**
+     * DRAFT, PENDING_CONFIRMATION, APPROVED, DISPUTED, PROCESSING, PAID, ROLLOVER, MERGED
+     * MERGED: a ROLLOVER statement that has been absorbed into the next cycle's statement.
      */
     @Column(name = "status", nullable = false, length = 30)
     private String status;

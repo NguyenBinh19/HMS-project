@@ -21,6 +21,7 @@ public class PayoutStatementResponse {
     private BigDecimal totalCommission;
     private BigDecimal totalRefunds;
     private BigDecimal adjustments;
+    private BigDecimal carriedForwardAmount;
     private BigDecimal netPayout;
     private Integer totalBookings;
     private Integer totalRoomNights;
