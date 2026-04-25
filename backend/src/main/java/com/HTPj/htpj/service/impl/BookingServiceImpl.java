@@ -482,7 +482,7 @@ public class BookingServiceImpl implements BookingService {
                     .createdAt(LocalDateTime.now())
                     .build();
             historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
-            historyCreditMD.setTransactionCode(String.format("TRK-%06d", history.getId()));
+            historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
             transactionHistoryRepository.save(historyCreditMD);
 
             // update agency

@@ -52,7 +52,7 @@ const SidebarAdmin = () => {
         {
             icon: <MessageCircle size={20} />,
             label: "Trung tâm trò chuyện",
-            path: "/agency/chat-page"
+            path: "/admin/chat-page"
         }
     ];
 

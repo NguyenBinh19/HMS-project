@@ -48,15 +48,15 @@ const CreditWallet = () => {
   const [policyUrl, setPolicyUrl] = useState("");
   const [isPdfLoading, setIsPdfLoading] = useState(true);
 
-// Tải link PDF chính sách tín dụng
+  // Tải link PDF chính sách tín dụng
   useEffect(() => {
     const fetchPolicy = async () => {
       try {
         const pdfRes = await api.get("/pdf-documents");
         if (pdfRes?.data?.result) {
           const policyDoc = pdfRes.data.result.find(doc =>
-              doc.title.includes("Phụ lục tín dụng") ||
-              doc.title.includes("thanh toán công nợ")
+            doc.title.includes("Phụ lục tín dụng") ||
+            doc.title.includes("thanh toán công nợ")
           );
           setPolicyUrl(policyDoc?.fileUrl || "");
         }
@@ -67,7 +67,7 @@ const CreditWallet = () => {
     fetchPolicy();
   }, []);
 
-// Khóa cuộn trang khi mở modal
+  // Khóa cuộn trang khi mở modal
   useEffect(() => {
     document.body.style.overflow = showPdfModal ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
@@ -110,6 +110,17 @@ const CreditWallet = () => {
       confirmButtonText: "Xác nhận",
       cancelButtonText: "Hủy",
       text: `Tối đa: ${maxDebt.toLocaleString("vi-VN")} ₫`,
+      footer: `<button id="pay-all-btn" style="
+      background:#16a34a;
+      color:white;
+      border:none;
+      padding:6px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:12px;
+    ">
+    Thanh toán tất cả
+  </button>`,
 
       didOpen: () => {
         const input = Swal.getInput();
@@ -117,15 +128,32 @@ const CreditWallet = () => {
         input.addEventListener("input", () => {
           let value = Number(input.value);
 
-          // ❌ không cho nhập <= 0
-          if (value <= 0) {
-            input.value = "";
-          }
+          if (value <= 0) input.value = "";
+          if (value > maxDebt) input.value = maxDebt;
+        });
 
-          // ❌ nếu vượt max → auto set về max
-          if (value > maxDebt) {
-            input.value = maxDebt;
-          }
+        const btn = document.getElementById("pay-all-btn");
+
+        btn.addEventListener("click", () => {
+          Swal.close();
+
+          api.post(`/agencies/${agencyId}/pay-debt?payment=${maxDebt}`)
+            .then(() => {
+              return Swal.fire({
+                icon: "success",
+                title: "Thanh toán thành công",
+                text: `Đã thanh toán toàn bộ ${maxDebt.toLocaleString("vi-VN")} ₫`,
+              });
+            })
+            .then(() => api.get(`/agencies/${agencyId}/credit-summary`))
+            .then((res) => setSummary(res.data.result || {}))
+            .catch((err) => {
+              Swal.fire({
+                icon: "error",
+                title: "Thanh toán thất bại",
+                text: err.response?.data?.message || err.message,
+              });
+            });
         });
       },
 
@@ -215,15 +243,14 @@ const CreditWallet = () => {
         <h2 className="text-lg font-semibold mb-4">Tổng quan tín dụng</h2>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-slate-800">Tổng quan tín dụng</h2>
           {/* Nút Xem chính sách */}
           {policyUrl && (
-              <button
-                  onClick={() => setShowPdfModal(true)}
-                  className="flex items-center gap-2 text-[11px] font-black text-black-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-wider"
-              >
-                <ExternalLink size={14}/> Phụ lục công nợ
-              </button>
+            <button
+              onClick={() => setShowPdfModal(true)}
+              className="flex items-center gap-2 text-[11px] font-black text-black-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-wider"
+            >
+              <ExternalLink size={14} /> Phụ lục công nợ
+            </button>
           )}
         </div>
         <div className="grid grid-cols-3 gap-6 text-center">
@@ -347,69 +374,69 @@ const CreditWallet = () => {
       </div>
       {/* MODAL PDF CHÍNH SÁCH TÍN DỤNG */}
       {showPdfModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
-              {/* Header Modal - Nút điều hướng */}
-              <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
-                <a
-                    href={policyUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
-                    title="Mở trong tab mới"
-                >
-                  <ExternalLink size={18} />
-                </a>
-                <button
-                    onClick={() => {
-                      setShowPdfModal(false);
-                      setIsPdfLoading(true);
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-5xl h-full md:h-[94vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
+            {/* Header Modal - Nút điều hướng */}
+            <div className="absolute top-4 right-4 z-[100] flex items-center gap-2">
+              <a
+                href={policyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2.5 bg-white/90 backdrop-blur-md text-slate-500 hover:text-blue-600 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-95"
+                title="Mở trong tab mới"
+              >
+                <ExternalLink size={18} />
+              </a>
+              <button
+                onClick={() => {
+                  setShowPdfModal(false);
+                  setIsPdfLoading(true);
+                }}
+                className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-slate-100 relative overflow-hidden">
+              {policyUrl ? (
+                <div className="w-full h-full overflow-hidden">
+                  <object
+                    data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                    type="application/pdf"
+                    style={{
+                      width: '100%',
+                      height: 'calc(100% + 40px)',
+                      marginTop: '-40px'
                     }}
-                    className="p-2.5 bg-slate-900/90 backdrop-blur-md text-white hover:bg-red-500 rounded-xl shadow-lg transition-all active:scale-95"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+                    className="relative z-10"
+                    onLoad={() => setIsPdfLoading(false)}
+                  >
+                    <iframe
+                      src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
+                      className="w-full h-full border-none"
+                      title="Credit Policy Preview"
+                      onLoad={() => setIsPdfLoading(false)}
+                    />
+                  </object>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white">
+                  <p className="text-sm font-medium">Tài liệu chính sách chưa khả dụng.</p>
+                </div>
+              )}
 
-              <div className="flex-1 bg-slate-100 relative overflow-hidden">
-                {policyUrl ? (
-                    <div className="w-full h-full overflow-hidden">
-                      <object
-                          data={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
-                          type="application/pdf"
-                          style={{
-                            width: '100%',
-                            height: 'calc(100% + 40px)',
-                            marginTop: '-40px'
-                          }}
-                          className="relative z-10"
-                          onLoad={() => setIsPdfLoading(false)}
-                      >
-                        <iframe
-                            src={`${policyUrl}#navpanes=0&view=FitH&toolbar=0`}
-                            className="w-full h-full border-none"
-                            title="Credit Policy Preview"
-                            onLoad={() => setIsPdfLoading(false)}
-                        />
-                      </object>
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white">
-                      <p className="text-sm font-medium">Tài liệu chính sách chưa khả dụng.</p>
-                    </div>
-                )}
-
-                {isPdfLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
-                      <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
-                            Đang tải phụ lục tín dụng...
-                        </span>
-                    </div>
-                )}
-              </div>
+              {isPdfLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-[20] bg-slate-50">
+                  <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                    Đang tải phụ lục tín dụng...
+                  </span>
+                </div>
+              )}
             </div>
           </div>
+        </div>
       )}
     </div>
   );

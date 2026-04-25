@@ -77,6 +77,7 @@ export default function BookingCheckoutPage() {
     const [isPdfLoading, setIsPdfLoading] = useState(true);
     const [showPdfModal, setShowPdfModal] = useState(false);
     const [policyUrl, setPolicyUrl] = useState("");
+    const [agencyStatus, setAgencyStatus] = useState("");
     useEffect(() => {
         const fetchPolicy = async () => {
             try {
@@ -170,7 +171,23 @@ export default function BookingCheckoutPage() {
             }
         };
 
+        const fetchAccountAgencyData = async () => {
+            if (agencyId) {
+                try {
+                    const res = await api.get(`/agencies/${agencyId}`);
+                    if (res.data?.result) {
+                        setAgencyStatus(res.data.result.status);
+                    }
+                } catch (error) {
+                    console.error("Lỗi lấy thông tin tài chính:", error);
+                }
+            } else {
+                console.warn("Không tìm thấy AgencyId để gọi API Finance");
+            }
+        };
+
         fetchAccountData();
+        fetchAccountAgencyData();
     }, [user?.agencyId, data.agencyId]);
 
     // SỬ DỤNG CUSTOM HOOK LOGIC VOUCHER
@@ -478,8 +495,8 @@ const validateSelectedAddons = async () => {
                             <div className="space-y-2">
                                 <label
                                     className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${paymentMethod === "WALLET"
-                                            ? "border-blue-500 bg-blue-50/40 shadow-sm"
-                                            : "border-slate-100 hover:bg-slate-50"
+                                        ? "border-blue-500 bg-blue-50/40 shadow-sm"
+                                        : "border-slate-100 hover:bg-slate-50"
                                         } ${isWalletInsufficient ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer"}`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -508,8 +525,8 @@ const validateSelectedAddons = async () => {
                                     </div>
                                     <div
                                         className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors ${isWalletInsufficient
-                                                ? "bg-red-50 text-red-600 border-red-100"
-                                                : "bg-blue-100 text-blue-700 border-blue-200"
+                                            ? "bg-red-50 text-red-600 border-red-100"
+                                            : "bg-blue-100 text-blue-700 border-blue-200"
                                             }`}>
                                         Còn: {walletBal.toLocaleString()} đ
                                     </div>
@@ -537,8 +554,8 @@ const validateSelectedAddons = async () => {
                             <div className="space-y-2">
                                 <label
                                     className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${paymentMethod === "CREDIT"
-                                            ? "border-purple-500 bg-purple-50/40 shadow-sm"
-                                            : "border-slate-100 hover:bg-slate-50"
+                                        ? "border-purple-500 bg-purple-50/40 shadow-sm"
+                                        : "border-slate-100 hover:bg-slate-50"
                                         } ${isCreditInsufficient ? "opacity-60 bg-slate-50 cursor-not-allowed" : "cursor-pointer"}`}
                                 >
                                     <div className="flex items-center gap-4">
@@ -567,8 +584,8 @@ const validateSelectedAddons = async () => {
                                     </div>
                                     <div
                                         className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors ${isCreditInsufficient
-                                                ? "bg-red-50 text-red-600 border-red-100"
-                                                : "bg-purple-100 text-purple-700 border-purple-200"
+                                            ? "bg-red-50 text-red-600 border-red-100"
+                                            : "bg-purple-100 text-purple-700 border-purple-200"
                                             }`}>
                                         Còn: {creditBal.toLocaleString()} đ
                                     </div>
@@ -743,14 +760,30 @@ const validateSelectedAddons = async () => {
 
                                 </div>
 
-                                <button
-                                    onClick={handleConfirmBooking}
-                                    disabled={isSubmitting}
-                                    className="w-full py-4 bg-[#1a73e8] hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all flex justify-center items-center gap-2"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <>
-                                        <CreditCard size={18} /> ĐẶT NGAY</>}
-                                </button>
+                                <div className="relative group w-full">
+                                    <button
+                                        onClick={handleConfirmBooking}
+                                        disabled={isSubmitting || agencyStatus === "LOCKED" || agencyStatus === "LEGAL"}
+                                        className="w-full py-4 bg-[#1a73e8] hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-black rounded-xl shadow-lg transition-all flex justify-center items-center gap-2"
+                                    >
+                                        {isSubmitting ? (
+                                            <Loader2 className="animate-spin" size={20} />
+                                        ) : (
+                                            <>
+                                                <CreditCard size={18} /> ĐẶT NGAY
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {/* Tooltip chỉ hiện khi status là LOCKED hoặc LEGAL */}
+                                    {(agencyStatus === "LOCKED" || agencyStatus === "LEGAL") && (
+                                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            Tài khoản của bạn đã bị khóa
+                                        </span>
+                                    )}
+                                </div>
+
+
                             </div>
                         </div>
 
