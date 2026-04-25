@@ -58,7 +58,8 @@ public class AgencyBooking {
     @Column(name = "penalty_rate", precision = 10, scale = 7)
     private BigDecimal penaltyRate;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agency_id", referencedColumnName = "agency_id", insertable = false, updatable = false)
+    // Trong AgencyBooking
+    @OneToMany(mappedBy = "agencyBooking", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Booking> bookings;
+
 }

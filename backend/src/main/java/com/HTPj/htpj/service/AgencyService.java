@@ -26,7 +26,7 @@ public interface AgencyService {
 
     CreditSummaryDto getCreditSummary(Long agencyId);
 
-    void payDebt(Long agencyId, BigDecimal payment);
+    void payDebt(Long agencyId, BigDecimal payment) throws Exception;
 
     List<AgencyUserBookingResponse> getAgencyUserBookingSummary();
 }

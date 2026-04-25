@@ -13,12 +13,13 @@ import com.HTPj.htpj.mapper.AgencyMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AgencyService;
 import com.HTPj.htpj.service.NotificationService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -260,11 +261,13 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
 
-    @Transactional
-    public void payDebt(Long agencyId, BigDecimal payment) {
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void payDebt(Long agencyId, BigDecimal payment) throws Exception {
         if (payment == null) {
             throw new IllegalArgumentException("Số tiền thanh toán không được null");
         }
+
+        BigDecimal totalAmountUseToPay = payment;
 
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new RuntimeException("Agency not found"));
@@ -282,59 +285,73 @@ public class AgencyServiceImpl implements AgencyService {
 
         agency.setWalletBalance(walletBalance.subtract(payment));
 
-        AgencyBooking booking = unpaidBookings.get(0);
+        for(AgencyBooking booking : unpaidBookings){
+            BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
+            BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
 
-        BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
-        BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
-
-        if (payment.compareTo(penalty) >= 0) {
-            payment = payment.subtract(penalty);
-            penalty = BigDecimal.ZERO;
-        } else {
-            penalty = penalty.subtract(payment);
-            payment = BigDecimal.ZERO;
-        }
-
-        //cấm sửa chỗ này logic quan trọng chỉ hoàn trả tín dụng khi trả gốc chứ không phải nãi
-        agency.setCurrentCredit(agency.getCurrentCredit() != null
-                ? agency.getCurrentCredit().add(payment)
-                : payment);
-
-        if (payment.compareTo(BigDecimal.ZERO) > 0) {
-            if (payment.compareTo(principal) >= 0) {
-                payment = payment.subtract(principal);
-                principal = BigDecimal.ZERO;
+            if (payment.compareTo(penalty) >= 0) {
+                payment = payment.subtract(penalty);
+                penalty = BigDecimal.ZERO;
             } else {
-                principal = principal.subtract(payment);
+                penalty = penalty.subtract(payment);
                 payment = BigDecimal.ZERO;
             }
-        }
 
-        booking.setPenaltyInterest(penalty);
-        booking.setPrincipalRemaining(principal);
-        booking.setUpdatedAt(LocalDateTime.now());
-
-        if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
-            booking.setIsPaid(true);
-        }
-
-        agencyBookingRepository.save(booking);
-
-        if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
             agency.setCurrentCredit(agency.getCurrentCredit() != null
                     ? agency.getCurrentCredit().add(payment)
                     : payment);
+
+            if (payment.compareTo(BigDecimal.ZERO) > 0) {
+                if (payment.compareTo(principal) >= 0) {
+                    payment = payment.subtract(principal);
+                    principal = BigDecimal.ZERO;
+                } else {
+                    principal = principal.subtract(payment);
+                    payment = BigDecimal.ZERO;
+                }
+            }
+
+            booking.setPenaltyInterest(penalty);
+            booking.setPrincipalRemaining(principal);
+            booking.setUpdatedAt(LocalDateTime.now());
+
+            if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
+                booking.setIsPaid(true);
+            }
+
+            agencyBookingRepository.save(booking);
+
+            if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
+                agency.setCurrentCredit(agency.getCurrentCredit() != null
+                        ? agency.getCurrentCredit().add(payment)
+                        : payment);
+            }
+
+            agencyRepository.save(agency);
+
+            BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
+
+            // Notify agency manager about debt payment
+            List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
+            for (Users manager : managers) {
+                notificationService.sendNotification(
+                        manager.getId(), "PAYMENT",
+                        "Thanh toán dư nợ thành công",
+                        "Đại lý đã thanh toán dư nợ " + amountPaid.toPlainString() + " VND.",
+                        "AGENCY", String.valueOf(agencyId),
+                        "/agency/credit-wallet"
+                );
+            }
+
+            agencyBookingRepository.updateStatusForPaidAgency();
         }
 
-        agencyRepository.save(agency);
-
-        BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
         TransactionHistory historyCreditMD = TransactionHistory.builder()
                 .transactionDate(LocalDateTime.now())
                 .transactionType("Payment")
                 .description("Thanh toán dư nợ tín dụng từ ví sang tín dụng")
                 .sourceType("Ví")
-                .amount(amountPaid)
+                .amount(totalAmountUseToPay)
                 .balanceAfter(agency.getWalletBalance())
                 .status("Success")
                 .direction("OUT")
@@ -345,18 +362,6 @@ public class AgencyServiceImpl implements AgencyService {
         historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
         historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
         transactionHistoryRepository.save(historyCreditMD);
-
-        // Notify agency manager about debt payment
-        List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
-        for (Users manager : managers) {
-            notificationService.sendNotification(
-                    manager.getId(), "PAYMENT",
-                    "Thanh toán dư nợ thành công",
-                    "Đại lý đã thanh toán dư nợ " + amountPaid.toPlainString() + " VND.",
-                    "AGENCY", String.valueOf(agencyId),
-                    "/agency/credit-wallet"
-            );
-        }
     }
 
     @Override

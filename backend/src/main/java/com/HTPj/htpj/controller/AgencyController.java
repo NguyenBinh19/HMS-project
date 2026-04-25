@@ -86,7 +86,7 @@ public class AgencyController {
     @PostMapping("/{agencyId}/pay-debt")
     public ApiResponse<String> payDebt(
             @PathVariable Long agencyId,
-            @RequestParam BigDecimal payment) {
+            @RequestParam BigDecimal payment) throws Exception {
         agencyService.payDebt(agencyId, payment);
         return ApiResponse.<String>builder()
                 .result("Thanh toán nợ thành công")
