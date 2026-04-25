@@ -72,6 +72,42 @@ public class ChatController {
         );
     }
 
+    @PostMapping("/init-nego")
+    public ConversationDTO initNegotiationChatWithHotel(
+            @RequestParam String hotelId,
+            @RequestParam String userId,
+            @RequestParam(required = false) String bookingId,
+            @RequestParam(required = false) String bookingCode,
+            @RequestParam(required = false) String hotelName,
+            @RequestParam(required = false) String room,
+            @RequestParam(required = false) String checkIn,
+            @RequestParam(required = false) String checkOut
+
+    ) {
+
+        System.out.println("=== INIT CHAT ===");
+        System.out.println("hotelId: " + hotelId);
+        System.out.println("userId: " + userId);
+        System.out.println("bookingId: " + bookingId);
+        System.out.println("bookingCode: " + bookingCode);
+        System.out.println("hotelName: " + hotelName);
+
+        if (hotelId == null || userId == null) {
+            throw new RuntimeException("Missing required params");
+        }
+
+        return chatService.initNegotiationChatWithHotel(
+                userId,
+                hotelId,
+                bookingId,
+                bookingCode,
+                hotelName,
+                room,
+                checkIn,
+                checkOut
+        );
+    }
+
     @PostMapping("/init-regular")
     public ConversationDTO initChatWithHotelRegular(
             @RequestParam String hotelId,

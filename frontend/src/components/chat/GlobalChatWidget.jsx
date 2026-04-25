@@ -68,6 +68,8 @@ export default function GlobalChatWidget() {
         pc.ontrack = (event) => {
             const stream = event.streams[0];
 
+            setRemoteStream(stream);
+
             console.log("REMOTE STREAM TRACKS:", stream.getTracks());
             console.log("AUDIO TRACK ENABLED:", stream.getAudioTracks()[0]?.enabled);
 
@@ -277,23 +279,15 @@ export default function GlobalChatWidget() {
     }, [currentUserId]);
 
     const startMedia = async (video = false) => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: video,
-            });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video,
+        });
 
-            setLocalStream(stream);
-            localStreamRef.current = stream;
+        setLocalStream(stream);
+        localStreamRef.current = stream;
 
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-            }
-
-            return stream;
-        } catch (err) {
-            console.error("❌ Media error:", err);
-        }
+        return stream;
     };
 
     // 🔍 SEARCH
@@ -458,29 +452,18 @@ export default function GlobalChatWidget() {
     };
 
     const endCall = () => {
-        setCallState("idle");
-
-        if (peerRef.current) {
-            peerRef.current.close();
-            peerRef.current = null;
-        }
-
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-
-        setLocalStream(null);
-        setRemoteStream(null);
-
-        if (clientRef.current && selectedChat) {
+        if (clientRef.current && selectedChat?.userId) {
             clientRef.current.publish({
                 destination: "/app/call.signal",
                 body: JSON.stringify({
                     type: "END",
+                    fromUserId: currentUserId,
                     toUserId: selectedChat.userId
                 })
             });
         }
+
+        window.location.reload();
     };
 
     const acceptCall = async () => {
@@ -613,6 +596,12 @@ export default function GlobalChatWidget() {
             behavior: "smooth",
         });
     }, [messages]);
+
+    useEffect(() => {
+        if (callState === "in-call" && localVideoRef.current && localStream) {
+            localVideoRef.current.srcObject = localStream;
+        }
+    }, [callState, localStream]);
 
     return (
         <div>
@@ -758,7 +747,11 @@ export default function GlobalChatWidget() {
                                         {/* RANK + BOOKING */}
                                         <div className="text-[11px] text-gray-500 flex gap-2 mt-0.5">
                                             <span className="text-yellow-600 font-medium">
-                                                🏆 {item.rank}
+                                                {item?.rank != null && (
+                                                    <>
+                                                        🏆 {item.rank}
+                                                    </>
+                                                )}
                                             </span>
                                             {item?.type === "BOOKING" && (
                                                 <span>
@@ -811,7 +804,7 @@ export default function GlobalChatWidget() {
                                     {selectedChat?.name}
                                 </div>
                                 <div className="text-xs text-gray-400">
-                                    0987 654 321
+                                    {selectedChat?.phoneNumber}
                                 </div>
                             </div>
                         </div>
@@ -864,6 +857,37 @@ export default function GlobalChatWidget() {
                                     className="text-blue-500 text-xs cursor-pointer"
                                 >
                                     Xem chi tiết đơn
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedChat?.type === "NEGOTIATION" && (
+                        <div className="p-3 border-b bg-gray-50">
+                            <div className="bg-orange-50 p-3 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <div className="font-medium text-sm text-orange-700">
+                                        {selectedChat?.hotelName || "Thương lượng giá"}
+                                    </div>
+
+                                    <div className="text-xs text-gray-500">
+                                        {selectedChat?.checkIn && selectedChat?.checkOut && (
+                                            <>
+                                                {new Date(selectedChat.checkIn).toLocaleDateString()} -{" "}
+                                                {new Date(selectedChat.checkOut).toLocaleDateString()}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {selectedChat?.room && (
+                                        <div className="text-xs text-gray-400">
+                                            {selectedChat.room}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="text-orange-500 text-xs font-medium">
+                                    Đang thương lượng
                                 </div>
                             </div>
                         </div>
@@ -1034,13 +1058,14 @@ export default function GlobalChatWidget() {
                                                 ref={localVideoRef}
                                                 autoPlay
                                                 muted
-                                                className="w-40 h-40 bg-black rounded-lg"
+                                                playsInline
+                                                className="w-80 h-80 bg-black rounded-lg"
                                             />
                                             <video
                                                 ref={remoteVideoRef}
                                                 autoPlay
                                                 playsInline
-                                                className="w-60 h-60 bg-black"
+                                                muted={false}
                                             />
                                         </div>
                                     )}

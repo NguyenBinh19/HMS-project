@@ -14,6 +14,8 @@ public interface ChatService {
     ConversationDTO buildConversation(Message m, String currentUserId);
     ConversationDTO initChatWithHotel(String userId, String hotelId, String bookingId, String bookingCode,
                                       String hotelName, String room, String checkIn, String checkOut);
+    ConversationDTO initNegotiationChatWithHotel(String userId, String hotelId, String bookingId, String bookingCode,
+                                      String hotelName, String room, String checkIn, String checkOut);
     ConversationDTO initChatRegular(String userId, String hotelId, String bookingId, String bookingCode,
                                     String hotelName);
 }

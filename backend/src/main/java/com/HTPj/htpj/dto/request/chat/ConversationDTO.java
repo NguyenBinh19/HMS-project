@@ -24,4 +24,6 @@ public class ConversationDTO {
     String checkIn;
     String checkOut;
     String hotelName;
+    String phoneNumber;
+    String rank;
 }

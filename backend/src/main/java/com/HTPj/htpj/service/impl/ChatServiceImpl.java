@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -85,6 +86,30 @@ public class ChatServiceImpl implements ChatService {
                     ? convo.getUser2()
                     : convo.getUser1();
 
+            //get rank name
+            String rankName = null;
+
+            if (otherUser != null &&
+                    otherUser.getAgency() != null &&
+                    otherUser.getAgency().getRank() != null) {
+
+                rankName = otherUser.getAgency().getRank().getRankName();
+            }
+
+            //get agency name
+            String name = Optional.ofNullable(otherUser)
+                    .map(u -> {
+                        String username = Optional.ofNullable(u.getUsername()).orElse("Unknown");
+                        String agencyName = Optional.ofNullable(u.getAgency())
+                                .map(a -> a.getAgencyName())
+                                .orElse(null);
+
+                        return agencyName != null
+                                ? username + " (" + agencyName + ")"
+                                : username;
+                    })
+                    .orElse("Unknown");
+
             int unreadCount = messageRepository
                     .countByConversation_IdAndReceiver_IdAndSeenFalse(
                             convo.getId(), userId
@@ -93,7 +118,7 @@ public class ChatServiceImpl implements ChatService {
             return ConversationDTO.builder()
                     .conversationId(convo.getId())
                     .userId(otherUser.getId())
-                    .name(otherUser.getUsername())
+                    .name(name)
                     .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
                     .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
                     .type(convo.getType())
@@ -104,6 +129,8 @@ public class ChatServiceImpl implements ChatService {
                     .checkIn(convo.getCheckIn())
                     .checkOut(convo.getCheckOut())
                     .hotelName(convo.getHotelName())
+                    .phoneNumber(otherUser.getPhone())
+                    .rank(rankName)
                     .build();
 
         }).toList();
@@ -144,7 +171,7 @@ public class ChatServiceImpl implements ChatService {
         Users hotelManager = userRepository.findById(hotelManagerID).orElseThrow();
 
         Conversation convo = conversationRepository
-                .findByUser1_IdAndUser2_IdAndReferenceId(userId, hotelManagerID, hotelId)
+                .findByUser1_IdAndUser2_IdAndReferenceId(userId, hotelManagerID, hotelManager.getId())
                 .orElse(null);
 
         if (convo == null) {
@@ -152,7 +179,7 @@ public class ChatServiceImpl implements ChatService {
                     .user1(user)
                     .user2(hotelManager)
                     .type("BOOKING")
-                    .referenceId(hotelId)
+                    .referenceId(hotelManager.getId())
                     .createdAt(LocalDateTime.now())
                     .bookingId(bookingCode)
                     .room(room)
@@ -174,7 +201,108 @@ public class ChatServiceImpl implements ChatService {
             messageRepository.save(firstMessage);
         } else {
             convo.setBookingId(bookingCode);
+            convo.setType("BOOKING");
+            convo.setBookingId(bookingCode);
+            convo.setRoom(room);
+            convo.setCheckIn(checkIn);
+            convo.setCheckOut(checkOut);
+            convo.setHotelName(hotelName);
             conversationRepository.save(convo);
+
+            Message firstMessage = Message.builder()
+                    .sender(user)
+                    .receiver(hotelManager)
+                    .conversation(convo)
+                    .content("Xin chào, tôi cần hỗ trợ đơn booking #" + bookingCode)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            messageRepository.save(firstMessage);
+        }
+
+        Message lastMessage = messageRepository
+                .findTopByConversation_IdOrderByCreatedAtDesc(convo.getId());
+
+        return ConversationDTO.builder()
+                .conversationId(convo.getId())
+                .userId(hotelManager.getId())
+                .name(hotelManager.getUsername())
+                .lastMessage(lastMessage != null ? lastMessage.getContent() : "")
+                .time(lastMessage != null ? lastMessage.getCreatedAt() : null)
+                .booking(convo.getBookingId())
+                .type(convo.getType())
+                .referenceId(convo.getReferenceId())
+                .room(convo.getRoom())
+                .checkIn(convo.getCheckIn())
+                .checkOut(convo.getCheckOut())
+                .hotelName(convo.getHotelName())
+                .build();
+    }
+
+    @Override
+    public ConversationDTO initNegotiationChatWithHotel(
+            String userId,
+            String hotelId,
+            String bookingId,
+            String bookingCode,
+            String hotelName,
+            String room,
+            String checkIn,
+            String checkOut
+    ) {
+
+        Users user = userRepository.findById(userId).orElseThrow();
+        String hotelManagerID = userRepository.findHotelMangerID(hotelId);
+        Users hotelManager = userRepository.findById(hotelManagerID).orElseThrow();
+
+        Conversation convo = conversationRepository
+                .findByUser1_IdAndUser2_IdAndReferenceId(userId, hotelManagerID, hotelManager.getId())
+                .orElse(null);
+
+        if (convo == null) {
+            convo = Conversation.builder()
+                    .user1(user)
+                    .user2(hotelManager)
+                    .type("NEGOTIATION")
+                    .referenceId(hotelManager.getId())
+                    .createdAt(LocalDateTime.now())
+                    .bookingId(bookingCode)
+                    .room(room)
+                    .checkIn(checkIn)
+                    .checkOut(checkOut)
+                    .hotelName(hotelName)
+                    .build();
+
+            conversationRepository.save(convo);
+
+            Message firstMessage = Message.builder()
+                    .sender(user)
+                    .receiver(hotelManager)
+                    .conversation(convo)
+                    .content("Xin chào, tôi cần thương lượng về giá của phòng này: " + room)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            messageRepository.save(firstMessage);
+        } else {
+            convo.setBookingId(bookingCode);
+            convo.setType("NEGOTIATION");
+            convo.setBookingId(bookingCode);
+            convo.setRoom(room);
+            convo.setCheckIn(checkIn);
+            convo.setCheckOut(checkOut);
+            convo.setHotelName(hotelName);
+            conversationRepository.save(convo);
+
+            Message firstMessage = Message.builder()
+                    .sender(user)
+                    .receiver(hotelManager)
+                    .conversation(convo)
+                    .content("Xin chào, tôi cần thương lượng về giá của phòng này: " + room)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            messageRepository.save(firstMessage);
         }
 
         Message lastMessage = messageRepository
@@ -233,9 +361,6 @@ public class ChatServiceImpl implements ChatService {
                     .build();
 
             messageRepository.save(firstMessage);
-        } else {
-            convo.setBookingId(bookingCode);
-            conversationRepository.save(convo);
         }
 
         Message lastMessage = messageRepository
