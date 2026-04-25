@@ -103,10 +103,17 @@ public class ChatServiceImpl implements ChatService {
                         String agencyName = Optional.ofNullable(u.getAgency())
                                 .map(a -> a.getAgencyName())
                                 .orElse(null);
+                        String hotelName = Optional.ofNullable(u.getHotel())
+                                .map(b -> b.getHotelName())
+                                .orElse(null);
 
-                        return agencyName != null
-                                ? username + " (" + agencyName + ")"
-                                : username;
+                        if(agencyName != null){
+                            return username + " (" + agencyName + ")";
+                        } else if(hotelName != null){
+                            return username + " (" + hotelName + ")";
+                        } else {
+                            return username;
+                        }
                     })
                     .orElse("Unknown");
 
