@@ -487,33 +487,61 @@ const AgencyProfile = () => {
                             {rankHistory && rankHistory.length > 0 ? (
                                 <div className="relative border-l-2 border-slate-100 ml-1.5 pl-6 py-6">
                                     {rankHistory.map((item, index) => {
-                                        const isUpgrade = item.changeType === 'UPGRADE';
+                                        const statusConfig = {
+                                            UPGRADE: {
+                                                dot: 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]',
+                                                label: 'Nâng hạng',
+                                                badge: 'text-blue-600 bg-blue-50'
+                                            },
+                                            DOWNGRADE: {
+                                                dot: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]',
+                                                label: 'Hạ hạng',
+                                                badge: 'text-rose-600 bg-rose-50'
+                                            },
+                                            HOLD: {
+                                                dot: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]',
+                                                label: 'Giữ hạng',
+                                                badge: 'text-amber-600 bg-amber-50'
+                                            }
+                                        };
+                                        const currentStatus = statusConfig[item.changeType] || statusConfig.HOLD;
                                         return (
                                             <div
                                                 key={item.id || index}
                                                 className={`relative animate-in slide-in-from-bottom-2 duration-300 ${index !== 0 ? 'mt-10' : ''}`}
                                             >
                                                 {/* Dot tín hiệu */}
-                                                <div className={`absolute -left-[33px] top-1 w-3 h-3 rounded-full ring-4 ring-white ${isUpgrade ? 'bg-blue-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]'}`} />
+                                                <div className={`absolute -left-[33px] top-1 w-3 h-3 rounded-full ring-4 ring-white ${currentStatus.dot}`}/>
                                                 <div className="flex flex-col gap-2">
                                                     {/* Time & Type Row */}
                                                     <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                                                {new Date(item.changedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                            <span
+                                                className="text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                                                {new Date(item.changedAt).toLocaleString('vi-VN', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric'
+                                                })}
                                             </span>
-                                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isUpgrade ? 'text-blue-600 bg-blue-50' : 'text-rose-600 bg-rose-50'}`}>
-                                                {isUpgrade ? 'Nâng hạng' : 'Hạ hạng'}
-                                            </span>
+                                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${currentStatus.badge}`}>
+                                                            {currentStatus.label}
+                                                        </span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-sm font-bold text-slate-700">{item.oldRank}</span>
-                                                        <ArrowRight size={14} className="text-slate-700" />
-                                                        <span className="text-[16px] font-black text-slate-900 uppercase tracking-tight">
+                                                        <span
+                                                            className="text-sm font-bold text-slate-700">{item.oldRank}</span>
+                                                        <ArrowRight size={14} className="text-slate-700"/>
+                                                        <span
+                                                            className="text-[16px] font-black text-slate-900 uppercase tracking-tight">
                                                 {item.newRank}
                                             </span>
                                                     </div>
-                                                    <div className="space-y-1 text-[12px] border-l-2 border-slate-50 pl-3 mt-1">
-                                                        <div className="flex justify-between border-b border-dashed border-slate-100 pb-1">
+                                                    <div
+                                                        className="space-y-1 text-[12px] border-l-2 border-slate-50 pl-3 mt-1">
+                                                        <div
+                                                            className="flex justify-between border-b border-dashed border-slate-100 pb-1">
                                                             <span className="text-slate-600 font-medium">Doanh thu ghi nhận:</span>
                                                             <span className="font-black text-slate-800">
                                                     {new Intl.NumberFormat('vi-VN').format(item.totalRevenue)}đ
@@ -526,8 +554,10 @@ const AgencyProfile = () => {
                                                             </p>
                                                         </div>
 
-                                                        <div className="text-[10px] text-slate-500 pt-1 flex justify-end">
-                                                            <span>Thực hiện: <span className="font-bold text-slate-700 uppercase">{item.changedBy}</span></span>
+                                                        <div
+                                                            className="text-[10px] text-slate-500 pt-1 flex justify-end">
+                                                            <span>Thực hiện: <span
+                                                                className="font-bold text-slate-700 uppercase">{item.changedBy}</span></span>
                                                         </div>
                                                     </div>
                                                 </div>
