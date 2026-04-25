@@ -140,7 +140,13 @@ const NotificationBell = () => {
         }
         setOpen(false);
         if (notif.targetUrl) {
-            navigate(notif.targetUrl);
+            // Always navigate as absolute path to avoid relative-resolution bugs
+            // (e.g. clicking the same notif from different routes leading to broken URLs).
+            let url = String(notif.targetUrl).trim();
+            if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) {
+                url = "/" + url;
+            }
+            navigate(url);
         }
     };
 

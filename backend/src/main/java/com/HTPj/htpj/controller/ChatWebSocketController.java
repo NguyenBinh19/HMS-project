@@ -1,8 +1,7 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.chat.ChatMessageRequest;
-import com.HTPj.htpj.dto.response.ChatMessageResponse;
-import com.HTPj.htpj.dto.request.chat.ConversationDTO;
+import com.HTPj.htpj.dto.response.chat.ChatMessageResponse;
 import com.HTPj.htpj.entity.Message;
 import com.HTPj.htpj.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +25,9 @@ public class ChatWebSocketController {
                 .senderId(saved.getSender().getId())
                 .receiverId(saved.getReceiver().getId())
                 .content(saved.getContent())
+                .type(saved.getType())
+                .fileUrl(saved.getFileUrl())
+                .fileName(saved.getFileName())
                 .createdAt(saved.getCreatedAt())
                 .build();
 

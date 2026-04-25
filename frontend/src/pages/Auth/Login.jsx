@@ -120,7 +120,7 @@ const Login = () => {
                 setToast({ show: true, message: "Đăng nhập thành công!", type: "success" });
 
                 setTimeout(() => {
-                    navigate(redirectPath, { replace: true });
+                    window.location.href = "/";
                 }, 600);
             } else {
                 setError("Đăng nhập thành công nhưng không nhận được thông tin xác thực.");

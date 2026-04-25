@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.project.ChatMessageProjection;
 import com.HTPj.htpj.entity.Message;
 import com.HTPj.htpj.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,4 +45,18 @@ public interface MessageRepository extends JpaRepository<Message, String> {
     List<Message> findByConversation_IdOrderByCreatedAtAsc(String conversationId);
 
     Message findTopByConversation_IdOrderByCreatedAtDesc(String conversationId);
+
+    int countByConversation_IdAndReceiver_IdAndSeenFalse(
+            String conversationId,
+            String receiverId
+    );
+
+    @Modifying
+    @Query("""
+    UPDATE Message m
+    SET m.seen = true
+    WHERE m.conversation.id = :conversationId
+    AND m.receiver.id = :userId
+""")
+    void markAsRead(String conversationId, String userId);
 }

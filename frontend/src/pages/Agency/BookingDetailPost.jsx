@@ -258,11 +258,12 @@ const BookingDetailPost = () => {
                 params: {
                     hotelId: booking.hotelId,
                     userId: currentUser.userId,
-
-                    // 🔥 ADD 3 dòng này
                     bookingId: booking.id,
                     bookingCode: booking.bookingCode,
-                    hotelName: booking.hotelName
+                    hotelName: booking.hotelName,
+                    room: booking.roomDetails?.[0]?.roomTitle,
+                    checkIn: booking.checkInDate,
+                    checkOut: booking.checkOutDate
                 }
             });
 

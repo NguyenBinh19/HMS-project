@@ -1122,7 +1122,7 @@ public class BookingServiceImpl implements BookingService {
                     "Hủy đặt phòng #" + booking.getBookingCode(),
                     "Đơn đặt phòng #" + booking.getBookingCode() + " đã bị hủy.",
                     "BOOKING", String.valueOf(booking.getBookingId()),
-                    "hotel/view-booking/" + booking.getBookingCode()
+                    "/hotel/view-booking/" + booking.getBookingCode()
             );
         }
         // Notify agency user
