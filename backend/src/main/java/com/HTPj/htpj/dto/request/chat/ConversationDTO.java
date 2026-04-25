@@ -19,4 +19,11 @@ public class ConversationDTO {
     String type;
     String referenceId;
     String booking;
+    int unreadCount;
+    String room;
+    String checkIn;
+    String checkOut;
+    String hotelName;
+    String phoneNumber;
+    String rank;
 }

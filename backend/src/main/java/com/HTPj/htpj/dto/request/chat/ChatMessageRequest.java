@@ -8,4 +8,7 @@ public class ChatMessageRequest {
     private String senderId;
     private String content;
     private String booking;
+    private String type; // TEXT | IMAGE | FILE
+    private String fileUrl;
+    private String fileName;
 }

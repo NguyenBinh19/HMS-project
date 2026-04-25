@@ -290,6 +290,57 @@ export default function HotelDetailPage() {
             : ["https://pix8.agoda.net/hotelImages/186/186135/186135_17083113400050872001.jpg"];
     if (!hotel) return <div className="flex justify-center items-center h-screen"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
 
+    const handleNegotiation = async () => {
+        try {
+            if (!currentUser?.userId) {
+                alert("Bạn cần đăng nhập để chat");
+                return;
+            }
+
+            if (!hotel?.hotelId && !hotel?.id) {
+                alert("Không tìm thấy khách sạn");
+                return;
+            }
+
+            if (selectedRooms.length === 0) {
+                alert("Vui lòng chọn ít nhất 1 phòng để thương lượng");
+                return;
+            }
+
+            const res = await api.post("/chat/init-nego", null, {
+                params: {
+                    hotelId: hotel.hotelId || hotel.id,
+                    userId: currentUser.userId,
+                    bookingId: null,
+                    hotelName: hotel.hotelName,
+                    room: selectedRooms.map(r => r.name).join(", "),
+                    checkIn: dates.checkIn,
+                    checkOut: dates.checkOut
+                }
+            });
+
+            const convo = res.data;
+
+            navigate(`/agency/chat-page`, {
+                state: {
+                    conversationId: convo.conversationId,
+                    bookingInfo: {
+                        bookingId: null,
+                        hotelName: hotel.hotelName,
+                        room: selectedRooms.map(r => r.name).join(", "),
+                        checkIn: dates.checkIn,
+                        checkOut: dates.checkOut,
+                        type: "NEGOTIATION"
+                    }
+                }
+            });
+
+        } catch (err) {
+            console.error("Chat negotiation lỗi:", err);
+            alert("Không thể mở chat thương lượng");
+        }
+    };
+
     return (
         <div className="bg-slate-50 min-h-screen">
 
@@ -361,15 +412,6 @@ export default function HotelDetailPage() {
                                     <MapPin size={18} />
                                     <span>{hotel.address}</span>
                                 </div>
-
-                                {/* 👉 Nút chat */}
-                                <button
-                                    onClick={() => handleOpenChat(hotel)}
-                                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition"
-                                >
-                                    <MessageCircle size={18} />
-                                    Chat
-                                </button>
                             </div>
 
                             <div className="flex flex-wrap gap-4 pt-6 border-t border-slate-100">
@@ -450,6 +492,13 @@ export default function HotelDetailPage() {
                                                                 className="group-hover:rotate-12 transition-transform" />
                                                             <span
                                                                 className="border-b border-blue-200 group-hover:border-blue-600">Xem chi tiết</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={handleNegotiation}
+                                                            className="flex items-center gap-2 hover:bg-orange-50 text-orange-600 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                                                        >
+                                                            Thương lượng giá
                                                         </button>
                                                     </div>
                                                 </div>

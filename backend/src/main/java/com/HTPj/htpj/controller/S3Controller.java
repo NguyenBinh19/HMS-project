@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/storage")
@@ -27,5 +29,23 @@ public class S3Controller {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .body(data);
+    }
+
+    @PostMapping("/upload-chat")
+    public ResponseEntity<Map<String, String>> uploadForChat(
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
+
+        String key = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+        s3Service.uploadFile(file, key);
+
+        String url = s3Service.getFileUrl(key);
+
+        Map<String, String> res = new HashMap<>();
+        res.put("url", url);
+        res.put("fileName", file.getOriginalFilename());
+
+        return ResponseEntity.ok(res);
     }
 }

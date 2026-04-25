@@ -183,9 +183,11 @@ const Header = () => {
 
     const handleLogout = () => {
         localStorage.clear();
+        sessionStorage.clear();
         setUser(null);
         setUserRoles([]);
-        navigate("/login");
+
+        window.location.href = "/login";
     };
 
     const navLinks = [
@@ -277,8 +279,8 @@ const Header = () => {
                                         key={link.name}
                                         to={link.href}
                                         className={`px-4 py-2 text-[15px] font-bold rounded-lg transition-all ${isActive
-                                                ? "text-blue-600 bg-blue-50"
-                                                : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                            ? "text-blue-600 bg-blue-50"
+                                            : "text-slate-500 hover:text-blue-600 hover:bg-blue-50"
                                             }`}
                                     >
                                         {link.name}

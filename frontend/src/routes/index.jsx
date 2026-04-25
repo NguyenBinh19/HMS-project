@@ -97,7 +97,7 @@ import PayoutStatementOverview from "@/pages/Admin/PayoutStatementOverview.jsx";
 
 import PartnerAuditLog from "@/pages/Admin/PartnerAuditLog.jsx";
 import GlobalChatWidget from "../components/chat/GlobalChatWidget.jsx";
-import TestChat from "../components/chat/TestChat.jsx";
+
 const AppRoutes = () => {
     return (
         <>

@@ -35,6 +35,11 @@ public class Message {
     @Builder.Default
     String type = "TEXT"; // TEXT | FILE
 
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String fileUrl;
+
+    private String fileName;
+
     @Builder.Default
     Boolean seen = false;
 
