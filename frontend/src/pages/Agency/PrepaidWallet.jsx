@@ -57,7 +57,7 @@ const PrepaidWallet = () => {
 
     const handleDemoPayment = async (amount) => {
         try {
-            const res = await api.post("https://www.jushotel.site/payment/create", {
+            const res = await api.post("https://www.hmsb2b.site/payment/create", {
                 agencyId,
                 amount: Number(amount),
             });

@@ -116,7 +116,7 @@ export default function GlobalChatWidget() {
 
     const socketUrl =
         protocol === "https"
-            ? `https://www.jushotel.site/backend/ws`
+            ? `https://www.hmsb2b.site/backend/ws`
             : `http://localhost:8080/ws`;
     useEffect(() => {
         selectedChatRef.current = selectedChat;

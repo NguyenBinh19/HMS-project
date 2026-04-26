@@ -103,7 +103,7 @@ public class SecurityConfig {
 
         corsConfiguration.addAllowedOriginPattern("http://localhost:*");
         corsConfiguration.addAllowedOriginPattern("http://localhost");
-        corsConfiguration.addAllowedOriginPattern("https://www.jushotel.site");
+        corsConfiguration.addAllowedOriginPattern("https://www.hmsb2b.site");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true);

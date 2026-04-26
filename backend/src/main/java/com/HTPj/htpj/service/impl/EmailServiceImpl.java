@@ -246,7 +246,7 @@ public class EmailServiceImpl implements EmailService {
                     + "</table></div>"
                     + "<p style='color: #475569; line-height: 1.6;'>Vui lòng đăng nhập vào hệ thống để xem chi tiết và xác nhận bảng sao kê.</p>"
                     + "<div style='text-align: center; margin: 24px 0;'>"
-                    + "<a href='https://www.jushotel.site/hotel/payout-state' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 14px;'>Xem chi tiết sao kê</a>"
+                    + "<a href='https://www.hmsb2b.site/hotel/payout-state' style='display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: bold; font-size: 14px;'>Xem chi tiết sao kê</a>"
                     + "</div>"
                     + "<p style='color: #94a3b8; font-size: 12px; margin-top: 24px;'>Đây là email tự động từ hệ thống HMS.Vui lòng không trả lời lại email này.</p>"
                     + "</div></div>";
