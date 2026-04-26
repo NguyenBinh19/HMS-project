@@ -59,7 +59,12 @@ const HotelProfessionalDashboard = () => {
             if (bookingRes.status === 'fulfilled' && bookingRes.value?.code === 1000) {
                 const all = bookingRes.value.result || [];
                 // Lọc trên chuỗi ngày
-                const todayList = all.filter(b => b.createdAt && b.createdAt.split('T')[0] === today);
+                const todayList = all.filter(b => {
+                    if (!b.createdAt) return false;
+                    const d = new Date(b.createdAt);
+                    const now = new Date();
+                    return d.toDateString() === now.toDateString();
+                });
                 setLiveBookings(todayList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5));
             }
 
@@ -130,7 +135,7 @@ const HotelProfessionalDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <KpiCard label="Doanh thu" value={formatVND(stats?.totalRevenue)}
                              trend={stats?.revenueGrowthPercent} icon={<Target size={20}/>} color="blue"/>
-                    <KpiCard label="Công suất phòng" value={`${stats?.occupancyRate || 0}%`}
+                    <KpiCard label="Công suất phòng"value={`${(stats?.occupancyRate || 0).toFixed(2)}%`}
                              trend={stats?.occupancyGrowthPercent} icon={<BedDouble size={20}/>}
                              progress={stats?.occupancyRate} color="purple"/>
                     <KpiCard label="Chỉ số ADR" value={formatVND(stats?.adr)} trend={stats?.adrGrowthPercent}
@@ -292,8 +297,8 @@ const HotelProfessionalDashboard = () => {
 };
 
 const KpiCard = ({label, value, trend, icon, progress, color}) => {
-    const displayTrend = trend === null ? 0 : trend;
-    const isPositive = displayTrend >= 0;
+    const trendValue = parseFloat(trend) || 0;
+    const isPositive = trendValue >= 0;
     return (
         <div
             className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative group hover:shadow-md transition-all">
@@ -305,7 +310,7 @@ const KpiCard = ({label, value, trend, icon, progress, color}) => {
                 <div
                     className={`flex items-center font-black text-[11px] ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                     {isPositive ? <ArrowUpRight size={14}/> : <ArrowDownLeft size={14}/>}
-                    {Math.abs(displayTrend)}%
+                    {Math.abs(trendValue).toFixed(2)}%
                 </div>
             </div>
             <p className="text-[11px] font-black text-[#47548C] uppercase tracking-wider">{label}</p>
@@ -350,8 +355,8 @@ const StatusBadge = ({ status }) => {
     const config = {
         'BOOKED': 'bg-amber-100 text-amber-700',
         'CONFIRMED': 'bg-blue-100 text-[#4318FF]',
-        'CHECKED_IN': 'bg-indigo-100 text-indigo-700',
-        'CHECKED_OUT': 'bg-slate-200 text-slate-700',
+        'CHECKED-IN': 'bg-indigo-100 text-indigo-700',
+        'CHECKED-OUT': 'bg-slate-200 text-slate-700',
         'COMPLETED': 'bg-emerald-100 text-emerald-700',
         'CANCELLED': 'bg-red-100 text-red-700',
         'NO_SHOW': 'bg-rose-100 text-rose-800 border border-rose-200',
