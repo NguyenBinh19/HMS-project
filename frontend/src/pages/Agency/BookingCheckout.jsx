@@ -259,7 +259,27 @@ export default function BookingCheckoutPage() {
             }
         } catch (error) { alert("Lỗi gia hạn."); } finally { setIsExtending(false); }
     };
+const validateSelectedAddons = async () => {
+    if (selectedAddons.length === 0) return true;
 
+    const res = await addonServiceApi.getActiveAddonServicesByHotel(data.hotelId);
+    const activeServices = res?.result || [];
+
+    const activeServiceIds = new Set(
+        activeServices.map(s => Number(s.serviceId))
+    );
+
+    const invalidAddon = selectedAddons.find(
+        addon => !activeServiceIds.has(Number(addon.serviceId))
+    );
+
+    if (invalidAddon) {
+        alert(`Dịch vụ "${invalidAddon.serviceName}" hiện không còn khả dụng. Vui lòng reload lại trang để cập nhật lại.`);
+        return false;
+    }
+
+    return true;
+};
     const handleConfirmBooking = async () => {
         const { name, email, phone } = customerInfo;
         if (!name.trim() || !email.trim() || !phone.trim() || !paymentMethod) return alert("Vui lòng điền đủ thông tin!");
@@ -290,6 +310,11 @@ export default function BookingCheckoutPage() {
 
         setIsSubmitting(true);
         try {
+             const addonValid = await validateSelectedAddons();
+    if (!addonValid) {
+        setIsSubmitting(false);
+        return;
+    }
             const payload = {
                 holdCode: data.holdCode,
                 guestName: name.trim(),

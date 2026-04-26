@@ -131,6 +131,14 @@ public class AddonServiceServiceImpl implements AddonServiceService {
             AddonService addonService = addonServiceRepository.findById(req.getServiceId())
                     .orElseThrow(() -> new AppException(ErrorCode.ADDON_SERVICE_NOT_FOUND));
 
+            if (!"active".equalsIgnoreCase(addonService.getStatus())) {
+                throw new AppException(ErrorCode.ADDON_SERVICE_NOT_AVAILABLE);
+            }
+
+            if (!addonService.getHotel().getHotelId().equals(booking.getHotelId())) {
+                throw new AppException(ErrorCode.ADDON_SERVICE_NOT_AVAILABLE);
+            }
+
             int qty = (req.getQuantity() != null && req.getQuantity() > 0) ? req.getQuantity() : 1;
 
             BigDecimal unitPrice = addonService.getNetPrice();
