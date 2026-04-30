@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Save } from 'lucide-react';
 import WeeklyStrategy from '@/components/hotel/dynamicPricing/WeeklyStrategy.jsx';
 import SpecialEvents from '@/components/hotel/dynamicPricing/SpecialEvents.jsx';
-import OccupancyRules from '@/components/hotel/dynamicPricing/OccupancyRules.jsx';
+// import OccupancyRules from '@/components/hotel/dynamicPricing/OccupancyRules.jsx';
 import { roomTypeService } from '@/services/roomtypes.service.js';
 
 const HOTEL_ID = 2;
@@ -99,7 +99,7 @@ const DynamicPricing = () => {
                                 >
                                     {roomTypes.map(rt => (
                                         <option key={rt.roomTypeId} value={rt.roomTypeId}>
-                                            {rt.typeName || rt.roomTypeName || `Room Type #${rt.roomTypeId}`}
+                                            {rt.roomTitle ||  `Room Type #${rt.roomTypeId}`}
                                         </option>
                                     ))}
                                 </select>
@@ -147,14 +147,14 @@ const DynamicPricing = () => {
                             >
                                 NGÀY LỄ & SỰ KIỆN
                             </button>
-                            <button
+                            {/* <button
                                 onClick={() => setActiveTab('OCCUPANCY')}
                                 className={`py-4 text-[13px] font-bold uppercase tracking-wide border-b-[3px] transition-all ${
                                     activeTab === 'OCCUPANCY' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
                                 LUẬT THEO CÔNG SUẤT
-                            </button>
+                            </button> */}
                         </div>
                     </div>
 
@@ -162,7 +162,7 @@ const DynamicPricing = () => {
                     <div className="p-6">
                         {selectedRoomTypeId && activeTab === 'WEEKLY' && <WeeklyStrategy basePrice={basePrice} roomTypeId={selectedRoomTypeId} />}
                         {selectedRoomTypeId && activeTab === 'EVENT' && <SpecialEvents roomTypeId={selectedRoomTypeId} />}
-                        {activeTab === 'OCCUPANCY' && <OccupancyRules />}
+                        {/* {activeTab === 'OCCUPANCY' && <OccupancyRules />} */}
                     </div>
                 </div>
             </div>

@@ -27,15 +27,13 @@ public class InventoryController {
      * UC-061: Get inventory grid for a hotel
      * Shows allotment, sold, available, stop-sell status per room type per date
      */
-    @GetMapping("/grid/{hotelId}")
+    @GetMapping("/grid")
     ApiResponse<List<InventoryGridResponse>> getInventoryGrid(
-            @PathVariable Integer hotelId,
             @RequestParam String startDate,
             @RequestParam String endDate
     ) {
         return ApiResponse.<List<InventoryGridResponse>>builder()
                 .result(roomAllotmentService.getInventoryGrid(
-                        hotelId,
                         LocalDate.parse(startDate),
                         LocalDate.parse(endDate)))
                 .build();

@@ -96,7 +96,7 @@ export default function CompareModal() {
                                                     <div className="space-y-4">
                                                         <div className="h-48 rounded-2xl overflow-hidden shadow-md">
                                                             <img
-                                                                src={hotel.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800"}
+                                                                src={hotel.images?.[0] || "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb"}
                                                                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                                                 alt="hotel"
                                                             />

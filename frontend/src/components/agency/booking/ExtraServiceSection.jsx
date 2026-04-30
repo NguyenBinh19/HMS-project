@@ -29,10 +29,11 @@ const CATEGORY_ICONS = {
  *   hotelId (number): id khách sạn
  *   onChange (fn): callback (selectedServices) khi thay đổi
  */
-const ExtraServiceSection = ({ hotelId, onChange }) => {
+const ExtraServiceSection = ({ hotelId, checkInDate, checkOutDate, onChange }) => {
     const [services, setServices] = useState([]);
     const [selected, setSelected] = useState({}); // { serviceId: { qty, serviceDate, flightNumber, flightTime, specialNote, expanded } }
     const [loading, setLoading] = useState(true);
+    const [serviceErrors, setServiceErrors] = useState({});
 
     useEffect(() => {
         if (!hotelId) return;
@@ -47,20 +48,26 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
 
     const notifyChange = (newSelected) => {
         if (!onChange) return;
+
         const payload = Object.entries(newSelected)
             .filter(([, v]) => v.checked)
             .map(([id, v]) => {
                 const svc = services.find(s => String(s.serviceId) === String(id));
                 return {
                     serviceId: Number(id),
+                    serviceName: svc?.serviceName || '',
                     quantity: v.qty,
                     serviceDate: v.serviceDate || null,
                     flightNumber: v.flightNumber || null,
                     flightTime: v.flightTime || null,
                     specialNote: v.specialNote || null,
                     netPrice: svc?.netPrice ?? 0,
+                    requireServiceDate: !!svc?.requireServiceDate,
+                    requireFlightInfo: !!svc?.requireFlightInfo,
+                    requireSpecialNote: !!svc?.requireSpecialNote,
                 };
             });
+
         onChange(payload);
     };
 
@@ -70,7 +77,18 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
             const next = was?.checked
                 ? { ...was, checked: false }
                 : { checked: true, qty: 1, serviceDate: "", flightNumber: "", flightTime: "", specialNote: "", expanded: true };
+
             const updated = { ...prev, [svc.serviceId]: next };
+
+            setServiceErrors((prevErrors) => ({
+                ...prevErrors,
+                [svc.serviceId]: {
+                    serviceDate: '',
+                    flightNumber: '',
+                    flightTime: '',
+                },
+            }));
+
             notifyChange(updated);
             return updated;
         });
@@ -79,6 +97,15 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
     const updateField = (serviceId, field, value) => {
         setSelected((prev) => {
             const updated = { ...prev, [serviceId]: { ...prev[serviceId], [field]: value } };
+
+            setServiceErrors((prevErrors) => ({
+                ...prevErrors,
+                [serviceId]: {
+                    ...(prevErrors[serviceId] || {}),
+                    [field]: '',
+                },
+            }));
+
             notifyChange(updated);
             return updated;
         });
@@ -100,7 +127,7 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
     return (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold mb-1 text-slate-800">Dịch vụ thêm</h2>
-            <p className="text-xs text-slate-400 mb-5">Chọn dịch vụ bổ trợ kèm theo cho chuyến lưu trú này</p>
+            <p className="text-xs text-slate-500 mb-5">Chọn dịch vụ bổ trợ kèm theo cho chuyến lưu trú này</p>
 
             <div className="space-y-3">
                 {services.map((svc) => {
@@ -111,9 +138,8 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
                     return (
                         <div
                             key={svc.serviceId}
-                            className={`border rounded-xl transition-all overflow-hidden ${
-                                isSelected ? "border-blue-300 bg-blue-50/30" : "border-slate-100 hover:border-slate-200"
-                            }`}
+                            className={`border rounded-xl transition-all overflow-hidden ${isSelected ? "border-blue-300 bg-blue-50/30" : "border-slate-100 hover:border-slate-200"
+                                }`}
                         >
                             {/* Service row */}
                             <div className="flex items-center gap-4 p-4">
@@ -186,35 +212,68 @@ const ExtraServiceSection = ({ hotelId, onChange }) => {
                                 <div className="px-4 pb-4 pt-0 space-y-3 border-t border-blue-100 bg-white">
                                     {svc.requireServiceDate && (
                                         <div>
-                                            <label className="text-xs text-slate-500 mb-1 block font-medium">Ngày sử dụng dịch vụ *</label>
+                                            <label className="text-xs text-slate-500 mb-1 block font-medium">
+                                                Ngày sử dụng dịch vụ *
+                                            </label>
                                             <input
                                                 type="date"
                                                 value={sel.serviceDate}
+                                                min={checkInDate || undefined}
+                                                max={checkOutDate || undefined}
                                                 onChange={(e) => updateField(svc.serviceId, "serviceDate", e.target.value)}
-                                                className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                className={`border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 ${serviceErrors[svc.serviceId]?.serviceDate
+                                                        ? 'border-red-300 bg-red-50 focus:ring-red-300'
+                                                        : 'border-slate-200 focus:ring-blue-400'
+                                                    }`}
                                             />
+                                            {serviceErrors[svc.serviceId]?.serviceDate && (
+                                                <p className="mt-1 text-xs text-red-600">
+                                                    {serviceErrors[svc.serviceId].serviceDate}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                     {svc.requireFlightInfo && (
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-xs text-slate-500 mb-1 block font-medium">Số hiệu chuyến bay</label>
+                                                <label className="text-xs text-slate-500 mb-1 block font-medium">
+                                                    Số hiệu chuyến bay *
+                                                </label>
                                                 <input
                                                     type="text"
                                                     placeholder="VD: VN123"
                                                     value={sel.flightNumber}
                                                     onChange={(e) => updateField(svc.serviceId, "flightNumber", e.target.value)}
-                                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                    className={`border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 ${serviceErrors[svc.serviceId]?.flightNumber
+                                                        ? 'border-red-300 bg-red-50 focus:ring-red-300'
+                                                        : 'border-slate-200 focus:ring-blue-400'
+                                                        }`}
                                                 />
+                                                {serviceErrors[svc.serviceId]?.flightNumber && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {serviceErrors[svc.serviceId].flightNumber}
+                                                    </p>
+                                                )}
                                             </div>
+
                                             <div>
-                                                <label className="text-xs text-slate-500 mb-1 block font-medium">Giờ hạ cánh</label>
+                                                <label className="text-xs text-slate-500 mb-1 block font-medium">
+                                                    Giờ hạ cánh *
+                                                </label>
                                                 <input
                                                     type="time"
                                                     value={sel.flightTime}
                                                     onChange={(e) => updateField(svc.serviceId, "flightTime", e.target.value)}
-                                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                    className={`border rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 ${serviceErrors[svc.serviceId]?.flightTime
+                                                        ? 'border-red-300 bg-red-50 focus:ring-red-300'
+                                                        : 'border-slate-200 focus:ring-blue-400'
+                                                        }`}
                                                 />
+                                                {serviceErrors[svc.serviceId]?.flightTime && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {serviceErrors[svc.serviceId].flightTime}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     )}

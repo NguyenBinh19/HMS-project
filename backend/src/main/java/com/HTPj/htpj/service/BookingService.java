@@ -27,6 +27,8 @@ public interface BookingService {
     //Uc79
     List<ListAllBookingsResponse> getAllBookings();
 
+    List<ListAllBookingsResponse> getAllBookingsByHotelId(Integer hotelId);
+
     //Uc28:
     BookingDetailResponse updateGuestInformation(UpdateGuestRequest request);
     List<ListAllBookingsResponse> getTodayCheckinBookings();
@@ -57,4 +59,6 @@ public interface BookingService {
     NoShowResponse reportNoShow(NoShowRequest request);
 
     void recalculateDebts();
+
+    BookingDetailResponse getBookingDetailById(Long bookingId);
 }

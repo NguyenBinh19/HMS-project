@@ -14,6 +14,9 @@ import { bookingService } from "@/services/booking.service";
 import { roomTypeService } from "@/services/roomtypes.service.js";
 import RoomDetailModal from "@/components/agency/booking/RoomDetailModal.jsx"
 import { ROLES, ROLE_GROUP } from "../../constant/roles.js";
+import { MessageCircle } from "lucide-react";
+import api from "../../services/axios.config.js";
+const DEFAULT_HOTEL_IMAGE = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb";
 // --- 1. SUB-COMPONENT: TIMER MODAL ---
 const BookingTimerModal = ({ expiredAt, onExpire, onExtend, isExtending }) => {
     const [timeLeft, setTimeLeft] = useState(0);
@@ -69,6 +72,8 @@ export default function HotelDetailPage() {
     const [roomTypes, setRoomTypes] = useState([]);
     const [loadingRooms, setLoadingRooms] = useState(true);
     const [selectedDetailRoom, setSelectedDetailRoom] = useState(null);
+    // Lấy ngày hiện tại theo định dạng YYYY-MM-DD
+    const todayStr = new Date().toISOString().split("T")[0];
 
     const [dates, setDates] = useState({
         checkIn: format(new Date(), 'yyyy-MM-dd'),
@@ -82,17 +87,26 @@ export default function HotelDetailPage() {
     const token = localStorage.getItem("accessToken");
     let roles = [];
 
+    let currentUser = null;
+
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            roles = decoded.scope || []; // tuỳ backend trả về
+
+            currentUser = {
+                userId: decoded.userId || decoded.sub,
+            };
+
+            console.log("Decoded token:", decoded);
+
+            roles = decoded.scope || [];
         } catch (err) {
             console.error("Invalid token");
         }
     }
     const isAgency = ROLE_GROUP.AGENCY.some(role =>
-    roles.includes(role)
-);
+        roles.includes(role)
+    );
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 
     // Tính toán tổng tiền dự kiến dựa trên mảng selectedRooms
@@ -147,9 +161,9 @@ export default function HotelDetailPage() {
                         id: staticRoom.roomTypeId,
                         name: staticRoom.roomTitle,
                         description: staticRoom.description,
-                        maxAdults: staticRoom.max_adults || 2,
-                        maxChildren: staticRoom.max_children || 0,
-                        area: staticRoom.room_area || 0,
+                        maxAdults: staticRoom.maxAdults || 2,
+                        maxChildren: staticRoom.maxChildren || 0,
+                        area: staticRoom.roomArea || 0,
                         bedType: staticRoom.bedType || "Giường đôi",
                         amenities: Array.isArray(staticRoom.amenities) ? staticRoom.amenities : [],
                         price: dynamicRoom?.price || 0,
@@ -233,6 +247,29 @@ export default function HotelDetailPage() {
         }
     };
 
+    const handleOpenChat = async (hotel) => {
+        try {
+            if (!currentUser?.userId) {
+                alert("Bạn cần đăng nhập để chat");
+                return;
+            }
+
+            const res = await api.post("/chat/init", null, {
+                params: {
+                    hotelId: hotel.hotelId || hotel.id,
+                    userId: currentUser.userId
+                }
+            });
+
+            const convo = res.data;
+
+            console.log("Chat created:", convo);
+
+        } catch (err) {
+            console.error("Chat init lỗi:", err);
+        }
+    };
+
     const handleExtendHold = async () => {
         if (!bookingSession) return;
         setIsExtending(true);
@@ -252,6 +289,57 @@ export default function HotelDetailPage() {
             ? hotel.images
             : ["https://pix8.agoda.net/hotelImages/186/186135/186135_17083113400050872001.jpg"];
     if (!hotel) return <div className="flex justify-center items-center h-screen"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
+
+    const handleNegotiation = async () => {
+        try {
+            if (!currentUser?.userId) {
+                alert("Bạn cần đăng nhập để chat");
+                return;
+            }
+
+            if (!hotel?.hotelId && !hotel?.id) {
+                alert("Không tìm thấy khách sạn");
+                return;
+            }
+
+            if (selectedRooms.length === 0) {
+                alert("Vui lòng chọn ít nhất 1 phòng để thương lượng");
+                return;
+            }
+
+            const res = await api.post("/chat/init-nego", null, {
+                params: {
+                    hotelId: hotel.hotelId || hotel.id,
+                    userId: currentUser.userId,
+                    bookingId: null,
+                    hotelName: hotel.hotelName,
+                    room: selectedRooms.map(r => r.name).join(", "),
+                    checkIn: dates.checkIn,
+                    checkOut: dates.checkOut
+                }
+            });
+
+            const convo = res.data;
+
+            navigate(`/agency/chat-page`, {
+                state: {
+                    conversationId: convo.conversationId,
+                    bookingInfo: {
+                        bookingId: null,
+                        hotelName: hotel.hotelName,
+                        room: selectedRooms.map(r => r.name).join(", "),
+                        checkIn: dates.checkIn,
+                        checkOut: dates.checkOut,
+                        type: "NEGOTIATION"
+                    }
+                }
+            });
+
+        } catch (err) {
+            console.error("Chat negotiation lỗi:", err);
+            alert("Không thể mở chat thương lượng");
+        }
+    };
 
     return (
         <div className="bg-slate-50 min-h-screen">
@@ -274,7 +362,7 @@ export default function HotelDetailPage() {
 
                             {/* HERO IMAGE */}
                             <img
-                                src={hotel.images?.[0]}
+                                src={hotel.images?.[0] || DEFAULT_HOTEL_IMAGE}
                                 className="w-full h-full object-cover cursor-pointer"
                                 alt="Hotel"
                                 onClick={() => setOpenGallery(true)}
@@ -312,16 +400,18 @@ export default function HotelDetailPage() {
                                         <Star key={i} size={16} fill="currentColor" />
                                     ))}
                                 </div>
-                                <span className="text-slate-500 text-sm font-bold">4.8/5</span>
+                                <span className="text-slate-500 text-sm font-bold">{hotel.avgRating}/5</span>
                             </div>
 
                             <h1 className="text-3xl font-black text-slate-900 mb-2">
                                 {hotel.hotelName}
                             </h1>
 
-                            <div className="flex items-center gap-2 text-blue-600 font-bold mb-6 text-sm">
-                                <MapPin size={18} />
-                                <span>{hotel.address}</span>
+                            <div className="flex items-center justify-between gap-2 mb-6">
+                                <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+                                    <MapPin size={18} />
+                                    <span>{hotel.address}</span>
+                                </div>
                             </div>
 
                             <div className="flex flex-wrap gap-4 pt-6 border-t border-slate-100">
@@ -342,12 +432,12 @@ export default function HotelDetailPage() {
                     )}
                     {isAgency && (<div className="bg-white p-6 mb-10 rounded-2xl shadow-xl border border-slate-100 flex items-end gap-6 sticky top-20 z-40">
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
-                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
+                            <label className="text-[11px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Nhận phòng</label>
+                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkIn} min={todayStr} onChange={(e) => setTempDates({ ...tempDates, checkIn: e.target.value })} />
                         </div>
                         <div className="flex-1 space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
-                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
+                            <label className="text-[11px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2"><CalendarIcon size={14} className="text-blue-600" /> Trả phòng</label>
+                            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-700" value={tempDates.checkOut} min={tempDates.checkIn || todayStr} onChange={(e) => setTempDates({ ...tempDates, checkOut: e.target.value })} />
                         </div>
                         <button onClick={handleUpdateDates} className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-[50px] rounded-xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95">Cập nhật ngày</button>
                     </div>)}
@@ -368,8 +458,8 @@ export default function HotelDetailPage() {
                                 <div
                                     key={room.id}
                                     className={`bg-white border rounded-[24px] flex flex-col md:flex-row p-5 gap-6 transition-all duration-300 ${isSelected
-                                            ? "border-blue-500 shadow-[0_12px_40px_rgba(37,99,235,0.1)] ring-1 ring-blue-500"
-                                            : "border-slate-100 shadow-sm hover:border-blue-200"
+                                        ? "border-blue-500 shadow-[0_12px_40px_rgba(37,99,235,0.1)] ring-1 ring-blue-500"
+                                        : "border-slate-100 shadow-sm hover:border-blue-200"
                                         } ${room.isSoldOut ? 'opacity-75 grayscale-[0.5]' : ''}`} // Thêm độ mờ và xám nhẹ nếu hết phòng/inactive
                                 >
                                     {/* 1. KHU VỰC THÔNG TIN CHÍNH (BÊN TRÁI) */}
@@ -403,6 +493,13 @@ export default function HotelDetailPage() {
                                                             <span
                                                                 className="border-b border-blue-200 group-hover:border-blue-600">Xem chi tiết</span>
                                                         </button>
+
+                                                        <button
+                                                            onClick={handleNegotiation}
+                                                            className="flex items-center gap-2 hover:bg-orange-50 text-orange-600 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                                                        >
+                                                            Thương lượng giá
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -425,24 +522,24 @@ export default function HotelDetailPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">
-                                            <div
-                                                className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div
-                                                    className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3} />
-                                                </div>
-                                                Xác nhận ngay
-                                            </div>
-                                            <div
-                                                className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">
-                                                <div
-                                                    className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                                    <Check size={12} strokeWidth={3} />
-                                                </div>
-                                                Miễn phí hủy phòng
-                                            </div>
-                                        </div>
+                                        {/*<div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-slate-50">*/}
+                                        {/*    <div*/}
+                                        {/*        className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">*/}
+                                        {/*        <div*/}
+                                        {/*            className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">*/}
+                                        {/*            <Check size={12} strokeWidth={3} />*/}
+                                        {/*        </div>*/}
+                                        {/*        Xác nhận ngay*/}
+                                        {/*    </div>*/}
+                                        {/*    <div*/}
+                                        {/*        className="flex items-center gap-2 text-emerald-600 text-[12px] font-bold">*/}
+                                        {/*        <div*/}
+                                        {/*            className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center">*/}
+                                        {/*            <Check size={12} strokeWidth={3} />*/}
+                                        {/*        </div>*/}
+                                        {/*        Miễn phí hủy phòng*/}
+                                        {/*    </div>*/}
+                                        {/*</div>*/}
                                     </div>
 
                                     {/* 2. KHU VỰC GIÁ VÀ ĐẶT PHÒNG (BÊN PHẢI) */}
@@ -496,8 +593,8 @@ export default function HotelDetailPage() {
                                                 {room.quantity > 0 && (
                                                     <div
                                                         className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-500 ${room.quantity <= 3
-                                                                ? 'bg-red-50 text-red-600 animate-pulse'
-                                                                : 'bg-emerald-50 text-emerald-700'
+                                                            ? 'bg-red-50 text-red-600 animate-pulse'
+                                                            : 'bg-emerald-50 text-emerald-700'
                                                             }`}>
                                                         <span
                                                             className={`w-1.5 h-1.5 rounded-full ${room.quantity <= 3 ? 'bg-red-500' : 'bg-emerald-500'}`}></span>

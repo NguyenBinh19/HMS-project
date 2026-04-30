@@ -10,9 +10,9 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1001, "Uncategorized error", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "Người dùng với email này đã tồn tại", HttpStatus.BAD_REQUEST),
-    USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    INVALID_PASSWORD(1004, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    USER_NOT_EXISTED(1005, "User not existed", HttpStatus.NOT_FOUND),
+    USERNAME_INVALID(1003, "Username phải có {min} ký tự trở lên", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(1004, "Password phải có {min} ký tự trở lên", HttpStatus.BAD_REQUEST),
+    USER_NOT_EXISTED(1005, "Người dùng không tồn tại", HttpStatus.NOT_FOUND),
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
@@ -40,11 +40,13 @@ public enum ErrorCode {
     USERNAME_EXISTED(1103, "Username already exists", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(1104, "Email already exists", HttpStatus.BAD_REQUEST),
     PHONE_EXISTED(1105, "Phone already exists", HttpStatus.BAD_REQUEST),
+    INVALID_ADMIN_ROLE(1100, "Invalid admin role", HttpStatus.FORBIDDEN),
 
     //hotel + room
     HOTEL_NOT_FOUND(2001, "Hotel not found", HttpStatus.NOT_FOUND),
     ROOM_TYPE_EXISTED(2002, "Room type already exists", HttpStatus.BAD_REQUEST),
     ROOM_TYPE_NOT_FOUND(2003, "Room type not found", HttpStatus.NOT_FOUND),
+    EVENT_DATE_CONFLICT(400, "Khoảng thời gian sự kiện bị trùng với sự kiện khác",HttpStatus.BAD_REQUEST),
 
     //promotion
     PROMOTION_NOT_FOUND(2101, "Promotion not found", HttpStatus.NOT_FOUND),
@@ -65,6 +67,7 @@ public enum ErrorCode {
     BOOKING_UPDATE_NOT_ALLOWED(2203, "Booking cannot update guest information", HttpStatus.BAD_REQUEST),
     BOOKING_NOT_FOUND(2204, "Booking not found", HttpStatus.NOT_FOUND),
     ADDON_SERVICE_NOT_FOUND(2205, "Addon service not found", HttpStatus.NOT_FOUND),
+    ADDON_SERVICE_NOT_AVAILABLE(2208, "Dịch vụ thêm không còn khả dụng",HttpStatus.BAD_REQUEST),
     INSUFFICIENT_BALANCE(2206,"The account balance is insufficient to make the payment.", HttpStatus.BAD_REQUEST),
     INVALID_PAYMENT_METHOD(2207,"Invalid payment method", HttpStatus.BAD_REQUEST),
 
@@ -114,6 +117,12 @@ public enum ErrorCode {
     STATEMENT_ALREADY_PAID(2413, "This statement has already been settled", HttpStatus.CONFLICT),
     PAYOUT_MISSING_BANK_INFO(2414, "Hotel bank account information is missing", HttpStatus.BAD_REQUEST),
     PAYOUT_BELOW_THRESHOLD(2415, "Net payout is below the minimum threshold", HttpStatus.BAD_REQUEST),
+    STATEMENT_CONFIRM_WINDOW_CLOSED(2416, "Confirmation window has closed (3rd-5th of the month only)", HttpStatus.BAD_REQUEST),
+    INVALID_BANK_INFO(2416, "Don't have bank info", HttpStatus.BAD_REQUEST),
+    DISPUTE_ALREADY_EXIST(2417, "This statement has already been disputed", HttpStatus.BAD_REQUEST),
+    DISPUTE_NOT_FOUND(2418, "Dispute not found", HttpStatus.BAD_REQUEST),
+    DISPUTE_ALREADY_RESOLVED(2419, "This statement has already been solved", HttpStatus.BAD_REQUEST),
+    FILE_UPLOAD_FAILED(2420, "File upload fail, upload again", HttpStatus.BAD_REQUEST),
 
     //financial - export (UC-084)
     EXPORT_INVALID_TYPE(2421, "Invalid report type for export", HttpStatus.BAD_REQUEST),
@@ -125,6 +134,9 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(4002, "Email already exists", HttpStatus.BAD_REQUEST),
     KYC_FILE_UPLOAD_FAILED(4003, "Failed to upload KYC document", HttpStatus.INTERNAL_SERVER_ERROR),
     KYC_VERIFICATION_NOT_FOUND(4004, "KYC verification request not found.", HttpStatus.NOT_FOUND),
+    BANNED_BUSINESS_LICENSE(4005, "SỐ GPKD ĐÃ BỊ CẤM", HttpStatus.NOT_FOUND),
+    BANNED_CIC_NUMBER(4006, "SỐ CCCD ĐÃ BỊ CẤM", HttpStatus.NOT_FOUND),
+
 
     //rank
     RANK_NOT_FOUND(4101, "Rank not found", HttpStatus.NOT_FOUND),
@@ -148,6 +160,10 @@ public enum ErrorCode {
     //config
     CONFIG_NOT_FOUND(5005, "config not found", HttpStatus.BAD_REQUEST),
 
+    //pdf document
+    PDF_DOCUMENT_NOT_FOUND(5101, "Tài liệu PDF không tồn tại", HttpStatus.NOT_FOUND),
+    PDF_UPLOAD_FAILED(5102, "Tải lên tệp PDF thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    PDF_INVALID_FILE_TYPE(5103, "Chỉ chấp nhận tệp định dạng PDF", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

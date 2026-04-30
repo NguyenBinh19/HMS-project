@@ -4,27 +4,30 @@ import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
+import com.HTPj.htpj.dto.response.agency.AgencyUserBookingResponse;
+import com.HTPj.htpj.dto.response.agency.BookingItemResponse;
 import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.AgencyMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.AgencyService;
-import jakarta.transaction.Transactional;
+import com.HTPj.htpj.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,8 @@ public class AgencyServiceImpl implements AgencyService {
     private final UserRepository userRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+    private final BookingRepository bookingRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<AgencyResponse> getAllAgencies() {
@@ -103,6 +108,18 @@ public class AgencyServiceImpl implements AgencyService {
 
         agencyRepository.save(agency);
 
+        // Notify agency manager about update
+        List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
+        for (Users manager : managers) {
+            notificationService.sendNotification(
+                    manager.getId(), "AGENCY",
+                    "Thông tin đại lý đã được cập nhật",
+                    "Thông tin của đại lý " + agency.getAgencyName() + " vừa được cập nhật.",
+                    "AGENCY", String.valueOf(agencyId),
+                    "/agency/agency-profile"
+            );
+        }
+
         return getAgencyDetail(agencyId);
     }
 
@@ -159,20 +176,35 @@ public class AgencyServiceImpl implements AgencyService {
                 .build();
     }
 
+    @Override
     public CreditSummaryDto getCreditSummary(Long agencyId) {
+
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new RuntimeException("Agency not found"));
 
-        BigDecimal creditLimit = agency.getCreditLimit() != null ? agency.getCreditLimit() : BigDecimal.ZERO;
-        BigDecimal currentCredit = agency.getCurrentCredit() != null ? agency.getCurrentCredit() : BigDecimal.ZERO;
+        BigDecimal creditLimit = agency.getCreditLimit() != null
+                ? agency.getCreditLimit()
+                : BigDecimal.ZERO;
+
+        BigDecimal currentCredit = agency.getCurrentCredit() != null
+                ? agency.getCurrentCredit()
+                : BigDecimal.ZERO;
+
         BigDecimal remainingCredit = currentCredit;
 
-        List<AgencyBooking> unpaidBookings = agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
+        List<AgencyBooking> unpaidBookings =
+                agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId);
 
         BigDecimal debt = unpaidBookings.stream()
                 .map(b -> {
-                    BigDecimal principal = b.getPrincipalRemaining() != null ? b.getPrincipalRemaining() : BigDecimal.ZERO;
-                    BigDecimal penalty = b.getPenaltyInterest() != null ? b.getPenaltyInterest() : BigDecimal.ZERO;
+                    BigDecimal principal = b.getPrincipalRemaining() != null
+                            ? b.getPrincipalRemaining()
+                            : BigDecimal.ZERO;
+
+                    BigDecimal penalty = b.getPenaltyInterest() != null
+                            ? b.getPenaltyInterest()
+                            : BigDecimal.ZERO;
+
                     return principal.add(penalty);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -182,17 +214,60 @@ public class AgencyServiceImpl implements AgencyService {
                         .divide(creditLimit, 0, RoundingMode.HALF_UP)
                         .intValue();
 
+        AgencyBooking worstBooking = unpaidBookings.stream()
+                .max(Comparator.comparing(
+                        b -> b.getLateWorkingDays() != null ? b.getLateWorkingDays() : 0
+                ))
+                .orElse(null);
+
+        Integer lateDays = 0;
+        Integer lateWorkingDays = 0;
+        BigDecimal penaltyRate = BigDecimal.ZERO;
+        BigDecimal penaltyAmount = BigDecimal.ZERO;
+        String status = "NORMAL";
+
+        if (worstBooking != null) {
+
+            lateDays = worstBooking.getLateDays() != null ? worstBooking.getLateDays() : 0;
+            lateWorkingDays = worstBooking.getLateWorkingDays() != null ? worstBooking.getLateWorkingDays() : 0;
+            penaltyRate = worstBooking.getPenaltyRate() != null ? worstBooking.getPenaltyRate() : BigDecimal.ZERO;
+            penaltyAmount = worstBooking.getPenaltyInterest() != null ? worstBooking.getPenaltyInterest() : BigDecimal.ZERO;
+
+            if (lateDays > 30) {
+                status = "LEGAL";
+            } else if (lateWorkingDays > 15) {
+                status = "LOCKED";
+            } else if (lateWorkingDays > 0) {
+                status = "WARNING";
+            } else {
+                status = "NORMAL";
+            }
+        }
+
         LocalDate dueDate = YearMonth.now().atDay(25);
 
-        return new CreditSummaryDto(remainingCredit, debt, creditLimit, usedPercent, dueDate);
+        return new CreditSummaryDto(
+                remainingCredit,
+                debt,
+                creditLimit,
+                usedPercent,
+                dueDate,
+                lateDays,
+                lateWorkingDays,
+                penaltyRate,
+                penaltyAmount,
+                status
+        );
     }
 
 
-    @Transactional
-    public void payDebt(Long agencyId, BigDecimal payment) {
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void payDebt(Long agencyId, BigDecimal payment) throws Exception {
         if (payment == null) {
             throw new IllegalArgumentException("Số tiền thanh toán không được null");
         }
+
+        BigDecimal totalAmountUseToPay = payment;
 
         Agency agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new RuntimeException("Agency not found"));
@@ -210,59 +285,73 @@ public class AgencyServiceImpl implements AgencyService {
 
         agency.setWalletBalance(walletBalance.subtract(payment));
 
-        AgencyBooking booking = unpaidBookings.get(0);
+        for(AgencyBooking booking : unpaidBookings){
+            BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
+            BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
 
-        BigDecimal penalty = booking.getPenaltyInterest() != null ? booking.getPenaltyInterest() : BigDecimal.ZERO;
-        BigDecimal principal = booking.getPrincipalRemaining() != null ? booking.getPrincipalRemaining() : BigDecimal.ZERO;
-
-        if (payment.compareTo(penalty) >= 0) {
-            payment = payment.subtract(penalty);
-            penalty = BigDecimal.ZERO;
-        } else {
-            penalty = penalty.subtract(payment);
-            payment = BigDecimal.ZERO;
-        }
-
-        //cấm sửa chỗ này logic quan trọng chỉ hoàn trả tín dụng khi trả gốc chứ không phải nãi
-        agency.setCurrentCredit(agency.getCurrentCredit() != null
-                ? agency.getCurrentCredit().add(payment)
-                : payment);
-
-        if (payment.compareTo(BigDecimal.ZERO) > 0) {
-            if (payment.compareTo(principal) >= 0) {
-                payment = payment.subtract(principal);
-                principal = BigDecimal.ZERO;
+            if (payment.compareTo(penalty) >= 0) {
+                payment = payment.subtract(penalty);
+                penalty = BigDecimal.ZERO;
             } else {
-                principal = principal.subtract(payment);
+                penalty = penalty.subtract(payment);
                 payment = BigDecimal.ZERO;
             }
-        }
 
-        booking.setPenaltyInterest(penalty);
-        booking.setPrincipalRemaining(principal);
-        booking.setUpdatedAt(LocalDateTime.now());
-
-        if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
-            booking.setIsPaid(true);
-        }
-
-        agencyBookingRepository.save(booking);
-
-        if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
             agency.setCurrentCredit(agency.getCurrentCredit() != null
                     ? agency.getCurrentCredit().add(payment)
                     : payment);
+
+            if (payment.compareTo(BigDecimal.ZERO) > 0) {
+                if (payment.compareTo(principal) >= 0) {
+                    payment = payment.subtract(principal);
+                    principal = BigDecimal.ZERO;
+                } else {
+                    principal = principal.subtract(payment);
+                    payment = BigDecimal.ZERO;
+                }
+            }
+
+            booking.setPenaltyInterest(penalty);
+            booking.setPrincipalRemaining(principal);
+            booking.setUpdatedAt(LocalDateTime.now());
+
+            if (penalty.compareTo(BigDecimal.ZERO) == 0 && principal.compareTo(BigDecimal.ZERO) == 0) {
+                booking.setIsPaid(true);
+            }
+
+            agencyBookingRepository.save(booking);
+
+            if (!agencyBookingRepository.findByAgencyIdAndIsPaidFalse(agencyId).isEmpty()) {
+                agency.setCurrentCredit(agency.getCurrentCredit() != null
+                        ? agency.getCurrentCredit().add(payment)
+                        : payment);
+            }
+
+            agencyRepository.save(agency);
+
+            BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
+
+            // Notify agency manager about debt payment
+            List<Users> managers = userRepository.findByAgency_AgencyId(agencyId);
+            for (Users manager : managers) {
+                notificationService.sendNotification(
+                        manager.getId(), "PAYMENT",
+                        "Thanh toán dư nợ thành công",
+                        "Đại lý đã thanh toán dư nợ " + amountPaid.toPlainString() + " VND.",
+                        "AGENCY", String.valueOf(agencyId),
+                        "/agency/credit-wallet"
+                );
+            }
+
+            agencyBookingRepository.updateStatusForPaidAgency();
         }
 
-        agencyRepository.save(agency);
-
-        BigDecimal amountPaid = walletBalance.subtract(agency.getWalletBalance());
         TransactionHistory historyCreditMD = TransactionHistory.builder()
                 .transactionDate(LocalDateTime.now())
                 .transactionType("Payment")
                 .description("Thanh toán dư nợ tín dụng từ ví sang tín dụng")
                 .sourceType("Ví")
-                .amount(amountPaid)
+                .amount(totalAmountUseToPay)
                 .balanceAfter(agency.getWalletBalance())
                 .status("Success")
                 .direction("OUT")
@@ -273,5 +362,88 @@ public class AgencyServiceImpl implements AgencyService {
         historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
         historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
         transactionHistoryRepository.save(historyCreditMD);
+    }
+
+    @Override
+    public List<AgencyUserBookingResponse> getAgencyUserBookingSummary() {
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String userId = jwt.getClaim("userId");
+
+        Users currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (currentUser.getAgency() == null) {
+            throw new AppException(ErrorCode.AGENCY_NOT_FOUND);
+        }
+
+        Long agencyId = currentUser.getAgency().getAgencyId();
+
+        // Lấy booking theo agency
+        List<Booking> bookings = bookingRepository.findByAgencyId(agencyId);
+
+        if (bookings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Map userId -> Users
+        Set<String> userIds = bookings.stream()
+                .map(Booking::getUserId)
+                .collect(Collectors.toSet());
+
+        Map<String, Users> userMap = userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(Users::getId, u -> u));
+
+        // Group booking theo user
+        Map<String, List<Booking>> grouped = bookings.stream()
+                .collect(Collectors.groupingBy(Booking::getUserId));
+
+        return grouped.entrySet().stream().map(entry -> {
+
+            String uid = entry.getKey();
+            List<Booking> userBookings = entry.getValue();
+
+            Users user = userMap.get(uid);
+
+            BigDecimal totalMoney = BigDecimal.ZERO;
+
+            List<BookingItemResponse> bookingItems = new ArrayList<>();
+
+            for (Booking b : userBookings) {
+
+                BigDecimal refund = b.getRefundAmount() == null
+                        ? BigDecimal.ZERO
+                        : b.getRefundAmount();
+
+                BigDecimal payment = b.getFinalAmount().subtract(refund);
+
+                totalMoney = totalMoney.add(payment);
+
+                bookingItems.add(
+                        BookingItemResponse.builder()
+                                .bookingId(b.getBookingId())
+                                .bookingStatus(b.getBookingStatus())
+                                .paymentAmount(payment)
+                                .build()
+                );
+            }
+
+            return AgencyUserBookingResponse.builder()
+                    .userId(uid)
+                    .username(user != null ? user.getUsername() : null)
+                    .fullName(user != null
+                            ? (user.getFirstName() + " " + user.getLastName())
+                            : null)
+                    .totalBooking(userBookings.size())
+                    .totalMoneyUsage(totalMoney)
+                    .bookings(bookingItems)
+                    .build();
+
+        }).collect(Collectors.toList());
     }
 }

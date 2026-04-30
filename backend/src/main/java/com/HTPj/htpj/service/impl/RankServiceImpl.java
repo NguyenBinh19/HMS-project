@@ -8,6 +8,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RankMapper;
 import com.HTPj.htpj.mapper.RankPeriodMapper;
 import com.HTPj.htpj.repository.*;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.RankService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,8 @@ public class RankServiceImpl implements RankService {
     AgencyBookingRevenueRepository revenueRepository;
     PartnerVerificationRepository partnerVerificationRepository;
     RankHistoryRepository rankHistoryRepository;
+    SystemLogRepository systemLogRepository;
+    NotificationService notificationService;
 
     public enum RankPeriodType {
         RANK_PERIOD_1_START,
@@ -58,6 +61,23 @@ public class RankServiceImpl implements RankService {
         return jwt.getClaim("userId");
     }
 
+    private void saveLog(String action) {
+        SystemLog log = new SystemLog();
+        log.setUserId(getCurrentUserId());
+        log.setAction(action);
+        log.setUpdatedAt(LocalDateTime.now());
+
+        systemLogRepository.save(log);
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
+    }
 
     @Override
     public String createRank(CreateRankRequest request) {
@@ -83,9 +103,12 @@ public class RankServiceImpl implements RankService {
 
         rankRepository.save(rank);
 
+        saveLog("Tạo rank: code=" + rank.getRankCode()
+                + ", name=" + rank.getRankName()
+                + ", priority=" + rank.getPriority());
+
         return "Create rank successfully";
     }
-
 
     @Override
     public String updateRank(Integer id, UpdateRankRequest request) {
@@ -117,6 +140,8 @@ public class RankServiceImpl implements RankService {
 
         rankRepository.save(rank);
 
+        saveLog("Cập nhật thông tin của hạng: "+ rank.getRankCode() + " - " + rank.getRankName());
+
         return "Update rank successfully";
     }
 
@@ -131,9 +156,11 @@ public class RankServiceImpl implements RankService {
         Long count = rankRepository.countAgencyByRankId(id);
         response.setAgencies(count);
 
+        response.setUpdatedAt(rank.getUpdatedAt());
+        response.setUpdatedBy(getUsernameFromId(rank.getUpdatedBy()));
+
         return response;
     }
-
 
     @Override
     public List<RankResponse> getAllRanks() {
@@ -146,7 +173,6 @@ public class RankServiceImpl implements RankService {
             return res;
         }).toList();
     }
-
 
     @Override
     public String deleteRank(Integer id) {
@@ -165,6 +191,8 @@ public class RankServiceImpl implements RankService {
         rank.setUpdatedBy(getCurrentUserId());
 
         rankRepository.save(rank);
+
+        saveLog("Dừng hoạt động hạng: " + rank.getRankCode() + " - " + rank.getRankName());
 
         return "Delete rank successfully";
     }
@@ -206,9 +234,15 @@ public class RankServiceImpl implements RankService {
 
         systemConfigRepository.save(config);
 
+        List<Users> admins = userRepository.findByIsAdminTrue();
+        for (Users admin : admins) {
+            notificationService.sendNotification(admin.getId(), "SYSTEM",
+                    "Cập nhật chu kỳ xếp hạng",
+                    "Chu kỳ xếp hạng " + periodType.name() + " đã được cập nhật thành " + request.getValue() + ".",
+                    "CONFIG", periodType.name(), "/admin/system-config");
+        }
         return "Update " + periodType.name() + " successfully";
     }
-
 
     @Override
     public String getRankPeriod(String type) {
@@ -310,7 +344,6 @@ public class RankServiceImpl implements RankService {
         }
         return map;
     }
-
 
     @Override
     public List<AgencyRankChangeResponse> getUpgradeCandidates(RankEvaluateRequest request) {
@@ -497,15 +530,86 @@ public class RankServiceImpl implements RankService {
 
             agency.setRank(targetRank);
             agency.setCreditLimit(targetRank.getCreditLimit());
+            agency.setCurrentCredit(targetRank.getCreditLimit());
 
             agencyRepository.save(agency);
 
         } else {
             history.setChangeType("HOLD");
+            agency.setRank(currentRank);
+            agency.setCreditLimit(currentRank.getCreditLimit());
+            agency.setCurrentCredit(currentRank.getCreditLimit());
+
+            agencyRepository.save(agency);
         }
 
         rankHistoryRepository.save(history);
 
+        saveLog("Cập nhật xếp hạng cho agency: "
+                + agency.getAgencyName()
+                + " từ " + currentRank.getRankCode()
+                + " -> " + targetRank.getRankCode());
+
+        List<Users> agencyUsers = userRepository.findByAgency_AgencyId(request.getAgencyId());
+
+        String action = "APPROVE".equalsIgnoreCase(request.getStatus()) ? "được cập nhật" : "được giữ nguyên";
+        for (Users u : agencyUsers) {
+            notificationService.sendNotification(u.getId(), "RANK",
+                    "Cập nhật hạng đại lý",
+                    "Hạng của đại lý bạn " + action + " thành " + targetRank.getRankCode() + ".",
+                    "RANK", String.valueOf(request.getAgencyId()), null);
+        }
         return "Change rank successfully";
+    }
+
+
+    @Override
+    public List<RankHistoryResponse> getAllRankHistories() {
+
+        List<RankHistory> histories = rankHistoryRepository.findAll();
+
+        return histories.stream().map(h -> RankHistoryResponse.builder()
+                .id(h.getId())
+                .agencyId(h.getAgency().getAgencyId())
+                .agencyName(h.getAgency().getAgencyName())
+                .oldRank(h.getOldRank() != null ? h.getOldRank().getRankName() : null)
+                .newRank(h.getNewRank().getRankName())
+                .totalRevenue(h.getTotalRevenueSnapshot())
+                .changeType(h.getChangeType())
+                .reason(h.getReason())
+                .changedAt(h.getChangedAt())
+                .changedBy(getUsernameFromId(h.getChangedBy())) // convert id -> username
+                .build()
+        ).toList();
+    }
+    @Override
+    public List<RankHistoryResponse> getMyAgencyRankHistories() {
+
+        String userId = getCurrentUserId();
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getAgency() == null) {
+            throw new RuntimeException("User is not belong to any agency");
+        }
+
+        Long agencyId = user.getAgency().getAgencyId();
+
+        List<RankHistory> histories = rankHistoryRepository.findByAgency_AgencyId(agencyId);
+
+        return histories.stream().map(h -> RankHistoryResponse.builder()
+                .id(h.getId())
+                .agencyId(h.getAgency().getAgencyId())
+                .agencyName(h.getAgency().getAgencyName())
+                .oldRank(h.getOldRank() != null ? h.getOldRank().getRankName() : null)
+                .newRank(h.getNewRank().getRankName())
+                .totalRevenue(h.getTotalRevenueSnapshot())
+                .changeType(h.getChangeType())
+                .reason(h.getReason())
+                .changedAt(h.getChangedAt())
+                .changedBy(getUsernameFromId(h.getChangedBy()))
+                .build()
+        ).toList();
     }
 }

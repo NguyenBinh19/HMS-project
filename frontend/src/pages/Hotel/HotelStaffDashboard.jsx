@@ -1,4 +1,4 @@
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Loader2, Search, Filter } from 'lucide-react';
 import StaffStats from '@/components/hotel/staff/HotelStaffStatistic.jsx';
 import StaffActionMenu from '@/components/hotel/staff/HotelStaffActionMenu.jsx';
 import StaffFormModal from '@/components/hotel/staff/HotelStaffModal.jsx';
@@ -10,6 +10,9 @@ const StaffDashboard = () => {
     const [staffs, setStaffs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterRole, setFilterRole] = useState('ALL');
+    const [filterStatus, setFilterStatus] = useState('ALL');
     // Cập nhật cấu trúc modalConfig để quản lý chế độ Xem chi tiết
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
@@ -17,7 +20,9 @@ const StaffDashboard = () => {
         isViewOnly: false
     });
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 9;
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
 
     const fetchStaffList = async () => {
         try {
@@ -33,6 +38,22 @@ const StaffDashboard = () => {
 
     useEffect(() => { fetchStaffList(); }, []);
 
+    // --- Logic Lọc Dữ Liệu ---
+    const filteredStaffs = useMemo(() => {
+        return staffs.filter(staff => {
+            const fullName = `${staff.lastName || ''} ${staff.firstName || ''}`.toLowerCase();
+            const email = (staff.email || '').toLowerCase();
+            const username = (staff.username || '').toLowerCase();
+            const search = searchTerm.toLowerCase();
+
+            const matchesSearch = fullName.includes(search) || email.includes(search) || username.includes(search);
+            const matchesRole = filterRole === 'ALL' || staff.permission === filterRole;
+            const matchesStatus = filterStatus === 'ALL' || staff.status === filterStatus;
+
+            return matchesSearch && matchesRole && matchesStatus;
+        });
+    }, [staffs, searchTerm, filterRole, filterStatus]);
+
     // Xử lý các hành động mở Modal
     const handleAddStaff = () => {
         setIsCreateOpen(true);
@@ -47,9 +68,14 @@ const StaffDashboard = () => {
     };
 
     const handleToggleStatus = async (staff) => {
+        if (staff.id === currentUserId) {
+            alert("Bạn không thể tự khóa tài khoản của chính mình!");
+            return;
+        }
+        // console.log("ID người dùng đang đăng nhập:", currentUserId);
+        // console.log("ID của nhân viên trong hàng này:", staff.id);
         const actionText = staff.status === 'ACTIVE' ? 'khóa' : 'mở khóa';
         if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này?`)) return;
-
         try {
             if (staff.status === 'ACTIVE') {
                 await staffService.lockStaff(staff.id);
@@ -64,10 +90,13 @@ const StaffDashboard = () => {
 
     const currentTableData = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
-        return staffs.slice(start, start + itemsPerPage);
-    }, [currentPage, staffs]);
+        return filteredStaffs.slice(start, start + itemsPerPage);
+    }, [currentPage, filteredStaffs]);
 
-    const totalPages = Math.max(1, Math.ceil(staffs.length / itemsPerPage));
+    const totalPages = Math.max(1, Math.ceil(filteredStaffs.length / itemsPerPage));
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterRole, filterStatus]);
 
     return (
         <div className="bg-[#F8FAFC] min-h-screen p-6 md:p-10">
@@ -86,12 +115,53 @@ const StaffDashboard = () => {
                 {/* Thống kê nhanh */}
                 <StaffStats data={staffs} />
 
+                {/* Search & Filter Bar */}
+                <div className="mt-8 flex flex-col md:flex-row gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Tìm theo tên, email hoặc username..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                            <Filter size={16} className="text-slate-400" />
+                            <select
+                                className="bg-transparent text-sm font-semibold text-slate-600 focus:outline-none cursor-pointer"
+                                value={filterRole}
+                                onChange={(e) => setFilterRole(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả vai trò</option>
+                                <option value="HOTEL_MANAGER">Quản lý</option>
+                                <option value="HOTEL_STAFF">Nhân viên</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                            <select
+                                className="bg-transparent text-sm font-semibold text-slate-600 focus:outline-none cursor-pointer"
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả trạng thái</option>
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="LOCKED">Bị khóa</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Bảng danh sách */}
-                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden mt-8">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 mt-8">
+                    <div className="overflow-visible rounded-[24px">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/30 border-b border-slate-50">
-                            <tr className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                            <tr className="text-[12px] font-bold text-slate-700 uppercase tracking-wider">
                                 <th className="px-8 py-5">Nhân viên</th>
                                 <th className="px-8 py-5">Chức vụ</th>
                                 <th className="px-8 py-5">Thông tin cá nhân</th>
@@ -99,11 +169,18 @@ const StaffDashboard = () => {
                                 <th className="px-8 py-5 text-right">Thao tác</th>
                             </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-slate-50 min-h-[450px]">
                             {loading ? (
                                 <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-medium">Đang tải dữ liệu...</td></tr>
-                            ) : staffs.length === 0 ? (
-                                <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-medium">Chưa có nhân viên nào.</td></tr>
+                            ) : filteredStaffs.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="text-center py-20">
+                                        <div className="flex flex-col items-center justify-center text-slate-400">
+                                            <Search size={40} className="mb-2 opacity-20" />
+                                            <p>{searchTerm ? "Không tìm thấy nhân viên phù hợp" : "Chưa có nhân viên nào"}</p>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : currentTableData.map((staff) => (
                                 <tr key={staff.id} className="hover:bg-blue-50/30 transition-colors group">
                                     <td className="px-8 py-6">
@@ -139,10 +216,16 @@ const StaffDashboard = () => {
                                     </td>
                                     <td className="px-8 py-6 text-center">
                                         <div className="flex flex-col items-center gap-1">
-                                            <Toggle checked={staff.status === 'ACTIVE'} onChange={() => handleToggleStatus(staff)} />
-                                            <span className={`text-[9px] font-bold uppercase ${staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                    {staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
-                                                </span>
+                                            <Toggle checked={staff.status === 'ACTIVE'}
+                                                    onChange={() => handleToggleStatus(staff)}
+                                                    disabled={staff.id === currentUserId}/>
+                                            <span className={`text-[9px] font-bold uppercase ${
+                                                staff.id === currentUserId
+                                                    ? 'text-slate-400'
+                                                    : (staff.status === 'ACTIVE' ? 'text-emerald-500' : 'text-rose-500')
+                                            }`}>
+                                                {staff.id === currentUserId ? 'Đang truy cập' : (staff.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa')}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
@@ -161,35 +244,37 @@ const StaffDashboard = () => {
                     </div>
 
                     {/* Phân Trang */}
-                    <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => prev - 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                            <ChevronLeft size={18} />
-                        </button>
-                        {[...Array(totalPages)].map((_, index) => (
+                    {filteredStaffs.length > itemsPerPage && (
+                        <div className="px-8 py-6 bg-slate-50/30 border-t border-slate-50 flex items-center justify-center gap-2">
                             <button
-                                key={index + 1}
-                                onClick={() => setCurrentPage(index + 1)}
-                                className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
-                                    currentPage === index + 1
-                                        ? 'bg-[#006AFF] text-white shadow-md'
-                                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                                }`}
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => prev - 1)}
+                                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50"
                             >
-                                {index + 1}
+                                <ChevronLeft size={18} />
                             </button>
-                        ))}
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => prev + 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-all"
-                        >
-                            <ChevronRight size={18} />
-                        </button>
-                    </div>
+                            {[...Array(totalPages)].map((_, index) => (
+                                <button
+                                    key={index + 1}
+                                    onClick={() => setCurrentPage(index + 1)}
+                                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                                        currentPage === index + 1
+                                            ? 'bg-[#006AFF] text-white shadow-md'
+                                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {index + 1}
+                                </button>
+                            ))}
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                                className="p-2 rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-blue-600 disabled:opacity-50"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -211,10 +296,17 @@ const StaffDashboard = () => {
     );
 };
 
-const Toggle = ({ checked, onChange }) => (
+const Toggle = ({ checked, onChange, disabled }) => (
     <label className="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" className="sr-only peer" checked={checked} onChange={onChange} />
-        <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
+        <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={checked}
+            onChange={disabled ? null : onChange} // Chặn sự kiện change
+            disabled={disabled}
+        />
+        <div
+            className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
     </label>
 );
 

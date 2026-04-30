@@ -74,7 +74,7 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
     if (!isOpen || !detail) return null;
 
     const type = detail.commissionType;
-    const isReadOnly = !detail.isActive;
+    const isReadOnly = !detail.isActive || type === 'HOTEL';
     const isDefault = type === 'DEFAULT';
     const hasHotels = hotels.length > 0;
 
@@ -140,7 +140,12 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
                     <div className="flex justify-between items-start mb-6">
                         <div>
                             <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight flex items-center gap-2">
-                                {isReadOnly ? "Chi tiết chính sách (Lưu trữ)" : "Chỉnh sửa chính sách"}
+                                {type === 'HOTEL'
+                                    ? "Chi tiết chính sách khách sạn"
+                                    : isReadOnly
+                                        ? "Chi tiết chính sách (Lưu trữ)"
+                                        : "Chỉnh sửa chính sách"
+                                }
                                 {detail.isActive ? <CheckCircle2 size={18} className="text-green-500" /> : <Archive size={18} className="text-gray-400" />}
                             </h3>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Loại: {type}</p>
@@ -148,10 +153,18 @@ const CommissionModalForm = ({ id, isOpen, onClose, onSuccess }) => {
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400"><X size={20} /></button>
                     </div>
 
-                    {isReadOnly && (
+                    {isReadOnly && type !== 'HOTEL' && (
                         <div className="mb-6 p-4 bg-gray-100 border-l-4 border-gray-400 rounded-r-xl flex gap-3 items-center">
                             <AlertCircle className="text-gray-500" size={20} />
                             <p className="text-xs font-bold text-gray-600 italic uppercase">Bản ghi này đã được lưu trữ và không thể chỉnh sửa thêm.</p>
+                        </div>
+                    )}
+                    {type === 'HOTEL' && (
+                        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl flex gap-3 items-center">
+                            <Info className="text-blue-500" size={20} />
+                            <p className="text-xs font-bold text-blue-600 italic uppercase">
+                                Chính sách riêng của khách sạn. Vui lòng liên hệ đối tác để thỏa thuận thêm.
+                            </p>
                         </div>
                     )}
 

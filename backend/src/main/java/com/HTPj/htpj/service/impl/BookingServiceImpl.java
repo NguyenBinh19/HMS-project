@@ -19,6 +19,7 @@ import com.HTPj.htpj.mapper.BookingMapper;
 import com.HTPj.htpj.mapper.RoomAvailabilityMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.BookingService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -62,6 +63,7 @@ public class BookingServiceImpl implements BookingService {
     private final SystemConfigRepository systemConfigRepository;
     private final AgencyBookingRepository agencyBookingRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<RoomAvailabilityResponse> checkAvailability(RoomAvailabilityRequest request) {
@@ -97,6 +99,15 @@ public class BookingServiceImpl implements BookingService {
                                 Collectors.summingInt(RoomHoldDetail::getQuantity)
                         ));
 
+        // Fetch allotment data for all room types in the date range
+        List<Integer> roomTypeIds = roomTypes.stream()
+                .map(RoomType::getRoomTypeId).toList();
+        // Allotment covers nights: checkIn to checkOut - 1
+        LocalDate allotmentEnd = request.getCheckOut().minusDays(1);
+        List<RoomAllotment> allotments = roomAllotmentRepository
+                .findByRoomTypeIdsAndDateRange(roomTypeIds, request.getCheckIn(), allotmentEnd);
+        Map<Integer, List<RoomAllotment>> allotmentMap = allotments.stream()
+                .collect(Collectors.groupingBy(RoomAllotment::getRoomTypeId));
 
         List<RoomAvailabilityResponse> responses = new ArrayList<>();
 
@@ -107,14 +118,33 @@ public class BookingServiceImpl implements BookingService {
                 continue;
             }
 
+            // Determine effective allotment ceiling from allotment records
+            List<RoomAllotment> rtAllotments = allotmentMap
+                    .getOrDefault(rt.getRoomTypeId(), Collections.emptyList());
+            Map<LocalDate, RoomAllotment> rtAllotmentDateMap = rtAllotments.stream()
+                    .collect(Collectors.toMap(RoomAllotment::getAllotmentDate, a -> a));
+
+            int effectiveCeiling = rt.getTotalRooms();
+            boolean isStopSell = false;
+            for (LocalDate date = request.getCheckIn(); !date.isAfter(allotmentEnd); date = date.plusDays(1)) {
+                RoomAllotment ra = rtAllotmentDateMap.get(date);
+                if (ra != null) {
+                    if (Boolean.TRUE.equals(ra.getStopSell())) {
+                        isStopSell = true;
+                        break;
+                    }
+                    effectiveCeiling = Math.min(effectiveCeiling, ra.getAllotment());
+                }
+            }
+
             int bookedQuantity =
                     bookedQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
 
             int holdingQuantity =
                     holdingQuantityMap.getOrDefault(rt.getRoomTypeId(), 0);
 
-            int availableQuantity =
-                    rt.getTotalRooms() - bookedQuantity - holdingQuantity;
+            int availableQuantity = isStopSell ? 0 :
+                    effectiveCeiling - bookedQuantity - holdingQuantity;
 
             BigDecimal calculatedPrice = calculateTotalPrice(
                     rt,
@@ -129,7 +159,7 @@ public class BookingServiceImpl implements BookingService {
                                 .roomTitle(rt.getRoomTitle())
                                 .price(calculatedPrice)
                                 .quantityAvaiable(0)
-                                .status("sold_out")
+                                .status(isStopSell ? "stop_sell" : "sold_out")
                                 .build()
                 );
             } else {
@@ -186,20 +216,40 @@ public class BookingServiceImpl implements BookingService {
 
                 RoomPricingRule rule = selectedRule.get();
 
-                if (rule.getAdjustmentValue() != null &&
-                        rule.getAdjustmentType() != null) {
+//                if (rule.getAdjustmentValue() != null &&
+//                        rule.getAdjustmentType() != null) {
+//
+//                    if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
+//
+//                        BigDecimal percentAmount = basePrice
+//                                .multiply(rule.getAdjustmentValue())
+//                                .divide(BigDecimal.valueOf(100));
+//
+//                        dailyPrice = dailyPrice.add(percentAmount);
+//                    }
+//
+//                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+//                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+//                    }
+//                }
+                if (rule.getAdjustmentValue() != null && rule.getAdjustmentType() != null) {
+                    BigDecimal adjustmentAmount = BigDecimal.ZERO;
 
+                    //Tính toán giá trị điều chỉnh
                     if ("percent".equalsIgnoreCase(rule.getAdjustmentType())) {
-
-                        BigDecimal percentAmount = basePrice
+                        adjustmentAmount = basePrice
                                 .multiply(rule.getAdjustmentValue())
                                 .divide(BigDecimal.valueOf(100));
-
-                        dailyPrice = dailyPrice.add(percentAmount);
+                    } else if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
+                        adjustmentAmount = rule.getAdjustmentValue();
                     }
 
-                    if ("fixed".equalsIgnoreCase(rule.getAdjustmentType())) {
-                        dailyPrice = dailyPrice.add(rule.getAdjustmentValue());
+                    // action để cộng (INCREASE) hoặc trừ (DECREASE)
+                    if ("DECREASE".equalsIgnoreCase(rule.getAction())) {
+                        dailyPrice = dailyPrice.subtract(adjustmentAmount);
+                    } else {
+                        // Mặc định là INCREASE hoặc các trường hợp khác
+                        dailyPrice = dailyPrice.add(adjustmentAmount);
                     }
                 }
             }
@@ -432,7 +482,7 @@ public class BookingServiceImpl implements BookingService {
                     .createdAt(LocalDateTime.now())
                     .build();
             historyCreditMD = transactionHistoryRepository.save(historyCreditMD);
-            historyCreditMD.setTransactionCode(String.format("TRK-%06d", history.getId()));
+            historyCreditMD.setTransactionCode(String.format("TRK-%06d", historyCreditMD.getId()));
             transactionHistoryRepository.save(historyCreditMD);
 
             // update agency
@@ -495,12 +545,31 @@ public class BookingServiceImpl implements BookingService {
         hold.setStatus("BOOKED");
         roomHoldRepository.save(hold);
 
+        // Notify hotel about new booking
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(saved.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "BOOKING",
+                    "Đặt phòng mới #" + saved.getBookingCode(),
+                    "Đơn đặt phòng mới #" + saved.getBookingCode() + " đã được tạo.",
+                    "BOOKING", String.valueOf(saved.getBookingId()),
+                    "/hotel/view-booking/" + saved.getBookingCode()
+            );
+        }
+        // Notify agency about booking confirmation
+        notificationService.sendNotification(
+                userId, "BOOKING",
+                "Đặt phòng thành công #" + saved.getBookingCode(),
+                "Đơn đặt phòng #" + saved.getBookingCode() + " đã được xác nhận.",
+                "BOOKING", String.valueOf(saved.getBookingId()),
+                "/agency/booking-list/detail/" + saved.getBookingCode()
+        );
+
         return bookingMapper.toResponse(saved);
     }
 
-    // =========================================================================
+
     // UC-029: Lịch sử đặt phòng (phân trang)
-    // =========================================================================
     @Override
     public Page<BookingHistoryResponse> getBookingHistory(int page, int size) {
         String userId = extractUserId();
@@ -542,21 +611,18 @@ public class BookingServiceImpl implements BookingService {
         });
     }
 
-    // =========================================================================
-    // UC-030: Chi tiết booking — JOIN FETCH tránh N+1
-    // =========================================================================
+
+    // UC-030: Chi tiết booking
     @Override
     public BookingDetailResponse getBookingDetail(String bookingCode) {
         String userId = extractUserId();
         Users user = userRepository.findByUsername(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-        // Một query: load booking + tất cả bookingDetails (JOIN FETCH)
         Booking booking = bookingRepository.findDetailByBookingCodeAndUserId(bookingCode, user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
         Hotel hotel = hotelRepository.findById(booking.getHotelId()).orElse(null);
 
-        // Một query: load addon services + tên dịch vụ (JOIN FETCH addonService)
         List<BookingAddonService> addonServices =
                 bookingAddonServiceRepository.findByBookingIdWithService(booking.getBookingId());
 
@@ -585,6 +651,80 @@ public class BookingServiceImpl implements BookingService {
                         .id(bas.getId())
                         .serviceName(bas.getAddonService().getServiceName())
                         .serviceType(bas.getAddonService().getCategory())
+                        .quantity(bas.getQuantity())
+                        .unitPrice(bas.getUnitPrice())
+                        .totalPrice(bas.getTotalPrice())
+                        .serviceDate(bas.getServiceDate())
+                        .flightNumber(bas.getFlightNumber())
+                        .flightTime(bas.getFlightTime())
+                        .specialNote(bas.getSpecialNote())
+                        .build())
+                .toList();
+
+        return BookingDetailResponse.builder()
+                .bookingId(booking.getBookingId())
+                .bookingCode(booking.getBookingCode())
+                .hotelId(booking.getHotelId())
+                .hotelName(hotel != null ? hotel.getHotelName() : null)
+                .hotelAddress(hotel != null ? hotel.getAddress() : null)
+                .hotelStarRating(hotel != null ? hotel.getStarRating() : null)
+                .checkInDate(booking.getCheckInDate())
+                .checkOutDate(booking.getCheckOutDate())
+                .nights(booking.getNights())
+                .totalRooms(booking.getTotalRooms())
+                .totalGuests(booking.getTotalGuests())
+                .guestName(booking.getGuestName())
+                .guestPhone(booking.getGuestPhone())
+                .guestEmail(booking.getGuestEmail())
+                .notes(booking.getNotes())
+                .totalAmount(booking.getTotalAmount())
+                .discountAmount(booking.getDiscountTotal())
+                .finalAmount(booking.getFinalAmount())
+                .paymentMethod(booking.getPaymentMethod())
+                .paymentStatus(booking.getPaymentStatus())
+                .bookingStatus(booking.getBookingStatus())
+                .createdAt(booking.getCreatedAt())
+                .hasFeedback(Boolean.TRUE.equals(booking.getHasFeedback()))
+                .roomDetails(roomDetails)
+                .addonServices(addonResponses)
+                .build();
+    }
+
+    @Override
+    public BookingDetailResponse getBookingDetailById(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        Hotel hotel = hotelRepository.findById(booking.getHotelId()).orElse(null);
+
+        List<BookingAddonService> addonServices =
+                bookingAddonServiceRepository.findByBookingIdWithService(booking.getBookingId());
+
+        List<BookingDetailItemResponse> roomDetails = booking.getBookingDetails()
+                .stream()
+                .map(bd -> BookingDetailItemResponse.builder()
+                        .bookingDetailId(bd.getBookingDetailId())
+                        .roomTitle(bd.getRoomTitle())
+                        .quantity(bd.getQuantity())
+                        .roomCode(bd.getRoomCode())
+                        .bedType(bd.getBedType())
+                        .roomArea(bd.getRoomArea())
+                        .maxAdults(bd.getMaxAdults())
+                        .maxChildren(bd.getMaxChildren())
+                        .maxGuests(bd.getMaxGuests())
+                        .amenities(bd.getAmenities())
+                        .pricePerNight(bd.getPricePerNight())
+                        .subtotalAmount(bd.getSubtotalAmount())
+                        .totalAmount(bd.getTotalAmount())
+                        .nights(bd.getNights())
+                        .build())
+                .toList();
+
+        List<BookingAddonServiceResponse> addonResponses = addonServices.stream()
+                .map(bas -> BookingAddonServiceResponse.builder()
+                        .id(bas.getId())
+                        .serviceName(bas.getAddonService() != null ? bas.getAddonService().getServiceName() : null)
+                        .serviceType(bas.getAddonService() != null ? bas.getAddonService().getCategory() : null)
                         .quantity(bas.getQuantity())
                         .unitPrice(bas.getUnitPrice())
                         .totalPrice(bas.getTotalPrice())
@@ -716,6 +856,9 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.getAllBookingsSummary();
     }
 
+    public List<ListAllBookingsResponse> getAllBookingsByHotelId(Integer hotelId) {
+        return bookingRepository.getAllBookingsSummaryByHotelId(hotelId);
+    }
     //UC28:
     @Override
     public BookingDetailResponse updateGuestInformation(UpdateGuestRequest request) {
@@ -745,12 +888,14 @@ public class BookingServiceImpl implements BookingService {
     //UC-050 - View Daily Arrival List
     @Override
     public List<ListAllBookingsResponse> getTodayCheckinBookings() {
-        return bookingRepository.getTodayCheckinBookings();
+        Integer hotelId = extractHotelId();
+        return bookingRepository.getTodayCheckinBookings(hotelId);
     }
 
     @Override
     public List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date) {
-        return bookingRepository.getBookingsByCheckinDate(date);
+        Integer hotelId = extractHotelId();
+        return bookingRepository.getBookingsByCheckinDate(hotelId, date);
     }
 
     // =========================================================================
@@ -809,15 +954,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private Integer extractHotelId() {
-        String userId = extractUserId();
-        Users user = userRepository.findByUsername(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        Hotel hotel = user.getHotel();
-        if (hotel == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
-        }
-        return hotel.getHotelId();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        Number hotelIdClaim = jwt.getClaim("hotelId");
+        return hotelIdClaim.intValue();
     }
 
     // =========================================================================
@@ -971,9 +1114,30 @@ public class BookingServiceImpl implements BookingService {
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
+        // Notify hotel about cancellation
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(booking.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "BOOKING",
+                    "Hủy đặt phòng #" + booking.getBookingCode(),
+                    "Đơn đặt phòng #" + booking.getBookingCode() + " đã bị hủy.",
+                    "BOOKING", String.valueOf(booking.getBookingId()),
+                    "/hotel/view-booking/" + booking.getBookingCode()
+            );
+        }
+        // Notify agency user
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Hủy đặt phòng #" + booking.getBookingCode(),
+                "Đơn đặt phòng #" + booking.getBookingCode() + " đã bị hủy. Hoàn tiền: " + refund.toPlainString() + " VND.",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
+
         return CancelBookingResponse.builder()
                 .bookingCode(booking.getBookingCode())
                 .bookingStatus("CANCELLED")
+                .finalAmount(booking.getFinalAmount())
                 .cancellationPenalty(penalty)
                 .refundAmount(refund)
                 .reason(request.getReason())
@@ -1002,13 +1166,22 @@ public class BookingServiceImpl implements BookingService {
 
         // Check-in is only allowed on the scheduled check-in date
         LocalDate today = LocalDate.now();
-        if (!today.equals(booking.getCheckInDate())) {
+        if (today.isBefore(booking.getCheckInDate())) {
             throw new AppException(ErrorCode.CHECKIN_DATE_MISMATCH);
         }
 
         booking.setBookingStatus("CHECKED-IN");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        // Notify agency about check-in
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Check-in #" + booking.getBookingCode(),
+                "Khách đã check-in cho đơn #" + booking.getBookingCode() + ".",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
 
         return bookingMapper.toBookingDetailResponse(booking);
     }
@@ -1033,6 +1206,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
+        // Notify agency about checkout
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "Check-out #" + booking.getBookingCode(),
+                "Khách đã check-out cho đơn #" + booking.getBookingCode() + ".",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
+
         return bookingMapper.toBookingDetailResponse(booking);
     }
 
@@ -1051,16 +1233,21 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.NOSHOW_NOT_ALLOWED);
         }
 
-        // Cannot report no-show before check-in date
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(booking.getCheckInDate())) {
-            throw new AppException(ErrorCode.NOSHOW_BEFORE_CHECKIN);
-        }
+
 
         // No-show: only change status, do NOT release inventory and do NOT refund
         booking.setBookingStatus("NO_SHOW");
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        // Notify agency about no-show
+        notificationService.sendNotification(
+                booking.getUserId(), "BOOKING",
+                "No-show #" + booking.getBookingCode(),
+                "Đơn #" + booking.getBookingCode() + " đã được báo cáo không đến (No-show).",
+                "BOOKING", String.valueOf(booking.getBookingId()),
+                "/agency/booking-list/detail/" + booking.getBookingCode()
+        );
 
         return NoShowResponse.builder()
                 .bookingCode(booking.getBookingCode())
@@ -1100,60 +1287,131 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void recalculateDebts() {
+
         List<AgencyBooking> allBookings = agencyBookingRepository.findAll();
         LocalDate today = LocalDate.now();
 
         for (AgencyBooking booking : allBookings) {
+
             if (Boolean.TRUE.equals(booking.getIsPaid())) {
                 continue;
             }
 
-            BigDecimal principal = booking.getPrincipalRemaining();
-            BigDecimal penalty = booking.getPenaltyInterest();
+            BigDecimal principal = booking.getPrincipalRemaining() != null
+                    ? booking.getPrincipalRemaining()
+                    : BigDecimal.ZERO;
+
+            BigDecimal penalty = booking.getPenaltyInterest() != null
+                    ? booking.getPenaltyInterest()
+                    : BigDecimal.ZERO;
 
             YearMonth ym = YearMonth.parse(booking.getMonth());
             LocalDate dueDate = ym.plusMonths(1).atDay(2);
 
+            int totalLateDays = 0;
+            int totalWorkingDays = 0;
+            BigDecimal currentRate = BigDecimal.ZERO;
+
             if (today.isAfter(dueDate)) {
+
                 LocalDate startDate = dueDate.plusDays(1);
-                LocalDate lastCalc = booking.getUpdatedAt() != null
-                        ? booking.getUpdatedAt().toLocalDate()
+
+                LocalDate lastCalc = booking.getLastInterestCalculatedDate() != null
+                        ? booking.getLastInterestCalculatedDate()
                         : startDate.minusDays(1);
 
-                LocalDate calcFrom = lastCalc.isBefore(startDate) ? startDate : lastCalc.plusDays(1);
+                LocalDate calcFrom = lastCalc.isBefore(startDate)
+                        ? startDate
+                        : lastCalc.plusDays(1);
 
-                long daysLate = ChronoUnit.DAYS.between(calcFrom, today) + 1;
-                int workingDays = countWorkingDays(startDate, calcFrom.minusDays(1));
+                totalLateDays = (int) ChronoUnit.DAYS.between(startDate, today) + 1;
 
-                for (int i = 0; i < daysLate; i++) {
+                totalWorkingDays = countWorkingDays(startDate, calcFrom.minusDays(1));
+
+                long daysToCalculate = 0;
+                if (!calcFrom.isAfter(today)) {
+                    daysToCalculate = ChronoUnit.DAYS.between(calcFrom, today) + 1;
+                }
+
+                for (int i = 0; i < daysToCalculate; i++) {
+
                     LocalDate d = calcFrom.plusDays(i);
 
                     if (isBusinessDay(d)) {
-                        workingDays++;
+                        totalWorkingDays++;
                     }
 
-                    BigDecimal rate = (workingDays <= 15)
+                    BigDecimal rate = (totalWorkingDays <= 15)
                             ? BigDecimal.valueOf(0.0003)
                             : BigDecimal.valueOf(0.0005);
 
-                    penalty = penalty.add(principal.multiply(rate));
+                    BigDecimal dailyInterest = principal
+                            .multiply(rate)
+                            .setScale(0, RoundingMode.HALF_UP);
+
+                    penalty = penalty.add(dailyInterest);
                 }
+
+                currentRate = (totalWorkingDays <= 15)
+                        ? BigDecimal.valueOf(0.0003)
+                        : BigDecimal.valueOf(0.0005);
 
                 Agency agency = agencyRepository.findById(booking.getAgencyId())
                         .orElseThrow(() -> new RuntimeException("Agency not found"));
 
-                if (workingDays <= 15) {
-                    agency.setStatus("WARNING");
-                } else {
+                if (totalLateDays > 30) {
+                    agency.setStatus("LEGAL");
+                } else if (totalWorkingDays > 15) {
                     agency.setStatus("LOCKED");
+                } else {
+                    agency.setStatus("WARNING");
                 }
 
                 agencyRepository.save(agency);
+
+                booking.setLastInterestCalculatedDate(today);
+
+            } else {
+                totalLateDays = 0;
+                totalWorkingDays = 0;
+                currentRate = BigDecimal.ZERO;
+
+                booking.setLastInterestCalculatedDate(null);
             }
 
+            booking.setLateDays(totalLateDays);
+            booking.setLateWorkingDays(totalWorkingDays);
+            booking.setPenaltyRate(currentRate);
             booking.setPenaltyInterest(penalty);
             booking.setUpdatedAt(LocalDateTime.now());
+
             agencyBookingRepository.save(booking);
+        }
+
+        Set<Long> notifiedAgencies = new HashSet<>();
+
+        for (AgencyBooking ab : allBookings) {
+
+            if (!Boolean.TRUE.equals(ab.getIsPaid())
+                    && !notifiedAgencies.contains(ab.getAgencyId())) {
+
+                notifiedAgencies.add(ab.getAgencyId());
+
+                List<Users> agencyUsers =
+                        userRepository.findByAgency_AgencyId(ab.getAgencyId());
+
+                for (Users u : agencyUsers) {
+                    notificationService.sendNotification(
+                            u.getId(),
+                            "PAYMENT",
+                            "Cập nhật dư nợ",
+                            "Dư nợ của đại lý đã được tính lại. Vui lòng kiểm tra.",
+                            "AGENCY",
+                            String.valueOf(ab.getAgencyId()),
+                            "/agency/credit-wallet"
+                    );
+                }
+            }
         }
     }
 

@@ -33,6 +33,7 @@ public class Users {
     String email;
     String password;
     String phone;
+    @Column(name = "address", columnDefinition = "NVARCHAR(255)")
     String address;
     @Column(length = 512)
     String avatarUrl;
@@ -68,4 +69,7 @@ public class Users {
     @ManyToOne
     @JoinColumn(name = "hotel_id")
     Hotel hotel;
+
+    @Column(name = "is_admin")
+    private Boolean isAdmin;
 }

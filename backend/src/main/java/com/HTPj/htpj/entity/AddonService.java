@@ -39,7 +39,7 @@ public class AddonService {
     @Column(name = "public_price", precision = 12, scale = 2)
     private BigDecimal publicPrice;
 
-    @Column(name = "unit", nullable = false, length = 50)
+    @Column(name = "unit", nullable = false,columnDefinition = "NVARCHAR(50)", length = 50)
     private String unit;
 
     @Column(name = "image_url", length = 500)

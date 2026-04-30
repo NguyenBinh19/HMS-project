@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, TrendingUp, ShieldCheck, Wallet, Loader2, Info, Star, Trophy, Crown, Medal, Gem, Award, Zap, AlertCircle } from 'lucide-react';
+import { X, Save, TrendingUp, ShieldCheck, Wallet, Loader2, Info, Star, Trophy, Crown, Medal, Gem, Award, Zap, AlertCircle, Users, UserCheck, Clock } from 'lucide-react';
 import { rankService } from '@/services/rank.service.js';
 
 const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
@@ -150,27 +150,40 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                                 <div className="grid grid-cols-12 gap-6">
                                     <div className="col-span-8 space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Tên hạng hiển thị</label>
-                                            <input required name="rankName" value={formData.rankName} onChange={handleChange}
-                                                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 outline-none focus:ring-2 ring-blue-500/10" />
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Tên
+                                                hạng hiển thị</label>
+                                            <input required name="rankName" value={formData.rankName}
+                                                   onChange={handleChange}
+                                                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 outline-none focus:ring-2 ring-blue-500/10"/>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Mô tả chi tiết</label>
-                                            <textarea name="description" value={formData.description} onChange={handleChange}
-                                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl h-24 outline-none text-sm" />
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Mô tả
+                                                chi tiết</label>
+                                            <textarea name="description" value={formData.description}
+                                                      onChange={handleChange}
+                                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl h-24 outline-none text-sm"/>
                                         </div>
                                     </div>
                                     <div className="col-span-4 space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Màu & Độ ưu tiên</label>
-                                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Màu &
+                                                Độ ưu tiên</label>
+                                            <div
+                                                className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                                                 <div className="flex items-center gap-3">
-                                                    <input name="color" type="color" value={formData.color} onChange={handleChange} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-white shadow-sm" />
-                                                    <input name="colorText" type="text" value={formData.color} onChange={handleChange} className="flex-1 bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-mono font-bold text-center uppercase" />
+                                                    <input name="color" type="color" value={formData.color}
+                                                           onChange={handleChange}
+                                                           className="w-10 h-10 rounded-lg cursor-pointer border-2 border-white shadow-sm"/>
+                                                    <input name="colorText" type="text" value={formData.color}
+                                                           onChange={handleChange}
+                                                           className="flex-1 bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-mono font-bold text-center uppercase"/>
                                                 </div>
                                                 <div className="relative">
-                                                    <input name="priority" type="number" value={formData.priority} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold outline-none pr-12" />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-300 uppercase">Ưu tiên</span>
+                                                    <input name="priority" type="number" value={formData.priority}
+                                                           onChange={handleChange}
+                                                           className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold outline-none pr-12"/>
+                                                    <span
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-300 uppercase">Ưu tiên</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -179,8 +192,10 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
 
                                 {/* Icon Picker */}
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Thay đổi biểu tượng</label>
-                                    <div className="flex flex-wrap gap-3 p-4 bg-slate-50 border border-slate-200 rounded-[24px]">
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Thay đổi biểu
+                                        tượng</label>
+                                    <div
+                                        className="flex flex-wrap gap-3 p-4 bg-slate-50 border border-slate-200 rounded-[24px]">
                                         {iconOptions.map((item) => {
                                             const IconComp = item.component;
                                             const isSelected = formData.icon === item.id;
@@ -197,7 +212,7 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
 
                             {/* 2. Chỉ số tài chính */}
                             <section className="space-y-4">
-                                <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2"><TrendingUp size={14} /> 2. Chỉ số thăng hạng & duy trì</h4>
+                                <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">2. Chỉ số thăng hạng & duy trì</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="p-6 bg-emerald-50/50 rounded-[28px] border border-emerald-100 space-y-3">
                                         <label className="text-[10px] font-black text-emerald-700 uppercase flex items-center gap-2"><Star size={12}/> Doanh thu nâng hạng</label>
@@ -221,7 +236,7 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                             {/* 3. Thấu chi (Read Only) */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"><Wallet size={14} /> 3. Đặc quyền thấu chi</h4>
+                                    <h4 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"> 3. Đặc quyền thấu chi</h4>
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-100">
                                         <AlertCircle size={12} />
                                         <span className="text-[10px] font-bold">Trường này không được phép sửa</span>
@@ -242,14 +257,66 @@ const EditRankingDetailModal = ({ isOpen, onClose, rankId, onSuccess }) => {
                                     </div>
                                 </div>
                             </section>
+                            {/* --- 4. THÔNG TIN HỆ THỐNG --- */}
+                            <section className="pt-6 border-t border-slate-100">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                    {/* Ô 1: Đại lý áp dụng */}
+                                    <div className="flex items-center gap-3 p-4 bg-blue-50/50 border border-blue-100 rounded-[20px] transition-all hover:bg-blue-50">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-50">
+                                            <Users size={20} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider leading-none mb-1.5">Quy mô</p>
+                                            <p className="text-sm font-black text-slate-800 truncate">
+                                                {formData.agencies || 0} <span className="text-[11px] font-bold text-slate-400">đối tác</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Ô 2: Người cập nhật */}
+                                    <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-[20px] transition-all hover:bg-slate-100/50">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-500 shadow-sm border border-slate-100">
+                                            <UserCheck size={20} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider leading-none mb-1.5">Người cập nhật</p>
+                                            <p className="text-sm font-black text-slate-700 truncate uppercase">
+                                                {formData.updatedBy || 'Hệ thống'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Ô 3: Thời gian chỉnh sửa */}
+                                    <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-[20px] transition-all hover:bg-slate-100/50">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-500 shadow-sm border border-slate-100">
+                                            <Clock size={20} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider leading-none mb-1.5">Lần cuối lúc</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">
+                                                {formData.updatedAt ? new Date(formData.updatedAt).toLocaleDateString('vi-VN') : '---'}
+                                                <span className="text-[11px] ml-1 text-slate-700 font-medium">
+                        {formData.updatedAt ? new Date(formData.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </section>
                         </>
                     )}
                 </div>
 
                 {/* Footer */}
                 <div className="p-6 border-t flex justify-end gap-3 bg-slate-50">
-                    <button type="button" onClick={onClose} className="px-6 py-3 font-bold text-slate-400 hover:text-slate-600 transition-colors">Đóng lại</button>
-                    <button type="submit" disabled={loading || fetching} className="bg-slate-900 text-white px-10 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl hover:bg-black active:scale-95 transition-all disabled:opacity-50">
+                    <button type="button" onClick={onClose}
+                            className="px-6 py-3 font-bold text-slate-400 hover:text-slate-600 transition-colors">Đóng
+                        lại
+                    </button>
+                    <button type="submit" disabled={loading || fetching}
+                            className="bg-slate-900 text-white px-10 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl hover:bg-black active:scale-95 transition-all disabled:opacity-50">
                         {loading ? <Loader2 className="animate-spin" size={20}/> : <><Save size={20}/> Lưu thay đổi</>}
                     </button>
                 </div>

@@ -1,7 +1,7 @@
 // @refresh reset
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/auth.service';
-
+import { jwtDecode } from "jwt-decode";
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
@@ -37,33 +37,41 @@ export const AuthContextProvider = ({ children }) => {
   // ✅ [MỚI] 2. Đăng nhập bằng OAuth2 (Google/Facebook)
   // Hàm này được gọi khi RedirectHandler nhận được token từ URL
   const loginWithOAuth2 = async (token) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Lưu token trước để axios interceptor có thể dùng nó gọi API
-      localStorage.setItem('accessToken', token);
+  setLoading(true);
+  setError(null);
+  try {
+    localStorage.setItem('accessToken', token);
 
-      // Gọi API lấy thông tin user
-      const user = await authService.fetchUserProfile();
-      
-      if (user) {
-        setCurrentUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        return true;
-      } else {
-        setError("Không thể lấy thông tin người dùng.");
-        authService.logout(); // Xóa token nếu lỗi
-        return false;
-      }
-    } catch (err) {
-      console.error("OAuth2 Login Error:", err);
-      setError("Đăng nhập Google/Facebook thất bại.");
+    const decoded = jwtDecode(token);
+    const user = await authService.fetchUserProfile();
+
+    if (user) {
+      const userProfile = {
+        ...user,
+        userId: user.userId || decoded.userId,
+        email: user.email || decoded.email,
+        agencyId: user.agencyId || decoded.agencyId,
+        hotelId: user.hotelId || decoded.hotelId,
+        roles: decoded.scope|| user.roles
+      };
+
+      setCurrentUser(userProfile);
+      localStorage.setItem('user', JSON.stringify(userProfile));
+      return true;
+    } else {
+      setError("Không thể lấy thông tin người dùng.");
       authService.logout();
       return false;
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    console.error("OAuth2 Login Error:", err);
+    setError("Đăng nhập Google/Facebook thất bại.");
+    authService.logout();
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 3. Đăng xuất
   const logout = () => {
@@ -96,6 +104,7 @@ export const AuthContextProvider = ({ children }) => {
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('user', JSON.stringify(currentUser));
+      sessionStorage.setItem('user', JSON.stringify(currentUser));
     } else {
       // Don't clear accessToken during OAuth2 callback (token is set before user is loaded)
       const isOAuthCallback = window.location.pathname.includes('oauth-callback');

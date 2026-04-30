@@ -31,4 +31,8 @@ public interface RankService {
     AgencyRankDetailResponse getAgencyRankDetail(AgencyRankDetailRequest request);
 
     String changeRank(ChangeRankRequest request);
+
+    List<RankHistoryResponse> getAllRankHistories();
+
+    List<RankHistoryResponse> getMyAgencyRankHistories();
 }

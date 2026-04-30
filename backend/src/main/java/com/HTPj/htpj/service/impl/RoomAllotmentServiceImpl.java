@@ -14,6 +14,9 @@ import com.HTPj.htpj.repository.RoomAllotmentRepository;
 import com.HTPj.htpj.repository.RoomTypeRepository;
 import com.HTPj.htpj.service.RoomAllotmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,14 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
     private final BookingDetailRepository bookingDetailRepository;
 
     @Override
-    public List<InventoryGridResponse> getInventoryGrid(Integer hotelId, LocalDate startDate, LocalDate endDate) {
+    public List<InventoryGridResponse> getInventoryGrid(LocalDate startDate, LocalDate endDate) {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
         List<RoomType> roomTypes = roomTypeRepository.findByHotel_HotelId(hotelId);
         if (roomTypes.isEmpty()) return Collections.emptyList();
 
@@ -69,7 +79,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 RoomAllotment existing = dateMap.get(date);
                 int sold = rtSoldMap.getOrDefault(date, 0);
-                int allotment = existing != null ? existing.getAllotment() : 0;
+                int allotment = existing != null ? existing.getAllotment() : rt.getTotalRooms();
                 boolean stopSell = existing != null && Boolean.TRUE.equals(existing.getStopSell());
                 int available = Math.max(0, allotment - sold);
 
@@ -281,7 +291,7 @@ public class RoomAllotmentServiceImpl implements RoomAllotmentService {
                     RoomAllotment.builder()
                             .roomTypeId(request.getRoomTypeId())
                             .allotmentDate(date)
-                            .allotment(0)
+                            .allotment(roomType.getTotalRooms())
                             .soldCount(0)
                             .build());
 

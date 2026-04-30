@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast';
 
 // Cấu hình trạng thái hệ thống
 const STATUS_CONFIG = {
-    "BOOKED": { label: "CHỜ THANH TOÁN", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+    "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
     "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
     "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
     // "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
@@ -233,7 +233,7 @@ const AdminBookingList = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[1000px]">
                         <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest font-black">
+                        <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-900 text-[10px] uppercase tracking-widest font-black">
                             <th className="px-8 py-6">Thông tin đơn hàng</th>
                             <th className="px-8 py-6">Khách hàng & Đối tác</th>
                             <th className="px-4 py-6 text-center">Thời gian lưu trú</th>

@@ -21,16 +21,16 @@ public class PartnerLegalInformation {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "legal_name", nullable = false, length = 255)
+    @Column(name = "legal_name", nullable = false, columnDefinition = "nvarchar(255)")
     private String legalName;
 
     @Column(name = "tax_code", nullable = false, length = 50)
     private String taxCode;
 
-    @Column(name = "business_address", nullable = false, length = 500)
+    @Column(name = "business_address", nullable = false, columnDefinition = "nvarchar(500)")
     private String businessAddress;
 
-    @Column(name = "representative_name", nullable = false, length = 255)
+    @Column(name = "representative_name", nullable = false, columnDefinition = "nvarchar(255)")
     private String representativeName;
 
     @Column(name = "representative_CIC_number", nullable = false, length = 50)
@@ -42,7 +42,7 @@ public class PartnerLegalInformation {
     @Column(name = "representative_CIC_date")
     private LocalDate representativeCICDate;
 
-    @Column(name = "representative_CIC_place", length = 255)
+    @Column(name = "representative_CIC_place", columnDefinition = "nvarchar(255)")
     private String representativeCICPlace;
 
     @Column(name = "created_at", nullable = false)

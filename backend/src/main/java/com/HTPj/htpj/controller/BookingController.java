@@ -91,6 +91,15 @@ public class BookingController {
                 .build();
     }
 
+    @GetMapping("/listAllByHotelId")
+    ApiResponse<List<ListAllBookingsResponse>> getAllBookingsByHotelId(
+            @RequestParam Integer hotelId
+    ) {
+        return ApiResponse.<List<ListAllBookingsResponse>>builder()
+                .result(bookingService.getAllBookingsByHotelId(hotelId))
+                .build();
+    }
+
     // UC-029: Lịch sử đặt phòng (phân trang)
     @GetMapping("/history")
     ApiResponse<Page<BookingHistoryResponse>> getBookingHistory(
@@ -227,6 +236,16 @@ public class BookingController {
     ApiResponse<NoShowResponse> reportNoShow(@RequestBody NoShowRequest request) {
         return ApiResponse.<NoShowResponse>builder()
                 .result(bookingService.reportNoShow(request))
+                .build();
+    }
+
+    //get booking detail by id
+    @GetMapping("/detail/id/{bookingId}")
+    ApiResponse<BookingDetailResponse> getBookingDetailById(
+            @PathVariable Long bookingId
+    ) {
+        return ApiResponse.<BookingDetailResponse>builder()
+                .result(bookingService.getBookingDetailById(bookingId))
                 .build();
     }
 

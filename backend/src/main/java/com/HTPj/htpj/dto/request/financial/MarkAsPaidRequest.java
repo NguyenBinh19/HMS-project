@@ -8,4 +8,7 @@ import java.util.List;
 public class MarkAsPaidRequest {
     private List<Long> statementIds;
     private String bankReference;
+    private String bankName;
+    private String bankAccountHolder;
+    private String bankAccountNumber;
 }

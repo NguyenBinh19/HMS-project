@@ -72,7 +72,7 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "guest_name", length = 255)
+    @Column(name = "guest_name", columnDefinition = "nvarchar(255)")
     private String guestName;
 
     @Column(name = "guest_phone", length = 20)
@@ -110,7 +110,15 @@ public class Booking {
     @Column(name = "refund_amount", precision = 12, scale = 2)
     private BigDecimal refundAmount;
 
+    @Column(name = "payout_processed")
+    private Boolean payoutProcessed;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agency_booking_id")
+    private AgencyBooking agencyBooking;
+
 }

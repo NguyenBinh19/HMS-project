@@ -27,11 +27,11 @@ public interface UserRepository extends JpaRepository<Users, String> {
     Optional<Users> findByUsername(String username);
 
     @Modifying
-    @Query("UPDATE Users u SET u.status='INACTIVE' WHERE u.agency.agencyId = :agencyId")
+    @Query("UPDATE Users u SET u.status='LOCKED' WHERE u.agency.agencyId = :agencyId")
     void suspendUsersByAgency(Long agencyId);
 
     @Modifying
-    @Query("UPDATE Users u SET u.status='INACTIVE' WHERE u.hotel.hotelId = :hotelId")
+    @Query("UPDATE Users u SET u.status='LOCKED' WHERE u.hotel.hotelId = :hotelId")
     void suspendUsersByHotel(Integer hotelId);
 
     Optional<Users> findByResetToken(String resetToken);
@@ -58,4 +58,17 @@ public interface UserRepository extends JpaRepository<Users, String> {
     List<Users> findByHotel_HotelId(Integer hotelId);
 
     List<Users> findByAgency_AgencyId(Long agencyId);
+
+    List<Users> findByIsAdminTrue();
+
+    @Query("SELECT u FROM Users u WHERE u.agency IS NOT NULL AND u.agency.status = 'ACTIVE'")
+    List<Users> findAllActiveAgencyUsers();
+
+    @Query(value = """
+    Select u.id
+    From users u
+    Join users_roles ur on ur.users_id = u.id
+    Where u.hotel_id = :hotelId and ur.roles_name = 'HOTEL_MANAGER'
+""", nativeQuery = true)
+    String findHotelMangerID(@Param("hotelId") String hotelId);
 }

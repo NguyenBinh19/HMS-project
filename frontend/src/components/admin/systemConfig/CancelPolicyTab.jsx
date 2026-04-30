@@ -27,15 +27,15 @@ const RenderInputBox = ({
                 <div className="p-1.5 bg-slate-100 rounded-lg group-hover:bg-blue-50 transition-colors">
                     {Icon && <Icon size={14} className="text-slate-500 group-hover:text-blue-500" />}
                 </div>
-                <label className="text-[10px] xl:text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] xl:text-[11px] font-black text-slate-600 uppercase tracking-widest">
                     {label}
                 </label>
             </div>
 
             <div className="relative flex items-center">
                 <input
-                    type="text" // Dùng text để kiểm soát hoàn toàn đầu vào
-                    inputMode="numeric" // Hiển thị bàn phím số trên mobile
+                    type="text"
+                    inputMode="numeric"
                     value={value || ''}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -48,7 +48,7 @@ const RenderInputBox = ({
                     </span>
                 )}
             </div>
-            {helperText && <p className="mt-2 text-[10px] text-slate-400 italic leading-relaxed line-clamp-1">{helperText}</p>}
+            {helperText && <p className="mt-2 text-[11px] text-slate-600 italic leading-relaxed line-clamp-1">{helperText}</p>}
         </div>
     );
 };
@@ -222,21 +222,28 @@ const CancelPolicyTab = () => {
     );
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 p-4 xl:p-8 bg-white/50 rounded-[40px]">
-            <ToastPortal ref={toastRef} autoClose={true} autoCloseTime={2800} />
+        <div
+            className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 p-4 xl:p-8 bg-white/50 rounded-[40px]">
+            <ToastPortal ref={toastRef} autoClose={true} autoCloseTime={2800}/>
             {/* Header Section */}
-            <div className="bg-slate-900 rounded-[28px] p-8 text-white flex flex-col sm:flex-row items-center justify-between shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                <div className="flex items-center gap-6 z-10">
-                    <div className="p-4 bg-blue-500/20 rounded-2xl border border-blue-500/20 shadow-inner">
-                        <ShieldAlert size={32} className="text-blue-400" />
+            <div className="bg-slate-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row items-center justify-between shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                <div className="flex items-center gap-4 z-10">
+                    <div className="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/20 shadow-inner">
+                        <ShieldAlert size={22} className="text-blue-400"/>
                     </div>
                     <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight italic">Thiết lập Chính sách Phạt hủy</h2>
+                        <h2 className="text-base font-bold tracking-tight uppercase">
+                            Thiết lập Chính sách Phạt hủy
+                        </h2>
                     </div>
                 </div>
-                <button onClick={fetchConfigs} className="mt-4 sm:mt-0 p-3 hover:bg-white/10 rounded-2xl transition-all text-slate-400 group border border-white/5 shadow-lg active:scale-90">
-                    <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
+                <button
+                    type="button"
+                    onClick={fetchConfigs}
+                    className="mt-4 sm:mt-0 p-2 hover:bg-white/10 rounded-full transition-all text-slate-400 group border border-white/5 active:scale-90"
+                >
+                    <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700"/>
                 </button>
             </div>
 
@@ -244,37 +251,45 @@ const CancelPolicyTab = () => {
             <div className="bg-white rounded-[28px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="bg-slate-50 px-8 py-4 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <HelpCircle size={18} className="text-blue-600" />
+                        <HelpCircle size={18} className="text-blue-600"/>
                         <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Hướng dẫn áp dụng thực tế</span>
                     </div>
-                    <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 animate-pulse">Dữ liệu thời gian thực</span>
+                    <span
+                        className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 animate-pulse">Dữ liệu thời gian thực</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
                     <div className="p-8 hover:bg-emerald-50/40 transition-colors">
                         <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase mb-4">
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> TRƯỜNG HỢP HỦY SỚM
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                            TRƯỜNG HỢP HỦY SỚM
                         </div>
                         <p className="text-[15px] text-slate-600 leading-relaxed">
-                            Khách hủy đơn <b>trước {form.fullRefundDays || '...'} ngày</b>. Hệ thống tự động thu phí phạt <b className="text-emerald-700 text-lg">{form.level1Percent || '0'}%</b> tổng giá trị.
+                            Khách hủy đơn <b>trước {form.fullRefundDays || '...'} ngày</b>. Hệ thống tự động thu phí
+                            phạt <b className="text-emerald-700 text-lg">{form.level1Percent || '0'}%</b> tổng giá trị.
                         </p>
                     </div>
 
                     <div className="p-8 hover:bg-amber-50/40 transition-colors">
                         <div className="flex items-center gap-2 text-amber-600 font-black text-[10px] uppercase mb-4">
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> TRƯỜNG HỢP TRUNG GIAN
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                            TRƯỜNG HỢP TRUNG GIAN
                         </div>
                         <p className="text-[15px] text-slate-600 leading-relaxed">
-                            Hủy từ <b>{form.penaltyDays || '...'}</b> đến <b>{form.fullRefundDays || '...'}</b> ngày trước Check-in. Thu phí phạt <b className="text-amber-700 text-lg">{form.level2Percent || '0'}%</b>.
+                            Hủy từ <b>{form.penaltyDays || '...'}</b> đến <b>{form.fullRefundDays || '...'}</b> ngày
+                            trước Check-in. Thu phí phạt <b
+                            className="text-amber-700 text-lg">{form.level2Percent || '0'}%</b>.
                         </p>
                     </div>
 
                     <div className="p-8 hover:bg-red-50/40 transition-colors">
                         <div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase mb-4">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> TRƯỜNG HỢP CẬN NGÀY
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                            TRƯỜNG HỢP CẬN NGÀY
                         </div>
                         <p className="text-[15px] text-slate-600 leading-relaxed">
-                            Hủy trong vòng <b>dưới {form.penaltyDays || '...'} ngày</b>. Phạt mức tối đa <b className="text-red-700 text-lg">{form.level3Percent || '0'}%</b> (Thường là mất cọc).
+                            Hủy trong vòng <b>dưới {form.penaltyDays || '...'} ngày</b>. Phạt mức tối đa <b
+                            className="text-red-700 text-lg">{form.level3Percent || '0'}%</b> (Thường là mất cọc).
                         </p>
                     </div>
                 </div>
@@ -284,8 +299,9 @@ const CancelPolicyTab = () => {
             <div className="space-y-8">
                 {/* Hàng 1: Mốc thời gian */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Clock size={16} className="text-blue-500" /> Mốc thời gian áp dụng (Số ngày trước Check-in)
+                    <div
+                        className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
+                        <Clock size={16} className="text-blue-700"/> Mốc thời gian áp dụng (Số ngày trước Check-in)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
                         <RenderInputBox
@@ -313,24 +329,34 @@ const CancelPolicyTab = () => {
 
                 {/* Hàng 2: Tỷ lệ phạt */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
-                        <Percent size={16} className="text-blue-500" /> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
+                    <div
+                        className="flex items-center gap-3 px-2 font-black text-[11px] text-slate-500 uppercase tracking-widest">
+                        <Percent size={16} className="text-blue-700"/> Tỷ lệ phần trăm phạt tương ứng (0 - 100%)
                     </div>
                     <div className="flex flex-col md:flex-row gap-6">
-                        <RenderInputBox label="Phí Level 1 (Sớm)" suffix="%" value={form.level1Percent} onChange={(val) => setForm({...form, level1Percent: val})} isLoading={loadingSubmit} placeholder="0" />
-                        <RenderInputBox label="Phí Level 2 (Vừa)" suffix="%" value={form.level2Percent} onChange={(val) => setForm({...form, level2Percent: val})} isLoading={loadingSubmit} placeholder="50" />
-                        <RenderInputBox label="Phí Level 3 (Trễ)" suffix="%" value={form.level3Percent} onChange={(val) => setForm({...form, level3Percent: val})} isLoading={loadingSubmit} placeholder="100" />
+                        <RenderInputBox label="Phí Level 1 (Sớm)" suffix="%" value={form.level1Percent}
+                                        onChange={(val) => setForm({...form, level1Percent: val})}
+                                        isLoading={loadingSubmit} placeholder="0"/>
+                        <RenderInputBox label="Phí Level 2 (Vừa)" suffix="%" value={form.level2Percent}
+                                        onChange={(val) => setForm({...form, level2Percent: val})}
+                                        isLoading={loadingSubmit} placeholder="50"/>
+                        <RenderInputBox label="Phí Level 3 (Trễ)" suffix="%" value={form.level3Percent}
+                                        onChange={(val) => setForm({...form, level3Percent: val})}
+                                        isLoading={loadingSubmit} placeholder="100"/>
                     </div>
                 </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-200/60">
+            <div
+                className="flex flex-col xl:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-200/60">
                 <div className="flex gap-4 items-start max-w-2xl bg-red-50/50 p-4 rounded-2xl border border-red-100">
-                    <AlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
+                    <AlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5"/>
                     <p className="text-[12px] text-slate-600 leading-relaxed">
-                        <b className="text-red-700 uppercase">Nguyên tắc hệ thống:</b> Mốc hoàn tiền phải lớn hơn mốc phạt trung gian.
-                        Tỷ lệ phạt phải tăng dần theo độ trễ đặt phòng. Các thay đổi này không áp dụng hồi tố cho các đơn đã đặt trước đó.
+                        <b className="text-red-700 uppercase">Nguyên tắc hệ thống:</b> Mốc hoàn tiền phải lớn hơn mốc
+                        phạt trung gian.
+                        Tỷ lệ phạt phải tăng dần theo độ trễ đặt phòng. Các thay đổi này không áp dụng hồi tố cho các
+                        đơn đã đặt trước đó.
                     </p>
                 </div>
 
@@ -339,8 +365,9 @@ const CancelPolicyTab = () => {
                     disabled={loadingSubmit}
                     className="w-full xl:w-auto flex items-center justify-center gap-4 px-16 py-5 bg-slate-900 hover:bg-blue-600 text-white rounded-[24px] font-bold shadow-2xl transition-all duration-300 active:scale-95 disabled:opacity-50 group overflow-hidden relative"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                    {loadingSubmit ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                    <div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    {loadingSubmit ? <Loader2 size={20} className="animate-spin"/> : <Save size={20}/>}
                     <span className="uppercase tracking-[0.2em] text-sm">Cập nhật chính sách</span>
                 </button>
             </div>

@@ -13,9 +13,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -42,13 +42,16 @@ public class SecurityConfig {
             "/users/register",
             "/email/welcome",
             "/storage/**",
-            "/sepay/**"
+            "/sepay/**",
+            "/support"
     };
 
     private final String[] PUBLIC_GET_ENPOINTS = {
             "/auth/vault",
             "/storage/**",
-            "/transaction-history/**"
+            "/transaction-history/**",
+            "/pdf-documents",
+            "/pdf-documents/**",
     };
 
     @Value("${app.frontend-url:http://localhost:5173}")
@@ -60,14 +63,18 @@ public class SecurityConfig {
     @Autowired
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
+
+    @Autowired
+    private OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // bật CORS
                 .authorizeHttpRequests(request ->
                         request
-//                                .requestMatchers("/booking/**").permitAll()
                                 .requestMatchers("/room-types/**").permitAll()
+                                .requestMatchers("/ws/**", "/ws/info/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(PUBLIC_POST_ENPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENPOINTS).permitAll()
@@ -76,10 +83,8 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth.baseUri("/oauth2/authorization"))
-                        .redirectionEndpoint(redir -> redir.baseUri("/oauth2/callback/*"))
                         .successHandler(oAuth2LoginSuccessHandler)
-                        .failureHandler(new SimpleUrlAuthenticationFailureHandler(
-                                frontendUrl + "/oauth-callback?error=OAuth2+login+failed"))
+                        .failureHandler(oAuth2LoginFailureHandler)
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                                 .decoder(customJwtDecoder)
@@ -97,7 +102,8 @@ public class SecurityConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         corsConfiguration.addAllowedOriginPattern("http://localhost:*");
-        corsConfiguration.addAllowedOriginPattern("https://www.jushotel.site");
+        corsConfiguration.addAllowedOriginPattern("http://localhost");
+        corsConfiguration.addAllowedOriginPattern("https://www.hmsb2b.site");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true);

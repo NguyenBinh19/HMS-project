@@ -12,6 +12,7 @@ public class PayoutListResponse {
     private List<PayoutListItemResponse> payouts;
     private BigDecimal totalPayoutLiability;
     private Integer totalRecords;
+    private Integer pendingCount;
     private Integer readyCount;
     private Integer processingCount;
     private Integer paidCount;

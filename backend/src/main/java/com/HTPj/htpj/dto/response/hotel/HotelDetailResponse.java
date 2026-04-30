@@ -31,5 +31,7 @@ public class HotelDetailResponse {
 
     private BigDecimal minPrice;
     private Integer totalAvailableRooms;
+    private Integer totalMaxGuests;
+    private Boolean suggested;
 }
 

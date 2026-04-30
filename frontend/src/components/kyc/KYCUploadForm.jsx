@@ -1,42 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Building, User, Edit3, CheckCircle2, Plus, X, RefreshCw } from 'lucide-react';
 import { kycService } from '@/services/kyc.service.js';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from "jwt-decode";
 const KYCUploadForm = ({ onBack, onSubmit }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [isFetchingOldData, setIsFetchingOldData] = useState(false);
     const [addressError, setAddressError] = useState("");
     const [placeError, setPlaceError] = useState("");
     const [dateError, setDateError] = useState("");
+    const [licenseError, setLicenseError] = useState("");
+    const [taxCodeError, setTaxCodeError] = useState("");
     const today = new Date().toLocaleDateString('en-CA');
 
     const { oldKycId, partnerType: navPartnerType } = location.state || {};
 
+    const handleSmartBack = () => {
+        if (isUpdateMode) {
+            navigate(-1);
+        } else {
+            if (onBack) {
+                onBack();
+            } else {
+                navigate(-1);
+            }
+        }
+    };
     const getPartnerTypeFromToken = () => {
         try {
             const token = localStorage.getItem("accessToken");
             if (!token) return "HOTEL";
-
             const decoded = jwtDecode(token);
-
-            // 1. Lấy dữ liệu từ mọi trường có thể chứa Role
             const rawRoles = decoded.roles || decoded.authorities || decoded.scope || [];
-
-            // 2. Chuẩn hóa về mảng String
             const rolesArray = Array.isArray(rawRoles)
                 ? rawRoles.map(r => (typeof r === 'object' ? r.name : String(r)))
                 : String(rawRoles).split(" ");
-
             if (rolesArray.some(role => role.includes("AGENCY"))) {
                 return "AGENCY";
             }
-
             if (rolesArray.some(role => role.includes("HOTEL"))) {
                 return "HOTEL";
             }
-
             return "HOTEL";
         } catch (err) {
             console.error("Lỗi Decode Token trong KYC Form:", err);
@@ -114,28 +120,36 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
 
     // 1. Chỉ cho phép nhập số
     const onlyNumbers = (val) => val.replace(/[^0-9]/g, "");
-
-    // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
-    const formatTaxCode = (val) => {
-        const digits = onlyNumbers(val).slice(0, 13);
-        if (digits.length > 10) {
-            return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
-        }
-        return digits;
-    };
+    //
+    // // 2. Format Mã số thuế (Chặn max 13 số, tự thêm dấu gạch nếu là mã đơn vị trực thuộc)
+    // const formatTaxCode = (val) => {
+    //     const digits = onlyNumbers(val).slice(0, 13);
+    //     if (digits.length > 10) {
+    //         return `${digits.slice(0, 10)}-${digits.slice(10, 13)}`;
+    //     }
+    //     return digits;
+    // };
 
     // 3. Format CCCD (Max 12 số)
     const formatCIC = (val) => onlyNumbers(val).slice(0, 12);
 
     const handleFinalSubmit = async () => {
-        if (!formData.legalName || !formData.taxCode) {
-            alert("Vui lòng điền các thông tin bắt buộc!");
+        const isMissingInfo =
+            !formData.legalName?.trim() ||
+            !formData.taxCode?.trim() ||
+            !formData.businessLicenseNumber?.trim() ||
+            !formData.businessAddress?.trim() ||
+            !formData.representativeName?.trim() ||
+            !formData.representativeCICNumber?.trim();
+
+        if (isMissingInfo) {
+            alert("Vui lòng điền đầy đủ các thông tin bắt buộc!");
             return;
         }
-        const rawTaxCode = formData.taxCode.replace("-", "");
 
-        if (rawTaxCode.length !== 10 && rawTaxCode.length !== 13) {
-            alert("Mã số thuế phải có 10 hoặc 13 số!");
+        // Nếu có bất kỳ thông báo lỗi nào đang tồn tại, không cho phép submit
+        if (dateError || addressError || placeError || licenseError || taxCodeError) {
+            alert("Thông tin nhập vào không hợp lệ. Vui lòng kiểm tra lại các trường báo đỏ!");
             return;
         }
 
@@ -266,13 +280,27 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                         <OCRInput
                             label="Mã số thuế"
                             value={formData.taxCode}
-                            onChange={(e) => setFormData(p => ({ ...p, taxCode: formatTaxCode(e.target.value) }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, taxCode: val }));
+                                setTaxCodeError(!val.trim() ? "Vui lòng nhập mã số thuế" : "");
+                            }}
                         />
+                        {taxCodeError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1 animate-pulse"> {taxCodeError}</p>
+                        )}
                         <OCRInput
                             label="Số GPKD"
                             value={formData.businessLicenseNumber}
-                            onChange={(e) => setFormData(p => ({ ...p, businessLicenseNumber: onlyNumbers(e.target.value).slice(0, 10) }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData(p => ({ ...p, businessLicenseNumber: val }));
+                                setLicenseError(!val.trim() ? "Vui lòng nhập số GPKD" : "");
+                            }}
                         />
+                        {licenseError && (
+                            <p className="text-[10px] text-rose-500 font-bold uppercase mt-1 animate-pulse"> {licenseError}</p>
+                        )}
                     </div>
                     <OCRInput
                         label="Địa chỉ trụ sở"
@@ -353,7 +381,7 @@ const KYCUploadForm = ({ onBack, onSubmit }) => {
                 </div>
 
                 <div className="flex gap-4 pt-6">
-                    <button type="button" onClick={onBack} className="flex-1 py-3.5 font-bold text-slate-500 border-2 rounded-xl hover:bg-slate-50 uppercase text-xs">Quay lại</button>
+                    <button type="button" onClick={handleSmartBack} className="flex-1 py-3.5 font-bold text-slate-500 border-2 rounded-xl hover:bg-slate-50 uppercase text-xs">Quay lại</button>
                     <button type="button" onClick={handleFinalSubmit} disabled={loading} className={`flex-[2] text-white py-3.5 rounded-xl font-black shadow-lg uppercase text-xs tracking-widest ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                         {loading ? "Đang xử lý..." : "Xác nhận hồ sơ"}
                     </button>
@@ -396,7 +424,9 @@ const OCRInput = ({ label, value, onChange, name, isTextArea, type = "text" }) =
             ) : (
                 <input type={type} name={name} value={value} onChange={onChange} className="w-full border-2 border-slate-100 rounded-xl p-3 text-sm font-semibold focus:border-blue-400 outline-none bg-slate-50" />
             )}
-            <Edit3 size={12} className="absolute right-4 top-4 text-slate-300 group-hover:text-blue-400 pointer-events-none" />
+            {type !== "date" && (
+                <Edit3 size={12} className="absolute right-4 top-4 text-slate-300 group-hover:text-blue-400 pointer-events-none" />
+            )}
         </div>
     </div>
 );

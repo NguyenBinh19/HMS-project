@@ -3,6 +3,8 @@ import { X, Calendar, MapPin, Phone, ShieldCheck, User, AtSign, CheckCircle2 } f
 import { staffService } from '@/services/staff.service.js';
 
 const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = false }) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
     const [formData, setFormData] = useState({
         userId: '',
         firstName: '',
@@ -40,22 +42,44 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
         setFormData(prev => ({ ...prev, phone: value }));
     };
+    const validateVietnamesePhone = (phone) => {
+        const vnf_regex = /^(03|05|07|08|09)+([0-9]{8})$/;
+        return vnf_regex.test(phone);
+    };
 
     const handleNameChange = (field, value) => {
-        const formattedName = value.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
+        // 1. Loại bỏ số và ký tự đặc biệt ngay lập tức
+        // Giữ lại chữ cái và dấu cách
+        let cleanValue = value.replace(/[0-9!@#$%^&*(),.?":{}|<>]/g, '');
+        // 2. Không cho phép nhập dấu cách ở ngay đầu dòng
+        cleanValue = cleanValue.trimStart();
+        if (cleanValue === '') {
+            setFormData(prev => ({ ...prev, [field]: '' }));
+            return;
+        }
+        // 3. Chuẩn hóa viết hoa chữ cái đầu
+        const formattedName = cleanValue.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
         setFormData(prev => ({ ...prev, [field]: formattedName }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isViewOnly || isSubmitting) return;
-
+        if (formData.userId === currentUserId && formData.status !== initialData.status) {
+            alert("Bạn không thể tự thay đổi trạng thái hoạt động của chính mình!");
+            return;
+        }
+        const cleanPhone = formData.phone.trim();
+        if (!validateVietnamesePhone(cleanPhone)) {
+            alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (03, 05, 07, 08, 09...).");
+            return;
+        }
         try {
             setIsSubmitting(true);
             const updatePayload = {
                 userId: formData.userId,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
                 username: formData.username,
                 email: formData.email,
                 phone: formData.phone,
@@ -75,6 +99,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
     };
 
     if (!isOpen) return null;
+    const isSelfEditing = formData.userId === currentUserId;
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-end z-[150]">
@@ -132,6 +157,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <Input
                                 label="Số điện thoại"
                                 icon={<Phone size={14}/>}
+                                inputMode="numeric"
                                 value={formData.phone}
                                 disabled={isViewOnly}
                                 onChange={handlePhoneChange}
@@ -163,7 +189,7 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest ml-1">Trạng thái tài khoản</label>
                                 <select
-                                    disabled={isViewOnly}
+                                    disabled={isViewOnly || isSelfEditing}
                                     value={formData.status}
                                     onChange={e => setFormData(prev => ({...prev, status: e.target.value}))}
                                     className={`w-full px-4 py-4 border rounded-2xl outline-none font-black transition-all appearance-none ${
@@ -172,9 +198,14 @@ const StaffFormModal = ({ isOpen, onClose, initialData, onSuccess, isViewOnly = 
                                             : 'bg-rose-50 text-rose-600 border-rose-100'
                                     }`}
                                 >
-                                    <option value="ACTIVE">● ĐANG HOẠT ĐỘNG</option>
-                                    <option value="LOCKED">● ĐÃ KHÓA</option>
+                                    <option value="ACTIVE"> ĐANG HOẠT ĐỘNG</option>
+                                    <option value="LOCKED"> ĐÃ KHÓA</option>
                                 </select>
+                                {isSelfEditing && !isViewOnly && (
+                                    <p className="text-[10px] text-amber-600 font-bold mt-2 italic">
+                                        Bạn không thể tự khóa tài khoản của chính mình
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

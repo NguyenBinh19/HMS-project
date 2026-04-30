@@ -29,6 +29,10 @@ public class HotelDetailListResponse {
     List<String> amenitiesList;
     Double avgRating;
     Integer totalReviews;
-
     VerificationInfoResponse verification;
+    BigDecimal commissionValue;
+    String rateType;
+    String commissionType;
+    LocalDateTime commissionUpdatedAt;
+    String commissionUpdatedBy;
 }

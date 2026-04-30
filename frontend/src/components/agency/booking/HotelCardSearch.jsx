@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { Eye, MapPin, Star, CheckCircle2, Plus } from "lucide-react"; // Thêm icon để trực quan hơn
+import { Eye, MapPin, Star, CheckCircle2, Plus, AlertTriangle } from "lucide-react"; // Thêm icon để trực quan hơn
 import React from "react";
 import { useCompare } from '@/context/CompareContext.jsx';
 import { jwtDecode } from "jwt-decode";
+const DEFAULT_HOTEL_IMAGE = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb";
 
-const HotelCard = ({ hotel }) => {
+const HotelCard = ({ hotel, isSuggested = false }) => {
     const navigate = useNavigate();
     const { compareItems, toggleCompareItem } = useCompare();
 
@@ -32,9 +33,9 @@ const HotelCard = ({ hotel }) => {
         }
     };
 
-    const coverImg = hotel.images && hotel.images.length > 0
+    const coverImg = (hotel.images && hotel.images.length > 0 && hotel.images[0])
         ? hotel.images[0]
-        : "https://images.unsplash.com/photo-1551882547-ff43c63ebeaf?q=80&w=800";
+        : DEFAULT_HOTEL_IMAGE;
 
     const starCount = hotel.starRating || 0;
     const formattedRating = (hotel.avgRating != null && hotel.avgRating > 0)
@@ -52,27 +53,31 @@ const HotelCard = ({ hotel }) => {
     };
 
     const handleToggleCompare = (e) => {
-        e.stopPropagation(); // Ngăn sự kiện click lan ra thẻ cha (tránh vô tình chuyển trang)
+        e.stopPropagation();
         toggleCompareItem(hotel);
     };
 
     return (
         <div
-            onClick={handleViewDetail} // Click vào card là xem chi tiết
+            onClick={handleViewDetail} // Click vào card để xem chi tiết
             className={`bg-white border rounded-[28px] p-4 flex gap-6 hover:shadow-2xl transition-all group overflow-hidden relative cursor-pointer ${
-                isSelected
-                    ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/10'
-                    : 'border-slate-100 hover:border-blue-200'
+                isSuggested
+                    ? 'border-slate-100 hover:border-blue-200'
+                    : isSelected
+                        ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/10'
+                        : 'border-slate-100 hover:border-blue-200'
             }`}
         >
+            {/* Badge đề xuất */}
+            {isSuggested && (
+                <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-amber-100 border border-amber-300 rounded-full px-3 py-1">
+                    <AlertTriangle size={12} className="text-amber-600" />
+                    <span className="text-[10px] font-bold text-amber-700">Đề xuất - Không đủ sức chứa</span>
+                </div>
+            )}
             {/* Ảnh khách sạn */}
             <div className="w-[260px] h-[180px] rounded-[20px] overflow-hidden shrink-0 relative">
                 <img src={coverImg} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={hotel.hotelName} />
-                {/*<div className="absolute top-2 left-2 flex flex-col gap-1">*/}
-                {/*    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase shadow-sm">Flash Sale -15%</span>*/}
-                {/*    <span className="bg-[#00A32E] text-white text-[9px] font-black px-2 py-1 rounded-md italic uppercase tracking-tighter shadow-sm">⚡ Instant Booking</span>*/}
-                {/*</div>*/}
-                {/* Badge đã chọn */}
                 {isSelected && (
                     <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-[2px] flex items-center justify-center">
                         <CheckCircle2 size={40} className="text-white drop-shadow-lg" />
@@ -98,6 +103,14 @@ const HotelCard = ({ hotel }) => {
                             <MapPin size={12} className="text-blue-500 shrink-0" />
                             <span className="truncate">{hotel.address}, {hotel.city}</span>
                         </p>
+                        {hotel.totalAvailableRooms != null && (
+                            <div className="flex items-center gap-3 mt-2 text-[10px] font-bold">
+                                <span className="text-slate-500">Còn trống: <span className="text-blue-600">{hotel.totalAvailableRooms} phòng</span></span>
+                                {hotel.totalMaxGuests != null && (
+                                    <span className="text-slate-500">Sức chứa tối đa: <span className="text-blue-600">{hotel.totalMaxGuests} khách</span></span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

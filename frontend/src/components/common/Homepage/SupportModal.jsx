@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, AlertCircle, CheckCircle2, Loader2, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import publicApi from '@/services/publicApi.config';
 
 const SupportModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
@@ -29,22 +30,45 @@ const SupportModal = ({ isOpen, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Business Rule: Validate dữ liệu bắt buộc
+        // Validate mandatory fields
         if (!formData.fullName || !formData.email || !formData.message) {
             setStatus({ ...status, error: 'Vui lòng điền đầy đủ các trường bắt buộc (*)' });
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setStatus({ ...status, error: 'Email không đúng định dạng' });
+            return;
+        }
+
+        // Validate phone format if provided
+        if (formData.phone && !/^[0-9+\-\s()]{7,20}$/.test(formData.phone)) {
+            setStatus({ ...status, error: 'Số điện thoại không đúng định dạng' });
             return;
         }
 
         setStatus({ ...status, loading: true });
 
         try {
-            // Giả lập gọi API (Hệ thống lấy email Admin từ config và gửi đi)
-            console.log("Đang gửi yêu cầu tới Admin...", formData);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const topicLabels = { GENERAL: 'Hỗ trợ chung', BOOKING: 'Vấn đề đặt phòng', PARTNER: 'Hợp tác đối tác', TECH: 'Lỗi kỹ thuật' };
+            const subject = formData.subject || topicLabels[formData.topic] || formData.topic;
+
+            await publicApi.post('/support', {
+                fullName: formData.fullName,
+                email: formData.email,
+                phone: formData.phone || null,
+                subject: subject,
+                message: formData.message
+            });
 
             setStatus({ loading: false, error: '', success: true });
         } catch (err) {
-            setStatus({ loading: false, error: 'Hệ thống email gặp sự cố. Thử lại sau!', success: false });
+            const msg = err.response?.status === 500
+                ? 'Hệ thống email gặp sự cố. Vui lòng thử lại sau!'
+                : (err.response?.data?.message || 'Hệ thống email gặp sự cố. Thử lại sau!');
+            setStatus({ loading: false, error: msg, success: false });
         }
     };
 

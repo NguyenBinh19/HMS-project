@@ -90,9 +90,9 @@ const LoginSlider = () => {
       </div>
       
       {/* Branding Logo Top Left */}
-      <div className="absolute top-8 left-8 z-20">
-         <img src="/assets/logo/logo_travelmate_xoafont.png" alt="TravelMate" className="h-12 w-auto object-contain brightness-0 invert drop-shadow-lg" />
-      </div>
+      {/*<div className="absolute top-8 left-8 z-20">*/}
+      {/*   <img src="/assets/logo/logo_travelmate_xoafont.png" alt="TravelMate" className="h-12 w-auto object-contain brightness-0 invert drop-shadow-lg" />*/}
+      {/*</div>*/}
     </div>
   );
 };

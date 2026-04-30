@@ -246,7 +246,7 @@ public class VoucherServiceImpl implements VoucherService {
         return cell;
     }
 
-    private String extractUserId() {
+    public String extractUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) auth.getPrincipal();
         return jwt.getSubject();

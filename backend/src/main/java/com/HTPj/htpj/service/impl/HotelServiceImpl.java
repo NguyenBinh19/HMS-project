@@ -1,5 +1,6 @@
 package com.HTPj.htpj.service.impl;
 
+import com.HTPj.htpj.dto.request.hotel.BankInfoRequest;
 import com.HTPj.htpj.dto.request.hotel.UpdateHotelRequest;
 import com.HTPj.htpj.dto.response.hotel.*;
 import com.HTPj.htpj.dto.response.kyc.VerificationInfoResponse;
@@ -9,6 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.HotelMapper;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.HotelService;
+import com.HTPj.htpj.service.NotificationService;
 import com.HTPj.htpj.service.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +47,8 @@ public class HotelServiceImpl implements HotelService {
     PartnerVerificationRepository partnerVerificationRepository;
     S3Service s3Service;
     UserRepository userRepository;
+    NotificationService notificationService;
+    RoomAllotmentRepository roomAllotmentRepository;
 
     public List<HotelResponse> getHotelsForView() {
 
@@ -110,7 +114,7 @@ public class HotelServiceImpl implements HotelService {
                 .totalReviews(totalReviews)
                 .build();
     }
-    public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms) {
+    public List<HotelDetailResponse> searchHotels(String keyword, LocalDate checkIn, LocalDate checkOut, Integer rooms, Integer adults, Integer children) {
 
         List<HotelSearchProjection> hotels =
                 hotelRepository.searchHotels(keyword);
@@ -133,11 +137,16 @@ public class HotelServiceImpl implements HotelService {
                 ));
 
         boolean filterByAvailability = checkIn != null && checkOut != null;
-        int requiredRooms = rooms != null && rooms > 0 ? rooms : 1;
+        int requiredRooms = rooms != null ? rooms : 0;
+        int requiredAdults = adults != null ? adults : 0;
+        int requiredChildren = children != null ? children : 0;
+        boolean filterByRooms = requiredRooms > 0;
+        boolean filterByGuests = requiredAdults > 0 || requiredChildren > 0;
 
         // Tính availability nếu có ngày
         Map<Integer, BigDecimal> minPriceMap = new HashMap<>();
         Map<Integer, Integer> availableRoomMap = new HashMap<>();
+        Map<Integer, Integer> maxGuestsMap = new HashMap<>();
 
         if (filterByAvailability) {
             List<RoomType> allRoomTypes = roomTypeRepository.findByHotel_HotelIdIn(hotelIds);
@@ -162,6 +171,15 @@ public class HotelServiceImpl implements HotelService {
                             RoomHoldDetail::getRoomTypeId,
                             Collectors.summingInt(RoomHoldDetail::getQuantity)));
 
+            // Fetch allotment data for all room types
+            List<Integer> allRoomTypeIds = allRoomTypes.stream()
+                    .map(RoomType::getRoomTypeId).toList();
+            LocalDate allotmentEnd = checkOut.minusDays(1);
+            List<RoomAllotment> allotments = roomAllotmentRepository
+                    .findByRoomTypeIdsAndDateRange(allRoomTypeIds, checkIn, allotmentEnd);
+            Map<Integer, List<RoomAllotment>> allotmentMap = allotments.stream()
+                    .collect(Collectors.groupingBy(RoomAllotment::getRoomTypeId));
+
             // Group room types by hotel
             Map<Integer, List<RoomType>> roomTypesByHotel = allRoomTypes.stream()
                     .filter(rt -> "ACTIVE".equalsIgnoreCase(rt.getRoomStatus()))
@@ -170,15 +188,39 @@ public class HotelServiceImpl implements HotelService {
             for (Integer hotelId : hotelIds) {
                 List<RoomType> rts = roomTypesByHotel.getOrDefault(hotelId, List.of());
                 int totalAvailable = 0;
+                int totalMaxGuests = 0;
                 BigDecimal minPrice = null;
 
                 for (RoomType rt : rts) {
                     int booked = bookedMap.getOrDefault(rt.getRoomTypeId(), 0);
                     int held = holdMap.getOrDefault(rt.getRoomTypeId(), 0);
-                    int available = rt.getTotalRooms() - booked - held;
+
+                    // Determine effective ceiling from allotment records
+                    List<RoomAllotment> rtAllotments = allotmentMap
+                            .getOrDefault(rt.getRoomTypeId(), Collections.emptyList());
+                    Map<LocalDate, RoomAllotment> rtAllotmentDateMap = rtAllotments.stream()
+                            .collect(Collectors.toMap(RoomAllotment::getAllotmentDate, a -> a));
+
+                    int effectiveCeiling = rt.getTotalRooms();
+                    boolean isStopSell = false;
+                    for (LocalDate date = checkIn; !date.isAfter(allotmentEnd); date = date.plusDays(1)) {
+                        RoomAllotment ra = rtAllotmentDateMap.get(date);
+                        if (ra != null) {
+                            if (Boolean.TRUE.equals(ra.getStopSell())) {
+                                isStopSell = true;
+                                break;
+                            }
+                            effectiveCeiling = Math.min(effectiveCeiling, ra.getAllotment());
+                        }
+                    }
+
+                    int available = isStopSell ? 0 : effectiveCeiling - booked - held;
 
                     if (available > 0) {
                         totalAvailable += available;
+                        int maxAdultsPerRoom = rt.getMaxAdults() != null ? rt.getMaxAdults() : 2;
+                        int maxChildrenPerRoom = rt.getMaxChildren() != null ? rt.getMaxChildren() : 0;
+                        totalMaxGuests += available * (maxAdultsPerRoom + maxChildrenPerRoom);
                         if (minPrice == null || rt.getBasePrice().compareTo(minPrice) < 0) {
                             minPrice = rt.getBasePrice();
                         }
@@ -186,36 +228,62 @@ public class HotelServiceImpl implements HotelService {
                 }
 
                 availableRoomMap.put(hotelId, totalAvailable);
+                maxGuestsMap.put(hotelId, totalMaxGuests);
                 if (minPrice != null) {
                     minPriceMap.put(hotelId, minPrice);
                 }
             }
         }
 
-        return hotels.stream()
-                .filter(h -> {
-                    if (!filterByAvailability) return true;
-                    int available = availableRoomMap.getOrDefault(h.getHotelId(), 0);
-                    return available >= requiredRooms;
-                })
-                .map(h ->
-                        HotelDetailResponse.builder()
-                                .hotelId(h.getHotelId())
-                                .hotelName(h.getHotelName())
-                                .address(h.getAddress())
-                                .city(h.getCity())
-                                .country(h.getCountry())
-                                .phone(h.getPhone())
-                                .description(h.getDescription())
-                                .starRating(h.getStarRating())
-                                .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
-                                .amenities(parseAmenities(h.getAmenities()))
-                                .avgRating(h.getAvgRating())
-                                .totalReviews(h.getTotalReviews())
-                                .minPrice(minPriceMap.get(h.getHotelId()))
-                                .totalAvailableRooms(availableRoomMap.get(h.getHotelId()))
-                                .build()
-                ).toList();
+        int requiredGuests = requiredAdults + requiredChildren;
+
+        // Tách thành 2 danh sách: khách sạn phù hợp và khách sạn đề xuất
+        List<HotelDetailResponse> matchingHotels = new ArrayList<>();
+        List<HotelDetailResponse> suggestedHotels = new ArrayList<>();
+
+        for (HotelSearchProjection h : hotels) {
+            int available = availableRoomMap.getOrDefault(h.getHotelId(), 0);
+            int maxGuests = maxGuestsMap.getOrDefault(h.getHotelId(), 0);
+
+            boolean meetsRoomRequirement = !filterByAvailability || !filterByRooms || available >= requiredRooms;
+            boolean meetsGuestRequirement = !filterByAvailability || !filterByGuests || maxGuests >= requiredGuests;
+            boolean isSuggested = filterByAvailability && (filterByRooms || filterByGuests) && (!meetsRoomRequirement || !meetsGuestRequirement);
+
+            // Bỏ qua khách sạn không có phòng trống
+            if (filterByAvailability && available <= 0) {
+                continue;
+            }
+
+            HotelDetailResponse response = HotelDetailResponse.builder()
+                    .hotelId(h.getHotelId())
+                    .hotelName(h.getHotelName())
+                    .address(h.getAddress())
+                    .city(h.getCity())
+                    .country(h.getCountry())
+                    .phone(h.getPhone())
+                    .description(h.getDescription())
+                    .starRating(h.getStarRating())
+                    .images(imageMap.getOrDefault(h.getHotelId(), List.of()))
+                    .amenities(parseAmenities(h.getAmenities()))
+                    .avgRating(h.getAvgRating())
+                    .totalReviews(h.getTotalReviews())
+                    .minPrice(minPriceMap.get(h.getHotelId()))
+                    .totalAvailableRooms(availableRoomMap.get(h.getHotelId()))
+                    .totalMaxGuests(maxGuestsMap.get(h.getHotelId()))
+                    .suggested(isSuggested)
+                    .build();
+
+            if (isSuggested) {
+                suggestedHotels.add(response);
+            } else {
+                matchingHotels.add(response);
+            }
+        }
+
+        // Trả về khách sạn phù hợp trước, sau đó khách sạn đề xuất
+        List<HotelDetailResponse> result = new ArrayList<>(matchingHotels);
+        result.addAll(suggestedHotels);
+        return result;
     }
 
     private List<String> parseAmenities(String amenitiesJson) {
@@ -262,6 +330,7 @@ public class HotelServiceImpl implements HotelService {
                 hotelMapper.toVerificationInfoResponse(verification);
 
         response.setVerification(verificationInfo);
+        response.setCommissionUpdatedBy(getUsernameFromId(hotel.getCommissionUpdatedBy()));
 
         List<HotelImageResponse> images = hotelImageRepository
                 .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
@@ -281,6 +350,15 @@ public class HotelServiceImpl implements HotelService {
         response.setTotalReviews(totalReviews);
 
         return response;
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
 
@@ -316,6 +394,7 @@ public class HotelServiceImpl implements HotelService {
                 hotelMapper.toVerificationInfoResponse(verification);
 
         response.setVerification(verificationInfo);
+        response.setCommissionUpdatedBy(getUsernameFromId(hotel.getCommissionUpdatedBy()));
 
         List<HotelImageResponse> images = hotelImageRepository
                 .findByHotelHotelIdOrderBySortOrderAsc(hotelId)
@@ -457,7 +536,40 @@ public class HotelServiceImpl implements HotelService {
             hotelImageRepository.saveAll(images);
         }
 
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+        for (Users u : hotelUsers) {
+            notificationService.sendNotification(u.getId(), "HOTEL",
+                    "Thông tin khách sạn đã được cập nhật",
+                    "Thông tin khách sạn của bạn đã được cập nhật.",
+                    "HOTEL", String.valueOf(hotelId), "/hotel/profile");
+        }
+
         return getHotelDetail(hotelId);
+    }
+
+    @Override
+    public BankInfoResponse getBankInfo(Integer hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        return BankInfoResponse.builder()
+                .bankName(hotel.getBankName())
+                .bankAccountNumber(hotel.getBankAccountNumber())
+                .bankAccountHolder(hotel.getBankAccountHolder())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateBankInfo(Integer hotelId, BankInfoRequest request) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        hotel.setBankName(request.getBankName());
+        hotel.setBankAccountNumber(request.getBankAccountNumber());
+        hotel.setBankAccountHolder(request.getBankAccountHolder());
+
+        hotelRepository.save(hotel);
     }
 
 

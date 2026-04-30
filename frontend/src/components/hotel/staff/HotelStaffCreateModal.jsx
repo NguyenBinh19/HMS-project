@@ -27,6 +27,10 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
         const value = e.target.value.replace(/\D/g, '').slice(0, 10);
         setFormData({ ...formData, phone: value });
     };
+    const validateVietnamesePhone = (phone) => {
+        const vnf_regex = /^(03|05|07|08|09)+([0-9]{8})$/;
+        return vnf_regex.test(phone);
+    };
 
     // 3. Viết hoa chữ cái đầu (Ví dụ: nguyễn văn -> Nguyễn Văn)
     const formatName = (val) => {
@@ -35,6 +39,11 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const cleanPhone = formData.phone.trim(); // Loại bỏ khoảng trắng thừa
+        if (!validateVietnamesePhone(cleanPhone)) {
+            alert("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (ví dụ: 09xx...)");
+            return;
+        }
         setIsSubmitting(true);
 
         try {
@@ -144,6 +153,8 @@ const StaffCreateModal = ({ isOpen, onClose, onSuccess }) => {
                                 <input
                                     required
                                     className="w-full px-5 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#006AFF] transition-all font-bold tracking-wider"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     placeholder="0912 345 678"
                                     value={formData.phone}
                                     onChange={handlePhoneChange}

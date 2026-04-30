@@ -97,33 +97,63 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM Booking b
     JOIN Agency a ON b.agencyId = a.agencyId
     JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
-    AND b.checkInDate = :date
+    WHERE b.hotelId = :hotelId
     """)
-    List<ListAllBookingsResponse> getBookingsByCheckinDate(LocalDate date);
+    List<ListAllBookingsResponse> getAllBookingsSummaryByHotelId(@Param("hotelId") Integer hotelId);
+
+    @Query("""
+SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+    b.bookingCode,
+    b.createdAt,
+    b.guestName,
+    a.agencyName,
+    h.hotelName,
+    b.checkInDate,
+    b.checkOutDate,
+    b.totalRooms,
+    b.finalAmount,
+    b.bookingStatus,
+    b.paymentStatus
+)
+FROM Booking b
+JOIN Agency a ON b.agencyId = a.agencyId
+JOIN Hotel h ON b.hotelId = h.hotelId
+WHERE b.hotelId = :hotelId
+AND b.bookingStatus IN ('BOOKED', 'NO_SHOW')
+AND b.checkInDate = :date
+ORDER BY b.createdAt DESC
+""")
+    List<ListAllBookingsResponse> getBookingsByCheckinDate(
+            @Param("hotelId") Integer hotelId,
+            @Param("date") LocalDate date
+    );
 
 
     @Query("""
-    SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
-        b.bookingCode,
-        b.createdAt,
-        b.guestName,
-        a.agencyName,
-        h.hotelName,
-        b.checkInDate,
-        b.checkOutDate,
-        b.totalRooms,
-        b.finalAmount,
-        b.bookingStatus,
-        b.paymentStatus
-    )
-    FROM Booking b
-    JOIN Agency a ON b.agencyId = a.agencyId
-    JOIN Hotel h ON b.hotelId = h.hotelId
-    WHERE b.bookingStatus IN ('BOOKED', 'NO_SHOW')
-    AND b.checkInDate = CURRENT_DATE
-    """)
-    List<ListAllBookingsResponse> getTodayCheckinBookings();
+SELECT new com.HTPj.htpj.dto.response.booking.ListAllBookingsResponse(
+    b.bookingCode,
+    b.createdAt,
+    b.guestName,
+    a.agencyName,
+    h.hotelName,
+    b.checkInDate,
+    b.checkOutDate,
+    b.totalRooms,
+    b.finalAmount,
+    b.bookingStatus,
+    b.paymentStatus
+)
+FROM Booking b
+JOIN Agency a ON b.agencyId = a.agencyId
+JOIN Hotel h ON b.hotelId = h.hotelId
+WHERE b.hotelId = :hotelId
+AND b.bookingStatus IN ('BOOKED', 'NO_SHOW')
+AND b.checkInDate = CURRENT_DATE
+ORDER BY b.createdAt DESC
+""")
+    List<ListAllBookingsResponse> getTodayCheckinBookings(
+            @Param("hotelId") Integer hotelId
+    );
 
     // UC-051: View Daily Departure List - bookings checking out today for a specific hotel
     @Query("""
@@ -190,5 +220,75 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingCodeAndHotelId(
             @Param("bookingCode") String bookingCode,
             @Param("hotelId") Integer hotelId
+    );
+
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.bookingDetails WHERE b.bookingId = :bookingId AND b.userId = :userId")
+    Optional<Booking> findByIdAndUserId(@Param("bookingId") Long bookingId, @Param("userId") String userId);
+
+    // Payout Statement: Find completed & paid bookings not yet processed, up to periodEnd
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus = 'COMPLETED'
+      AND b.paymentStatus = 'PAID'
+      AND (b.payoutProcessed = false OR b.payoutProcessed IS NULL)
+      AND b.checkOutDate <= :periodEnd
+    ORDER BY b.checkOutDate ASC
+    """)
+    List<Booking> findUnprocessedPaidBookingsByHotel(
+            @Param("hotelId") Integer hotelId,
+            @Param("periodEnd") LocalDate periodEnd
+    );
+
+    // Payout Statement: Get all distinct hotelIds with unprocessed paid bookings up to periodEnd
+    @Query("""
+    SELECT DISTINCT b.hotelId FROM Booking b
+    WHERE b.bookingStatus = 'COMPLETED'
+      AND b.paymentStatus = 'PAID'
+      AND (b.payoutProcessed = false OR b.payoutProcessed IS NULL)
+      AND b.checkOutDate <= :periodEnd
+    """)
+    List<Integer> findHotelIdsWithUnprocessedPaidBookings(
+            @Param("periodEnd") LocalDate periodEnd
+    );
+
+    @Query("""
+    SELECT b FROM Booking b
+    WHERE b.agencyId = :agencyId
+    """)
+    List<Booking> findByAgencyId(@Param("agencyId") Long agencyId);
+
+
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus IN :statuses
+      AND b.checkOutDate > :startDate
+      AND b.checkInDate <= :endDate
+    """)
+    List<Booking> findRevenueBookings(
+            @Param("hotelId") Integer hotelId,
+            @Param("statuses") List<String> statuses,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.bookingDetails
+    WHERE b.hotelId = :hotelId
+      AND b.bookingStatus IN :statuses
+      AND b.checkOutDate > :startDate
+      AND b.checkInDate <= :endDate
+      AND b.agencyId = :agencyId
+    """)
+    List<Booking> findRevenueBookingsByAgency(
+            @Param("hotelId") Integer hotelId,
+            @Param("statuses") List<String> statuses,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("agencyId") Long agencyId
     );
 }

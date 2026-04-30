@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
@@ -9,9 +9,11 @@ import {
     Star,
     RefreshCcw,
     FileText,
-    Clock
+    Clock, Loader2, XCircle, ChevronRight,
 } from 'lucide-react';
 import { bookingService } from '@/services/booking.service.js';
+import SubmitFeedbackModal from '@/components/agency/booking/SubmitFeedbackModal.jsx';
+import CancelBookingModal from '@/components/agency/booking/CancelBookingModal.jsx';
 
 const STATUS_TAB_MAP = {
     "Sắp khởi hành": ["BOOKED", "CONFIRMED", "PAID"],
@@ -59,6 +61,11 @@ const OrderListScreen = () => {
     const [activeTab, setActiveTab] = useState("Sắp khởi hành");
     const [searchText, setSearchText] = useState("");
 
+    const [isDownloading, setIsDownloading] = useState(null);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
     const tabs = [
         { name: "Sắp khởi hành" },
         { name: "Đang lưu trú" },
@@ -71,26 +78,98 @@ const OrderListScreen = () => {
         setPage(0);
     }, [activeTab, searchText]);
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            setLoading(true);
-            try {
-                // API nhận tham số page hiện tại
-                const res = await bookingService.getBookingHistory(page, 10);
-                const data = res.result;
-                setOrders(data.content || []);
-                setTotalPages(data.totalPages || 0);
-
-                // Cuộn lên đầu trang khi chuyển trang thành công
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } catch (err) {
-                console.error("Lỗi khi tải lịch sử đặt phòng:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchHistory();
+    const fetchHistory = useCallback(async (isSilent = false) => {
+        if (!isSilent) setLoading(true);
+        try {
+            const res = await bookingService.getBookingHistory(page, 10);
+            const data = res.result;
+            setOrders(data.content || []);
+            setTotalPages(data.totalPages || 0);
+            if (!isSilent) window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+            console.error("Lỗi khi tải lịch sử đặt phòng:", err);
+        } finally {
+            if (!isSilent) setLoading(false);
+        }
     }, [page]);
+
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
+
+    const handleDownloadVoucher = async (order) => {
+        try {
+            setIsDownloading(order.bookingCode);
+            const response = await bookingService.downloadVoucher(order.bookingCode);
+            const blob = new Blob([response], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `Voucher_${order.bookingCode}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
+        } catch (error) {
+            alert("Voucher hiện chưa sẵn sàng hoặc có lỗi hệ thống.");
+        } finally {
+            setIsDownloading(null);
+        }
+    };
+
+    // // Kiểm tra quyền hủy
+    // const canCancel = (order) => {
+    //     if (!order || !order.checkInDate) return false;
+    //     const s = order.bookingStatus?.toUpperCase();
+    //     // Chỉ cho phép hủy khi trạng thái là BOOKED
+    //     const validStatus = ['BOOKED'].includes(s);
+    //     if (!validStatus) return false;
+    //     const today = new Date();
+    //     today.setHours(0, 0, 0, 0);
+    //     const checkIn = new Date(order.checkInDate);
+    //     checkIn.setHours(0, 0, 0, 0);
+    //     // Không cho phép hủy nếu ngày hiện tại đã sau ngày Check-in (CheckIn >= Today)
+    //     return checkIn >= today;
+    // };
+    //
+    // // Xử lý Hủy đơn từ Modal
+    // const handleCancelBooking = async (reason) => {
+    //     try {
+    //         await bookingService.cancelBooking({
+    //             bookingCode: selectedBooking.bookingCode,
+    //             reason: reason || "Đại lý yêu cầu hủy"
+    //         });
+    //         alert("Hủy đơn hàng thành công!");
+    //         setIsCancelModalOpen(false);
+    //         fetchHistory();
+    //     } catch (err) {
+    //         alert("Lỗi: " + (err.response?.data?.message || "Không thể hủy đơn"));
+    //     }
+    // };
+
+    const handleOpenReview = (order) => {
+        if (!order) return;
+        // Lưu đơn hàng vào state để Modal có thể truy cập thông tin (bookingId, hotelId, bookingCode)
+        setSelectedBooking(order);
+        // Mở Modal
+        setIsReviewModalOpen(true);
+    };
+    const handleFeedbackSuccess = () => {
+        alert("Đánh giá của bạn đã được gửi thành công!");
+        // Cập nhật ngay lập tức vào danh sách orders hiện tại trong state
+        // giúp nút chuyển sang "Đã đánh giá" mà không cần đợi API load lại
+        setOrders(prevOrders =>
+            prevOrders.map(order =>
+                order.bookingId === selectedBooking.bookingId
+                    ? { ...order, hasFeedback: true } // Ép trạng thái đã đánh giá
+                    : order
+            )
+        );
+        setIsReviewModalOpen(false);
+        setSelectedBooking(null);
+        // Gọi lại API để đồng bộ dữ liệu chuẩn từ server
+        fetchHistory(true);
+    };
 
     const filteredOrders = orders.filter((o) => {
         // Luôn ép status về UpperCase để so sánh với Map
@@ -168,78 +247,116 @@ const OrderListScreen = () => {
                     {filteredOrders.map((order) => {
                         const statusLabel = getStatusLabel(order.bookingStatus, order.paymentStatus);
                         const tab = getTabFromStatus(order.bookingStatus);
+                        // Hàm điều hướng dùng chung
+                        const goToDetail = () => navigate(`/agency/booking-list/detail/${encodeURIComponent(order.bookingCode)}`);
                         return (
-                            <div key={order.bookingId} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-                                <div
-                                    onClick={() => navigate(`/agency/booking-list/detail/${encodeURIComponent(order.bookingCode)}`)}
-                                    className="flex justify-between items-start mb-4 cursor-pointer group"
-                                >
-                                    <div>
-                                <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
-                                    {order.bookingCode}
-                                </span>
+                            <div
+                                key={order.bookingId}
+                                className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all relative group cursor-pointer"
+                                onClick={goToDetail} // Cho phép click vào bất cứ đâu trống trên card để vào chi tiết
+                            >
+                                {/* Nút mũi tên với hiệu ứng trượt nhẹ khi hover vào card */}
+                                <div className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300">
+                                    <ChevronRight size={22} strokeWidth={2.5} />
+                                </div>
+
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="pr-12"> {/* Chừa khoảng trống rộng hơn cho mũi tên */}
+                                        <span className="text-blue-600 font-bold text-sm group-hover:text-blue-700 group-hover:underline underline-offset-4 decoration-2 transition-all">
+                                            {order.bookingCode}
+                                        </span>
                                         <p className="text-[11px] text-slate-400 mt-0.5">
                                             {order.createdAt ? new Date(order.createdAt).toLocaleString("vi-VN") : ""}
                                         </p>
                                     </div>
-                                    <div
-                                        className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
-                                            statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
-                                                statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
-                                        }`}>
+
+                                    {/* Status Label */}
+                                    <div className={`text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5 mr-8 ${
+                                        statusLabel === 'PAID & CONFIRMED' ? 'bg-emerald-50 text-emerald-600' :
+                                            statusLabel === 'HOÀN THÀNH' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                                    }`}>
                                         {statusLabel !== 'ĐÃ HỦY' && <CheckIcon/>}
-                                        {statusLabel === 'ĐÃ HỦY' && <span>✘</span>}
                                         {statusLabel}
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4">
+                                <div className="flex gap-4 pr-10">
                                     <div className="flex-1">
                                         <h3 className="font-bold text-slate-800 mb-1">{order.hotelName}</h3>
                                         <div className="space-y-1">
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><UserIcon /></span>
+                                                <span className="w-4 flex justify-center"><UserIcon/></span>
                                                 {order.guestName}{order.totalGuests > 1 ? ` (+${order.totalGuests - 1} người)` : ""}
                                             </p>
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><Calendar size={14} /></span>
+                                                <span className="w-4 flex justify-center"><Calendar size={14}/></span>
                                                 {formatDate(order.checkInDate)} - {formatDate(order.checkOutDate)} ({order.nights} đêm)
                                             </p>
                                             <p className="text-xs text-slate-500 flex items-center gap-2">
-                                                <span className="w-4 flex justify-center"><BedIcon /></span>
+                                                <span className="w-4 flex justify-center"><BedIcon/></span>
                                                 {order.totalRooms} phòng
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right flex flex-col justify-between items-end">
-                                        <span className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
+                                        <span
+                                            className="text-emerald-600 font-bold text-lg">{formatCurrency(order.finalAmount)}</span>
 
                                         <div className="flex gap-2">
                                             {tab === "Sắp khởi hành" && (
                                                 <>
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                                                        <Download size={14} /> Tải Voucher
+                                                    <button
+                                                        onClick={() => handleDownloadVoucher(order)}
+                                                        disabled={isDownloading === order.bookingCode}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:bg-slate-300 transition-all shadow-sm"
+                                                    >
+                                                        {isDownloading === order.bookingCode ?
+                                                            <Loader2 size={14} className="animate-spin"/> :
+                                                            <Download size={14}/>}
+                                                        Tải Voucher
                                                     </button>
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                                                        <MessageCircle size={14} /> Chat với KS
-                                                    </button>
+                                                    {/*<button*/}
+                                                    {/*    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">*/}
+                                                    {/*    <MessageCircle size={14}/> Chat với KS*/}
+                                                    {/*</button>*/}
+                                                    {/*{canCancel(order) && (*/}
+                                                    {/*    <button*/}
+                                                    {/*        onClick={() => { setSelectedBooking(order); setIsCancelModalOpen(true); }}*/}
+                                                    {/*        className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100"*/}
+                                                    {/*    >*/}
+                                                    {/*        <XCircle size={14} /> Hủy*/}
+                                                    {/*    </button>*/}
+                                                    {/*)}*/}
                                                 </>
                                             )}
-                                            {tab === "Hoàn thành" && (
-                                                <>
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
-                                                        <Star size={14} /> Đánh giá
-                                                    </button>
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-200">
-                                                        <RefreshCcw size={14} /> Đặt lại
-                                                    </button>
-                                                </>
-                                            )}
-                                            {tab === "Đã hủy" && (
-                                                <button className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100">
-                                                    Xem lý do
-                                                </button>
-                                            )}
+                                            {/*{tab === "Hoàn thành" && (*/}
+                                            {/*    <>*/}
+                                            {/*        <button*/}
+                                            {/*            onClick={() => handleOpenReview(order)}*/}
+                                            {/*            // Vô hiệu hóa nút nếu hasFeedback là true*/}
+                                            {/*            disabled={order.hasFeedback === true}*/}
+                                            {/*            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${*/}
+                                            {/*                order.hasFeedback*/}
+                                            {/*                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"*/}
+                                            {/*                    : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 shadow-sm"*/}
+                                            {/*            }`}*/}
+                                            {/*        >*/}
+                                            {/*            <Star*/}
+                                            {/*                size={14}*/}
+                                            {/*                // Nếu đã đánh giá thì tô màu vàng cho ngôi sao*/}
+                                            {/*                fill={order.hasFeedback ? "#94a3b8" : "none"}*/}
+                                            {/*                className={order.hasFeedback ? "text-slate-400" : ""}*/}
+                                            {/*            />*/}
+                                            {/*            {order.hasFeedback ? "Đã đánh giá" : "Đánh giá ngay"}*/}
+                                            {/*        </button>*/}
+                                            {/*    </>*/}
+                                            {/*)}*/}
+                                            {/*{tab === "Đã hủy" && (*/}
+                                            {/*    <button*/}
+                                            {/*        className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold hover:bg-rose-100">*/}
+                                            {/*        Xem lý do*/}
+                                            {/*    </button>*/}
+                                            {/*)}*/}
                                         </div>
                                     </div>
                                 </div>
@@ -257,7 +374,7 @@ const OrderListScreen = () => {
                         onClick={() => setPage(p => p - 1)}
                         className="px-4 py-2 rounded-lg border bg-white text-sm font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
                     >
-                        ← Trước
+                    ← Trước
                     </button>
 
                     <div className="flex gap-1">
@@ -292,6 +409,23 @@ const OrderListScreen = () => {
                         Tiếp →
                     </button>
                 </div>
+            )}
+            {/* Modals */}
+            {isReviewModalOpen && selectedBooking && (
+                <SubmitFeedbackModal
+                    isOpen={isReviewModalOpen}
+                    onClose={() => { setIsReviewModalOpen(false); setSelectedBooking(null); }}
+                    booking={selectedBooking}
+                    onSuccess={handleFeedbackSuccess}
+                />
+            )}
+            {isCancelModalOpen && selectedBooking && (
+                <CancelBookingModal
+                    isOpen={isCancelModalOpen}
+                    onClose={() => { setIsCancelModalOpen(false); setSelectedBooking(null); }}
+                    bookingCode={selectedBooking.bookingCode}
+                    onConfirm={handleCancelBooking}
+                />
             )}
         </div>
     );

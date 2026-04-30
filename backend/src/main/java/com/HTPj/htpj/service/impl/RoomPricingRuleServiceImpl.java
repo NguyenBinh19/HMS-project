@@ -3,6 +3,8 @@ package com.HTPj.htpj.service.impl;
 import com.HTPj.htpj.dto.request.pricingrule.RoomPricingRuleRequest;
 import com.HTPj.htpj.dto.response.pricingrule.RoomPricingRuleResponse;
 import com.HTPj.htpj.entity.RoomPricingRule;
+import com.HTPj.htpj.exception.AppException;
+import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.mapper.RoomPricingRuleMapper;
 import com.HTPj.htpj.repository.RoomPricingRuleRepository;
 import com.HTPj.htpj.service.RoomPricingRuleService;
@@ -82,7 +84,7 @@ public class RoomPricingRuleServiceImpl implements RoomPricingRuleService {
                 .filter(RoomPricingRule::getIsActive)
                 .filter(r -> isMatched(r, date, dayName))
                 .sorted(Comparator.comparing(RoomPricingRule::getPriority,
-                        Comparator.nullsLast(Integer::compareTo)).reversed())
+                        Comparator.nullsFirst(Integer::compareTo)).reversed())
                 .toList();
 
         BigDecimal finalPrice = basePrice;
@@ -161,7 +163,7 @@ public class RoomPricingRuleServiceImpl implements RoomPricingRuleService {
                 );
 
         if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Event date conflict detected");
+            throw new AppException(ErrorCode.EVENT_DATE_CONFLICT);
         }
     }
 
@@ -179,7 +181,7 @@ public class RoomPricingRuleServiceImpl implements RoomPricingRuleService {
                 );
 
         if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Event date conflict detected");
+            throw new AppException(ErrorCode.EVENT_DATE_CONFLICT);
         }
     }
 }

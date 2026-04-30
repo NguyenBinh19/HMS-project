@@ -4,6 +4,7 @@ import com.HTPj.htpj.dto.DataSourceResponse.transaction.CreditSummaryDto;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
+import com.HTPj.htpj.dto.response.agency.AgencyUserBookingResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,5 +26,7 @@ public interface AgencyService {
 
     CreditSummaryDto getCreditSummary(Long agencyId);
 
-    void payDebt(Long agencyId, BigDecimal payment);
+    void payDebt(Long agencyId, BigDecimal payment) throws Exception;
+
+    List<AgencyUserBookingResponse> getAgencyUserBookingSummary();
 }

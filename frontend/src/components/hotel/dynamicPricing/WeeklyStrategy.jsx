@@ -64,6 +64,7 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
                         ruleType: 'WEEKLY',
                         dayOfWeek: rule.dbKey,
                         action: rule.action,
+                        priority: 1,
                         adjustmentType: rule.adjustment_type,
                         adjustmentValue: rule.adjustment_value,
                         isActive: true
@@ -84,10 +85,17 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
     };
 
     const handleChange = (dayId, field, value) => {
-        setWeeklyRules(prev => prev.map(item =>
-            item.day_of_week === dayId ? { ...item, [field]: value } : item
-        ));
-    };
+    setWeeklyRules(prev => prev.map(item => {
+        if (item.day_of_week !== dayId) return item;
+
+        if (field === 'adjustment_value') {
+            const num = Number(value);
+            if (num < 0) return item; 
+        }
+
+        return { ...item, [field]: value };
+    }));
+};
 
     return (
         <div className="w-full">
@@ -101,7 +109,7 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
                 {DAYS.map((day) => {
                     const rule = weeklyRules.find(r => r.day_of_week === day.id);
-                    const isKeep = rule.action === 'KEEP';
+                    const showValueInput = ['INCREASE', 'DECREASE'].includes(rule.action);
 
                     return (
                         <div
@@ -137,66 +145,42 @@ const WeeklyStrategy = ({ basePrice = 1500000, roomTypeId }) => {
                             </div>
 
                             {/* Section: Giá trị (Input Group) */}
-                            <div>
-                                <label className="block text-xs text-gray-500 mb-1.5 font-medium">Giá trị</label>
-                                <div className="flex rounded-lg shadow-sm">
-                                    <input
-                                        type="number"
-                                        value={rule.adjustment_value}
-                                        onChange={(e) => handleChange(day.id, 'adjustment_value', e.target.value)}
-                                        disabled={isKeep}
-                                        className={`block w-full min-w-0 flex-1 border border-r-0 border-gray-300 rounded-none rounded-l-lg p-2.5 text-sm text-gray-900 outline-none focus:ring-blue-500 focus:border-blue-500 ${isKeep ? 'bg-gray-50 text-gray-400' : 'bg-white'}`}
-                                        placeholder="0"
-                                    />
-                                    <span className="inline-flex items-center px-0 border border-l-0 border-gray-300 rounded-r-lg bg-white relative">
-                                        <select
-                                            value={rule.adjustment_type}
-                                            onChange={(e) => handleChange(day.id, 'adjustment_type', e.target.value)}
-                                            disabled={isKeep}
-                                            className={`h-full py-0 pl-2 pr-7 border-0 bg-transparent text-gray-500 text-sm rounded-r-lg focus:ring-0 focus:outline-none cursor-pointer appearance-none ${isKeep ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
-                                        >
-                                            <option value="FIXED">đ</option>
-                                            <option value="PERCENT">%</option>
-                                        </select>
-                                        {/* Icon mũi tên nhỏ cho select đơn vị */}
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
-                                            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        </div>
-                                    </span>
+                            {showValueInput && (
+                                <div>
+                                    <label className="block text-xs text-gray-500 mb-1.5 font-medium">Giá trị</label>
+                                    <div className="flex rounded-lg shadow-sm">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={rule.adjustment_value}
+                                            onChange={(e) => handleChange(day.id, 'adjustment_value', e.target.value)}
+                                            className="block w-full min-w-0 flex-1 border border-r-0 border-gray-300 rounded-none rounded-l-lg p-2.5 text-sm text-gray-900 outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            placeholder="0"
+                                        />
+                                        <span className="inline-flex items-center px-0 border border-l-0 border-gray-300 rounded-r-lg bg-white relative">
+                                            <select
+                                                value={rule.adjustment_type}
+                                                onChange={(e) => handleChange(day.id, 'adjustment_type', e.target.value)}
+                                                className="h-full py-0 pl-2 pr-7 border-0 bg-transparent text-gray-500 text-sm rounded-r-lg focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-gray-50"
+                                            >
+                                                <option value="FIXED">đ</option>
+                                                <option value="PERCENT">%</option>
+                                            </select>
+
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+                                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
 
-            {/* Section: Mô phỏng giá */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 min-h-[300px] flex flex-col justify-between relative">
-                <h3 className="text-[15px] font-bold text-gray-900 mb-4">Mô phỏng giá cho tuần tới</h3>
-
-                {/* Chart placeholder */}
-                <div className="flex-1 w-full bg-gray-50/50 rounded border border-dashed border-gray-200 mb-4 flex items-center justify-center text-gray-400 text-sm">
-                    Biểu đồ biến động giá
-                </div>
-
-                {/* Footer thông số */}
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-gray-600 pt-4 border-t border-gray-100">
-                    <div>
-                        Giá Gốc: <span className="font-bold text-gray-900 underline decoration-gray-300 underline-offset-4">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice)}</span>
-                    </div>
-                    <div>
-                        Thứ Bảy: <span className="font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice + 100000)}</span> <span className="text-green-600 font-medium">(+6.7%)</span>
-                    </div>
-                    <div>
-                        Chủ Nhật: <span className="font-bold text-gray-900">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(basePrice + 200000)}</span> <span className="text-green-600 font-medium">(+13.3%)</span>
-                    </div>
-                </div>
-
-                {/* Labels ngày tháng dưới cùng biểu đồ */}
-                <div className="flex justify-between text-xs text-gray-400 mt-2 px-2">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                </div>
-            </div>
 
             {/* Save Button */}
             <div className="flex justify-end mt-6">

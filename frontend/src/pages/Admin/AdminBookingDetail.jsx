@@ -15,7 +15,7 @@ const AdminBookingDetail = () => {
     const [loading, setLoading] = useState(true);
 
     const STATUS_CONFIG = {
-        "BOOKED": { label: "CHỜ THANH TOÁN", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
+        "BOOKED": { label: "ĐÃ ĐẶT", color: "bg-amber-500", border: "border-amber-200", text: "text-white" },
         "CONFIRMED": { label: "ĐÃ XÁC NHẬN", color: "bg-emerald-600", border: "border-emerald-200", text: "text-white" },
         "CHECKED-IN": { label: "ĐANG LƯU TRÚ", color: "bg-blue-600", border: "border-blue-200", text: "text-white" },
         "CHECKED-OUT": { label: "HOÀN THÀNH", color: "bg-slate-600", border: "border-slate-300", text: "text-white" },
@@ -76,11 +76,11 @@ const AdminBookingDetail = () => {
                     <div>
                         <button
                             onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
+                            className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
                         >
                             <ChevronLeft size={16} /> QUAY LẠI DANH SÁCH
                         </button>
-                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 flex items-center gap-3">
+                        <h1 className="text-3xl font-black tracking-tighter text-slate-800 flex items-center gap-3">
                             Chi tiết <span className="text-blue-600">Đơn hàng</span>
                         </h1>
                     </div>
@@ -98,7 +98,7 @@ const AdminBookingDetail = () => {
                             </div>
 
                             <div className="mb-10">
-                                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>
+                                {/*<span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block">Mã hệ thống: {booking.bookingId}</span>*/}
                                 <h2 className="text-4xl font-black text-slate-900 tracking-tight">{booking.bookingCode}</h2>
                                 <p className="text-slate-400 font-bold text-xs mt-2 flex items-center gap-2">
                                     <Clock size={14}/> Khởi tạo lúc: {new Date(booking.createdAt).toLocaleTimeString('vi-VN')} ngày {formatDate(booking.createdAt)}
@@ -107,19 +107,19 @@ const AdminBookingDetail = () => {
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ngày đến</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ngày đến</p>
                                     <p className="font-black text-slate-800 text-lg">{formatDate(booking.checkInDate)}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ngày đi</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ngày đi</p>
                                     <p className="font-black text-slate-800 text-lg">{formatDate(booking.checkOutDate)}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Thời gian</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Thời gian</p>
                                     <p className="font-black text-blue-600 text-lg">{booking.nights} ĐÊM</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Số khách</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Số khách</p>
                                     <p className="font-black text-slate-800 text-lg">{booking.totalGuests} NGƯỜI</p>
                                 </div>
                             </div>

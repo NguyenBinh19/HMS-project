@@ -2,6 +2,7 @@ package com.HTPj.htpj.entity;
 
 import java.util.Set;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
@@ -19,6 +20,8 @@ import lombok.experimental.FieldDefaults;
 public class Role {
     @Id
     String name;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     String description;
 
     @ManyToMany

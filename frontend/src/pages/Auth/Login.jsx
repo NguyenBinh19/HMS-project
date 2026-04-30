@@ -35,8 +35,8 @@ const Login = () => {
 
             const hotelId = decoded.hotelId;
             const agencyId = decoded.agencyId;
-            console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
-            if (roles.some(r => r.includes("ADMIN"))) return "/admin";
+            // console.log("Điều hướng dựa trên Token:", { roles, hotelId, agencyId });
+            if (roles.some(r => r.includes("ADMIN"))) return "/admin/dashboard";
             if (roles.some(r => r.includes("HOTEL"))) {
                 return hotelId ? "/hotel/dashboard" : "/kyc/status";
             }
@@ -241,9 +241,9 @@ const Login = () => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'email' || formData.email
-                                            ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
-                                            : 'top-4 text-slate-400 font-medium'
-                                        }
+                                        ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
+                                        : 'top-4 text-slate-400 font-medium'
+                                    }
                              `}>
                                         Email đăng nhập
                                     </label>
@@ -268,9 +268,9 @@ const Login = () => {
                                     />
                                     <label className={`absolute left-12 transition-all duration-300 pointer-events-none
                                 ${focusedField === 'password' || formData.password
-                                            ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
-                                            : 'top-4 text-slate-400 font-medium'
-                                        }
+                                        ? '-top-4 bg-white px-2 text-xs font-bold text-blue-600'
+                                        : 'top-4 text-slate-400 font-medium'
+                                    }
                              `}>
                                         Mật khẩu
                                     </label>
@@ -281,8 +281,7 @@ const Login = () => {
 
                                 <div className="flex justify-between items-center">
                                     <label className="flex items-center gap-2 cursor-pointer group">
-                                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                                        <span className="text-sm font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">Ghi nhớ</span>
+
                                     </label>
                                     <Link to="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline decoration-2 underline-offset-4 transition-colors">
                                         Quên mật khẩu?

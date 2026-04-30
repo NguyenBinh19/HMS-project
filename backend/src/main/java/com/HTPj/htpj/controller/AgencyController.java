@@ -5,6 +5,7 @@ import com.HTPj.htpj.dto.request.ApiResponse;
 import com.HTPj.htpj.dto.request.agency.UpdateAgencyRequest;
 import com.HTPj.htpj.dto.response.agency.AgencyDetailResponse;
 import com.HTPj.htpj.dto.response.agency.AgencyResponse;
+import com.HTPj.htpj.dto.response.agency.AgencyUserBookingResponse;
 import com.HTPj.htpj.service.AgencyService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -85,10 +86,17 @@ public class AgencyController {
     @PostMapping("/{agencyId}/pay-debt")
     public ApiResponse<String> payDebt(
             @PathVariable Long agencyId,
-            @RequestParam BigDecimal payment) {
+            @RequestParam BigDecimal payment) throws Exception {
         agencyService.payDebt(agencyId, payment);
         return ApiResponse.<String>builder()
                 .result("Thanh toán nợ thành công")
+                .build();
+    }
+
+    @GetMapping("/user-booking")
+    public ApiResponse<List<AgencyUserBookingResponse>> getAgencyUserBookingSummary() {
+        return ApiResponse.<List<AgencyUserBookingResponse>>builder()
+                .result(agencyService.getAgencyUserBookingSummary())
                 .build();
     }
 

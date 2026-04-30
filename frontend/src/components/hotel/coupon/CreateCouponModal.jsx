@@ -16,7 +16,7 @@ const getInitialState = () => ({
     stayEndDate: "",
     agencyUsageLimit: 1,
     minStay: 1,
-    maxUsage: 100,
+    maxUsage: "",
     status: "ACTIVE",
     createdBy: "ADMIN_TEST"
 });
@@ -51,28 +51,24 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
         setFormData(prev => ({ ...prev, code: result }));
     };
 
+
     // Hàm xử lý nhập liệu thông minh: Không bị kẹt số 0, không nhập số âm
     const handleChange = (field, value) => {
         const numericFields = ["discountVal", "maxDiscount", "minOrderVal", "minStay", "maxUsage", "agencyUsageLimit"];
-
         if (numericFields.includes(field)) {
             // Cho phép để trống để xóa trắng ô input
             if (value === "") {
                 setFormData(prev => ({ ...prev, [field]: "" }));
                 return;
             }
-
             let val = parseFloat(value);
             if (isNaN(val)) return;
-
             // Không cho phép số âm
             val = Math.max(0, val);
-
             // Giới hạn 100 nếu là phần trăm
             if (field === "discountVal" && formData.typeDiscount === "PERCENT") {
                 val = Math.min(100, val);
             }
-
             setFormData(prev => ({ ...prev, [field]: val }));
         } else {
             setFormData(prev => ({ ...prev, [field]: value }));
@@ -80,14 +76,30 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
     };
 
     const validateForm = () => {
-        if (!formData.code.trim()) return "Mã Code không được để trống";
-        if (!formData.name.trim()) return "Tên chương trình không được để trống";
-        if (!formData.discountVal || Number(formData.discountVal) <= 0) return "Giá trị giảm phải lớn hơn 0";
-        if (!formData.applyEndDate) return "Vui lòng chọn ngày kết thúc áp dụng";
-
-        const start = new Date(formData.applyStartDate);
-        const end = new Date(formData.applyEndDate);
-        if (end < start) return "Ngày kết thúc áp dụng không được trước ngày bắt đầu";
+        const {
+            code, name, discountVal,maxUsage,
+            applyStartDate, applyEndDate,
+            stayStartDate, stayEndDate
+        } = formData;
+        // 1. Kiểm tra trống
+        if (!code.trim()) return "Mã Code không được để trống";
+        if (!name.trim()) return "Tên chương trình không được để trống";
+        if (!discountVal || Number(discountVal) <= 0) return "Giá trị giảm phải lớn hơn 0";
+        if (maxUsage === "" || Number(maxUsage) <= 0) return "Vui lòng nhập tổng lượt sử dụng tối đa (lớn hơn 0)";
+        // 2. Kiểm tra ngày áp dụng (Apply Date)
+        if (!applyStartDate) return "Vui lòng chọn ngày bắt đầu áp dụng";
+        if (!applyEndDate) return "Vui lòng chọn ngày kết thúc áp dụng";
+        const applyStart = new Date(applyStartDate);
+        const applyEnd = new Date(applyEndDate);
+        if (applyEnd < applyStart) return "Ngày kết thúc áp dụng không được trước ngày bắt đầu";
+        // 3. Kiểm tra ngày lưu trú (Stay Date)
+        if (!stayStartDate) return "Vui lòng chọn ngày bắt đầu lưu trú";
+        if (!stayEndDate) return "Vui lòng chọn ngày kết thúc lưu trú";
+        const stayStart = new Date(stayStartDate);
+        const stayEnd = new Date(stayEndDate);
+        if (stayEnd < stayStart) return "Ngày kết thúc lưu trú không được trước ngày bắt đầu lưu trú";
+        // ngày lưu trú không  kết thúc trước khi mã bắt đầu có hiệu lực
+        if (stayEnd < applyStart) return "Ngày kết thúc lưu trú không thể trước ngày bắt đầu áp dụng mã";
 
         return null;
     };
@@ -98,7 +110,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
 
         setIsSubmitting(true);
         try {
-            // Ép kiểu dữ liệu chuẩn xác trước khi gửi về BE
+            // Ép kiểu dữ liệu
             const payload = {
                 ...formData,
                 discountVal: Number(formData.discountVal || 0),
@@ -247,30 +259,48 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
                                     <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Thời gian áp dụng mã</label>
                                     <div className="flex flex-col gap-2">
                                         <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" value={formData.applyStartDate} onChange={(e) => handleChange("applyStartDate", e.target.value)} />
-                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" value={formData.applyEndDate} onChange={(e) => handleChange("applyEndDate", e.target.value)} />
+                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" min={formData.applyStartDate} value={formData.applyEndDate} onChange={(e) => handleChange("applyEndDate", e.target.value)} />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Thời gian ở (Ngày lưu trú)</label>
                                     <div className="flex flex-col gap-2">
-                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" value={formData.stayStartDate} onChange={(e) => handleChange("stayStartDate", e.target.value)} />
-                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" value={formData.stayEndDate} onChange={(e) => handleChange("stayEndDate", e.target.value)} />
+                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" min={formData.applyStartDate} value={formData.stayStartDate} onChange={(e) => handleChange("stayStartDate", e.target.value)} />
+                                        <input type="date" className="w-full border border-slate-300 rounded-md p-2 text-sm font-medium" min={formData.stayStartDate} value={formData.stayEndDate} onChange={(e) => handleChange("stayEndDate", e.target.value)} />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="p-4 bg-slate-50 border rounded-xl space-y-4">
                                 <label className="block text-[11px] font-black text-slate-400 uppercase">Ràng buộc hệ thống</label>
-                                <div className="grid grid-cols-2 gap-4">
+                                {/* Chỉnh sửa grid-cols-3 để 3 ô cùng hàng */}
+                                <div className="grid grid-cols-3 gap-4">
                                     <div>
                                         <label className="text-xs font-bold text-slate-600 block mb-1 italic">Số đêm tối thiểu</label>
-                                        <input type="number" className="w-full border border-slate-300 rounded-md p-2 bg-white font-bold text-blue-600" value={formData.minStay} onChange={(e) => handleChange("minStay", e.target.value)} />
+                                        <input type="number"
+                                               className="w-full border border-slate-300 rounded-md p-2 bg-white font-bold text-blue-600 outline-none focus:border-blue-500"
+                                               value={formData.minStay}
+                                               onChange={(e) => handleChange("minStay", e.target.value)}/>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-600 block mb-1 italic">Tổng lượt dùng</label>
+                                        <input type="number"
+                                               className="w-full border border-slate-300 rounded-md p-2 bg-white font-bold text-blue-600 outline-none focus:border-blue-500"
+                                               value={formData.maxUsage}
+                                               onChange={(e) => handleChange("maxUsage", e.target.value)}/>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-600 block mb-1 italic">Lượt dùng / Đại lý</label>
-                                        <input type="number" className="w-full border border-slate-300 rounded-md p-2 bg-white font-bold text-blue-600" value={formData.agencyUsageLimit} onChange={(e) => handleChange("agencyUsageLimit", e.target.value)} />
+                                        <input type="number"
+                                               className="w-full border border-slate-300 rounded-md p-2 bg-white font-bold text-blue-600 outline-none focus:border-blue-500"
+                                               value={formData.agencyUsageLimit}
+                                               onChange={(e) => handleChange("agencyUsageLimit", e.target.value)}/>
                                     </div>
                                 </div>
+                                <p className="text-[10px] text-slate-400 mt-1 italic leading-tight">
+                                    * <b>Tổng lượt dùng:</b> Giới hạn toàn hệ thống. <br/>
+                                    * <b>Lượt dùng / Đại lý:</b> Số lần tối đa một Agency được dùng mã này.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -279,7 +309,8 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess}) {
                     {step === 4 && (
                         <div className="space-y-8 py-4 animate-in slide-in-from-right-2">
                             <div className="grid grid-cols-2 gap-4">
-                                <button onClick={() => handleChange("typePromotion", "PUBLIC")} className={`p-6 border-2 rounded-xl flex flex-col items-center gap-3 transition-all ${formData.typePromotion === "PUBLIC" ? "border-blue-600 bg-blue-50" : "border-slate-100 opacity-60"}`}>
+                                <button onClick={() => handleChange("typePromotion", "PUBLIC")}
+                                        className={`p-6 border-2 rounded-xl flex flex-col items-center gap-3 transition-all ${formData.typePromotion === "PUBLIC" ? "border-blue-600 bg-blue-50" : "border-slate-100 opacity-60"}`}>
                                     <Globe className={formData.typePromotion === "PUBLIC" ? "text-blue-600" : "text-slate-300"} size={32} />
                                     <span className="font-bold text-sm">CÔNG KHAI (Mọi người)</span>
                                     <p className="text-[10px] text-center text-slate-500">Mã sẽ hiển thị công khai trên trang đặt phòng</p>

@@ -11,14 +11,14 @@ const StatCard = ({ title, value, color, icon: Icon, description }) => (
                 <Icon size={24} />
             </div>
             <div>
-                <h3 className="text-[12px] font-bold text-slate-400 mb-0.5 uppercase tracking-widest">
+                <h3 className="text-[12px] font-bold text-slate-600 mb-0.5 uppercase tracking-widest">
                     {title}
                 </h3>
                 <p className="text-2xl font-black text-slate-800 leading-none">
                     {value}
                 </p>
                 {description && (
-                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium italic">
                         {description}
                     </p>
                 )}
@@ -38,7 +38,7 @@ const StaffStats = ({ data = [] }) => {
     const totalLimit = "100.000.000";
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <StatCard
                 title="Tổng nhân viên"
                 value={totalStaff < 10 ? `0${totalStaff}` : totalStaff}
@@ -52,13 +52,6 @@ const StaffStats = ({ data = [] }) => {
                 color="text-emerald-600"
                 icon={UserCheck}
                 description="Tài khoản sẵn sàng"
-            />
-            <StatCard
-                title="Hạn mức cấp ngày"
-                value={`${totalLimit} đ`}
-                color="text-orange-600"
-                icon={CreditCard}
-                description="Tổng quỹ đại lý cấp"
             />
         </div>
     );

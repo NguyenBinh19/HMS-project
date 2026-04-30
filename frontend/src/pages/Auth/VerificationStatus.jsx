@@ -14,10 +14,61 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { kycService } from "@/services/kyc.service.js";
+import { jwtDecode } from "jwt-decode";
 
 const VerificationStatusPage = () => {
     const navigate = useNavigate();
+    // Hàm xử lý quay lại
+    const handleGoBack = () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
+            const isApproved = !!(storedUser.agencyId || storedUser.hotelId);
+
+            if (!isApproved) {
+                console.warn("Tài khoản chưa có agencyId/hotelId. Điều hướng về trang chủ.");
+                navigate("/");
+                return;
+            }
+
+            let isAgency = false;
+            if (token) {
+                try {
+                    const decoded = jwtDecode(token);
+                    const roles = decoded.roles || decoded.authorities || [];
+                    const rolesStr = JSON.stringify(roles).toUpperCase();
+
+                    if (rolesStr.includes("AGENCY") || decoded.agencyId) {
+                        isAgency = true;
+                    }
+                } catch (e) {
+                    console.error("Token decode error:", e);
+                }
+            }
+            if (!isAgency) {
+                const hasAgencyId = !!storedUser.agencyId;
+                const isAgencyByType = storedUser.partnerType === "AGENCY";
+                let isAgencyByRole = false;
+                if (storedUser.roles) {
+                    if (Array.isArray(storedUser.roles)) {
+                        isAgencyByRole = storedUser.roles.some(r =>
+                            (typeof r === 'string' ? r : r.name).toUpperCase().includes("AGENCY")
+                        );
+                    } else if (typeof storedUser.roles === 'string') {
+                        isAgencyByRole = storedUser.roles.toUpperCase().includes("AGENCY");
+                    }
+                }
+                isAgency = hasAgencyId || isAgencyByType || isAgencyByRole;
+            }
+            // 3. Thực hiện điều hướng
+            const dashboardPath = isAgency ? "/agency/agency-dashboard" : "/hotel/dashboard";
+            navigate(dashboardPath);
+        } catch (error) {
+            console.error("Lỗi điều hướng:", error);
+            navigate("/");
+        }
+    };
     const [kycList, setKycList] = useState([]);
     const [kycDetail, setKycDetail] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -94,7 +145,7 @@ const VerificationStatusPage = () => {
 
     // ĐIỀU KIỆN: Chỉ bản ghi mới nhất VÀ có trạng thái cho phép mới được hiện nút Cập nhật
     const isLatest = kycDetail?.id === kycList[0]?.id;
-    const statusAllowsUpdate = ["VERIFIED", "REJECTED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase());
+    const statusAllowsUpdate = ["VERIFIED", "NEED_MORE_INFORMATION"].includes(kycDetail?.status?.toUpperCase());
     const canUpdate = isLatest && statusAllowsUpdate;
 
     return (
@@ -102,7 +153,7 @@ const VerificationStatusPage = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={handleGoBack}
                         className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-[10px] tracking-[0.2em] transition-all mb-4"
                     >
                         <ChevronLeft size={16}/> QUAY LẠI
@@ -304,7 +355,7 @@ const getStatusTheme = (status) => {
                 icon: <AlertCircle size={48} className="text-red-500" />,
                 bg: "bg-red-50/50", border: "border-red-100",
                 text: "text-red-700", badgeBg: "bg-red-100",
-                label: "Bị từ chối", desc: "Rất tiếc, hồ sơ định danh không được thông qua. Vui lòng xem lý do và cập nhật lại thông tin."
+                label: "Bị từ chối", desc: "Hồ sơ của bạn đã bị từ chối vĩnh viễn hoặc vi phạm nghiêm trọng chính sách. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết."
             };
         case "NEED_MORE_INFORMATION":
             return {

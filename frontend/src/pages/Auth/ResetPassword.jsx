@@ -59,6 +59,10 @@ const ResetPassword = () => {
 
     const showToastOnce = (msg, type = "error") => {
         setToast({ show: true, message: msg, type });
+
+        setTimeout(() => {
+            setToast(prev => ({ ...prev, show: false }));
+        }, 3000);
     };
 
     const onSubmit = async (e) => {
@@ -84,7 +88,23 @@ const ResetPassword = () => {
             await authService.resetPassword(token, password);
             setIsSuccess(true); // Chuyển sang giao diện thành công
         } catch (err) {
-            const msg = err.response?.data?.message || "Liên kết không hợp lệ hoặc đã hết hạn.";
+            console.log("FULL ERROR:", err.response?.data);
+
+            const errorCode = Number(err.response?.data?.code);
+
+            // 👉 Bắt riêng lỗi password trùng
+            if (errorCode === 1018) {
+                showToastOnce("Mật khẩu mới không được trùng với mật khẩu cũ.", "error");
+                return;
+            }
+
+            // 👉 fallback message
+            const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.response?.data?.result?.message ||
+                "Liên kết không hợp lệ hoặc đã hết hạn.";
+
             showToastOnce(msg, "error");
         } finally {
             setLoading(false);
@@ -176,14 +196,27 @@ const ResetPassword = () => {
                                         Mật khẩu mới
                                     </label>
                                     <div className="relative">
-
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <Lock
+                                            className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${focusedField === "password"
+                                                ? "text-blue-500"
+                                                : password
+                                                    ? "text-blue-500"
+                                                    : "text-gray-400"
+                                                }`}
+                                        />
                                         <input
                                             type={showPassword ? "text" : "password"}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
+                                            onFocus={() => setFocusedField("password")}
+                                            onBlur={() => setFocusedField(null)}
                                             placeholder="Mật khẩu mới"
-                                            className="w-full pl-10 pr-10 py-3 border rounded-xl"
+                                            className={`w-full pl-10 pr-10 py-3 rounded-xl transition-all outline-none ${focusedField === "password"
+                                                ? "border-2 border-blue-400 bg-white"
+                                                : password
+                                                    ? "border-2 border-blue-400 bg-white"
+                                                    : "border border-slate-200 bg-white"
+                                                }`}
                                         />
                                         <button
                                             type="button"
@@ -237,15 +270,32 @@ const ResetPassword = () => {
                                         Xác nhận mật khẩu mới
                                     </label>
                                     <div className="relative">
-                                        <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <ShieldCheck
+                                            className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${confirmError
+                                                    ? "text-red-500"
+                                                    : focusedField === "confirm"
+                                                        ? "text-blue-500"
+                                                        : confirm
+                                                            ? "text-blue-500"
+                                                            : "text-gray-400"
+                                                }`}
+                                        />
 
                                         <input
                                             type={showConfirm ? "text" : "password"}
                                             value={confirm}
                                             onChange={(e) => setConfirm(e.target.value)}
+                                            onFocus={() => setFocusedField("confirm")}
+                                            onBlur={() => setFocusedField(null)}
                                             placeholder="Xác nhận mật khẩu"
-                                            className={`w-full pl-10 pr-10 py-3 border rounded-xl transition-all
-                ${confirmError ? "border-red-500" : confirm ? "border-green-500" : ""}`}
+                                            className={`w-full pl-10 pr-10 py-3 rounded-xl transition-all outline-none ${confirmError
+                                                    ? "border-2 border-red-500 bg-white"
+                                                    : focusedField === "confirm"
+                                                        ? "border-2 border-blue-400 bg-white"
+                                                        : confirm
+                                                            ? "border-2 border-blue-400 bg-white"
+                                                            : "border border-slate-200 bg-white"
+                                                }`}
                                         />
 
                                         <button
@@ -257,7 +307,6 @@ const ResetPassword = () => {
                                         </button>
                                     </div>
 
-                                    {/* BADGE CONFIRM */}
                                     {confirm && (
                                         <div className="mt-2">
                                             <Badge
@@ -283,17 +332,15 @@ const ResetPassword = () => {
             </div>
 
             {/* TOAST */}
-            <ToastPortal>
-                {toast.show && (
-                    <div className="fixed top-6 right-6">
-                        <Toast
-                            message={toast.message}
-                            type={toast.type}
-                            onClose={() => setToast({ ...toast, show: false })}
-                        />
-                    </div>
-                )}
-            </ToastPortal>
+            {toast.show && (
+                <div className="fixed top-6 right-6 z-[9999]">
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast({ ...toast, show: false })}
+                    />
+                </div>
+            )}
         </div>
     );
 };

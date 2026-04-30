@@ -10,6 +10,7 @@ import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.EmailService;
 import com.HTPj.htpj.service.FeedbackService;
+import com.HTPj.htpj.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,13 +18,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +42,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     UserRepository userRepository;
     PartnerVerificationRepository verificationRepository;
     EmailService emailService;
+    NotificationService notificationService;
 
     private static final int FEEDBACK_WINDOW_DAYS = 180;
     private static final int REPLY_WINDOW_DAYS = 30;
@@ -48,7 +53,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     // ======================================================================
     @Override
     @Transactional
-    @PreAuthorize("hasRole('AGENCY_MANAGER')")
+    @PreAuthorize("hasAnyRole('AGENCY_MANAGER', 'AGENCY_STAFF')")
     public FeedbackResponse submitFeedback(SubmitFeedbackRequest request) {
         String userId = getCurrentUserId();
 
@@ -103,6 +108,18 @@ public class FeedbackServiceImpl implements FeedbackService {
         // POST-3: Notify Hotel Owner via email
         notifyHotelOwner(hotel, booking, user, request.getOverall());
 
+        // Notify hotel via in-app notification
+        List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotel.getHotelId());
+        for (Users hotelUser : hotelUsers) {
+            notificationService.sendNotification(
+                    hotelUser.getId(), "FEEDBACK",
+                    "Đánh giá mới từ đặt phòng #" + booking.getBookingCode(),
+                    "Khách hàng đã gửi đánh giá " + request.getOverall() + " sao cho khách sạn của bạn.",
+                    "FEEDBACK", String.valueOf(review.getReviewId()),
+                    "/hotel/reviews"
+            );
+        }
+
         log.info("Feedback submitted for booking {} by user {}", booking.getBookingCode(), userId);
 
         return toResponse(review, booking, hotel, null);
@@ -112,9 +129,14 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-033: Agency feedback history
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('AGENCY_MANAGER')")
+    @PreAuthorize("hasAnyRole('AGENCY_MANAGER', 'AGENCY_STAFF')")
     public Page<FeedbackResponse> getMyFeedbackHistory(Pageable pageable) {
-        String userId = getCurrentUserId();
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String userId = jwt.getClaim("userId");
         return reviewRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(review -> {
                     Booking booking = review.getBookingId() != null
@@ -132,9 +154,16 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-055: Hotel's received feedback
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public Page<FeedbackResponse> getHotelFeedback(Pageable pageable) {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
         return reviewRepository.findByHotelId(hotelId, pageable)
                 .map(review -> {
                     Booking booking = review.getBookingId() != null
@@ -151,9 +180,16 @@ public class FeedbackServiceImpl implements FeedbackService {
     // UC-055: Hotel feedback stats
     // ======================================================================
     @Override
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackStatsResponse getHotelFeedbackStats() {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
 
         return FeedbackStatsResponse.builder()
                 .averageScore(reviewRepository.getAvgRating(hotelId))
@@ -170,9 +206,16 @@ public class FeedbackServiceImpl implements FeedbackService {
     // ======================================================================
     @Override
     @Transactional
-    @PreAuthorize("hasRole('HOTEL_MANAGER')")
+    @PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'HOTEL_STAFF')")
     public FeedbackResponse replyToFeedback(Integer reviewId, ReplyFeedbackRequest request) {
-        Integer hotelId = getCurrentUserHotelId();
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+
+        Number hotelIdNum = jwt.getClaim("hotelId");
+        Integer hotelId = hotelIdNum.intValue();
+//        Integer hotelId = getCurrentUserHotelId();
 
         HotelReview review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
@@ -198,6 +241,17 @@ public class FeedbackServiceImpl implements FeedbackService {
         review.setReplyBy(getCurrentUsername());
         review.setStatus("RESPONDED");
         reviewRepository.save(review);
+
+        // Notify agency about reply
+        if (review.getUserId() != null) {
+            notificationService.sendNotification(
+                    review.getUserId(), "FEEDBACK",
+                    "Phản hồi từ khách sạn",
+                    "Khách sạn " + review.getHotel().getHotelName() + " đã phản hồi đánh giá của bạn.",
+                    "FEEDBACK", String.valueOf(reviewId),
+                    "/agency/feedback-history"
+            );
+        }
 
         log.info("Hotel {} replied to review {}", hotelId, reviewId);
 
@@ -274,20 +328,32 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     private String getCurrentUserId() {
-        String username = getCurrentUsername();
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        return user.getId();
-    }
+        var context = SecurityContextHolder.getContext();
+        var authentication = context.getAuthentication();
 
-    private Integer getCurrentUserHotelId() {
-        String username = getCurrentUsername();
-        PartnerVerification pv = verificationRepository
-                .findTopBySubmittedByOrderByVersionDesc(username)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        if (pv.getHotel() == null) {
-            throw new AppException(ErrorCode.HOTEL_NOT_FOUND);
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            String userId = jwt.getClaim("userId");
+
+            if (userId == null) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            return userId;
+        }
+
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
+    }
+    private Integer getCurrentUserHotelId() {
+        String userId = getCurrentUserId();
+        PartnerVerification pv = verificationRepository
+                .findTopBySubmittedByOrderByVersionDesc(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
         return pv.getHotel().getHotelId();
     }
 }

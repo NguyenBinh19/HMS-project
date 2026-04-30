@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import KYCTable from '@/components/admin/kycQueue/KYCTable.jsx';
 import KYCReviewModal from '@/components/admin/kycQueue/KYCReviewModal.jsx';
+import {
+    Search, Eye, Building2, Hotel, Users,
+    Loader2, Info, Filter, ChevronRight
+} from "lucide-react";
 import { kycService, KYC_STATUS } from '@/services/kyc.service.js';
 
 const KYCQueuePage = () => {
@@ -11,6 +15,10 @@ const KYCQueuePage = () => {
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const pageSize = 10;
+    const [searchTerm, setSearchTerm] = useState("");
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [searchTerm, activeTab]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -30,15 +38,24 @@ const KYCQueuePage = () => {
     };
 
     useEffect(() => {
-        setCurrentPage(0);
         fetchData();
     }, [activeTab]);
 
+    const filteredData = useMemo(() => {
+        const search = searchTerm.toLowerCase().trim();
+        if (!search) return allData;
 
-    const paginatedData = allData.slice(
-        currentPage * pageSize,
-        (currentPage + 1) * pageSize
-    );
+        return allData.filter(item =>
+            (item.legalName || "").toLowerCase().includes(search) ||
+            (item.taxCode || "").includes(search)
+        );
+    }, [allData, searchTerm]);
+
+    // Phân trang dựa trên mảng đã lọc
+    const paginatedData = useMemo(() => {
+        const start = currentPage * pageSize;
+        return filteredData.slice(start, start + pageSize);
+    }, [filteredData, currentPage, pageSize]);
 
     const handleOpenReview = async (item) => {
         try {
@@ -58,18 +75,17 @@ const KYCQueuePage = () => {
             <p className="text-slate-500 text-[14px] mb-8">Xử lý yêu cầu đăng ký tài khoản mới cho Đại lý và Khách
                 sạn</p>
 
-            {/* Tabs Header */}
-            <div
-                className="bg-white rounded-t-xl border-x border-t border-slate-200 px-6 pt-5 flex items-center justify-between">
-                <h3 className="font-bold text-slate-700 text-[15px]">Danh sách hồ sơ</h3>
-                <div className="flex gap-8">
+            {/* Toolbar: Tabs + Search */}
+            <div className="bg-white rounded-t-2xl border-x border-t border-slate-200 px-6 pt-5 flex flex-col md:flex-row items-end md:items-center justify-between gap-4">
+                {/* Tabs bên trái */}
+                <div className="flex gap-8 overflow-x-auto w-full md:w-auto">
                     <TabItem
                         label="Chờ duyệt"
                         active={activeTab === KYC_STATUS.PENDING}
                         onClick={() => setActiveTab(KYC_STATUS.PENDING)}
                     />
                     <TabItem
-                        label="Yêu cầu bổ sung"
+                        label="Cần bổ sung"
                         active={activeTab === KYC_STATUS.NEED_MORE_INFORMATION}
                         onClick={() => setActiveTab(KYC_STATUS.NEED_MORE_INFORMATION)}
                     />
@@ -86,16 +102,39 @@ const KYCQueuePage = () => {
                         color="text-red-600"
                     />
                 </div>
-        </div>
+
+                {/* Ô Search bên phải */}
+                <div className="relative w-full md:w-80 mb-3">
+                    <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={16}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Tìm tên đối tác, MST..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:font-normal"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 hover:text-slate-600"
+                        >
+                            XÓA
+                        </button>
+                    )}
+                </div>
+            </div>
 
     {/* Table */
     }
             <KYCTable
-                data={paginatedData} // Chỉ truyền dữ liệu của trang hiện tại
+                data={paginatedData}
                 onReview={handleOpenReview}
                 loading={loading}
                 pagination={{
-                    total: allData.length, // Tổng số bản ghi thực tế
+                    total: allData.length,
                     current: currentPage,
                     size: pageSize,
                     onPageChange: (newPage) => setCurrentPage(newPage)

@@ -172,7 +172,7 @@ const VerifyOtp = () => {
                 <div className="absolute -top-10 -left-10 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-colors duration-500 ${isSuccess ? "bg-emerald-50" : "bg-cyan-50"}`}>
                   {isSuccess ? (
-                    <CheckCircle2 size={32} className="text-emerald-500" />
+                    <CheckCircle2 size={32} className="text-blue-500" />
                   ) : (
                     <ShieldCheck size={32} className="text-cyan-600" />
                   )}
@@ -186,13 +186,13 @@ const VerifyOtp = () => {
                     <span className="font-bold text-slate-700">{maskEmail(email)}</span>
                   </p>
                 )}
-                <div className={`h-1.5 w-20 rounded-full mt-4 bg-gradient-to-r ${isSuccess ? "from-emerald-500 to-teal-400" : "from-cyan-500 to-blue-400"}`}></div>
+                <div className={`h-1.5 w-20 rounded-full mt-4 bg-gradient-to-r ${isSuccess ? "from-blue-500 to-cyan-400" : "from-cyan-500 to-blue-400"}`}></div>
               </div>
 
               {/* Success state */}
               {isSuccess ? (
                 <div className="animate-fade-in-up space-y-6">
-                  <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+                  <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
                     <p className="text-slate-700 text-sm leading-relaxed text-center">
                       Tài khoản của bạn đã được kích hoạt thành công.
                       <br />
@@ -201,7 +201,7 @@ const VerifyOtp = () => {
                   </div>
                   <button
                     onClick={() => navigate("/login")}
-                    className="group w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/20 transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
+                    className="group w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
                   >
                     Đăng nhập ngay <LogIn size={20} className="group-hover:translate-x-1 transition-transform" />
                   </button>
@@ -230,11 +230,10 @@ const VerifyOtp = () => {
                         onKeyDown={(e) => handleKeyDown(i, e)}
                         onPaste={i === 0 ? handlePaste : undefined}
                         disabled={loading}
-                        className={`w-12 h-14 text-center text-xl font-black rounded-xl border-2 outline-none transition-all duration-200 ${
-                          digit
+                        className={`w-12 h-14 text-center text-xl font-black rounded-xl border-2 outline-none transition-all duration-200 ${digit
                             ? "border-cyan-500 bg-cyan-50 text-cyan-700"
                             : "border-slate-200 bg-slate-50 text-slate-800 hover:border-slate-300"
-                        } focus:border-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-500/10 disabled:opacity-50`}
+                          } focus:border-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-500/10 disabled:opacity-50`}
                       />
                     ))}
                   </div>
@@ -243,11 +242,10 @@ const VerifyOtp = () => {
                   <button
                     onClick={() => submitOtp(otp.join(""))}
                     disabled={loading || otp.some((d) => !d)}
-                    className={`group w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-3 ${
-                      otp.every((d) => d) && !loading
+                    className={`group w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-3 ${otp.every((d) => d) && !loading
                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/20 cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {loading ? (
                       <><Loader2 className="animate-spin" /> Đang xác thực...</>
@@ -263,11 +261,10 @@ const VerifyOtp = () => {
                       type="button"
                       onClick={handleResend}
                       disabled={resendCooldown > 0 || resendLoading}
-                      className={`inline-flex items-center gap-2 text-sm font-bold transition-colors ${
-                        resendCooldown > 0 || resendLoading
+                      className={`inline-flex items-center gap-2 text-sm font-bold transition-colors ${resendCooldown > 0 || resendLoading
                           ? "text-slate-400 cursor-not-allowed"
                           : "text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
-                      }`}
+                        }`}
                     >
                       {resendLoading ? (
                         <Loader2 size={14} className="animate-spin" />

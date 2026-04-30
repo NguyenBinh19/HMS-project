@@ -1,10 +1,14 @@
 package com.HTPj.htpj.controller;
 
 import com.HTPj.htpj.dto.request.ApiResponse;
+import com.HTPj.htpj.dto.request.systemConfig.UpdateSystemConfigRequest;
+import com.HTPj.htpj.dto.response.systemConfig.SystemConfigResponse;
 import com.HTPj.htpj.entity.SystemConfig;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
 import com.HTPj.htpj.repository.SystemConfigRepository;
+import com.HTPj.htpj.service.SystemConfigService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -26,6 +30,21 @@ import java.util.stream.Collectors;
 public class SystemConfigController {
 
     SystemConfigRepository systemConfigRepository;
+    SystemConfigService systemConfigService;
+
+    @GetMapping
+    ApiResponse<List<SystemConfigResponse>> getAllConfigs() {
+        return ApiResponse.<List<SystemConfigResponse>>builder()
+                .result(systemConfigService.getAllConfigs())
+                .build();
+    }
+
+    @PutMapping
+    ApiResponse<SystemConfigResponse> updateConfig(@RequestBody @Valid UpdateSystemConfigRequest request) {
+        return ApiResponse.<SystemConfigResponse>builder()
+                .result(systemConfigService.updateConfig(request))
+                .build();
+    }
 
     /**
      * Get cancellation penalty configs

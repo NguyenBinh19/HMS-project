@@ -55,7 +55,15 @@ public class PayoutStatement {
     private Integer totalRoomNights;
 
     /**
-     * DRAFT, PENDING_CONFIRMATION, APPROVED, DISPUTED, PROCESSING, PAID, ROLLOVER
+     * Amount carried forward from previous ROLLOVER statement(s).
+     * Included in netPayout of this statement.
+     */
+    @Column(name = "carried_forward_amount", precision = 18, scale = 2)
+    private BigDecimal carriedForwardAmount;
+
+    /**
+     * DRAFT, PENDING_CONFIRMATION, APPROVED, DISPUTED, PROCESSING, PAID, ROLLOVER, MERGED
+     * MERGED: a ROLLOVER statement that has been absorbed into the next cycle's statement.
      */
     @Column(name = "status", nullable = false, length = 30)
     private String status;
@@ -66,11 +74,11 @@ public class PayoutStatement {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
-    @Column(name = "dispute_reason", columnDefinition = "NVARCHAR(MAX)")
-    private String disputeReason;
-
-    @Column(name = "dispute_reason_code", length = 50)
-    private String disputeReasonCode;
+//    @Column(name = "dispute_reason", columnDefinition = "NVARCHAR(MAX)")
+//    private String disputeReason;
+//
+//    @Column(name = "dispute_reason_code", length = 50)
+//    private String disputeReasonCode;
 
     @Column(name = "bank_reference", length = 100)
     private String bankReference;
@@ -81,11 +89,23 @@ public class PayoutStatement {
     @Column(name = "paid_by", length = 255)
     private String paidBy;
 
+    @Column(name = "payment_proof_s3_key", length = 255)
+    private String paymentProofS3Key;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "bank_name", columnDefinition = "NVARCHAR(255)")
+    private String bankName;
+
+    @Column(name = "bank_account_holder", columnDefinition = "NVARCHAR(255)")
+    private String bankAccountHolder;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
 
     @PrePersist
     protected void onCreate() {

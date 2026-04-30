@@ -31,6 +31,14 @@ const FrontDeskDashboard = () => {
         });
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10; // Số lượng đơn mỗi trang
+
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchBookings();
+    }, [currentDate, activeTab]);
+
     const fetchBookings = async () => {
         setLoading(true);
         try {
@@ -142,24 +150,36 @@ const FrontDeskDashboard = () => {
         b.guestName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
     return (
         <div className="p-6 bg-[#f8fafc] min-h-screen font-sans">
             <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-8">Vận hành Lễ tân</h1>
 
-            <div className="relative max-w-md mb-8">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <div className="relative w-full mb-8">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20}/>
                 <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Tìm tên khách, mã đơn..."
-                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-[1.5rem] shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    placeholder="Tìm tên khách, mã đơn hàng..."
+                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.5rem] shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
                 />
+                {searchTerm && (
+                    <button
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest"
+                    >
+                        Xóa
+                    </button>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-                <StatCard title="Khách đến" count={activeTab === 'arrival' ? bookings.length : 0} sub="Lịch check-in" type="arrival" active={activeTab === 'arrival'} onClick={() => setActiveTab('arrival')} />
+                <StatCard title="Khách đến" count={activeTab === 'arrival' ? bookings.length : 0} sub="Lịch check-in"
+                          type="arrival" active={activeTab === 'arrival'} onClick={() => setActiveTab('arrival')}/>
                 <StatCard
                     title="Khách đi"
                     count={activeTab === 'departure' ? bookings.length : 0}
@@ -182,30 +202,39 @@ const FrontDeskDashboard = () => {
 
                 {loading ? (
                     <div className="py-32 flex flex-col items-center justify-center gap-4">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <div
+                            className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Đang tải...</p>
                     </div>
                 ) : (
                     <BookingTable
-                        bookings={filteredBookings}
+                        bookings={paginatedBookings}
                         activeTab={activeTab}
                         onCheckin={handleCheckin}
                         onCheckout={handleCheckout}
                         onNoShow={openNoShowModal}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        totalResults={filteredBookings.length}
                     />
                 )}
             </div>
             {noShowModal.show && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-8 border border-slate-100 animate-in fade-in zoom-in duration-200">
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div
+                        className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-8 border border-slate-100 animate-in fade-in zoom-in duration-200">
                         <div className="flex items-center gap-4 text-rose-600 mb-6">
-                            <div className="p-3 bg-rose-50 rounded-2xl"><UserX size={28} /></div>
+                            <div className="p-3 bg-rose-50 rounded-2xl"><UserX size={28}/></div>
                             <h3 className="text-xl font-black uppercase tracking-tighter">Báo cáo Khách không đến</h3>
                         </div>
 
                         <div className="space-y-4 mb-8">
                             <p className="text-sm text-slate-500 font-medium">
-                                Xác nhận khách <span className="text-slate-900 font-black">{noShowModal.booking?.guestName}</span> không đến nhận phòng?
+                                Xác nhận khách <span
+                                className="text-slate-900 font-black">{noShowModal.booking?.guestName}</span> không đến
+                                nhận phòng?
                             </p>
                             <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100">
                                 <p className="text-[10px] text-rose-700 font-black uppercase tracking-widest leading-relaxed">
@@ -214,7 +243,9 @@ const FrontDeskDashboard = () => {
                             </div>
                         </div>
 
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Lý do báo cáo</label>
+                        <label
+                            className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Lý
+                            do báo cáo</label>
                         <textarea
                             className="w-full p-4 border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all mb-8 bg-slate-50/50"
                             rows="3"
@@ -224,13 +255,15 @@ const FrontDeskDashboard = () => {
 
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setNoShowModal({ show: false, booking: null, reason: "" })}
+                                onClick={() => setNoShowModal({show: false, booking: null, reason: ""})}
                                 className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
-                            >Đóng</button>
+                            >Đóng
+                            </button>
                             <button
                                 onClick={handleConfirmNoShow}
                                 className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-700 active:scale-95 transition-all"
-                            >Xác nhận</button>
+                            >Xác nhận
+                            </button>
                         </div>
                     </div>
                 </div>

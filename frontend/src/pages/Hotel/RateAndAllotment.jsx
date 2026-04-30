@@ -5,8 +5,9 @@ import BulkUpdateModal from '@/components/hotel/inventory/BulkUpdateModal.jsx';
 import StopSellModal from '@/components/hotel/inventory/StopSellModal.jsx';
 import { inventoryService } from '@/services/inventory.service.js';
 import { roomTypeService } from '@/services/roomtypes.service.js';
+import { jwtDecode } from "jwt-decode";
 
-const HOTEL_ID = 2;
+
 const GRID_DAYS = 14;
 
 const formatDateParam = (date) => {
@@ -43,7 +44,7 @@ const RateAndAllotment = () => {
     useEffect(() => {
         const loadRoomTypes = async () => {
             try {
-                const res = await roomTypeService.getRoomTypesByHotelId(HOTEL_ID);
+                const res = await roomTypeService.getRoomTypesByHotelId();
                 const list = res.result || res || [];
                 setRoomTypes(list.map(rt => ({
                     ...rt,
@@ -62,7 +63,6 @@ const RateAndAllotment = () => {
         setLoading(true);
         try {
             const res = await inventoryService.getInventoryGrid(
-                HOTEL_ID,
                 formatDateParam(startDate),
                 formatDateParam(endDate)
             );
@@ -159,10 +159,10 @@ const RateAndAllotment = () => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                            Rate & Allotment
+                            Giá & Phân bổ phòng
                         </h1>
                         <p className="text-gray-500 text-sm">
-                            Manage room inventory and stop-sell restrictions
+                            Quản lý số lượng phòng và trạng thái đóng bán
                         </p>
                     </div>
 
@@ -172,14 +172,14 @@ const RateAndAllotment = () => {
                             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             <PenLine size={16} />
-                            Bulk Update
+                            Cập nhật hàng loạt
                         </button>
                         <button
                             onClick={() => setShowStopSellModal(true)}
                             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
                         >
                             <ShieldOff size={16} />
-                            Stop-sell
+                            Đóng bán
                         </button>
                     </div>
                 </div>
@@ -218,11 +218,10 @@ const RateAndAllotment = () => {
 
             {/* Toast */}
             {toast && (
-                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all ${
-                    toast.type === 'error'
+                <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all ${toast.type === 'error'
                         ? 'bg-red-600 text-white'
                         : 'bg-emerald-600 text-white'
-                }`}>
+                    }`}>
                     {toast.message}
                 </div>
             )}

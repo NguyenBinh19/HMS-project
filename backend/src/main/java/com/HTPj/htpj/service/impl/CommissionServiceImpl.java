@@ -4,18 +4,17 @@ import com.HTPj.htpj.dto.request.commission.CreateCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.DeleteCommissionRequest;
 import com.HTPj.htpj.dto.request.commission.UpdateCommissionRequest;
 import com.HTPj.htpj.dto.response.commision.CommissionDetailResponse;
+import com.HTPj.htpj.dto.response.commision.CommissionLogResponse;
 import com.HTPj.htpj.dto.response.commision.CommissionResponse;
 import com.HTPj.htpj.dto.response.commision.HotelUsingDealResponse;
 import com.HTPj.htpj.dto.response.hotel.HotelListResponse;
-import com.HTPj.htpj.entity.Commission;
-import com.HTPj.htpj.entity.CommissionHotel;
-import com.HTPj.htpj.entity.Hotel;
+import com.HTPj.htpj.entity.*;
 import com.HTPj.htpj.exception.AppException;
 import com.HTPj.htpj.exception.ErrorCode;
-import com.HTPj.htpj.repository.CommissionHotelRepository;
-import com.HTPj.htpj.repository.CommissionRepository;
-import com.HTPj.htpj.repository.HotelRepository;
+import com.HTPj.htpj.mapper.CommissionLogMapper;
+import com.HTPj.htpj.repository.*;
 import com.HTPj.htpj.service.CommissionService;
+import com.HTPj.htpj.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -36,11 +35,63 @@ public class CommissionServiceImpl implements CommissionService {
     CommissionRepository commissionRepository;
     CommissionHotelRepository commissionHotelRepository;
     HotelRepository hotelRepository;
+    UserRepository userRepository;
+    NotificationService notificationService;
+    SystemLogRepository systemLogRepository;
+    CommissionLogRepository commissionLogRepository;
+    CommissionLogMapper commissionLogMapper;
 
     private String getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Jwt jwt = (Jwt) authentication.getPrincipal();
         return jwt.getClaim("userId");
+    }
+
+    private void saveLog(String action) {
+        SystemLog log = new SystemLog();
+        log.setUserId(getUserId());
+        log.setAction(action);
+        log.setUpdatedAt(LocalDateTime.now());
+
+        systemLogRepository.save(log);
+    }
+
+    private void saveCommissionLog(
+            Hotel hotel,
+            Commission newCommission,
+            String userId,
+            String note
+    ) {
+        CommissionLog log = new CommissionLog();
+
+        log.setHotelId(Long.valueOf(hotel.getHotelId()));
+
+        // OLD
+        log.setOldCommissionId(hotel.getCommissionId());
+        log.setOldValue(hotel.getCommissionValue());
+        log.setOldCommissionType(hotel.getCommissionType());
+        log.setOldRateType(hotel.getRateType());
+
+        // NEW
+        log.setNewCommissionId(newCommission.getCommissionId());
+        log.setNewValue(newCommission.getCommissionValue());
+        log.setNewCommissionType(newCommission.getCommissionType());
+        log.setNewRateType(newCommission.getRateType());
+
+        log.setChangedBy(userId);
+        log.setChangedAt(LocalDateTime.now());
+        log.setNote(note);
+
+        commissionLogRepository.save(log);
+    }
+
+    private String getUsernameFromId(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return "Unknown";
+        }
+        return userRepository.findById(userId)
+                .map(Users::getUsername)
+                .orElse("User not found in system");
     }
 
     @Override
@@ -66,6 +117,9 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setIsActive(true);
             commission.setStartDate(null);
             commission.setEndDate(null);
+
+            saveLog("Tạo % hoa hồng mặc định: "
+                    + commission.getCommissionValue() + "%");
         }
 
         // DEAL
@@ -78,6 +132,10 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setEndDate(request.getEndDate());
             commission.setIsActive(request.getIsActive());
             commission.setNote(request.getNote());
+
+            saveLog("Tạo % hoa hồng khuyến mãi: từ "
+                    + request.getStartDate() + " - " + request.getEndDate()
+                    + ", giá trị: " + commission.getCommissionValue() + "%");
         }
 
         // HOTEL
@@ -124,6 +182,31 @@ public class CommissionServiceImpl implements CommissionService {
                 hotel.setCommissionType("HOTEL");
 
                 hotelRepository.save(hotel);
+
+                saveCommissionLog(
+                        hotel,
+                        commission,
+                        userId,
+                        "Cập nhật hoa hồng riêng cho khách sạn"
+                );
+
+                saveLog("Tạo % hoa hồng cho khách sạn: "
+                        + hotel.getHotelId() + " - " + hotel.getHotelName()
+                        + ", giá trị: " + commission.getCommissionValue() + "%");
+            }
+
+            // Notify hotels about new commission
+            for (Integer hotelId : request.getHotelIds()) {
+                List<Users> hotelUsers = userRepository.findByHotel_HotelId(hotelId);
+                for (Users hotelUser : hotelUsers) {
+                    notificationService.sendNotification(
+                            hotelUser.getId(), "COMMISSION",
+                            "Cập nhật hoa hồng",
+                            "Hoa hồng cho khách sạn của bạn đã được thiết lập.",
+                            "COMMISSION", String.valueOf(commission.getCommissionId()),
+                            "/hotel/profile"
+                    );
+                }
             }
         }
 
@@ -151,6 +234,9 @@ public class CommissionServiceImpl implements CommissionService {
 
         commissionRepository.save(commission);
 
+        saveLog("Dừng hoạt động % hoa hồng: commissionId = "
+                + commission.getCommissionId());
+
         return "Archived successfully";
     }
 
@@ -174,6 +260,13 @@ public class CommissionServiceImpl implements CommissionService {
 
         Commission commission = commissionRepository.findById(commissionId)
                 .orElseThrow(() -> new AppException(ErrorCode.COMMISSION_NOT_FOUND));
+
+
+        String createBy = getUsernameFromId(commission.getCreatedBy());
+        String updateBy = getUsernameFromId(commission.getUpdatedBy());
+
+        commission.setCreatedBy(createBy);
+        commission.setUpdatedBy(updateBy);
 
         CommissionDetailResponse response = new CommissionDetailResponse();
         response.setCommission(commission);
@@ -210,8 +303,10 @@ public class CommissionServiceImpl implements CommissionService {
             commission.setCommissionValue(request.getCommissionValue());
             commission.setNote(request.getNote());
             commission.setReason(request.getReason());
-        }
 
+            saveLog("Cập nhật hoa hồng mặc định thành: "
+                    + commission.getCommissionValue() + "%");
+        }
         // deal
         else if ("DEAL".equals(type)) {
             List<Hotel> hotelsUsingCommission =
@@ -235,6 +330,11 @@ public class CommissionServiceImpl implements CommissionService {
                 commission.setNote(request.getNote());
                 commission.setReason(request.getReason());
             }
+
+            saveLog("Cập nhật hoa hồng: commissionId = "
+                    + commission.getCommissionId()
+                    + ", thời gian: " + request.getStartDate()
+                    + " - " + request.getEndDate());
         }
 
         // hotel
@@ -256,7 +356,7 @@ public class CommissionServiceImpl implements CommissionService {
 
                     Hotel hotel = hotelRepository.findById(ch.getHotelId())
                             .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-
+                    saveCommissionLog(hotel, commission, userId, "Cập nhật chiết khấu riêng của khách sạn");
                     hotel.setUpdatedAt(now);
 
                     hotel.setCommissionValue(request.getCommissionValue());
@@ -294,6 +394,10 @@ public class CommissionServiceImpl implements CommissionService {
                     hotelRepository.save(hotel);
                 }
             }
+
+            saveLog("Cập nhật hoa hồng khách sạn, mã hoa hồng: "
+                    + commission.getCommissionId()
+                    + ", giá trị: " + commission.getCommissionValue() + "%");
         }
 
         // common update
@@ -301,6 +405,25 @@ public class CommissionServiceImpl implements CommissionService {
         commission.setUpdatedBy(userId);
 
         commissionRepository.save(commission);
+
+        // Notify hotels about commission update (HOTEL type only)
+        if ("HOTEL".equals(commission.getCommissionType())) {
+            List<CommissionHotel> hotelLinks = commissionHotelRepository.findByCommissionId(commission.getCommissionId());
+            if (hotelLinks != null) {
+                for (CommissionHotel ch : hotelLinks) {
+                    List<Users> hotelUsers = userRepository.findByHotel_HotelId(ch.getHotelId());
+                    for (Users hotelUser : hotelUsers) {
+                        notificationService.sendNotification(
+                                hotelUser.getId(), "COMMISSION",
+                                "Cập nhật hoa hồng",
+                                "Hoa hồng của khách sạn bạn đã được cập nhật.",
+                                "COMMISSION", String.valueOf(commission.getCommissionId()),
+                                "/hotel/profile"
+                        );
+                    }
+                }
+            }
+        }
 
         return "Update successfully";
     }
@@ -327,9 +450,11 @@ public class CommissionServiceImpl implements CommissionService {
 
         commissionRepository.save(commission);
 
+        saveLog("Kích hoạt % hoa hồng: commissionId = "
+                + commission.getCommissionId());
+
         return "Active commission thành công";
     }
-
 
     @Override
     public HotelUsingDealResponse getHotelsUsingDeal(Long commissionId) {
@@ -399,4 +524,44 @@ public class CommissionServiceImpl implements CommissionService {
 
         return "Set hotel về DEFAULT commission thành công";
     }
+
+    @Override
+    public List<CommissionLogResponse> getAllCommissionLogs() {
+
+        List<CommissionLogResponse> logs = commissionLogMapper.toResponseList(
+                commissionLogRepository.findAll()
+        );
+
+        logs.forEach(log ->
+                log.setChangedBy(getUsernameFromId(log.getChangedBy()))
+        );
+
+        return logs;
+    }
+
+    @Override
+    public List<CommissionLogResponse> getHotelCommissionLogs() {
+
+        String userId = getUserId();
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getHotel() == null) {
+            throw new RuntimeException("User does not belong to any hotel");
+        }
+
+        Long hotelId = Long.valueOf(user.getHotel().getHotelId());
+
+        List<CommissionLogResponse> logs = commissionLogMapper.toResponseList(
+                commissionLogRepository.findByHotelId(hotelId)
+        );
+
+        logs.forEach(log ->
+                log.setChangedBy(getUsernameFromId(log.getChangedBy()))
+        );
+
+        return logs;
+    }
+
 }

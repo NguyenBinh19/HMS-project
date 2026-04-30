@@ -1,216 +1,376 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-    Trophy, Wallet, AlertTriangle, Users,
-    Calendar, MessageSquare, ArrowUpRight,
-    Lock, CheckCircle2, AlertCircle, TrendingUp
+    Wallet, Calendar, CheckCircle2, XCircle, Clock,
+    Loader2, ChevronRight, Plus, FileText,
+    Download, Star, MapPin, AlertCircle, Info, ShieldAlert, CreditCard
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
+import { jwtDecode } from "jwt-decode";
 
-// Giả lập dữ liệu biểu đồ
-const chartData = Array.from({ length: 15 }, (_, i) => ({
-    day: (i + 1).toString().padStart(2, '0'),
-    revenue: Math.floor(Math.random() * 10000000) + 5000000,
-}));
+// Services
+import { rankService } from '@/services/rank.service';
+import { bookingService } from '@/services/booking.service';
+import { agencyService } from '@/services/agency.service';
+import api from "@/services/axios.config";
 
 const AgencyDashboard = () => {
-    // Trạng thái tài khoản: 'NORMAL' | 'STAGE1' (Warning) | 'STAGE2' (Locked)
-    const [accountStatus, setAccountStatus] = useState('NORMAL');
+    const [loading, setLoading] = useState(true);
+    const [agencyId, setAgencyId] = useState(null);
+    const [agencyData, setAgencyData] = useState(null);
+    const navigate = useNavigate();
 
-    // Style theo trạng thái nợ
-    const getStatusConfig = () => {
-        switch (accountStatus) {
-            case 'STAGE1':
-                return {
-                    banner: "bg-amber-50 border-amber-200 text-amber-800",
-                    bannerIcon: <AlertTriangle className="text-amber-500" />,
-                    bannerMsg: "Tài khoản quá hạn. Lãi phạt 0.03%/ngày đang được áp dụng. Vui lòng thanh toán để tránh bị khóa hệ thống.",
-                    isLocked: false
-                };
-            case 'STAGE2':
-                return {
-                    banner: "bg-red-600 border-red-700 text-white",
-                    bannerIcon: <Lock className="text-white" />,
-                    bannerMsg: "DỊCH VỤ ĐÃ BỊ KHÓA. Quá hạn > 15 ngày làm việc. Lãi phạt 0.05%/ngày. Vui lòng tất toán nợ để tiếp tục sử dụng.",
-                    isLocked: true
-                };
-            default:
-                return { banner: null, isLocked: false };
+    const [rankData, setRankData] = useState(null);
+    const [finance, setFinance] = useState({
+        wallet: 0,
+        credit: {
+            remainingCredit: 0,
+            debt: 0,
+            creditLimit: 0,
+            usedPercent: 0,
+            dueDate: "",
+            overdueDebt: 0
+        }
+    });
+    const [monthlyStats, setMonthlyStats] = useState({
+        completed: { count: 0, revenue: 0 },
+        cancelled: { count: 0, revenue: 0 },
+        others: { count: 0, revenue: 0 }
+    });
+    const [upcoming, setUpcoming] = useState({ day1: [], day2: [] });
+
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                setAgencyId(decoded.agencyId || decoded.agency_id);
+            } catch (error) { console.error("Token error", error); }
+        }
+    }, []);
+
+    const fetchData = async () => {
+        if (!agencyId) return;
+        setLoading(true);
+        try {
+            const profileRes = await agencyService.getAgencyProfileDetail();
+            const agency = profileRes?.result;
+
+            const [rankRes, creditRes, bookingRes] = await Promise.allSettled([
+                rankService.getRankDetail(agency?.rankId),
+                api.get(`/agencies/${agencyId}/credit-summary`),
+                bookingService.getBookingHistory()
+            ]);
+
+            const getRes = (res) => res.status === 'fulfilled' ? res.value : null;
+
+            const creditResponse = getRes(creditRes);
+            const creditInfo = creditResponse?.data?.result;
+
+            setRankData(getRes(rankRes)?.result);
+            setAgencyData(agency);
+
+            setFinance({
+                wallet: agency?.walletBalance || 0,
+                credit: creditInfo || null
+            });
+
+            const bookings = getRes(bookingRes)?.result?.content || [];
+            let stats = { completed: { count: 0, revenue: 0 }, cancelled: { count: 0, revenue: 0 }, others: { count: 0, revenue: 0 } };
+            let d1 = [], d2 = [];
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            bookings.forEach(b => {
+                const bookingDate = new Date(b.createdAt);
+                const isThisMonth = bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+
+                if (isThisMonth) {
+                    if (b.bookingStatus === 'COMPLETED') {
+                        stats.completed.count++;
+                        stats.completed.revenue += b.finalAmount;
+                    } else if (b.bookingStatus === 'CANCELLED') {
+                        stats.cancelled.count++;
+                        stats.cancelled.revenue += b.finalAmount;
+                    } else {
+                        stats.others.count++;
+                        stats.others.revenue += b.finalAmount;
+                    }
+                }
+
+                const checkIn = new Date(b.checkInDate).setHours(0,0,0,0);
+                const diff = Math.round((checkIn - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                if (b.bookingStatus !== 'CANCELLED') {
+                    if (diff === 0 || diff === 1) d1.push(b);
+                    else if (diff === 2) d2.push(b);
+                }
+            });
+            setMonthlyStats(stats);
+            setUpcoming({ day1: d1, day2: d2 });
+
+        } catch (error) {
+            console.error("Fetch error", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const config = getStatusConfig();
+    useEffect(() => { fetchData(); }, [agencyId]);
+
+    const formatVND = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+
+    if (loading) return <div className="flex h-screen items-center justify-center bg-white"><Loader2 className="animate-spin text-blue-500" size={40}/></div>;
 
     return (
-        <div className={`p-6 bg-slate-50 min-h-screen space-y-6 ${config.isLocked ? 'grayscale-[0.5]' : ''}`}>
+        <div className="p-6 bg-[#F8FAFC] min-h-screen max-w-[1440px] mx-auto space-y-8 font-sans text-slate-900">
 
-            {/* 1. Sticky Alert Banner */}
-            {config.banner && (
-                <div className={`flex items-center gap-3 p-4 rounded-2xl border shadow-sm animate-pulse ${config.banner}`}>
-                    {config.bannerIcon}
-                    <p className="font-bold text-sm tracking-tight">{config.bannerMsg}</p>
-                </div>
-            )}
-
-            {/* 2. Top Widgets Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Rank Widget */}
-                <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hạng thành viên</p>
-                            <div className="bg-amber-500 text-white px-4 py-1 rounded-lg font-black text-sm inline-block italic">RANK A</div>
-                        </div>
-                        <Trophy className="text-amber-400" size={32} />
-                    </div>
-                    <div className="space-y-2">
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-500 w-[70%]" />
-                        </div>
-                        <p className="text-[10px] font-bold text-slate-500">Cần thêm 20.000.000đ doanh số để lên Rank S</p>
-                        <button className="text-blue-600 font-black text-[10px] uppercase hover:underline">Xem quyền lợi Rank</button>
-                    </div>
-                </div>
-
-                {/* Financial Widget */}
-                <div className={`bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 transition-all ${accountStatus === 'STAGE2' ? 'ring-2 ring-red-500' : ''}`}>
-                    <div className="flex justify-between items-start mb-2">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tài chính (Sức mua)</p>
-                        <Wallet className={accountStatus === 'NORMAL' ? 'text-emerald-500' : 'text-red-500'} size={20} />
-                    </div>
-                    <h2 className="text-3xl font-black text-slate-900 mb-4">250.000.000 đ</h2>
-                    <div className="space-y-2 text-xs mb-4">
-                        <div className="flex justify-between">
-              <span className="flex items-center gap-2 font-bold text-slate-500">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" /> Ví tiền mặt (Prepaid)
-              </span>
-                            <span className="font-black text-slate-800">150.000.000 đ</span>
-                        </div>
-                        <div className="flex justify-between">
-              <span className="flex items-center gap-2 font-bold text-slate-500">
-                <div className="w-2 h-2 rounded-full bg-blue-500" /> Tín dụng (Credit)
-              </span>
-                            <span className="font-black text-slate-800">100.000.000 đ</span>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button disabled={config.isLocked} className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-[10px] font-black uppercase disabled:bg-slate-300">Nạp tiền</button>
-                        <button className="flex-1 border border-slate-200 py-2 rounded-xl text-[10px] font-black uppercase">Gia hạn hạn mức</button>
-                    </div>
-                </div>
-
-                {/* Debt Widget */}
-                <div className={`p-6 rounded-[32px] shadow-sm border transition-all ${accountStatus === 'NORMAL' ? 'bg-white border-slate-100' : 'bg-red-50 border-red-100'}`}>
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Nghĩa vụ nợ (Principal + Penalty)</p>
-                    <h2 className="text-3xl font-black text-red-600 mb-1">15.000.000 đ</h2>
-                    <p className="text-[10px] font-bold text-slate-500 mb-6 italic">Lãi phạt dự kiến: {accountStatus === 'NORMAL' ? '0đ' : '450.000đ'}</p>
-                    <div className="flex items-center justify-between mb-4 text-[10px] font-black">
-                        <span className="text-slate-400 uppercase">Hạn thanh toán:</span>
-                        <span className="text-slate-900">25/11/2026</span>
-                    </div>
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-200 hover:bg-blue-700">
-                        Thanh toán ngay
-                    </button>
+            {/* HEADER SECTION */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                        Chào mừng, {agencyData?.agencyName || "Emerald Travel"}!
+                        <span
+                            className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase border border-blue-200 shadow-sm shadow-blue-100/50">
+                            <Star
+                                size={11}
+                                fill="currentColor"
+                                className="text-blue-500 mb-0.5"
+                            />
+                            <span className="tracking-wider">
+                                {rankData?.rankName || 'HẠNG PHỔ THÔNG'}
+                            </span>
+                        </span>
+                    </h1>
+                    <p className="text-slate-500 text-sm font-bold">Chào mừng bạn trở lại hệ thống. Đây là tóm tắt hiệu
+                        suất của đại lý.</p>
                 </div>
             </div>
 
-            {/* 3. Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <StatCard icon={<CheckCircle2 className="text-emerald-500"/>} label="Mới đặt" value="5" sub="Booking trong 24h qua" />
-                <StatCard icon={<Calendar className="text-slate-400"/>} label="Sắp khởi hành" value="12" sub="Check-in trong 3 ngày tới" />
-                <StatCard icon={<AlertCircle className="text-red-500"/>} label="Khiếu nại" value="1" sub="Cần xử lý gấp" highlight />
-                <StatCard icon={<Users className="text-blue-500"/>} label="Nhân viên Active" value="3/5" sub="Online hôm nay" />
-            </div>
+            <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-8 space-y-8">
+                    {/* STATS SECTION */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <StatSummaryCard
+                            label="ĐƠN THÀNH CÔNG" count={monthlyStats.completed.count} revenue={monthlyStats.completed.revenue}
+                            icon={<CheckCircle2 size={16} className="text-emerald-500"/>}
+                            bg="bg-white" border="border-emerald-100"
+                            onDetail={() => navigate('/agency/booking-list')}
+                        />
+                        <StatSummaryCard
+                            label="ĐƠN ĐÃ HỦY" count={monthlyStats.cancelled.count} revenue={monthlyStats.cancelled.revenue}
+                            icon={<XCircle size={16} className="text-rose-500"/>}
+                            bg="bg-white" border="border-rose-100"
+                            onDetail={() => navigate('/agency/booking-list')}
+                        />
+                        <StatSummaryCard
+                            label="ĐƠN KHÁC" count={monthlyStats.others.count} revenue={monthlyStats.others.revenue}
+                            icon={<Clock size={16} className="text-blue-500"/>}
+                            bg="bg-white" border="border-blue-100"
+                            onDetail={() => navigate('/agency/booking-list')}
+                        />
+                    </div>
 
-            {/* 4. Chart & Activity Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Revenue Chart */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
-                    <div className="flex justify-between items-center mb-8">
-                        <h3 className="font-black text-slate-800 uppercase tracking-tighter">Doanh số & Ngân sách</h3>
-                        <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400">
-                            <span className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-sm"/> Doanh số</span>
-                            <span className="flex items-center gap-1"><div className="w-3 h-3 border-t-2 border-dashed border-red-400"/> Ngưỡng cảnh báo</span>
+                    {/* SCHEDULE SECTION */}
+                    <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-200">
+                        <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight">Sắp khởi hành</h3>
+                                <p className="text-slate-500 text-sm font-bold mt-1 tracking-wider">
+                                    Lịch trình trong 48 giờ
+                                </p>
+                            </div>
+                            <button onClick={() => navigate('/agency/booking-list')}
+                                    className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-600 transition-colors">Xem tất cả</button>
+                        </div>
+                        <div className="space-y-10 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            <ScheduleSection title="HÔM NAY / TRONG 24H" list={upcoming.day1.slice(0, 5)} navigate={navigate} />
+                            <ScheduleSection title="TRONG 48H TỚI" list={upcoming.day2.slice(0, 5)} navigate={navigate} />
                         </div>
                     </div>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
-                                <YAxis hide />
-                                <Tooltip cursor={{fill: '#f8fafc'}} content={<CustomTooltip />} />
-                                <Bar dataKey="revenue" radius={[6, 6, 0, 0]} barSize={24}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 10 ? '#3b82f6' : '#93c5fd'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
                 </div>
 
-                {/* Recent Activity - Audit */}
-                <div className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
-                    <h3 className="font-black text-slate-800 uppercase tracking-tighter mb-6 flex items-center gap-2">
-                        <TrendingUp size={18} className="text-blue-600"/> Hoạt động gần đây
-                    </h3>
-                    <div className="space-y-6">
-                        <ActivityItem time="10:05" desc="Nhân viên A đặt thành công Mường Thanh Luxury" amount="-2.500.000đ" type="debt" />
-                        <ActivityItem time="09:30" desc="Admin đã duyệt yêu cầu nạp tiền" amount="+50.000.000đ" type="success" />
-                        <ActivityItem time="08:00" desc="Hệ thống tự động trừ nợ đến hạn" amount="-5.000.000đ" type="debt" />
-                        <ActivityItem time="06:30" desc="Yêu cầu hạn mức mới được gửi đi" amount="Số tiền: 50.000.000đ" type="info" />
+                <div className="col-span-12 lg:col-span-4 space-y-6">
+                    {/* VÍ TRẢ TRƯỚC CARD */}
+                    <div
+                        className="p-6 rounded-[32px] border border-blue-100 bg-white shadow-sm flex items-center gap-5">
+                        <div className="p-4 bg-blue-50 rounded-[22px] text-blue-500 border border-blue-100">
+                            <Wallet size={24}/>
+                        </div>
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Ví trả trước</p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tight">
+                                {formatVND(finance.wallet)}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* QUẢN LÝ DƯ NỢ */}
+                    <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-200 space-y-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <CreditCard size={18} className="text-blue-500"/>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Thông tin tín
+                                dụng</h3>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Dư nợ hiện tại</span>
+                                <span
+                                    className="text-sm font-black text-slate-900">{formatVND(finance.credit?.debt)}</span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Hạn thanh toán</span>
+                                <span className="text-sm font-black text-blue-500">
+                                    {finance.credit?.dueDate ? new Date(finance.credit.dueDate).toLocaleDateString('vi-VN') : "---"}
+                                </span>
+                            </div>
+                            <div className="flex justify-between border-b border-slate-50 pb-2">
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-tight">Sức mua còn lại</span>
+                                <span
+                                    className="text-sm font-black text-emerald-500">{formatVND(finance.credit.remainingCredit)}</span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => navigate('/agency/credit-wallet')}
+                            className="w-full py-4 bg-blue-500 text-white rounded-[20px] font-black text-[13px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md"
+                        >
+                            Chi tiết
+                        </button>
+                    </div>
+
+                    {/* QUICK ACTIONS */}
+                    <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-200">
+                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Thao tác
+                            nhanh</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <QuickBtn icon={<Plus size={20}/>} label="Tạo đơn mới"
+                                      bg="bg-blue-50 text-blue-600 border-blue-100"
+                                      onClick={() => navigate('/agency/search-hotel')}/>
+                            <QuickBtn icon={<FileText size={20}/>} label="Lịch sử"
+                                      bg="bg-indigo-50 text-indigo-600 border-indigo-100"
+                                      onClick={() => navigate('/agency/transaction-history')}/>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Control Panel (demo chuyển trạng thái) */}
-            <div className="fixed bottom-4 right-4 bg-white p-2 rounded-full shadow-2xl border flex gap-2">
-                <button onClick={() => setAccountStatus('NORMAL')} className="p-2 bg-emerald-500 text-white rounded-full"><CheckCircle2 size={16}/></button>
-                <button onClick={() => setAccountStatus('STAGE1')} className="p-2 bg-amber-500 text-white rounded-full"><AlertTriangle size={16}/></button>
-                <button onClick={() => setAccountStatus('STAGE2')} className="p-2 bg-red-500 text-white rounded-full"><Lock size={16}/></button>
             </div>
         </div>
     );
 };
 
-// --- Sub-components ---
+// --- SUB-COMPONENTS ---
 
-const StatCard = ({ icon, label, value, sub, highlight }) => (
-    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-2">
-        <div className="p-3 bg-slate-50 rounded-2xl">{icon}</div>
-        <div className="text-2xl font-black text-slate-900">{value}</div>
-        <div>
-            <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{label}</p>
-            <p className={`text-[9px] font-bold ${highlight ? 'text-red-500' : 'text-slate-400'}`}>{sub}</p>
+const StatSummaryCard = ({label, count, revenue, icon, border, onDetail}) => (
+    <div className={`p-6 rounded-[32px] border ${border} bg-white shadow-sm group relative`}>
+        <div className="flex justify-between items-start mb-6">
+            <div
+                className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 group-hover:bg-blue-500 group-hover:text-white transition-colors">{icon}</div>
+            <span
+                className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Tháng này</span>
         </div>
-    </div>
-);
-
-const ActivityItem = ({ time, desc, amount, type }) => (
-    <div className="flex gap-4 items-start">
-        <span className="text-[10px] font-black text-slate-400 mt-1">{time}</span>
         <div className="space-y-1">
-            <p className="text-xs font-bold text-slate-700 leading-tight">{desc}</p>
-            <p className={`text-[10px] font-black ${type === 'success' ? 'text-emerald-500' : type === 'debt' ? 'text-red-500' : 'text-blue-500'}`}>
-                {amount}
-            </p>
+            <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-slate-900 leading-none">{count}</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase leading-none">{label}</span>
+            </div>
+            <p className="text-lg font-black text-blue-500 tracking-tight leading-none pt-1">{new Intl.NumberFormat('vi-VN').format(revenue)}₫</p>
+        </div>
+        <button
+            onClick={onDetail}
+            className="mt-6 flex items-center gap-1 text-[10px] font-black text-slate-900 hover:text-blue-500 transition-colors uppercase tracking-widest"
+        >
+            Chi tiết <ChevronRight size={12}/>
+        </button>
+    </div>
+);
+
+const ScheduleSection = ({ title, list, totalCount, navigate }) => (
+    <div className="space-y-6">
+        <div className="flex items-center justify-between sticky top-0 bg-white py-2 z-10">
+            <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]"></div>
+                <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-widest">{title}</h4>
+            </div>
+            {totalCount > 0 && (
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                    {totalCount} đơn hàng
+                </span>
+            )}
+        </div>
+
+        <div className="space-y-4">
+            {list.length > 0 ? (
+                <>
+                    {list.map((item, idx) => (
+                        <div
+                            key={idx}
+                            onClick={() => navigate(`/agency/booking-list/detail/${item.bookingCode}`)}
+                            className="flex items-center justify-between p-5 bg-white hover:bg-blue-50/30 rounded-[24px] border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group shadow-sm"
+                        >
+                            <div className="flex items-center gap-5">
+                                <div
+                                    className="w-14 h-14 bg-slate-900 rounded-2xl flex flex-col items-center justify-center border border-slate-800 shadow-sm">
+                                    <span
+                                        className="text-[9px] font-black text-slate-500 uppercase">TH{new Date(item.checkInDate).getMonth() + 1}</span>
+                                    <span
+                                        className="text-xl font-black text-white">{new Date(item.checkInDate).getDate()}</span>
+                                </div>
+                                <div className="space-y-1">
+                                    <h5 className="text-sm font-black text-slate-900 group-hover:text-blue-500 transition-colors uppercase truncate max-w-[180px] tracking-tight">{item.hotelName}</h5>
+                                    <div
+                                        className="flex items-center gap-2 text-[11px] font-black text-slate-500 uppercase">
+                                        <span>Code: <span className="text-blue-500">#{item.bookingCode}</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                {/* Đổi items-end thành items-center cho cả cụm này */}
+                                {item.paymentStatus === 'PAID' ? (
+                                    <span
+                                        className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-full uppercase border border-emerald-100">
+                                        Đã thanh toán
+                                    </span>
+                                ) : (
+                                    <span
+                                        className="px-3 py-1 bg-amber-50 text-amber-600 text-[9px] font-black rounded-full uppercase border border-amber-100">
+                                    Chờ thanh toán
+                                </span>
+                                )}
+                                <p className="text-[10px] font-black text-slate-500 uppercase ">
+                                    Xem chi tiết
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Nút Xem thêm nếu còn đơn */}
+                    {totalCount > 5 && (
+                        <button
+                            onClick={() => navigate('/agency/booking-list')}
+                            className="w-full py-4 border-2 border-dashed border-slate-100 rounded-[24px] text-[10px] font-black text-blue-500 uppercase tracking-widest hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center gap-2 group"
+                        >
+                            Xem thêm {totalCount - 5} đơn hàng khác
+                            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    )}
+                </>
+            ) : (
+                <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-[24px] bg-slate-50/50">
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic">Không có lịch trình phù hợp</p>
+                </div>
+            )}
         </div>
     </div>
 );
 
-const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-800">
-                <p className="text-[10px] font-black uppercase mb-1">Doanh số ngày {payload[0].payload.day}</p>
-                <p className="text-sm font-black text-blue-400">{new Intl.NumberFormat('vi-VN').format(payload[0].value)} đ</p>
-            </div>
-        );
-    }
-    return null;
-};
+const QuickBtn = ({ icon, label, bg, onClick }) => (
+    <button onClick={onClick} className={`${bg} p-5 rounded-[24px] border flex flex-col items-center gap-3 hover:shadow-md hover:translate-y-[-2px] transition-all active:scale-95 group w-full`}>
+        <div className="group-hover:scale-110 transition-transform">{icon}</div>
+        <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">{label}</span>
+    </button>
+);
 
 export default AgencyDashboard;

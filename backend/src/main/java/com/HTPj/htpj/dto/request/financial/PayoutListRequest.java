@@ -10,4 +10,5 @@ public class PayoutListRequest {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private Integer hotelId;        // optional filter
+    private Boolean includeDisputed;
 }

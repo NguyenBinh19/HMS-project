@@ -142,13 +142,13 @@ const BookingSuccessPage = () => {
                 </div>
 
                 <h1 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Thanh toán thành công! Đơn hàng đã được xác nhận. </h1>
-                <p className="text-slate-500 font-medium mb-8">
-                    Mã đặt phòng đã được gửi đến <span className="text-slate-800 font-bold">{display.guestEmail}</span>
-                </p>
+                {/*<p className="text-slate-500 font-medium mb-8">*/}
+                {/*    Mã đặt phòng đã được gửi đến <span className="text-slate-800 font-bold">{display.guestEmail}</span>*/}
+                {/*</p>*/}
 
                 {/* BOOKING CODE CARD */}
                 <div className="bg-white border border-slate-200 rounded-2xl py-5 px-10 inline-flex items-center gap-12 shadow-sm mb-10">
-                    <span className="text-slate-400 font-black text-[11px] uppercase tracking-wider">Mã đặt phòng</span>
+                    <span className="text-slate-600 font-black text-[11px] uppercase tracking-wider">Mã đặt phòng</span>
                     <div className="flex items-center gap-4">
                         <span className="text-2xl font-black text-blue-700 tracking-tighter uppercase">#{display.code}</span>
                         <button onClick={() => copyToClipboard(display.code)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400">
@@ -167,11 +167,11 @@ const BookingSuccessPage = () => {
                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-16">
                         <div className="space-y-6">
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Khách sạn</p>
+                                <p className="text-[10px] font-black text-slate-600 uppercase mb-1 tracking-wider">Khách sạn</p>
                                 <p className="font-black text-slate-800 text-lg leading-tight uppercase">{display.hotelName}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Khách chính</p>
+                                <p className="text-[10px] font-black text-slate-600 uppercase mb-1 tracking-wider">Khách chính</p>
                                 <p className="font-bold text-slate-700 text-base">{display.guestName}</p>
                                 <p className="text-xs text-slate-400 font-medium">{display.guestPhone}</p>
                             </div>
@@ -179,15 +179,14 @@ const BookingSuccessPage = () => {
 
                         <div className="space-y-6">
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Thời gian lưu trú</p>
+                                <p className="text-[10px] font-black text-slate-600 uppercase mb-1 tracking-wider">Thời gian lưu trú</p>
                                 <p className="font-bold text-slate-700">{safeFormatDate(display.checkIn)} — {safeFormatDate(display.checkOut)}</p>
                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter mt-1">{display.nights} đêm • {display.rooms} Phòng</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-wider">Trạng thái đặt phòng</p>
+                                <p className="text-[10px] font-black text-slate-600 uppercase mb-1 tracking-wider">Trạng thái đặt phòng</p>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase">Đã thanh toán</span>
-                                    <span className="bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase">Confirmed</span>
                                 </div>
                             </div>
                         </div>
@@ -249,7 +248,7 @@ const BookingSuccessPage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate("/homepage")}
+                        onClick={() => navigate("/agency/agency-dashboard")}
                         className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                     >
                         <Home className="mb-2 text-slate-400" size={24}/>
@@ -264,19 +263,19 @@ const BookingSuccessPage = () => {
                     <h3 className="font-black text-slate-800 mb-8 uppercase tracking-widest text-[10px] flex items-center gap-2">
                         <Info size={16} className="text-emerald-500"/> Thông tin cần lưu ý
                     </h3>
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <p className="font-black text-slate-800 text-sm">Xác nhận tức thì</p>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">Đơn hàng đã được hệ thống khách sạn xác nhận ngay lập tức.</p>
                         </div>
                         <div className="space-y-2">
                             <p className="font-black text-slate-800 text-sm">Voucher điện tử</p>
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed">PDF đã được ẩn giá Net, sẵn sàng gửi cho khách hàng lẻ.</p>
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed">PDF đã chuẩn, sẵn sàng gửi cho khách hàng.</p>
                         </div>
-                        <div className="space-y-2">
-                            <p className="font-black text-slate-800 text-sm">Hóa đơn VAT</p>
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed">Hóa đơn đã được gửi vào hòm thư nội bộ của đại lý.</p>
-                        </div>
+                        {/*<div className="space-y-2">*/}
+                        {/*    <p className="font-black text-slate-800 text-sm">Hóa đơn VAT</p>*/}
+                        {/*    <p className="text-xs text-slate-500 font-medium leading-relaxed">Hóa đơn đã được gửi vào hòm thư nội bộ của đại lý.</p>*/}
+                        {/*</div>*/}
                     </div>
                 </div>
             </div>

@@ -21,15 +21,23 @@ public class PayoutStatementResponse {
     private BigDecimal totalCommission;
     private BigDecimal totalRefunds;
     private BigDecimal adjustments;
+    private BigDecimal carriedForwardAmount;
     private BigDecimal netPayout;
     private Integer totalBookings;
     private Integer totalRoomNights;
     private String status;
     private String confirmedBy;
     private LocalDateTime confirmedAt;
-    private String disputeReason;
-    private String disputeReasonCode;
+    //    private String disputeReason;
+//    private String disputeReasonCode;
+    //bank
+    private String bankName;
+    private String bankAccountHolder;
+    private String bankAccountNumber;
+
     private String bankReference;
+    private String paidBy;
+    private String paymentProofUrl;
     private LocalDateTime paidAt;
     private LocalDateTime createdAt;
     private List<PayoutLineItemResponse> lineItems;

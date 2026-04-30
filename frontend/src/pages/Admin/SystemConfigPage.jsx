@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import RankCycleTab from '@/components/admin/systemConfig/RankCycleTab.jsx';
 import CancelPolicyTab from '@/components/admin/systemConfig/CancelPolicyTab.jsx';
+import PdfConfigTab from '@/components/admin/systemConfig/PdfConfigTab.jsx';
+import EmailConfigTab from '@/components/admin/systemConfig/EmailConfigTab.jsx';
 
 const SystemConfigPage = () => {
-    const [activeTab, setActiveTab] = useState('RANK_CYCLE');
+    const [activeTab, setActiveTab] = useState('CANCEL_POLICY');
 
     const tabs = [
         { id: 'CANCEL_POLICY', label: 'Chính sách hủy' },
         { id: 'RANK_CYCLE', label: 'Chu kỳ xếp hạng' },
-        { id: 'FINANCE', label: 'Tài chính' },
-        { id: 'OPERATION', label: 'Vận hành & TTL' },
-        { id: 'NOTI', label: 'Thông báo' },
+        { id: 'PDF_CONFIG', label: 'Tài liệu PDF' },
+        { id: 'EMAIL_CONFIG', label: 'Cấu hình Email hỗ trợ' },
     ];
 
     return (
@@ -25,7 +26,7 @@ const SystemConfigPage = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`pb-4 text-sm font-bold transition-all relative ${
-                                activeTab === tab.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                                activeTab === tab.id ? 'text-blue-700' : 'text-slate-500 hover:text-slate-600'
                             }`}
                         >
                             {tab.label}
@@ -38,7 +39,8 @@ const SystemConfigPage = () => {
                 <div className="bg-white p-2 rounded-[32px]">
                     {activeTab === 'RANK_CYCLE' && <RankCycleTab />}
                     {activeTab === 'CANCEL_POLICY' && <CancelPolicyTab />}
-                    {/* Các tab khác tương tự... */}
+                    {activeTab === 'PDF_CONFIG' && <PdfConfigTab />}
+                    {activeTab === 'EMAIL_CONFIG' && <EmailConfigTab />}
                 </div>
             </div>
         </div>
